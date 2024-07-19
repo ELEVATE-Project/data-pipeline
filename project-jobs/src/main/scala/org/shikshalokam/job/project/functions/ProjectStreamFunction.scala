@@ -32,8 +32,80 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
 
   override def processElement(event: Event, context: ProcessFunction[Event, Event]#Context, metrics: Metrics): Unit = {
 
-//    println(s"Processing Project Submission Event")
+
+
+    val (projectEvidences, projectEvidencesCount) = extractEvidenceData(event.projectAttachments)
+    println("projectEvidences = " + projectEvidences)
+    println("projectEvidencesCount = " + projectEvidencesCount)
+
+    val organisationsData = extractOrganisationsData(event.organisations)
+    println(organisationsData)
+
+    /** Required to feed orgIds into projects table */
+    //val orgIdsString = organisationsData.map(_("orgId")).mkString(", ")
+    //println(orgIdsString)
+
+    val locationsDada = extractLocationsData(event.locations)
+    println(locationsDada)
+
+
+
+
+
+
 
     }
 
+
+
+
+
+
+
+
+
+
+
+
+  def extractEvidenceData(Attachments: List[Map[String, Any]]): (String, Int) = {
+    val evidenceList = Attachments.map { attachment =>
+      if (attachment.get("type").contains("link")) {
+        attachment.get("name").map(_.toString).getOrElse("")
+      } else {
+        attachment.get("sourcePath").map(_.toString).getOrElse("")
+      }
+    }
+    (evidenceList.mkString(", "), evidenceList.length)
   }
+
+//  def extractOrganisationsData(Organisations: List[Map[String, Any]]): (String, String) = {
+//    val orgId = Organisations.map(organisation => organisation.get("organisationId").map(id => if (id.toString.trim.isEmpty) "Null" else id.toString).getOrElse("Null"))
+//    val orgName = Organisations.map(organisation => organisation.get("orgName").map(name => if (name.toString.trim.isEmpty) "Null" else name.toString).getOrElse("Null"))
+//    (orgId.mkString(", "), orgName.mkString(", "))
+//  }
+
+  def extractOrganisationsData(organisations: List[Map[String, Any]]): List[Map[String, String]] = {
+    organisations.map { organisation =>
+      val id = organisation.get("organisationId").map(id => if (id.toString.trim.isEmpty) "Null" else id.toString).getOrElse("Null")
+      val name = organisation.get("orgName").map(name => if (name.toString.trim.isEmpty) "Null" else name.toString).getOrElse("Null")
+      Map("orgId" -> id, "orgName" -> name)
+    }
+  }
+
+  def extractLocationsData(locations: List[Map[String, Any]]): List[Map[String, String]] = {
+    locations.flatMap { location =>
+      location.get("type").map(_.toString.trim).filter(_.nonEmpty).flatMap { locationType =>
+        val code = location.get("code").map(id => if (id.toString.trim.isEmpty) "Null" else id.toString).getOrElse("Null")
+        val externalId = location.get("id").map(id => if (id.toString.trim.isEmpty) "Null" else id.toString).getOrElse("Null")
+        val name = location.get("name").map(id => if (id.toString.trim.isEmpty) "Null" else id.toString).getOrElse("Null")
+        Some(Map(
+          s"${locationType}Code" -> code,
+          s"${locationType}ExternalId" -> externalId,
+          s"${locationType}Name" -> name
+        ))
+      }
+    }
+  }
+
+
+}

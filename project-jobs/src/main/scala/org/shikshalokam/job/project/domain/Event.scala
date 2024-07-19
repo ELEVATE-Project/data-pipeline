@@ -27,13 +27,15 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
   def createdBy: String = readOrDefault[String]("createdBy", "")
   def completedDate: String = if (readOrDefault[String]("status", "") == "submitted") readOrDefault[String]("updatedAt", "None") else "None"
   def createdAt: String = readOrDefault[String]("createdAt", "")
-  def projectEvidences: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("attachments", null)
-//  def evidenceCount
+  def projectAttachments: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("attachments", null)
   def projectLastSync: String = readOrDefault[String]("syncedAt", "")
-//  def projectRemarks: String = readOrDefault[String]("syncedAt", "")
+  def projectRemarks: String = readOrDefault[String]("remarks", "")
   def projectUpdatedDate: String = readOrDefault[String]("updatedAt", "")
   def projectStatus: String = readOrDefault[String]("status", "")
+  def organisations: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("userProfile.organisations", null)
+  def locations: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("userProfile.userLocations", null)
 
+  println(locations)
   println("\n")
   println("solutionId = " + solutionId)
   println("solutionExternalId = " + solutionExternalId)
@@ -58,10 +60,12 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
   println("createdBy = " + createdBy)
   println("completedDate = " + completedDate)
   println("createdAt = " + createdAt)
-  println("projectEvidences = "+ projectEvidences)
   println("projectLastSync = "+ projectLastSync)
+  println("projectRemarks = "+ projectRemarks)
   println("projectUpdatedDate = "+ projectUpdatedDate)
   println("projectStatus = "+ projectStatus)
+
+
 
 
 }
