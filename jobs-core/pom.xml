@@ -79,21 +79,6 @@
             <artifactId>junidecode</artifactId>
             <version>0.1.1</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>${CLOUD_STORE_GROUP_ID}</groupId>-->
-<!--            <artifactId>${CLOUD_STORE_ARTIFACT_ID}</artifactId>-->
-<!--            <version>${CLOUD_STORE_VERSION}</version>-->
-<!--            <exclusions>-->
-<!--                <exclusion>-->
-<!--                    <artifactId>log4j</artifactId>-->
-<!--                    <groupId>log4j</groupId>-->
-<!--                </exclusion>-->
-<!--                <exclusion>-->
-<!--                    <artifactId>slf4j-log4j12</artifactId>-->
-<!--                    <groupId>org.slf4j</groupId>-->
-<!--                </exclusion>-->
-<!--            </exclusions>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.version}</artifactId>
