@@ -23,12 +23,12 @@
     </properties>
 
     <dependencies>
-
+        <!-- Required dependency -->
         <dependency>
             <groupId>org.shikshalokam</groupId>
             <artifactId>jobs-core</artifactId>
             <version>1.0.0</version>
-<!--            <scope>provided</scope>-->
+            <!-- <scope>provided</scope> -->
         </dependency>
         <dependency>
             <groupId>org.shikshalokam</groupId>
@@ -51,7 +51,7 @@
             <version>${flink.version}</version>
         </dependency>
 
-        <!-- Json parser -->
+        <!-- Json dependency -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
