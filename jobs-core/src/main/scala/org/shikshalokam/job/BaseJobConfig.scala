@@ -24,14 +24,6 @@ class BaseJobConfig(val config: Config, val jobName: String) extends Serializabl
   // Only for Tests
   val kafkaAutoOffsetReset: Option[String] = if (config.hasPath("kafka.auto.offset.reset")) Option(config.getString("kafka.auto.offset.reset")) else None
 
-//  // Redis
-//  val redisHost: String = Option(config.getString("redis.host")).getOrElse("localhost")
-//  val redisPort: Int = Option(config.getInt("redis.port")).getOrElse(6379)
-//  //val redisConnectionTimeout: Int = Option(config.getInt("redisdb.connection.timeout")).getOrElse(30000)
-//
-//  val metaRedisHost: String = Option(config.getString("redis-meta.host")).getOrElse("localhost")
-//  val metaRedisPort: Int = Option(config.getInt("redis-meta.port")).getOrElse(6379)
-
   // Checkpointing config
   val enableCompressedCheckpointing: Boolean = config.getBoolean("task.checkpointing.compressed")
   val checkpointingInterval: Int = config.getInt("task.checkpointing.interval")
@@ -40,11 +32,6 @@ class BaseJobConfig(val config: Config, val jobName: String) extends Serializabl
   val checkpointingBaseUrl: Option[String] = if (config.hasPath("job.statebackend.base.url")) Option(config.getString("job.statebackend.base.url")) else None
   // By default checkpointing timeout is 10 mins
   val checkpointingTimeout: Long = if (config.hasPath("task.checkpointing.timeout")) config.getLong("task.checkpointing.timeout") else 600000L
-
-  // LMS Cassandra DB Config
-//  val lmsDbHost: String = config.getString("lms-cassandra.host")
-//  val lmsDbPort: Int = config.getInt("lms-cassandra.port")
-//  val isMultiDCEnabled: Boolean = config.getBoolean("lms-cassandra.isMultiDCEnabled")
 
   def kafkaConsumerProperties: Properties = {
     val properties = new Properties()
