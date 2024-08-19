@@ -39,11 +39,11 @@ class PostgresUtil(dbUrl: String, dbUser: String, dbPassword: String) {
     }
   }
 
-  def insertData(insertQuery: String): Unit = {
+  def executeUpdate(query: String, table: String, id: String): Unit = {
     val connection = getConnection
     try {
-      connection.createStatement().executeUpdate(insertQuery)
-      println("Data inserted successfully.")
+      connection.createStatement().executeUpdate(query)
+      println(s"Data inserted into ${table} table successfully with id $id.")
     } catch {
       case e: SQLException =>
         println("Error inserting data: " + e.getMessage)

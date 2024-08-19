@@ -42,53 +42,71 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
   val tasksTable = "Tasks"
   val organisationsTable = "Organisations"
 
-  val createSolutionsTable = """CREATE TABLE IF NOT EXISTS Solutions (
-                         |    solutionId TEXT PRIMARY KEY,
-                         |    externalId TEXT,
-                         |    name TEXT,
-                         |    description TEXT,
-                         |    duration TEXT,
-                         |    hasAcceptedTAndC TEXT,
-                         |    isDeleted BOOLEAN,
-                         |    createdType TEXT,
-                         |    programId TEXT,
-                         |    programName TEXT,
-                         |    programExternalId TEXT,
-                         |    programDescription TEXT,
-                         |    privateProgram BOOLEAN
-                         |);
-                         |""".stripMargin
+  val createSolutionsTable =
+    """CREATE TABLE IF NOT EXISTS Solutions (
+      |    solutionId TEXT PRIMARY KEY,
+      |    externalId TEXT,
+      |    name TEXT,
+      |    description TEXT,
+      |    duration TEXT,
+      |    hasAcceptedTAndC TEXT,
+      |    isDeleted BOOLEAN,
+      |    createdType TEXT,
+      |    programId TEXT,
+      |    programName TEXT,
+      |    programExternalId TEXT,
+      |    programDescription TEXT,
+      |    privateProgram BOOLEAN
+      |);""".stripMargin
 
-  val createProjectTable = """CREATE TABLE IF NOT EXISTS Projects (
-                             |    projectId TEXT PRIMARY KEY,
-                             |    createdBy TEXT,
-                             |    solutionId TEXT,
-                             |    programId TEXT,
-                             |    completedDate TEXT,
-                             |    createdDate TEXT,
-                             |    evidence TEXT,
-                             |    evidenceCount TEXT,
-                             |    lastSync TEXT,
-                             |    remarks TEXT,
-                             |    updatedDate DATE,
-                             |    projectStatus TEXT,
-                             |    organisationId TEXT,
-                             |    stateCode TEXT,
-                             |    stateExternalId TEXT,
-                             |    stateName TEXT,
-                             |    districtCode TEXT,
-                             |    districtExternalId TEXT,
-                             |    districtName TEXT,
-                             |    blockCode TEXT,
-                             |    blockExternalId TEXT,
-                             |    blockName TEXT,
-                             |    clusterCode TEXT,
-                             |    clusterExternalId TEXT,
-                             |    clusterName TEXT,
-                             |    schoolCode TEXT,
-                             |    schoolExternalId TEXT,
-                             |    schoolName TEXT,
-                             |    boardName TEXT
-                             |);""".stripMargin
+  val createProjectTable =
+    """CREATE TABLE IF NOT EXISTS Projects (
+      |    projectId TEXT PRIMARY KEY,
+      |    solutionId TEXT REFERENCES Solutions(solutionId),
+      |    createdBy TEXT,
+      |    programId TEXT,
+      |    taskCount TEXT,
+      |    completedDate TEXT,
+      |    createdDate TEXT,
+      |    evidence TEXT,
+      |    evidenceCount TEXT,
+      |    lastSync TEXT,
+      |    remarks TEXT,
+      |    updatedDate DATE,
+      |    projectStatus TEXT,
+      |    organisationId TEXT,
+      |    stateCode TEXT,
+      |    stateExternalId TEXT,
+      |    stateName TEXT,
+      |    districtCode TEXT,
+      |    districtExternalId TEXT,
+      |    districtName TEXT,
+      |    blockCode TEXT,
+      |    blockExternalId TEXT,
+      |    blockName TEXT,
+      |    clusterCode TEXT,
+      |    clusterExternalId TEXT,
+      |    clusterName TEXT,
+      |    schoolCode TEXT,
+      |    schoolExternalId TEXT,
+      |    schoolName TEXT,
+      |    boardName TEXT
+      |);""".stripMargin
 
+  val createTasksTable =
+    """CREATE TABLE IF NOT EXISTS Tasks (
+      |    taskId TEXT PRIMARY KEY,
+      |    projectId TEXT REFERENCES Projects(projectId),
+      |    name TEXT,
+      |    assignedTo TEXT,
+      |    startDate TEXT,
+      |    endDate TEXT,
+      |    syncedAt TEXT,
+      |    isDeleted TEXT,
+      |    isDeletable TEXT,
+      |    remarks TEXT,
+      |    status TEXT,
+      |    evidence TEXT,
+      |    evidenceCount TEXT
+      |);""".stripMargin
 }
