@@ -32,7 +32,6 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def programDescription: String = readOrDefault[String]("programInformation.description", "")
 
-
   def projectId: String = readOrDefault[String]("_id", "")
 
   def createdBy: String = readOrDefault[String]("createdBy", "")
@@ -55,43 +54,52 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def locations: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("userProfile.userLocations", null)
 
-  //  def boardName: String = readOrDefault[String]("userProfile.framework.board", "")
   def boardName: String = {
     val boardList: List[String] = readOrDefault[List[String]]("userProfile.framework.board", List())
     boardList.mkString(", ")
   }
+  def tasks: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("tasks", null)
 
-  println(locations)
-  println("\n")
-  println("solutionId = " + solutionId)
-  println("solutionExternalId = " + solutionExternalId)
-  println("solutionName = " + solutionName)
-  println("solutionDescription = " + solutionDescription)
+  val taskCount = tasks.size
 
-  println("\n")
-  println("projectDuration = " + projectDuration)
-  println("hasAcceptedTAndC = " + hasAcceptedTAndC)
-  println("projectIsDeleted = " + projectIsDeleted)
-  println("projectCreatedType = " + projectCreatedType)
-  println("privateProgram = " + privateProgram)
+//  val taskCount = Option(tasks).map(_.size).getOrElse(0)
+//  println(taskCount)
+//  println("before tasks count")
+//  Thread.sleep(5000)
 
-  println("\n")
-  println("programId = " + programId)
-  println("programExternalId = " + programExternalId)
-  println("programName = " + programName)
-  println("programDescription = " + programDescription)
-
-  println("\n")
-  println("projectId = " + projectId)
-  println("createdBy = " + createdBy)
-  println("completedDate = " + completedDate)
-  println("createdAt = " + createdAt)
-  println("projectLastSync = " + projectLastSync)
-  println("projectRemarks = " + projectRemarks)
-  println("projectUpdatedDate = " + projectUpdatedDate)
-  println("projectStatus = " + projectStatus)
-  println("boardName = " +boardName)
-
+//  println("\n")
+//  println("solutionId = " + solutionId)
+//  println("solutionExternalId = " + solutionExternalId)
+//  println("solutionName = " + solutionName)
+//  println("solutionDescription = " + solutionDescription)
+//
+//  println("\n")
+//  println("projectDuration = " + projectDuration)
+//  println("hasAcceptedTAndC = " + hasAcceptedTAndC)
+//  println("projectIsDeleted = " + projectIsDeleted)
+//  println("projectCreatedType = " + projectCreatedType)
+//  println("privateProgram = " + privateProgram)
+//
+//  println("\n")
+//  println("programId = " + programId)
+//  println("programExternalId = " + programExternalId)
+//  println("programName = " + programName)
+//  println("programDescription = " + programDescription)
+//
+//  println("\n")
+//  println("projectId = " + projectId)
+//  println("createdBy = " + createdBy)
+//  println("completedDate = " + completedDate)
+//  println("createdAt = " + createdAt)
+//  println("projectLastSync = " + projectLastSync)
+//  println("projectRemarks = " + projectRemarks)
+//  println("projectUpdatedDate = " + projectUpdatedDate)
+//  println("projectStatus = " + projectStatus)
+//  println("boardName = " +boardName)
+//
+//  println(taskCount)
+//  println(tasks)
+//  println(locations)
 
 }
 

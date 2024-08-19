@@ -37,7 +37,6 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
 
   override def processElement(event: Event, context: ProcessFunction[Event, Event]#Context, metrics: Metrics): Unit = {
 
-
     val (projectEvidences, projectEvidencesCount) = extractEvidenceData(event.projectAttachments)
     println("projectEvidences = " + projectEvidences)
     println("projectEvidencesCount = " + projectEvidencesCount)
@@ -52,9 +51,17 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val locationsData = extractLocationsData(event.locations)
     println(locationsData)
 
+    val tasksData = extractTasksData(event.tasks)
+    println("=======$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$========")
+    println(tasksData)
+
     postgresUtil.createTable(config.createSolutionsTable, config.solutionsTable)
     postgresUtil.createTable(config.createProjectTable, config.projectsTable)
+    postgresUtil.createTable(config.createTasksTable, config.tasksTable)
 
+    /**
+     * Extracting Solutions data
+     */
     val solutionId = event.solutionId
     val solutionExternalId = event.solutionExternalId
     val solutionName = event.solutionName
@@ -69,13 +76,25 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val programDescription = event.programDescription
     val privateProgram = event.privateProgram
 
-
-    val insertSolutionQuery =
+    val upsertSolutionQuery =
       s"""INSERT INTO Solutions (solutionId, externalId, name, description, duration, hasAcceptedTAndC, isDeleted, createdType, programId, programName, programExternalId, programDescription, privateProgram)
-         |VALUES ('$solutionId', '$solutionExternalId', '$solutionName', '$solutionDescription', '$projectDuration', '$hasAcceptedTAndC', $projectIsDeleted, '$projectCreatedType', '$programId', '$programName', '$programExternalId', '$programDescription', $privateProgram);
+         |VALUES ('$solutionId', '$solutionExternalId', '$solutionName', '$solutionDescription', '$projectDuration', '$hasAcceptedTAndC', $projectIsDeleted, '$projectCreatedType', '$programId', '$programName', '$programExternalId', '$programDescription', $privateProgram)
+         |ON CONFLICT (solutionId) DO UPDATE SET
+         |    externalId = '$solutionExternalId',
+         |    name = '$solutionName',
+         |    description = '$solutionDescription',
+         |    duration = '$projectDuration',
+         |    hasAcceptedTAndC = '$hasAcceptedTAndC',
+         |    isDeleted = $projectIsDeleted,
+         |    createdType = '$projectCreatedType',
+         |    programId = '$programId',
+         |    programName = '$programName',
+         |    programExternalId = '$programExternalId',
+         |    programDescription = '$programDescription',
+         |    privateProgram = $privateProgram;
          |""".stripMargin
 
-//    postgresUtil.insertData(insertSolutionQuery)
+    postgresUtil.executeUpdate(upsertSolutionQuery, config.solutionsTable, solutionId)
 
     /**
      * Extracting Project data
@@ -106,13 +125,27 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val schoolExternalId = extractLocationDetail(locationsData, "schoolExternalId")
     val schoolName = extractLocationDetail(locationsData, "schoolName")
     val boardName = event.boardName
+    val taskCount = event.taskCount
 
-    val updateProjectQuery =
-      s"""UPDATE Projects
-         |SET
+    val upsertProjectQuery =
+      s"""INSERT INTO Projects (
+         |    projectId, createdBy, solutionId, programId, taskCount, completedDate, createdDate, evidence,
+         |    evidenceCount, lastSync, remarks, updatedDate, projectStatus, organisationId, stateCode,
+         |    stateExternalId, stateName, districtCode, districtExternalId, districtName, blockCode,
+         |    blockExternalId, blockName, clusterCode, clusterExternalId, clusterName, schoolCode,
+         |    schoolExternalId, schoolName, boardName
+         |) VALUES (
+         |    '$projectId', '$createdBy', '$solutionId', '$programId', '$taskCount', '$completedDate',
+         |    '$createdDate', '$evidence', '$evidenceCount', '$lastSync', '$remarks', '$updatedDate',
+         |    '$projectStatus', '$organisationId', '$stateCode', '$stateExternalId', '$stateName',
+         |    '$districtCode', '$districtExternalId', '$districtName', '$blockCode', '$blockExternalId',
+         |    '$blockName', '$clusterCode', '$clusterExternalId', '$clusterName', '$schoolCode',
+         |    '$schoolExternalId', '$schoolName', '$boardName'
+         |) ON CONFLICT (projectId) DO UPDATE SET
          |    createdBy = '$createdBy',
          |    solutionId = '$solutionId',
          |    programId = '$programId',
+         |    taskCount = '$taskCount',
          |    completedDate = '$completedDate',
          |    createdDate = '$createdDate',
          |    evidence = '$evidence',
@@ -137,18 +170,47 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
          |    schoolCode = '$schoolCode',
          |    schoolExternalId = '$schoolExternalId',
          |    schoolName = '$schoolName',
-         |    boardName = '$boardName'
-         |WHERE
-         |    projectId = '$projectId';
+         |    boardName = '$boardName';
          |""".stripMargin
 
+    postgresUtil.executeUpdate(upsertProjectQuery, config.projectsTable, projectId)
 
-    try {
-      postgresUtil.insertData(updateProjectQuery) // Assuming insertData can also execute UPDATE statements
-      println("Record updated successfully.")
-    } catch {
-      case e: Exception =>
-        println("Error occurred while updating the record: " + e.getMessage)
+    /**
+     * Extracting Tasks data
+     */
+    tasksData.foreach { task =>
+      val taskId = task("taskId").toString
+      val taskName = task("taskName")
+      val taskAssignedTo = task("taskAssignedTo")
+      val taskStartDate = task("taskStartDate")
+      val taskEndDate = task("taskEndDate")
+      val taskSyncedAt = task("taskSyncedAt")
+      val taskIsDeleted = task("taskIsDeleted")
+      val taskIsDeletable = task("taskIsDeletable")
+      val taskRemarks = task("taskRemarks")
+      val taskStatus = task("taskStatus")
+      val taskEvidence = task("taskEvidence")
+      val taskEvidenceCount = task("taskEvidenceCount")
+
+      val upsertTaskQuery =
+        s"""INSERT INTO Tasks (taskId, projectId, name, assignedTo, startDate, endDate, syncedAt, isDeleted, isDeletable, remarks, status, evidence, evidenceCount)
+           |VALUES ('$taskId', '$projectId', '$taskName', '$taskAssignedTo', '$taskStartDate', '$taskEndDate', '$taskSyncedAt', $taskIsDeleted, $taskIsDeletable, '$taskRemarks', '$taskStatus', '$taskEvidence', $taskEvidenceCount)
+           |ON CONFLICT (taskId) DO UPDATE SET
+           |    name = '$taskName',
+           |    projectId = '$projectId',
+           |    assignedTo = '$taskAssignedTo',
+           |    startDate = '$taskStartDate',
+           |    endDate = '$taskEndDate',
+           |    syncedAt = '$taskSyncedAt',
+           |    isDeleted = $taskIsDeleted,
+           |    isDeletable = $taskIsDeletable,
+           |    remarks = '$taskRemarks',
+           |    status = '$taskStatus',
+           |    evidence = '$taskEvidence',
+           |    evidenceCount = $taskEvidenceCount;
+           |""".stripMargin
+
+      postgresUtil.executeUpdate(upsertTaskQuery, config.tasksTable, taskId)
     }
 
   }
@@ -191,6 +253,30 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
           s"${locationType}Name" -> name
         ))
       }
+    }
+  }
+
+  def extractTasksData(tasks: List[Map[String, Any]]): List[Map[String, Any]] = {
+    tasks.map { task =>
+      def extractField(field: String): String = task.get(field).map(key => if (key.toString.trim.isEmpty) "Null" else key.toString).getOrElse("Null")
+
+      val taskEvidenceList: List[Map[String, Any]] = task.get("attachments").map(_.asInstanceOf[List[Map[String, Any]]]).getOrElse(List.empty[Map[String, Any]])
+      val (taskEvidence, taskEvidenceCount) = extractEvidenceData(taskEvidenceList)
+
+      Map(
+        "taskId" -> extractField("_id"),
+        "taskName" -> extractField("name"),
+        "taskAssignedTo" -> extractField("assignee"),
+        "taskStartDate" -> extractField("startDate"),
+        "taskEndDate" -> extractField("endDate"),
+        "taskSyncedAt" -> extractField("syncedAt"),
+        "taskIsDeleted" -> extractField("isDeleted"),
+        "taskIsDeletable" -> extractField("isDeletable"),
+        "taskRemarks" -> extractField("remarks"),
+        "taskStatus" -> extractField("status"),
+        "taskEvidence" -> taskEvidence,
+        "taskEvidenceCount" -> taskEvidenceCount
+      )
     }
   }
 
