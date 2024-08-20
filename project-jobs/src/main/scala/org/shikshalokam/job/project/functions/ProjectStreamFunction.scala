@@ -41,15 +41,15 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     println("projectEvidences = " + projectEvidences)
     println("projectEvidencesCount = " + projectEvidencesCount)
 
-    val organisationsData = extractOrganisationsData(event.organisations)
-    println(organisationsData)
+    //val organisationsData = extractOrganisationsData(event.organisations)
+    //println(organisationsData)
 
     /** Required to feed orgIds into projects table */
     //val orgIdsString = organisationsData.map(_("orgId")).mkString(", ")
     //println(orgIdsString)
 
-    val locationsData = extractLocationsData(event.locations)
-    println(locationsData)
+    //val locationsData = extractLocationsData(event.locations)
+    //println(locationsData)
 
     val tasksData = extractTasksData(event.tasks)
     println("=======$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$========")
@@ -108,39 +108,33 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val remarks = event.projectRemarks
     val updatedDate = event.projectUpdatedDate
     val projectStatus = event.projectStatus
-    val organisationId = organisationsData.map(_("orgId")).mkString(", ")
-    val stateCode = extractLocationDetail(locationsData, "stateCode")
-    val stateExternalId = extractLocationDetail(locationsData, "stateExternalId")
-    val stateName = extractLocationDetail(locationsData, "stateName")
-    val districtCode = extractLocationDetail(locationsData, "districtCode")
-    val districtExternalId = extractLocationDetail(locationsData, "districtExternalId")
-    val districtName = extractLocationDetail(locationsData, "districtName")
-    val blockCode = extractLocationDetail(locationsData, "blockCode")
-    val blockExternalId = extractLocationDetail(locationsData, "blockExternalId")
-    val blockName = extractLocationDetail(locationsData, "blockName")
-    val clusterCode = extractLocationDetail(locationsData, "clusterCode")
-    val clusterExternalId = extractLocationDetail(locationsData, "clusterExternalId")
-    val clusterName = extractLocationDetail(locationsData, "clusterName")
-    val schoolCode = extractLocationDetail(locationsData, "schoolCode")
-    val schoolExternalId = extractLocationDetail(locationsData, "schoolExternalId")
-    val schoolName = extractLocationDetail(locationsData, "schoolName")
+//    val organisationId = organisationsData.map(_("orgId")).mkString(", ")
+//    val stateCode = extractLocationDetail(locationsData, "stateCode")
+//    val stateExternalId = extractLocationDetail(locationsData, "stateExternalId")
+//    val stateName = extractLocationDetail(locationsData, "stateName")
+//    val districtCode = extractLocationDetail(locationsData, "districtCode")
+//    val districtExternalId = extractLocationDetail(locationsData, "districtExternalId")
+//    val districtName = extractLocationDetail(locationsData, "districtName")
+//    val blockCode = extractLocationDetail(locationsData, "blockCode")
+//    val blockExternalId = extractLocationDetail(locationsData, "blockExternalId")
+//    val blockName = extractLocationDetail(locationsData, "blockName")
+//    val clusterCode = extractLocationDetail(locationsData, "clusterCode")
+//    val clusterExternalId = extractLocationDetail(locationsData, "clusterExternalId")
+//    val clusterName = extractLocationDetail(locationsData, "clusterName")
+//    val schoolCode = extractLocationDetail(locationsData, "schoolCode")
+//    val schoolExternalId = extractLocationDetail(locationsData, "schoolExternalId")
+//    val schoolName = extractLocationDetail(locationsData, "schoolName")
     val boardName = event.boardName
     val taskCount = event.taskCount
 
     val upsertProjectQuery =
       s"""INSERT INTO Projects (
          |    projectId, createdBy, solutionId, programId, taskCount, completedDate, createdDate, evidence,
-         |    evidenceCount, lastSync, remarks, updatedDate, projectStatus, organisationId, stateCode,
-         |    stateExternalId, stateName, districtCode, districtExternalId, districtName, blockCode,
-         |    blockExternalId, blockName, clusterCode, clusterExternalId, clusterName, schoolCode,
-         |    schoolExternalId, schoolName, boardName
+         |    evidenceCount, lastSync, remarks, updatedDate, projectStatus, boardName
          |) VALUES (
          |    '$projectId', '$createdBy', '$solutionId', '$programId', '$taskCount', '$completedDate',
          |    '$createdDate', '$evidence', '$evidenceCount', '$lastSync', '$remarks', '$updatedDate',
-         |    '$projectStatus', '$organisationId', '$stateCode', '$stateExternalId', '$stateName',
-         |    '$districtCode', '$districtExternalId', '$districtName', '$blockCode', '$blockExternalId',
-         |    '$blockName', '$clusterCode', '$clusterExternalId', '$clusterName', '$schoolCode',
-         |    '$schoolExternalId', '$schoolName', '$boardName'
+         |    '$projectStatus', '$boardName'
          |) ON CONFLICT (projectId) DO UPDATE SET
          |    createdBy = '$createdBy',
          |    solutionId = '$solutionId',
@@ -154,22 +148,6 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
          |    remarks = '$remarks',
          |    updatedDate = '$updatedDate',
          |    projectStatus = '$projectStatus',
-         |    organisationId = '$organisationId',
-         |    stateCode = '$stateCode',
-         |    stateExternalId = '$stateExternalId',
-         |    stateName = '$stateName',
-         |    districtCode = '$districtCode',
-         |    districtExternalId = '$districtExternalId',
-         |    districtName = '$districtName',
-         |    blockCode = '$blockCode',
-         |    blockExternalId = '$blockExternalId',
-         |    blockName = '$blockName',
-         |    clusterCode = '$clusterCode',
-         |    clusterExternalId = '$clusterExternalId',
-         |    clusterName = '$clusterName',
-         |    schoolCode = '$schoolCode',
-         |    schoolExternalId = '$schoolExternalId',
-         |    schoolName = '$schoolName',
          |    boardName = '$boardName';
          |""".stripMargin
 
