@@ -37,23 +37,62 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
 
   override def processElement(event: Event, context: ProcessFunction[Event, Event]#Context, metrics: Metrics): Unit = {
 
+    println(s"***************** Start of Processing the Project Event with Id = ${event._id}*****************")
+
+    //TODO: TO be removed later
     val (projectEvidences, projectEvidencesCount) = extractEvidenceData(event.projectAttachments)
-    println("projectEvidences = " + projectEvidences)
-    println("projectEvidencesCount = " + projectEvidencesCount)
-
-    //val organisationsData = extractOrganisationsData(event.organisations)
-    //println(organisationsData)
-
-    /** Required to feed orgIds into projects table */
-    //val orgIdsString = organisationsData.map(_("orgId")).mkString(", ")
-    //println(orgIdsString)
-
-    //val locationsData = extractLocationsData(event.locations)
-    //println(locationsData)
+    val (roleIds, roles) = extractUserRolesData(event.userRoles)
 
     val tasksData = extractTasksData(event.tasks)
-    println("=======$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$========")
-    println(tasksData)
+
+    //TODO: TO be removed later
+    println("\n Solutions data ")
+    println("solutionId = " + event.solutionId)
+    println("solutionExternalId = " + event.solutionExternalId)
+    println("solutionName = " + event.solutionName)
+    println("solutionDescription = " + event.solutionDescription)
+    println("projectDuration = " + event.projectDuration)
+    println("hasAcceptedTAndC = " + event.hasAcceptedTAndC)
+    println("projectIsDeleted = " + event.projectIsDeleted)
+    println("projectCreatedType = " + event.projectCreatedType)
+    println("privateProgram = " + event.privateProgram)
+    println("programId = " + event.programId)
+    println("programExternalId = " + event.programExternalId)
+    println("programName = " + event.programName)
+    println("programDescription = " + event.programDescription)
+
+    println("\n Project data")
+    println("projectId = " + event.projectId)
+    println("solutionId = " + event.solutionId)
+    println("createdBy = " + event.createdBy)
+    println("completedDate = " + event.completedDate)
+    println("createdAt = " + event.createdAt)
+    println("projectLastSync = " + event.projectLastSync)
+    println("projectUpdatedDate = " + event.projectUpdatedDate)
+    println("projectStatus = " + event.projectStatus)
+    println("projectRemarks = " + event.projectRemarks)
+    println("projectEvidences = " + projectEvidences)
+    println("projectEvidencesCount = " + projectEvidencesCount)
+    println("programId = " + event.programId)
+    println("taskCount = " + event.taskCount)
+    println("userRoleIds = " + roleIds)
+    println("userRoles = " + roles)
+    println("organisationId = " + event.organisationId)
+    println("organisationName = " + event.organisationName)
+    println("organisationCode = " + event.organisationCode)
+    println("stateId = " + event.stateId)
+    println("stateName = " + event.stateName)
+    println("districtId = " + event.districtId)
+    println("districtName = " + event.districtName)
+    println("blockId = " + event.blockId)
+    println("blockName = " + event.blockName)
+    println("clusterId = " + event.clusterId)
+    println("clusterName = " + event.clusterName)
+    println("schoolId = " + event.schoolId)
+    println("schoolName = " + event.schoolName)
+
+    println("\n Tasks data")
+    println("tasksData = " + tasksData)
 
     postgresUtil.createTable(config.createSolutionsTable, config.solutionsTable)
     postgresUtil.createTable(config.createProjectTable, config.projectsTable)
@@ -101,54 +140,66 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
      */
     val projectId = event.projectId
     val createdBy = event.createdBy
-    val completedDate = event.completedDate
     val createdDate = event.createdAt
-    val (evidence, evidenceCount) = extractEvidenceData(event.projectAttachments)
+    val completedDate = event.completedDate
     val lastSync = event.projectLastSync
-    val remarks = event.projectRemarks
     val updatedDate = event.projectUpdatedDate
-    val projectStatus = event.projectStatus
-//    val organisationId = organisationsData.map(_("orgId")).mkString(", ")
-//    val stateCode = extractLocationDetail(locationsData, "stateCode")
-//    val stateExternalId = extractLocationDetail(locationsData, "stateExternalId")
-//    val stateName = extractLocationDetail(locationsData, "stateName")
-//    val districtCode = extractLocationDetail(locationsData, "districtCode")
-//    val districtExternalId = extractLocationDetail(locationsData, "districtExternalId")
-//    val districtName = extractLocationDetail(locationsData, "districtName")
-//    val blockCode = extractLocationDetail(locationsData, "blockCode")
-//    val blockExternalId = extractLocationDetail(locationsData, "blockExternalId")
-//    val blockName = extractLocationDetail(locationsData, "blockName")
-//    val clusterCode = extractLocationDetail(locationsData, "clusterCode")
-//    val clusterExternalId = extractLocationDetail(locationsData, "clusterExternalId")
-//    val clusterName = extractLocationDetail(locationsData, "clusterName")
-//    val schoolCode = extractLocationDetail(locationsData, "schoolCode")
-//    val schoolExternalId = extractLocationDetail(locationsData, "schoolExternalId")
-//    val schoolName = extractLocationDetail(locationsData, "schoolName")
-    val boardName = event.boardName
+    val status = event.projectStatus
+    val remarks = event.projectRemarks
+    val (evidence, evidenceCount) = extractEvidenceData(event.projectAttachments)
     val taskCount = event.taskCount
+    val (userRoleIds, userRoles) = extractUserRolesData(event.userRoles)
+    val orgId = event.organisationId
+    val orgName = event.organisationName
+    val orgCode = event.organisationCode
+    val stateId = event.stateId
+    val stateName = event.stateName
+    val districtId = event.districtId
+    val districtName = event.districtName
+    val blockId = event.blockId
+    val blockName = event.blockName
+    val clusterId = event.clusterId
+    val clusterName = event.clusterName
+    val schoolId = event.schoolId
+    val schoolName = event.schoolName
 
     val upsertProjectQuery =
       s"""INSERT INTO Projects (
-         |    projectId, createdBy, solutionId, programId, taskCount, completedDate, createdDate, evidence,
-         |    evidenceCount, lastSync, remarks, updatedDate, projectStatus, boardName
+         |    projectId, solutionId, createdBy, createdDate, completedDate, lastSync, updatedDate, status, remarks,
+         |    evidence, evidenceCount, programId, taskCount, userRoleIds, userRoles, orgId, orgName, orgCode, stateId,
+         |    stateName, districtId, districtName, blockId, blockName, clusterId, clusterName, schoolId, schoolName
          |) VALUES (
-         |    '$projectId', '$createdBy', '$solutionId', '$programId', '$taskCount', '$completedDate',
-         |    '$createdDate', '$evidence', '$evidenceCount', '$lastSync', '$remarks', '$updatedDate',
-         |    '$projectStatus', '$boardName'
+         |    '$projectId', '$solutionId', '$createdBy', '$createdDate', '$completedDate', '$lastSync', '$updatedDate', '$status', '$remarks',
+         |    '$evidence', '$evidenceCount', '$programId', '$taskCount', '$userRoleIds', '$userRoles', '$orgId', '$orgName', '$orgCode', '$stateId',
+         |    '$stateName', '$districtId', '$districtName', '$blockId', '$blockName', '$clusterId', '$clusterName', '$schoolId', '$schoolName'
          |) ON CONFLICT (projectId) DO UPDATE SET
-         |    createdBy = '$createdBy',
          |    solutionId = '$solutionId',
-         |    programId = '$programId',
-         |    taskCount = '$taskCount',
-         |    completedDate = '$completedDate',
+         |    createdBy = '$createdBy',
          |    createdDate = '$createdDate',
+         |    completedDate = '$completedDate',
+         |    lastSync = '$lastSync',
+         |    updatedDate = '$updatedDate',
+         |    status = '$status',
+         |    remarks = '$remarks',
          |    evidence = '$evidence',
          |    evidenceCount = '$evidenceCount',
-         |    lastSync = '$lastSync',
-         |    remarks = '$remarks',
-         |    updatedDate = '$updatedDate',
-         |    projectStatus = '$projectStatus',
-         |    boardName = '$boardName';
+         |    programId = '$programId',
+         |    taskCount = '$taskCount',
+         |    userRoleIds = '$userRoleIds',
+         |    userRoles = '$userRoles',
+         |    orgId = '$orgId',
+         |    orgName = '$orgName',
+         |    orgCode = '$orgCode',
+         |    stateId = '$stateId',
+         |    stateName = '$stateName',
+         |    districtId = '$districtId',
+         |    districtName ='$districtName',
+         |    blockId = '$blockId',
+         |    blockName = '$blockName',
+         |    clusterId = '$clusterId',
+         |    clusterName = '$clusterName',
+         |    schoolId = '$schoolId',
+         |    schoolName = '$schoolName'
          |""".stripMargin
 
     postgresUtil.executeUpdate(upsertProjectQuery, config.projectsTable, projectId)
@@ -191,11 +242,12 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
       postgresUtil.executeUpdate(upsertTaskQuery, config.tasksTable, taskId)
     }
 
+    println(s"***************** End of Processing the Project Event *****************\n")
+
   }
 
-
-  def extractEvidenceData(Attachments: List[Map[String, Any]]): (String, Int) = {
-    val evidenceList = Attachments.map { attachment =>
+  def extractEvidenceData(attachments: List[Map[String, Any]]): (String, Int) = {
+    val evidenceList = attachments.map { attachment =>
       if (attachment.get("type").contains("link")) {
         attachment.get("name").map(_.toString).getOrElse("")
       } else {
@@ -205,18 +257,10 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     (evidenceList.mkString(", "), evidenceList.length)
   }
 
-  //  def extractOrganisationsData(Organisations: List[Map[String, Any]]): (String, String) = {
-  //    val orgId = Organisations.map(organisation => organisation.get("organisationId").map(id => if (id.toString.trim.isEmpty) "Null" else id.toString).getOrElse("Null"))
-  //    val orgName = Organisations.map(organisation => organisation.get("orgName").map(name => if (name.toString.trim.isEmpty) "Null" else name.toString).getOrElse("Null"))
-  //    (orgId.mkString(", "), orgName.mkString(", "))
-  //  }
-
-  def extractOrganisationsData(organisations: List[Map[String, Any]]): List[Map[String, String]] = {
-    organisations.map { organisation =>
-      val id = organisation.get("organisationId").map(id => if (id.toString.trim.isEmpty) "Null" else id.toString).getOrElse("Null")
-      val name = organisation.get("orgName").map(name => if (name.toString.trim.isEmpty) "Null" else name.toString).getOrElse("Null")
-      Map("orgId" -> id, "orgName" -> name)
-    }
+  def extractUserRolesData(roles: List[Map[String, Any]]): (String, String) = {
+    val roleId = roles.map { role => role.get("id").map(_.toString).getOrElse("") }
+    val roleName = roles.map { role => role.get("title").map(_.toString).getOrElse("") }
+    (roleId.mkString(", "), roleName.mkString(", "))
   }
 
   def extractLocationsData(locations: List[Map[String, Any]]): List[Map[String, String]] = {

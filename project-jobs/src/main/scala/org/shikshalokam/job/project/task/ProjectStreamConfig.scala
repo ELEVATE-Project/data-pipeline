@@ -6,7 +6,6 @@ import org.apache.flink.api.java.typeutils.TypeExtractor
 import org.shikshalokam.job.project.domain.Event
 import org.shikshalokam.job.BaseJobConfig
 
-
 class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(config, "ProjectsStreamJob") {
 
   implicit val mapTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
@@ -64,33 +63,31 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |    projectId TEXT PRIMARY KEY,
       |    solutionId TEXT REFERENCES Solutions(solutionId),
       |    createdBy TEXT,
-      |    programId TEXT,
-      |    taskCount TEXT,
-      |    completedDate TEXT,
       |    createdDate TEXT,
+      |    completedDate TEXT,
+      |    lastSync TEXT,
+      |    updatedDate DATE,
+      |    status TEXT,
+      |    remarks TEXT,
       |    evidence TEXT,
       |    evidenceCount TEXT,
-      |    lastSync TEXT,
-      |    remarks TEXT,
-      |    updatedDate DATE,
-      |    projectStatus TEXT,
-      |    organisationId TEXT,
-      |    stateCode TEXT,
-      |    stateExternalId TEXT,
+      |    programId TEXT,
+      |    taskCount TEXT,
+      |    userRoleIds TEXT,
+      |    userRoles TEXT,
+      |    orgId TEXT,
+      |    orgName TEXT,
+      |    orgCode TEXT,
+      |    stateId TEXT,
       |    stateName TEXT,
-      |    districtCode TEXT,
-      |    districtExternalId TEXT,
+      |    districtId TEXT,
       |    districtName TEXT,
-      |    blockCode TEXT,
-      |    blockExternalId TEXT,
+      |    blockId TEXT,
       |    blockName TEXT,
-      |    clusterCode TEXT,
-      |    clusterExternalId TEXT,
+      |    clusterId TEXT,
       |    clusterName TEXT,
-      |    schoolCode TEXT,
-      |    schoolExternalId TEXT,
-      |    schoolName TEXT,
-      |    boardName TEXT
+      |    schoolId TEXT,
+      |    schoolName TEXT
       |);""".stripMargin
 
   val createTasksTable =
