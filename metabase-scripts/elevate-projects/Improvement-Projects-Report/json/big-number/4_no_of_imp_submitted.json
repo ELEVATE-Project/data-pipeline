@@ -1,0 +1,33 @@
+{
+  "questionCard": {
+    "name": "No. of improvements submitted",
+    "collection_id": 133,
+    "dataset_query": {
+      "database": 34,
+      "type": "native",
+      "native": {
+        "query": "SELECT COUNT(DISTINCT projectid) AS no_of_imp_submitted FROM projects WHERE 1=1 AND status = 'submitted' [[AND statename = {{state_param}}]];",
+        "template-tags": {
+          "state_param": {
+            "type": "text",
+            "name": "state_param",
+            "display-name": "State Param"
+          }
+        }
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {}
+  },
+  "dashCards": {
+    "card_id": 382,
+    "dashboard_tab_id": null,
+    "id": 4,
+    "parameter_mappings": [],
+    "col": 0,
+    "row": 4,
+    "size_x": 8,
+    "size_y": 3,
+    "visualization_settings": {}
+  }
+}
