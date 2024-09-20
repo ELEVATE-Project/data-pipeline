@@ -1,0 +1,33 @@
+{
+  "questionCard": {
+    "name": "No. of improvements submitted with evidence",
+    "collection_id": 133,
+    "dataset_query": {
+      "database": 34,
+      "type": "native",
+      "native": {
+        "query": "SELECT COUNT(DISTINCT projectid) AS no_of_users_submitted_with_evidence FROM projects WHERE 1=1 AND status = 'submitted' AND evidence IS NOT NULL [[AND statename = {{state_param}}]];",
+        "template-tags": {
+          "state_param": {
+            "type": "text",
+            "name": "state_param",
+            "display-name": "State Param"
+          }
+        }
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {}
+  },
+  "dashCards": {
+    "card_id": 383,
+    "dashboard_tab_id": null,
+    "id": 5,
+    "parameter_mappings": [],
+    "col": 8,
+    "row": 4,
+    "size_x": 8,
+    "size_y": 3,
+    "visualization_settings": {}
+  }
+}

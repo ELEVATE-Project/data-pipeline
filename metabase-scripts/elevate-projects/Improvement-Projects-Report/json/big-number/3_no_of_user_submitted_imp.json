@@ -1,0 +1,33 @@
+{
+  "questionCard": {
+    "name": "No. of users: submitted the improvement project",
+    "collection_id": 133,
+    "dataset_query": {
+      "database": 34,
+      "type": "native",
+      "native": {
+        "query": "SELECT COUNT(DISTINCT createdby) AS no_of_users_submitted FROM projects WHERE 1=1 AND status = 'submitted' [[AND statename = {{state_param}}]];",
+        "template-tags": {
+          "state_param": {
+            "type": "text",
+            "name": "state_param",
+            "display-name": "State Param"
+          }
+        }
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {}
+  },
+  "dashCards": {
+    "card_id": 381,
+    "dashboard_tab_id": null,
+    "id": 3,
+    "parameter_mappings": [],
+    "col": 16,
+    "row": 0,
+    "size_x": 8,
+    "size_y": 3,
+    "visualization_settings": {}
+  }
+}

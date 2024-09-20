@@ -1,0 +1,61 @@
+{
+  "questionCard": {
+    "name": "Status of users state wise",
+    "collection_id": 133,
+    "dataset_query": {
+      "database": 34,
+      "type": "native",
+      "native": {
+        "query": "WITH UserProjectCounts AS (\n    SELECT\n        statename,\n        createdby,\n        COUNT(DISTINCT CASE WHEN status = 'started' THEN projectid END) AS \"Started Projects\",\n        COUNT(DISTINCT CASE WHEN status = 'inProgress' THEN projectid END) AS \"In Progress Projects\",\n        COUNT(DISTINCT CASE WHEN status = 'submitted' THEN projectid END) AS \"Submitted Projects\"\n    FROM projects\n    WHERE \n        1=1\n        [[ AND statename = {{state_param}} ]]\n    GROUP BY statename, createdby\n)\nSELECT \n    statename AS \"State\",\n    COUNT(DISTINCT CASE WHEN \"Started Projects\" > 0 THEN createdby END) AS \"Started Users\",\n    COUNT(DISTINCT CASE WHEN \"In Progress Projects\" > 0 THEN createdby END) AS \"In Progress Users\",\n    COUNT(DISTINCT CASE WHEN \"Submitted Projects\" > 0 THEN createdby END) AS \"Submitted Users\"\nFROM UserProjectCounts\nGROUP BY statename\nORDER BY \"Submitted Users\" DESC; ",
+        "template-tags": {
+          "state_param": {
+            "type": "text",
+            "name": "state_param",
+            "display-name": "State Param"
+          }
+        }
+      }
+    },
+    "display": "bar",
+    "visualization_settings": {
+      "graph.show_goal": false,
+      "graph.y_axis.title_text": "No. of users",
+      "graph.show_values": false,
+      "graph.x_axis.axis_enabled": true,
+      "graph.y_axis.scale": "linear",
+      "graph.metrics": [
+        "Submitted Users",
+        "In Progress Users",
+        "Started Users"
+      ],
+      "graph.y_axis.axis_enabled": true,
+      "graph.label_value_formatting": "auto",
+      "series_settings": {
+        "In Progress": {
+          "color": "#FBE499"
+        },
+        "Submitted": {
+          "color": "#A7D07C"
+        },
+        "Started": {
+          "color": "#F7C4C4"
+        }
+      },
+      "graph.dimensions": [
+        "State"
+      ],
+      "stackable.stack_type": "stacked"
+    }
+  },
+  "dashCards": {
+    "card_id": 386,
+    "dashboard_tab_id": null,
+    "id": 8,
+    "parameter_mappings": [],
+    "col": 13,
+    "row": 8,
+    "size_x": 12,
+    "size_y": 6,
+    "visualization_settings": {}
+  }
+}
