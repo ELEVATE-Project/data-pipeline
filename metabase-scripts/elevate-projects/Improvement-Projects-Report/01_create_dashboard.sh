@@ -132,10 +132,10 @@ else
     exit 1
 fi
 
-echo ">>  [01_create_metabase_collection_dashboard.sh] Script executed successfully!"
+echo ">>  [01_create_dashboard.sh] Script executed successfully!"
 echo ""
 echo ""
 sleep 2
 
-# Call the 02_update_metabase_json_ids.sh script
-./02_update_metabase_json_ids.sh
+# Call the 02_get_table_data.sh script
+./02_get_table_data.sh
