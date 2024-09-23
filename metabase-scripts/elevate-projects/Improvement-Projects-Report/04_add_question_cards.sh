@@ -84,7 +84,7 @@ process_json_files() {
                     fi
 
                     # Update the dashCards key in the JSON file with the new card_id
-                    jq --argjson card_id "$CARD_ID" '.dashCards.card_id = $card_id' "$JSON_FILE" > "${JSON_FILE}.tmp" && mv "${JSON_FILE}.tmp" "$JSON_FILE"
+                    jq --argjson card_id "$CARD_ID" '.dashCards.card_id = $card_id | .dashCards.parameter_mappings |= map(.card_id = $card_id)' "$JSON_FILE" > "${JSON_FILE}.tmp" && mv "${JSON_FILE}.tmp" "$JSON_FILE"
 
                     # Append the new dashCard to the dashboard
                     append_dashcard_to_dashboard "$JSON_FILE"
@@ -159,4 +159,10 @@ process_json_files "$BIG_NUMBER_DIR"
 process_json_files "$GRAPH_DIR"
 process_json_files "$TABLE_DIR"
 
-echo ">>  [03_add_question_cards_to_dashboard.sh] Script executed successfully!"
+echo ">>  [04_add_question_cards.sh] Script executed successfully!"
+echo ""
+echo ""
+sleep 2
+
+# Call the 05_add_parameters.sh script
+./05_add_parameters.sh

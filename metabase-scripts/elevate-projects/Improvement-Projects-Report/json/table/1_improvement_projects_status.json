@@ -1,7 +1,7 @@
 {
   "questionCard": {
     "name": "Improvement projects status",
-    "collection_id": 133,
+    "collection_id": 168,
     "dataset_query": {
       "database": 34,
       "type": "native",
@@ -23,7 +23,7 @@
     }
   },
   "dashCards": {
-    "card_id": 387,
+    "card_id": 475,
     "dashboard_tab_id": null,
     "id": 9,
     "parameter_mappings": [],
