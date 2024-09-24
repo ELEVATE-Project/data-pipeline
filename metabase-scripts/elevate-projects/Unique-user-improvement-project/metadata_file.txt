@@ -1,0 +1,73 @@
+COLLECTION_ID: 19
+DASHBOARD_ID: 22
+DATABASE_ID: 2
+METABASE_URL: http://localhost:3000
+SESSION_TOKEN: 602cc62a-e5fc-43c2-b072-26c7bf8a213b
+------------ Table Name and ID's ------------
+projects: 9
+schools: 12
+solutions: 11
+tasks: 10
+------------ Field Names and ID's ------------
+projects - projectid: 97
+projects - solutionid: 85
+projects - createdby: 92
+projects - createddate: 90
+projects - completeddate: 72
+projects - lastsync: 83
+projects - updateddate: 78
+projects - status: 76
+projects - remarks: 89
+projects - evidence: 99
+projects - evidencecount: 91
+projects - programid: 84
+projects - taskcount: 82
+projects - userroleids: 94
+projects - userroles: 96
+projects - orgid: 81
+projects - orgname: 98
+projects - orgcode: 77
+projects - stateid: 88
+projects - statename: 80
+projects - districtid: 79
+projects - districtname: 87
+projects - blockid: 75
+projects - blockname: 86
+projects - clusterid: 73
+projects - clustername: 74
+projects - schoolid: 95
+projects - schoolname: 93
+schools - school_id: 132
+schools - school_name: 130
+schools - address: 131
+schools - city: 133
+schools - state: 128
+schools - postal_code: 129
+schools - latitude: 126
+schools - longitude: 127
+solutions - solutionid: 125
+solutions - externalid: 124
+solutions - name: 120
+solutions - description: 113
+solutions - duration: 122
+solutions - hasacceptedtandc: 119
+solutions - isdeleted: 115
+solutions - createdtype: 123
+solutions - programid: 116
+solutions - programname: 118
+solutions - programexternalid: 121
+solutions - programdescription: 114
+solutions - privateprogram: 117
+tasks - taskid: 105
+tasks - projectid: 107
+tasks - name: 106
+tasks - assignedto: 109
+tasks - startdate: 101
+tasks - enddate: 112
+tasks - syncedat: 100
+tasks - isdeleted: 103
+tasks - isdeletable: 104
+tasks - remarks: 102
+tasks - status: 110
+tasks - evidence: 111
+tasks - evidencecount: 108
