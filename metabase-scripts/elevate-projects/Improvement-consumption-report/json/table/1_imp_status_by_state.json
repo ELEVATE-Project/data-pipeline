@@ -6,7 +6,7 @@
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT \n    solutions.programname AS \"Program Name\",\n    projects.statename AS \"State Name\",\n    SUM(CASE WHEN projects.status = 'started' THEN 1 ELSE 0 END) AS \"Started\",\n    SUM(CASE WHEN projects.status = 'inprogress' THEN 1 ELSE 0 END) AS \"In-Progress\",\n\tSUM(CASE WHEN projects.status = 'submitted' THEN 1 ELSE 0 END) AS \"Submitted\",\n    SUM(CASE WHEN projects.status = 'submitted' AND projects.evidence IS NOT NULL THEN 1 ELSE 0 END) AS \"Submitted projects with evidences\"\nFROM projects \nJOIN solutions ON projects.solutionid = solutions.solutionid\nWHERE 1=1 \n[[AND {{program_param}}]]\n[[AND {{state_param}}]]\nGROUP BY solutions.programname, projects.statename\nORDER BY \"Submitted\" DESC",
+        "query": "SELECT \n    solutions.programname AS \"Program Name\",\n    projects.statename AS \"State Name\",\n    SUM(CASE WHEN projects.status = 'started' THEN 1 ELSE 0 END) AS \"Started\",\n    SUM(CASE WHEN projects.status = 'inProgress' THEN 1 ELSE 0 END) AS \"In-Progress\",\n\tSUM(CASE WHEN projects.status = 'submitted' THEN 1 ELSE 0 END) AS \"Submitted\",\n    SUM(CASE WHEN projects.status = 'submitted' AND projects.evidence IS NOT NULL THEN 1 ELSE 0 END) AS \"Submitted projects with evidences\"\nFROM projects \nJOIN solutions ON projects.solutionid = solutions.solutionid\nWHERE 1=1 \n[[AND {{program_param}}]]\n[[AND {{state_param}}]]\nGROUP BY solutions.programname, projects.statename\nORDER BY \"Submitted\" DESC",
         "template-tags": {
           "state_param": {
             "type": "text",
