@@ -90,10 +90,16 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     println("clusterName = " + event.clusterName)
     println("schoolId = " + event.schoolId)
     println("schoolName = " + event.schoolName)
+    println("certificateTemplateId = " + event.certificateTemplateId)
+    println("certificateTemplateUrl = " + event.certificateTemplateUrl)
+    println("certificateIssuedOn = " + event.certificateIssuedOn)
+    println("certificateStatus = " + event.certificateStatus)
+    println("certificatePdfPath = " + event.certificatePdfPath)
 
     println("\n Tasks data")
     println("tasksData = " + tasksData)
 
+    // Uncomment the bellow lines to create table schema for the first time.
     postgresUtil.createTable(config.createSolutionsTable, config.solutionsTable)
     postgresUtil.createTable(config.createProjectTable, config.projectsTable)
     postgresUtil.createTable(config.createTasksTable, config.tasksTable)
@@ -116,24 +122,36 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val privateProgram = event.privateProgram
 
     val upsertSolutionQuery =
-      s"""INSERT INTO Solutions (solutionId, externalId, name, description, duration, hasAcceptedTAndC, isDeleted, createdType, programId, programName, programExternalId, programDescription, privateProgram)
-         |VALUES ('$solutionId', '$solutionExternalId', '$solutionName', '$solutionDescription', '$projectDuration', '$hasAcceptedTAndC', $projectIsDeleted, '$projectCreatedType', '$programId', '$programName', '$programExternalId', '$programDescription', $privateProgram)
-         |ON CONFLICT (solutionId) DO UPDATE SET
-         |    externalId = '$solutionExternalId',
-         |    name = '$solutionName',
-         |    description = '$solutionDescription',
-         |    duration = '$projectDuration',
-         |    hasAcceptedTAndC = '$hasAcceptedTAndC',
-         |    isDeleted = $projectIsDeleted,
-         |    createdType = '$projectCreatedType',
-         |    programId = '$programId',
-         |    programName = '$programName',
-         |    programExternalId = '$programExternalId',
-         |    programDescription = '$programDescription',
-         |    privateProgram = $privateProgram;
-         |""".stripMargin
+      """INSERT INTO Solutions (solutionId, externalId, name, description, duration, hasAcceptedTAndC, isDeleted, createdType, programId, programName, programExternalId, programDescription, privateProgram)
+        |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        |ON CONFLICT (solutionId) DO UPDATE SET
+        |    externalId = ?,
+        |    name = ?,
+        |    description = ?,
+        |    duration = ?,
+        |    hasAcceptedTAndC = ?,
+        |    isDeleted = ?,
+        |    createdType = ?,
+        |    programId = ?,
+        |    programName = ?,
+        |    programExternalId = ?,
+        |    programDescription = ?,
+        |    privateProgram = ?;
+        |""".stripMargin
 
-    postgresUtil.executeUpdate(upsertSolutionQuery, config.solutionsTable, solutionId)
+    val solutionParams = Seq(
+      // Insert parameters
+      solutionId, solutionExternalId, solutionName, solutionDescription, projectDuration,
+      hasAcceptedTAndC, projectIsDeleted, projectCreatedType, programId, programName,
+      programExternalId, programDescription, privateProgram,
+
+      // Update parameters (matching columns in the ON CONFLICT clause)
+      solutionExternalId, solutionName, solutionDescription, projectDuration,
+      hasAcceptedTAndC, projectIsDeleted, projectCreatedType, programId,
+      programName, programExternalId, programDescription, privateProgram
+    )
+
+    postgresUtil.executePreparedUpdate(upsertSolutionQuery, solutionParams, config.solutionsTable, solutionId)
 
     /**
      * Extracting Project data
@@ -162,47 +180,43 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val clusterName = event.clusterName
     val schoolId = event.schoolId
     val schoolName = event.schoolName
+    val certificateTemplateId = event.certificateTemplateId
+    val certificateTemplateUrl = event.certificateTemplateUrl
+    val certificateIssuedOn = event.certificateIssuedOn
+    val certificateStatus = event.certificateStatus
+    val certificatePdfPath = event.certificatePdfPath
 
     val upsertProjectQuery =
-      s"""INSERT INTO Projects (
-         |    projectId, solutionId, createdBy, createdDate, completedDate, lastSync, updatedDate, status, remarks,
-         |    evidence, evidenceCount, programId, taskCount, userRoleIds, userRoles, orgId, orgName, orgCode, stateId,
-         |    stateName, districtId, districtName, blockId, blockName, clusterId, clusterName, schoolId, schoolName
-         |) VALUES (
-         |    '$projectId', '$solutionId', '$createdBy', '$createdDate', '$completedDate', '$lastSync', '$updatedDate', '$status', '$remarks',
-         |    '$evidence', '$evidenceCount', '$programId', '$taskCount', '$userRoleIds', '$userRoles', '$orgId', '$orgName', '$orgCode', '$stateId',
-         |    '$stateName', '$districtId', '$districtName', '$blockId', '$blockName', '$clusterId', '$clusterName', '$schoolId', '$schoolName'
-         |) ON CONFLICT (projectId) DO UPDATE SET
-         |    solutionId = '$solutionId',
-         |    createdBy = '$createdBy',
-         |    createdDate = '$createdDate',
-         |    completedDate = '$completedDate',
-         |    lastSync = '$lastSync',
-         |    updatedDate = '$updatedDate',
-         |    status = '$status',
-         |    remarks = '$remarks',
-         |    evidence = '$evidence',
-         |    evidenceCount = '$evidenceCount',
-         |    programId = '$programId',
-         |    taskCount = '$taskCount',
-         |    userRoleIds = '$userRoleIds',
-         |    userRoles = '$userRoles',
-         |    orgId = '$orgId',
-         |    orgName = '$orgName',
-         |    orgCode = '$orgCode',
-         |    stateId = '$stateId',
-         |    stateName = '$stateName',
-         |    districtId = '$districtId',
-         |    districtName ='$districtName',
-         |    blockId = '$blockId',
-         |    blockName = '$blockName',
-         |    clusterId = '$clusterId',
-         |    clusterName = '$clusterName',
-         |    schoolId = '$schoolId',
-         |    schoolName = '$schoolName'
-         |""".stripMargin
+      """INSERT INTO Projects (
+        |    projectId, solutionId, createdBy, createdDate, completedDate, lastSync, updatedDate, status, remarks,
+        |    evidence, evidenceCount, programId, taskCount, userRoleIds, userRoles, orgId, orgName, orgCode, stateId,
+        |    stateName, districtId, districtName, blockId, blockName, clusterId, clusterName, schoolId, schoolName,
+        |    certificateTemplateId, certificateTemplateUrl, certificateIssuedOn, certificateStatus, certificatePdfPath
+        |) VALUES (
+        |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        |) ON CONFLICT (projectId) DO UPDATE SET
+        |    solutionId = ?, createdBy = ?, createdDate = ?, completedDate = ?, lastSync = ?, updatedDate = ?,
+        |    status = ?, remarks = ?, evidence = ?, evidenceCount = ?, programId = ?, taskCount = ?, userRoleIds = ?,
+        |    userRoles = ?, orgId = ?, orgName = ?, orgCode = ?, stateId = ?, stateName = ?, districtId = ?,
+        |    districtName = ?, blockId = ?, blockName = ?, clusterId = ?, clusterName = ?, schoolId = ?, schoolName = ?,
+        |    certificateTemplateId = ?, certificateTemplateUrl = ?, certificateIssuedOn = ?, certificateStatus = ?, certificatePdfPath = ?;
+        |""".stripMargin
 
-    postgresUtil.executeUpdate(upsertProjectQuery, config.projectsTable, projectId)
+    val projectParams = Seq(
+      // Insert parameters
+      projectId, solutionId, createdBy, createdDate, completedDate, lastSync, updatedDate, status, remarks,
+      evidence, evidenceCount, programId, taskCount, userRoleIds, userRoles, orgId, orgName, orgCode, stateId,
+      stateName, districtId, districtName, blockId, blockName, clusterId, clusterName, schoolId, schoolName,
+      certificateTemplateId, certificateTemplateUrl, certificateIssuedOn, certificateStatus, certificatePdfPath,
+
+      // Update parameters (matching columns in the ON CONFLICT clause)
+      solutionId, createdBy, createdDate, completedDate, lastSync, updatedDate, status, remarks, evidence,
+      evidenceCount, programId, taskCount, userRoleIds, userRoles, orgId, orgName, orgCode, stateId, stateName,
+      districtId, districtName, blockId, blockName, clusterId, clusterName, schoolId, schoolName,
+      certificateTemplateId, certificateTemplateUrl, certificateIssuedOn, certificateStatus, certificatePdfPath
+    )
+
+    postgresUtil.executePreparedUpdate(upsertProjectQuery, projectParams, config.projectsTable, projectId)
 
     /**
      * Extracting Tasks data
@@ -222,24 +236,28 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
       val taskEvidenceCount = task("taskEvidenceCount")
 
       val upsertTaskQuery =
-        s"""INSERT INTO Tasks (taskId, projectId, name, assignedTo, startDate, endDate, syncedAt, isDeleted, isDeletable, remarks, status, evidence, evidenceCount)
-           |VALUES ('$taskId', '$projectId', '$taskName', '$taskAssignedTo', '$taskStartDate', '$taskEndDate', '$taskSyncedAt', $taskIsDeleted, $taskIsDeletable, '$taskRemarks', '$taskStatus', '$taskEvidence', $taskEvidenceCount)
-           |ON CONFLICT (taskId) DO UPDATE SET
-           |    name = '$taskName',
-           |    projectId = '$projectId',
-           |    assignedTo = '$taskAssignedTo',
-           |    startDate = '$taskStartDate',
-           |    endDate = '$taskEndDate',
-           |    syncedAt = '$taskSyncedAt',
-           |    isDeleted = $taskIsDeleted,
-           |    isDeletable = $taskIsDeletable,
-           |    remarks = '$taskRemarks',
-           |    status = '$taskStatus',
-           |    evidence = '$taskEvidence',
-           |    evidenceCount = $taskEvidenceCount;
-           |""".stripMargin
+        """INSERT INTO Tasks (
+          |    taskId, projectId, name, assignedTo, startDate, endDate, syncedAt, isDeleted, isDeletable,
+          |    remarks, status, evidence, evidenceCount
+          |) VALUES (
+          |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+          |) ON CONFLICT (taskId) DO UPDATE SET
+          |    name = ?, projectId = ?, assignedTo = ?, startDate = ?, endDate = ?, syncedAt = ?,
+          |    isDeleted = ?, isDeletable = ?, remarks = ?, status = ?, evidence = ?, evidenceCount = ?;
+          |""".stripMargin
 
-      postgresUtil.executeUpdate(upsertTaskQuery, config.tasksTable, taskId)
+      val taskParams = Seq(
+        // Insert parameters
+        taskId, projectId, taskName, taskAssignedTo, taskStartDate, taskEndDate, taskSyncedAt, taskIsDeleted,
+        taskIsDeletable, taskRemarks, taskStatus, taskEvidence, taskEvidenceCount,
+
+        // Update parameters (matching columns in the ON CONFLICT clause)
+        taskName, projectId, taskAssignedTo, taskStartDate, taskEndDate, taskSyncedAt, taskIsDeleted,
+        taskIsDeletable, taskRemarks, taskStatus, taskEvidence, taskEvidenceCount
+      )
+
+      postgresUtil.executePreparedUpdate(upsertTaskQuery, taskParams, config.tasksTable, taskId)
+
     }
 
     println(s"***************** End of Processing the Project Event *****************\n")

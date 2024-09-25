@@ -4,7 +4,7 @@ import org.shikshalokam.job.domain.reader.JobRequest
 
 class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) extends JobRequest(eventMap, partition, offset) {
 
- def _id: String = readOrDefault[String]("_id", "")
+  def _id: String = readOrDefault[String]("_id", "")
 
   def solutionId: String = readOrDefault[String]("solutionInformation._id", "")
 
@@ -81,6 +81,16 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
   def tasks: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("tasks", null)
 
   val taskCount = tasks.size
+
+  def certificateTemplateId: String = readOrDefault[String]("certificate.templateId", "")
+
+  def certificateTemplateUrl: String = readOrDefault[String]("certificate.templateUrl", "")
+
+  def certificateIssuedOn: String = readOrDefault[String]("certificate.issuedOn", "")
+
+  def certificateStatus: String = readOrDefault[String]("certificate.status", "")
+
+  def certificatePdfPath: String = readOrDefault[String]("certificate.pdfPath", "")
 
 }
 
