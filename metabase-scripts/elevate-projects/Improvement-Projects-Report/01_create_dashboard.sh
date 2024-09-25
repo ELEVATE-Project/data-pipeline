@@ -25,7 +25,7 @@ METABASE_PASSWORD="analytics@123"
 
 # Collection and dashboard details
 COLLECTION_NAME="Improvement Projects"
-DASHBOARD_NAME="Improvement Projects Dashboard"
+DASHBOARD_NAME="Improvement Projects Report"
 
 OUTPUT_FILE="./metadata_file.txt"
 DATABASE_NAME="Elevate Data" #Local DB

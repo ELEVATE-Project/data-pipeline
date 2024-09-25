@@ -6,7 +6,7 @@
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT\n  count(DISTINCT projects.createdby)\nFROM\n  projects\nJOIN solutions ON projects.solutionid = solutions.solutionid\nWHERE projects.status = 'inprogress'\n    [[AND {{state_param}}]]\n    [[AND {{district_param}}]]\n    [[AND {{program_param}}]]",
+        "query": "SELECT\n  count(DISTINCT projects.createdby)\nFROM\n  projects\nJOIN solutions ON projects.solutionid = solutions.solutionid\nWHERE projects.status = 'inProgress'\n    [[AND {{state_param}}]]\n    [[AND {{district_param}}]]\n    [[AND {{program_param}}]]",
         "template-tags": {
           "state_param": {
             "type": "dimension",

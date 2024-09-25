@@ -6,7 +6,7 @@
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT\n  COUNT(DISTINCT projects.projectid) AS \"no_of_projects_inprogress\"\nFROM\n  projects\nJOIN solutions on projects.solutionid = solutions.solutionid\nWHERE\nprojects.status = 'inprogress'\n[[AND {{state_param}} ]]\n[[AND {{district_param}}]]\n[[AND {{program_param}}]]",
+        "query": "SELECT\n  COUNT(DISTINCT projects.projectid) AS \"no_of_projects_inprogress\"\nFROM\n  projects\nJOIN solutions on projects.solutionid = solutions.solutionid\nWHERE\nprojects.status = 'inProgress'\n[[AND {{state_param}} ]]\n[[AND {{district_param}}]]\n[[AND {{program_param}}]]",
         "template-tags": {
           "state_param": {
             "type": "dimension",
