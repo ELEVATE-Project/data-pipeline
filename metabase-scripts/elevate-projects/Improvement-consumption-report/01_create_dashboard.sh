@@ -24,8 +24,8 @@ METABASE_USERNAME="analytics@shikshalokam.org"
 METABASE_PASSWORD="analytics@123"
 
 # Collection and dashboard details
-COLLECTION_NAME="Improvement Projects"
-DASHBOARD_NAME="Improvement Projects Report"
+COLLECTION_NAME="Improvement Consumption"
+DASHBOARD_NAME="Improvement Consumption Report"
 
 OUTPUT_FILE="./metadata_file.txt"
 DATABASE_NAME="Elevate Data" #Local DB
