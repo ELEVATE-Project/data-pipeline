@@ -66,7 +66,7 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |    createdDate TEXT,
       |    completedDate TEXT,
       |    lastSync TEXT,
-      |    updatedDate DATE,
+      |    updatedDate TEXT,
       |    status TEXT,
       |    remarks TEXT,
       |    evidence TEXT,
@@ -87,7 +87,12 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |    clusterId TEXT,
       |    clusterName TEXT,
       |    schoolId TEXT,
-      |    schoolName TEXT
+      |    schoolName TEXT,
+      |    certificateTemplateId TEXT,
+      |    certificateTemplateUrl TEXT,
+      |    certificateIssuedOn TEXT,
+      |    certificateStatus TEXT,
+      |    certificatePdfPath TEXT
       |);""".stripMargin
 
   val createTasksTable =
