@@ -28,7 +28,7 @@ COLLECTION_NAME="Improvement Projects"
 DASHBOARD_NAME="Improvement Projects Report"
 
 OUTPUT_FILE="./metadata_file.txt"
-DATABASE_NAME="Elevate Data" #Local DB
+DATABASE_NAME="Dev-Elevate-Data" #Local DB
 
 # Check if required commands are installed
 if ! command -v curl &> /dev/null; then
