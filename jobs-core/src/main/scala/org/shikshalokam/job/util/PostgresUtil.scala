@@ -82,7 +82,4 @@ class PostgresUtil(dbUrl: String, dbUser: String, dbPassword: String) {
     }
   }
 
-
-
-
 }
