@@ -1,0 +1,119 @@
+version: '3.8'
+services:
+  # Dev environment
+  metabase-dev:
+    image: metabase/metabase:latest
+    platform: linux/amd64
+    container_name: dev-elevate-metabase
+    ports:
+      - "3000:3000"
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase_dev
+      MB_DB_PORT: 5432
+      MB_DB_USER: postgres
+      MB_DB_PASS: elevatedata
+      MB_DB_HOST: host.docker.internal
+    volumes:
+      - dev-metabase-data:/dev-metabase-data  # Named volume for dev
+    restart: unless-stopped
+    networks:
+      - dev_network
+
+networks:
+  dev_network:
+    driver: bridge
+
+volumes:
+  dev-metabase-data:
+    driver: local
+
+
+
+#version: '3.8'
+#services:
+#  # QA environment
+#  metabase-qa:
+#    image: metabase/metabase:latest
+#    platform: linux/amd64
+#    container_name: qa-elevate-metabase
+#    ports:
+#      - "3001:3000"  # Different port for QA container
+#    environment:
+#      MB_DB_TYPE: postgres
+#      MB_DB_DBNAME: metabase_qa
+#      MB_DB_PORT: 5432
+#      MB_DB_USER: postgres
+#      MB_DB_PASS: elevatedata
+#      MB_DB_HOST: host.docker.internal
+#    volumes:
+#      - qa-metabase-data:/qa-metabase-data  # Named volume for QA
+#    restart: unless-stopped
+#    networks:
+#      - qa_network
+#
+#networks:
+#  qa_network:
+#    driver: bridge
+#
+#volumes:
+#  qa-metabase-data:
+#    driver: local
+
+
+
+
+#BELLOW COMPOSE COMMANDS WILL START BOTH THE CONTAINERS
+#version: '3.8'
+#services:
+#  # Dev environment
+#  metabase-dev:
+#    image: metabase/metabase:latest
+#    platform: linux/amd64
+#    container_name: dev-elevate-metabase
+#    ports:
+#      - "3000:3000"
+#    environment:
+#      MB_DB_TYPE: postgres
+#      MB_DB_DBNAME: metabase_dev
+#      MB_DB_PORT: 5432
+#      MB_DB_USER: postgres
+#      MB_DB_PASS: elevatedata
+#      MB_DB_HOST: host.docker.internal
+#    volumes:
+#      - dev-metabase-data:/dev-metabase-data  # Named volume for dev
+#    restart: unless-stopped
+#    networks:
+#      - dev_network
+#
+#  # QA environment
+#  metabase-qa:
+#    image: metabase/metabase:latest
+#    platform: linux/amd64
+#    container_name: qa-elevate-metabase
+#    ports:
+#      - "3001:3000"  # Different port for QA container
+#    environment:
+#      MB_DB_TYPE: postgres
+#      MB_DB_DBNAME: metabase_qa
+#      MB_DB_PORT: 5432
+#      MB_DB_USER: postgres
+#      MB_DB_PASS: elevatedata
+#      MB_DB_HOST: host.docker.internal
+#    volumes:
+#      - qa-metabase-data:/qa-metabase-data  # Named volume for QA
+#    restart: unless-stopped
+#    networks:
+#      - qa_network
+#
+#networks:
+#  dev_network:
+#    driver: bridge
+#  qa_network:
+#    driver: bridge
+#
+#volumes:
+#  dev-metabase-data:
+#    driver: local
+#  qa-metabase-data:
+#    driver: local
