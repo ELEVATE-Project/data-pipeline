@@ -1,9 +1,9 @@
 {
   "questionCard": {
     "name": "No. of users: Started the improvement project",
-    "collection_id": 168,
+    "collection_id": 86,
     "dataset_query": {
-      "database": 34,
+      "database": 2,
       "type": "native",
       "native": {
         "query": "SELECT\n  COUNT(DISTINCT projects.createdby) AS no_of_users_started\nFROM\n  projects \nJOIN solutions on projects.solutionid = solutions.solutionid\nWHERE projects.status = 'started'\n[[ AND {{state_param}} ]]\n[[AND {{district_param}}]]\n[[AND {{program_param}}]]",
@@ -15,7 +15,7 @@
             "default": null,
             "dimension": [
               "field",
-              189,
+              80,
               null
             ],
             "widget-type": "string/=",
@@ -28,7 +28,7 @@
             "default": null,
             "dimension": [
               "field",
-              196,
+              87,
               null
             ],
             "widget-type": "string/=",
@@ -41,7 +41,7 @@
             "default": null,
             "dimension": [
               "field",
-              173,
+              118,
               null
             ],
             "widget-type": "string/=",
@@ -92,13 +92,13 @@
     ]
   },
   "dashCards": {
-    "card_id": 467,
+    "card_id": 386,
     "dashboard_tab_id": null,
     "id": 1,
     "parameter_mappings": [
       {
         "parameter_id": "c32c8fc5",
-        "card_id": 467,
+        "card_id": 386,
         "target": [
           "dimension",
           [
@@ -109,7 +109,7 @@
       },
       {
         "parameter_id": "74a10335",
-        "card_id": 467,
+        "card_id": 386,
         "target": [
           "dimension",
           [
@@ -120,7 +120,7 @@
       },
       {
         "parameter_id": "8c7d86ea",
-        "card_id": 467,
+        "card_id": 386,
         "target": [
           "dimension",
           [

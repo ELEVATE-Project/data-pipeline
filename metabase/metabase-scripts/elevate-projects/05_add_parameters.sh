@@ -9,8 +9,13 @@ NC="\033[0m"
 echo -e "${BOLD_YELLOW}           :: Update the dashboard with new parameters ::           ${NC}"
 echo -e "${NC}"
 
+#External Path 
+main_dir=$1
+inside_dir_path=$2
+new_name=$3
+
 # Check if metadata_file.txt exists
-METADATA_FILE="./metadata_file.txt"
+METADATA_FILE="$inside_dir_path/metadata_file.txt"
 if [ ! -f "$METADATA_FILE" ]; then
     echo "Error: metadata_file.txt not found."
     exit 1

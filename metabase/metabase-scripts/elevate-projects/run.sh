@@ -6,9 +6,9 @@ GREEN="\033[0;32m"
 NC="\033[0m" # No Color (reset to default)
 
 # Target directory
-target_dir="elevate-projects"
-
-
+target_dir="."
+main_dir=$(pwd)
+#to main_dir_path 
 # Loop through subdirectories
 for dir in "$target_dir"/*; do
   # Check if it's actually a directory
@@ -17,9 +17,10 @@ for dir in "$target_dir"/*; do
 
     # Change directory to the subdirectory
     cd "$dir"
-
+    inside_dir_path=$(pwd)
+    #report_path 
     # Execute the script (assuming it's in the current directory)
-    ./01_create_dashboard.sh 
+    $main_dir/01_create_dashboard.sh $main_dir $inside_dir_path
 
     # Move back to the parent directory 
     cd - &> /dev/null || true  

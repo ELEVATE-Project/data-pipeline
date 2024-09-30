@@ -4,6 +4,17 @@
 ## retrieves relevant IDs (collection, dashboard, and database), and saves them to a file.
 ## It uses curl for API requests and jq to handle JSON responses.
 
+#External Path 
+main_dir=$1
+inside_dir_path=$2
+folder_name=$(basename "$inside_dir_path")
+
+# Replace dashes with spaces
+new_name=$(echo "$folder_name" | tr '-' ' ')  
+
+# Remove trailing spaces (if necessary)
+new_name=$(echo "$new_name" | tr -s ' ')
+
 # Color codes for terminal output
 BOLD_CYAN="\033[1;36m"
 BOLD_YELLOW="\033[1;33m"
@@ -15,8 +26,9 @@ echo -e "██ ████ ██ █████      ██    ████�
 echo -e "██  ██  ██ ██         ██    ██   ██ ██   ██ ██   ██      ██ ██      "
 echo -e "██      ██ ███████    ██    ██   ██ ██████  ██   ██ ███████ ███████ "
 echo -e "${NC}"
-echo -e "${BOLD_YELLOW}         :: Starting up the Improvement Projects Report ::          ${NC}"
+echo -e "${BOLD_YELLOW}         :: Starting up the $new_name ::          ${NC}"
 echo -e "${NC}"
+
 
 # Metabase server URL and credentials
 METABASE_URL="http://localhost:3000"
@@ -24,11 +36,11 @@ METABASE_USERNAME="analytics@shikshalokam.org"
 METABASE_PASSWORD="analytics@123"
 
 # Collection and dashboard details
-COLLECTION_NAME="Improvement Projects"
-DASHBOARD_NAME="Improvement Projects Report"
+COLLECTION_NAME="$new_name"
+DASHBOARD_NAME="$folder_name"
 
-OUTPUT_FILE="./metadata_file.txt"
-DATABASE_NAME="Dev-Elevate-Data" #Local DB
+OUTPUT_FILE="$inside_dir_path/metadata_file.txt"
+DATABASE_NAME="meta-data" #Local DB
 
 # Check if required commands are installed
 if ! command -v curl &> /dev/null; then
@@ -138,4 +150,4 @@ echo ""
 sleep 2
 
 # Call the 02_get_table_data.sh script
-./02_get_table_data.sh
+$main_dir/02_get_table_data.sh $main_dir $inside_dir_path $new_name
