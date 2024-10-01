@@ -1,7 +1,7 @@
 {
   "questionCard": {
     "name": "Improvement projects by district",
-    "collection_id": 85,
+    "collection_id": 110,
     "dataset_query": {
       "database": 2,
       "type": "native",
@@ -33,7 +33,7 @@
     }
   },
   "dashCards": {
-    "card_id": 385,
+    "card_id": 465,
     "dashboard_tab_id": null,
     "id": 6,
     "parameter_mappings": [],

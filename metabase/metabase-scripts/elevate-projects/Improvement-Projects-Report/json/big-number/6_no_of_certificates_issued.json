@@ -1,7 +1,7 @@
 {
   "questionCard": {
     "name": "No. of certificates issued",
-    "collection_id": 86,
+    "collection_id": 111,
     "dataset_query": {
       "database": 2,
       "type": "native",
@@ -33,7 +33,7 @@
     "visualization_settings": {}
   },
   "dashCards": {
-    "card_id": 391,
+    "card_id": 471,
     "dashboard_tab_id": null,
     "id": 6,
     "parameter_mappings": [],

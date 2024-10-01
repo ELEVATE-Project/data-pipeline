@@ -1,12 +1,12 @@
 {
   "questionCard": {
-    "name": "No. of improvements in inProgress status currently",
-    "collection_id": 85,
+    "name": "No. of unique users submitted the project",
+    "collection_id": 112,
     "dataset_query": {
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT\n  COUNT(DISTINCT projects.projectid) AS \"no_of_projects_inprogress\"\nFROM\n  projects\nJOIN solutions on projects.solutionid = solutions.solutionid\nWHERE\nprojects.status = 'inProgress'\n[[AND {{state_param}} ]]\n[[AND {{district_param}}]]\n[[AND {{program_param}}]]",
+        "query": "SELECT\n  count(DISTINCT projects.createdby)\nFROM\n  projects\nJOIN solutions ON projects.solutionid = solutions.solutionid\nWHERE projects.status = 'submitted'\n    [[AND {{state_param}}]]\n    [[AND {{district_param}}]]\n    [[AND {{program_param}}]]",
         "template-tags": {
           "state_param": {
             "type": "dimension",
@@ -92,18 +92,13 @@
     ]
   },
   "dashCards": {
-    "card_id": 381,
+    "card_id": 478,
     "dashboard_tab_id": null,
     "id": 2,
-    "col": 6,
-    "row": 0,
-    "size_x": 6,
-    "size_y": 3,
-    "visualization_settings": {},
     "parameter_mappings": [
       {
         "parameter_id": "c32c8fc5",
-        "card_id": 381,
+        "card_id": 478,
         "target": [
           "dimension",
           [
@@ -114,7 +109,7 @@
       },
       {
         "parameter_id": "74a10335",
-        "card_id": 381,
+        "card_id": 478,
         "target": [
           "dimension",
           [
@@ -125,7 +120,7 @@
       },
       {
         "parameter_id": "8c7d86ea",
-        "card_id": 381,
+        "card_id": 478,
         "target": [
           "dimension",
           [
@@ -134,6 +129,11 @@
           ]
         ]
       }
-    ]
+    ],
+    "col": 4,
+    "row": 3,
+    "size_x": 8,
+    "size_y": 3,
+    "visualization_settings": {}
   }
 }

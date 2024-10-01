@@ -1,7 +1,7 @@
 {
   "questionCard": {
     "name": "Improvement projects by state",
-    "collection_id": 85,
+    "collection_id": 110,
     "dataset_query": {
       "database": 2,
       "type": "native",
@@ -28,7 +28,7 @@
     }
   },
   "dashCards": {
-    "card_id": 384,
+    "card_id": 464,
     "dashboard_tab_id": null,
     "id": 5,
     "parameter_mappings": [],

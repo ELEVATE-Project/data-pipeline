@@ -5,27 +5,15 @@
 ## It uses curl for API requests and jq to handle JSON responses.
 
 #External Path 
-main_dir=$1
-inside_dir_path=$2
-folder_name=$(basename "$inside_dir_path")
+report_path=$1
+folder_name=$(basename "$report_path")
 
-# Replace dashes with spaces
-new_name=$(echo "$folder_name" | tr '-' ' ')  
-
-# Remove trailing spaces (if necessary)
-new_name=$(echo "$new_name" | tr -s ' ')
+new_name=$(echo "$folder_name" | tr -s '-' ' ')
 
 # Color codes for terminal output
 BOLD_CYAN="\033[1;36m"
 BOLD_YELLOW="\033[1;33m"
 NC="\033[0m" # No Color (reset to default)
-echo -e "${BOLD_CYAN}"
-echo -e "███    ███ ███████ ████████  █████  ██████   █████  ███████ ███████ "
-echo -e "████  ████ ██         ██    ██   ██ ██   ██ ██   ██ ██      ██      "
-echo -e "██ ████ ██ █████      ██    ███████ ██████  ███████ ███████ █████   "
-echo -e "██  ██  ██ ██         ██    ██   ██ ██   ██ ██   ██      ██ ██      "
-echo -e "██      ██ ███████    ██    ██   ██ ██████  ██   ██ ███████ ███████ "
-echo -e "${NC}"
 echo -e "${BOLD_YELLOW}         :: Starting up the $new_name ::          ${NC}"
 echo -e "${NC}"
 
@@ -36,11 +24,11 @@ METABASE_USERNAME="analytics@shikshalokam.org"
 METABASE_PASSWORD="analytics@123"
 
 # Collection and dashboard details
-COLLECTION_NAME="$new_name"
-DASHBOARD_NAME="$folder_name"
+COLLECTION_NAME=$(echo "$new_name" | sed 's/ Report$//')
+DASHBOARD_NAME="$new_name"
 
-OUTPUT_FILE="$inside_dir_path/metadata_file.txt"
-DATABASE_NAME="meta-data" #Local DB
+OUTPUT_FILE="$report_path/metadata_file.txt"
+DATABASE_NAME="Elevate-Data" #Local DB
 
 # Check if required commands are installed
 if ! command -v curl &> /dev/null; then
@@ -148,6 +136,8 @@ echo ">>  [01_create_dashboard.sh] Script executed successfully!"
 echo ""
 echo ""
 sleep 2
-
+echo "$pwd"
+cd ..
+echo "$pwd"
 # Call the 02_get_table_data.sh script
-$main_dir/02_get_table_data.sh $main_dir $inside_dir_path $new_name
+./02_get_table_data.sh $report_path

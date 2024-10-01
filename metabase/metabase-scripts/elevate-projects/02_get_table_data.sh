@@ -12,12 +12,9 @@ echo -e "${BOLD_YELLOW}          :: Get the required table data from Metabase ::
 echo -e "${NC}"
 
 #External Path 
-main_dir=$1
-inside_dir_path=$2
-new_name=$3
-
+report_path=$1
 # Check if metadata_file.txt exists
-METADATA_FILE="$inside_dir_path/metadata_file.txt"
+METADATA_FILE="$report_path/metadata_file.txt"
 if [ ! -f "$METADATA_FILE" ]; then
     echo "Error: metadata_file.txt not found."
     exit 1
@@ -78,4 +75,4 @@ echo ""
 sleep 2
 
 # Call the 03_update_json_files.sh script
-$main_dir/03_update_json_files.sh $main_dir $inside_dir_path $new_name
+./03_update_json_files.sh $report_path

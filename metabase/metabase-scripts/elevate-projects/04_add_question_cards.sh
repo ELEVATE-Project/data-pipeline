@@ -12,18 +12,16 @@ echo -e "${BOLD_YELLOW}     :: Creating question card and adding them to dashboa
 echo -e "${NC}"
 
 #External Path 
-main_dir=$1
-inside_dir_path=$2
-new_name=$3
+report_path=$1
 
 # Directory setup
-JSON_DIR="$inside_dir_path/json"
+JSON_DIR="$report_path/json"
 BIG_NUMBER_DIR="$JSON_DIR/big-number"
 GRAPH_DIR="$JSON_DIR/graph"
 TABLE_DIR="$JSON_DIR/table"
 
 # Check if metadata_file.txt exists
-METADATA_FILE="$inside_dir_path/metadata_file.txt"
+METADATA_FILE="$report_path/metadata_file.txt"
 if [ ! -f "$METADATA_FILE" ]; then
     echo "Error: metadata_file.txt not found."
     exit 1
@@ -169,5 +167,6 @@ echo ""
 echo ""
 sleep 2
 
+
 # Call the 05_add_parameters.sh script
-$main_dir/05_add_parameters.sh $main_dir $inside_dir_path $new_name
+./05_add_parameters.sh $report_path

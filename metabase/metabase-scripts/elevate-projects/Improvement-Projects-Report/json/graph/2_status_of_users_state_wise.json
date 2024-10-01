@@ -1,7 +1,7 @@
 {
   "questionCard": {
     "name": "Status of users state wise",
-    "collection_id": 86,
+    "collection_id": 111,
     "dataset_query": {
       "database": 2,
       "type": "native",
@@ -48,7 +48,7 @@
     }
   },
   "dashCards": {
-    "card_id": 393,
+    "card_id": 473,
     "dashboard_tab_id": null,
     "id": 8,
     "parameter_mappings": [],

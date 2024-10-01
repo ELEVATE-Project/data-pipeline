@@ -10,18 +10,16 @@ echo -e "${BOLD_YELLOW}       :: Updating all the request bodies in JSON files :
 echo -e "${NC}"
 
 #External Path 
-main_dir=$1
-inside_dir_path=$2
-new_name=$2
+report_path=$1
 
 # Directory setup
-JSON_DIR="$inside_dir_path/json"
+JSON_DIR="$report_path/json"
 BIG_NUMBER_DIR="$JSON_DIR/big-number"
 GRAPH_DIR="$JSON_DIR/graph"
 TABLE_DIR="$JSON_DIR/table"
 
 # Check if metadata_file.txt exists
-METADATA_FILE="$inside_dir_path/metadata_file.txt"
+METADATA_FILE="$report_path/metadata_file.txt"
 if [ ! -f "$METADATA_FILE" ]; then
     echo "Error: metadata_file.txt not found."
     exit 1
@@ -121,4 +119,4 @@ echo ""
 sleep 2
 
 # Call the 04_add_question_cards.sh script
-$main_dir/04_add_question_cards.sh $main_dir $inside_dir_path $new_name
+./04_add_question_cards.sh $report_path

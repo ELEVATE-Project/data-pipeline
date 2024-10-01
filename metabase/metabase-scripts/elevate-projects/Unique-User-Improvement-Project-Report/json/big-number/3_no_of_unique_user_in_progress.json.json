@@ -1,12 +1,12 @@
 {
   "questionCard": {
-    "name": "No. of improvements in started status currently",
-    "collection_id": 85,
+    "name": "No. of unique users in progress",
+    "collection_id": 112,
     "dataset_query": {
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT\n  COUNT(DISTINCT projects.projectid) AS no_of_projects_started\nFROM\n  projects\nJOIN solutions on projects.solutionid = solutions.solutionid\nWHERE projects.status = 'started'\n[[AND {{state_param}}]] \n[[AND {{district_param}}]]\n[[AND {{program_param}}]]",
+        "query": "SELECT\n  count(DISTINCT projects.createdby)\nFROM\n  projects\nJOIN solutions ON projects.solutionid = solutions.solutionid\nWHERE projects.status = 'inProgress'\n    [[AND {{state_param}}]]\n    [[AND {{district_param}}]]\n    [[AND {{program_param}}]]",
         "template-tags": {
           "state_param": {
             "type": "dimension",
@@ -92,13 +92,13 @@
     ]
   },
   "dashCards": {
-    "card_id": 380,
+    "card_id": 477,
     "dashboard_tab_id": null,
-    "id": 1,
+    "id": 2,
     "parameter_mappings": [
       {
         "parameter_id": "c32c8fc5",
-        "card_id": 380,
+        "card_id": 477,
         "target": [
           "dimension",
           [
@@ -109,7 +109,7 @@
       },
       {
         "parameter_id": "74a10335",
-        "card_id": 380,
+        "card_id": 477,
         "target": [
           "dimension",
           [
@@ -120,7 +120,7 @@
       },
       {
         "parameter_id": "8c7d86ea",
-        "card_id": 380,
+        "card_id": 477,
         "target": [
           "dimension",
           [
@@ -130,9 +130,9 @@
         ]
       }
     ],
-    "col": 0,
+    "col": 16,
     "row": 0,
-    "size_x": 6,
+    "size_x": 8,
     "size_y": 3,
     "visualization_settings": {}
   }
