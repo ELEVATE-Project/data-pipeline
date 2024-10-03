@@ -23,7 +23,7 @@ METABASE_USERNAME="analytics@shikshalokam.org"
 METABASE_PASSWORD="analytics@123"
 
 # Collection and dashboard details
-COLLECTION_NAME=$(echo "$report_name" | sed 's/ Report$//')
+COLLECTION_NAME=$(echo "$report_name" | sed 's/ Report$//; s/$/ Collection/')
 DASHBOARD_NAME="$report_name"
 
 OUTPUT_FILE="$report_path/metadata_file.txt"
