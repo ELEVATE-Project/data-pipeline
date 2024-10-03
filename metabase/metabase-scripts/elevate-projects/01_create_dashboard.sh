@@ -8,13 +8,12 @@
 report_path=$1
 folder_name=$(basename "$report_path")
 
-new_name=$(echo "$folder_name" | tr -s '-' ' ')
+report_name=$(echo "$folder_name" | tr -s '-' ' ')
 
 # Color codes for terminal output
-BOLD_CYAN="\033[1;36m"
 BOLD_YELLOW="\033[1;33m"
 NC="\033[0m" # No Color (reset to default)
-echo -e "${BOLD_YELLOW}         :: Starting up the $new_name ::          ${NC}"
+echo -e "${BOLD_YELLOW}         :: Starting up the $report_name ::          ${NC}"
 echo -e "${NC}"
 
 
@@ -24,8 +23,8 @@ METABASE_USERNAME="analytics@shikshalokam.org"
 METABASE_PASSWORD="analytics@123"
 
 # Collection and dashboard details
-COLLECTION_NAME=$(echo "$new_name" | sed 's/ Report$//')
-DASHBOARD_NAME="$new_name"
+COLLECTION_NAME=$(echo "$report_name" | sed 's/ Report$//')
+DASHBOARD_NAME="$report_name"
 
 OUTPUT_FILE="$report_path/metadata_file.txt"
 DATABASE_NAME="Elevate-Data" #Local DB
@@ -134,10 +133,7 @@ fi
 
 echo ">>  [01_create_dashboard.sh] Script executed successfully!"
 echo ""
-echo ""
 sleep 2
-echo "$pwd"
 cd ..
-echo "$pwd"
 # Call the 02_get_table_data.sh script
 ./02_get_table_data.sh $report_path

@@ -115,7 +115,6 @@ update_json_files "$TABLE_DIR"
 echo ">>  JSON files have been updated with DATABASE_ID=$DATABASE_ID and COLLECTION_ID=$COLLECTION_ID inside questionCard."
 echo ">>  [03_update_json_files.sh] Script executed successfully!"
 echo ""
-echo ""
 sleep 2
 
 # Call the 04_add_question_cards.sh script

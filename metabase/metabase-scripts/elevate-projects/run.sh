@@ -8,7 +8,7 @@ NC="\033[0m" # No Color (reset to default)
 # Color codes for terminal output
 BOLD_CYAN="\033[1;36m"
 BOLD_YELLOW="\033[1;33m"
-NC="\033[0m" # No Color (reset to default)
+
 echo -e "${BOLD_CYAN}"
 echo -e "███    ███ ███████ ████████  █████  ██████   █████  ███████ ███████ "
 echo -e "████  ████ ██         ██    ██   ██ ██   ██ ██   ██ ██      ██      "
@@ -24,6 +24,7 @@ for dir in "$target_dir"/*; do
   # Check if it's actually a directory
   if [[ -d "$dir" ]]; then
     echo -e "${PINK} Started Processing Directory: $dir ${NC}"
+    echo ""
     # Change directory to the subdirectory
     cd "$dir"
     report_path=$(pwd)

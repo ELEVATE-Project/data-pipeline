@@ -5,7 +5,6 @@
 ## and appends this information to the same metadata file.
 
 BOLD_YELLOW="\033[1;33m"
-BOLD_GREEN="\033[1;32m"
 
 NC="\033[0m"
 echo -e "${BOLD_YELLOW}          :: Get the required table data from Metabase ::              ${NC}"
@@ -70,7 +69,6 @@ metadata=$(get_database_metadata)
 echo ">>  Saved the Ids to Metadata File"
 
 echo ">>  [02_get_table_data.sh] Script executed successfully!"
-echo ""
 echo ""
 sleep 2
 

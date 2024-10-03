@@ -164,7 +164,6 @@ process_json_files "$TABLE_DIR"
 
 echo ">>  [04_add_question_cards.sh] Script executed successfully!"
 echo ""
-echo ""
 sleep 2
 
 
