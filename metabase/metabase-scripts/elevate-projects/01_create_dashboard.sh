@@ -7,15 +7,14 @@
 #External Path 
 report_path=$1
 folder_name=$(basename "$report_path")
-
 report_name=$(echo "$folder_name" | tr -s '-' ' ')
 
-# Color codes for terminal output
+# ANSI escape codes for colors
 BOLD_YELLOW="\033[1;33m"
-NC="\033[0m" # No Color (reset to default)
+NC="\033[0m" 
+
 echo -e "${BOLD_YELLOW}         :: Starting up the $report_name ::          ${NC}"
 echo -e "${NC}"
-
 
 # Metabase server URL and credentials
 METABASE_URL="http://localhost:3000"

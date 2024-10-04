@@ -4,8 +4,10 @@
 ## values in the dataset_query object based on IDs read from a configuration file.
 ## It ensures that the IDs are numeric and processes each subdirectory if it exists.
 
+# ANSI escape codes for colors
 BOLD_YELLOW="\033[1;33m"
 NC="\033[0m"
+
 echo -e "${BOLD_YELLOW}       :: Updating all the request bodies in JSON files ::        ${NC}"
 echo -e "${NC}"
 

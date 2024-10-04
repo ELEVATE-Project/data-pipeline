@@ -4,9 +4,10 @@
 ## a session token and database ID specified in a metadata file, extracts table and field names along with their IDs,
 ## and appends this information to the same metadata file.
 
+# ANSI escape codes for colors
 BOLD_YELLOW="\033[1;33m"
-
 NC="\033[0m"
+
 echo -e "${BOLD_YELLOW}          :: Get the required table data from Metabase ::              ${NC}"
 echo -e "${NC}"
 

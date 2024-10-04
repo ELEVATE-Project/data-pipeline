@@ -4,10 +4,11 @@
 ## It reads the Url, session token and dashboard ID from a file, processes JSON files from specified directories,
 ## creates question cards via API calls, and updates the dashboard with the new cards.
 
+# ANSI escape codes for colors
 BOLD_YELLOW="\033[1;33m"
 BOLD_GREEN="\033[1;32m"
-
 NC="\033[0m"
+
 echo -e "${BOLD_YELLOW}     :: Creating question card and adding them to dashboard ::      ${NC}"
 echo -e "${NC}"
 
@@ -165,7 +166,6 @@ process_json_files "$TABLE_DIR"
 echo ">>  [04_add_question_cards.sh] Script executed successfully!"
 echo ""
 sleep 2
-
 
 # Call the 05_add_parameters.sh script
 ./05_add_parameters.sh $report_path
