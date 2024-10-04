@@ -4,15 +4,17 @@
 ## a session token and database ID specified in a metadata file, extracts table and field names along with their IDs,
 ## and appends this information to the same metadata file.
 
+# ANSI escape codes for colors
 BOLD_YELLOW="\033[1;33m"
-BOLD_GREEN="\033[1;32m"
-
 NC="\033[0m"
+
 echo -e "${BOLD_YELLOW}          :: Get the required table data from Metabase ::              ${NC}"
 echo -e "${NC}"
 
+#External Path 
+report_path=$1
 # Check if metadata_file.txt exists
-METADATA_FILE="./metadata_file.txt"
+METADATA_FILE="$report_path/metadata_file.txt"
 if [ ! -f "$METADATA_FILE" ]; then
     echo "Error: metadata_file.txt not found."
     exit 1
@@ -69,8 +71,7 @@ echo ">>  Saved the Ids to Metadata File"
 
 echo ">>  [02_get_table_data.sh] Script executed successfully!"
 echo ""
-echo ""
 sleep 2
 
 # Call the 03_update_json_files.sh script
-./03_update_json_files.sh
+./03_update_json_files.sh $report_path

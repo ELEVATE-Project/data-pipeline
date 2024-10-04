@@ -4,21 +4,25 @@
 ## It reads the Url, session token and dashboard ID from a file, processes JSON files from specified directories,
 ## creates question cards via API calls, and updates the dashboard with the new cards.
 
+# ANSI escape codes for colors
 BOLD_YELLOW="\033[1;33m"
 BOLD_GREEN="\033[1;32m"
-
 NC="\033[0m"
+
 echo -e "${BOLD_YELLOW}     :: Creating question card and adding them to dashboard ::      ${NC}"
 echo -e "${NC}"
 
+#External Path 
+report_path=$1
+
 # Directory setup
-JSON_DIR="./json"
+JSON_DIR="$report_path/json"
 BIG_NUMBER_DIR="$JSON_DIR/big-number"
 GRAPH_DIR="$JSON_DIR/graph"
 TABLE_DIR="$JSON_DIR/table"
 
 # Check if metadata_file.txt exists
-METADATA_FILE="./metadata_file.txt"
+METADATA_FILE="$report_path/metadata_file.txt"
 if [ ! -f "$METADATA_FILE" ]; then
     echo "Error: metadata_file.txt not found."
     exit 1
@@ -161,8 +165,7 @@ process_json_files "$TABLE_DIR"
 
 echo ">>  [04_add_question_cards.sh] Script executed successfully!"
 echo ""
-echo ""
 sleep 2
 
 # Call the 05_add_parameters.sh script
-./05_add_parameters.sh
+./05_add_parameters.sh $report_path

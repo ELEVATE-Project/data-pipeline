@@ -1,9 +1,9 @@
 {
   "questionCard": {
     "name": "Improvement projects status",
-    "collection_id": 168,
+    "collection_id": 111,
     "dataset_query": {
-      "database": 34,
+      "database": 2,
       "type": "native",
       "native": {
         "query": "SELECT \n    s.programname AS \"Program Name\",\n    s.name AS \"Improvement Project Name\",\n    p.statename,\n    p.districtname AS \"District Name\",\n    p.orgname AS \"Organisation Name\",\n    SUM(CASE WHEN p.status = 'started' THEN 1 ELSE 0 END) AS \"Started\",\n    SUM(CASE WHEN p.status = 'inProgress' THEN 1 ELSE 0 END) AS \"In-Progress\",\n    SUM(CASE WHEN p.status = 'inProgress' AND p.evidence IS NOT NULL THEN 1 ELSE 0 END) AS \"In progress projects with evidence\",\n    SUM(CASE WHEN p.status = 'submitted' THEN 1 ELSE 0 END) AS \"Submitted\"\nFROM projects p\nJOIN solutions s ON p.solutionid = s.solutionid\nWHERE 1=1\n[[AND statename = {{state_param}}]]\nGROUP BY s.programname, s.name,p.statename, p.districtname, p.orgname\nORDER BY \"Submitted\" DESC; ",
@@ -23,7 +23,7 @@
     }
   },
   "dashCards": {
-    "card_id": 475,
+    "card_id": 474,
     "dashboard_tab_id": null,
     "id": 9,
     "parameter_mappings": [],

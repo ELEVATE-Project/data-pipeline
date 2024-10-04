@@ -4,19 +4,24 @@
 ## values in the dataset_query object based on IDs read from a configuration file.
 ## It ensures that the IDs are numeric and processes each subdirectory if it exists.
 
+# ANSI escape codes for colors
 BOLD_YELLOW="\033[1;33m"
 NC="\033[0m"
+
 echo -e "${BOLD_YELLOW}       :: Updating all the request bodies in JSON files ::        ${NC}"
 echo -e "${NC}"
 
+#External Path 
+report_path=$1
+
 # Directory setup
-JSON_DIR="./json"
+JSON_DIR="$report_path/json"
 BIG_NUMBER_DIR="$JSON_DIR/big-number"
 GRAPH_DIR="$JSON_DIR/graph"
 TABLE_DIR="$JSON_DIR/table"
 
 # Check if metadata_file.txt exists
-METADATA_FILE="./metadata_file.txt"
+METADATA_FILE="$report_path/metadata_file.txt"
 if [ ! -f "$METADATA_FILE" ]; then
     echo "Error: metadata_file.txt not found."
     exit 1
@@ -112,8 +117,7 @@ update_json_files "$TABLE_DIR"
 echo ">>  JSON files have been updated with DATABASE_ID=$DATABASE_ID and COLLECTION_ID=$COLLECTION_ID inside questionCard."
 echo ">>  [03_update_json_files.sh] Script executed successfully!"
 echo ""
-echo ""
 sleep 2
 
 # Call the 04_add_question_cards.sh script
-./04_add_question_cards.sh
+./04_add_question_cards.sh $report_path

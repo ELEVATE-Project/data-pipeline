@@ -3,14 +3,18 @@
 ## This script retrieves a Metabase dashboard's existing parameters using a session token and dashboard ID,
 ## appends new filtering parameters to the existing ones, and updates the dashboard with the modified parameters.
 
+# ANSI escape codes for colors
 BOLD_YELLOW="\033[1;33m"
-
 NC="\033[0m"
+
 echo -e "${BOLD_YELLOW}           :: Update the dashboard with new parameters ::           ${NC}"
 echo -e "${NC}"
 
+#External Path 
+report_path=$1
+
 # Check if metadata_file.txt exists
-METADATA_FILE="./metadata_file.txt"
+METADATA_FILE="$report_path/metadata_file.txt"
 if [ ! -f "$METADATA_FILE" ]; then
     echo "Error: metadata_file.txt not found."
     exit 1

@@ -1,9 +1,9 @@
 {
   "questionCard": {
     "name": "Status of improvement projects",
-    "collection_id": 168,
+    "collection_id": 111,
     "dataset_query": {
-      "database": 34,
+      "database": 2,
       "type": "native",
       "native": {
         "query": "SELECT DISTINCT(statename) AS \"State\", COUNT(DISTINCT CASE WHEN status = 'started' THEN projectid END) AS \"Started Projects\", COUNT(DISTINCT CASE WHEN status = 'inProgress' THEN projectid END) AS \"In Progress Projects\", COUNT(DISTINCT CASE WHEN status = 'submitted' THEN projectid END) AS \"Submitted Projects\", COUNT(DISTINCT projectid) AS \"Total Projects\" FROM projects WHERE 1=1 [[AND statename = {{state_param}}]] GROUP BY statename ORDER BY \"Total Projects\" DESC;",
@@ -57,7 +57,7 @@
     }
   },
   "dashCards": {
-    "card_id": 473,
+    "card_id": 472,
     "dashboard_tab_id": null,
     "id": 7,
     "parameter_mappings": [],
