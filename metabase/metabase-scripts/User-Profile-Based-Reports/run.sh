@@ -17,7 +17,8 @@ target_dir="."
 main_dir_path=$(pwd)
 first_dir_processed=false
 report_name="$1"
-parameter_value="$2"
+parameter_value1="$2"
+parameter_value2="$3"
 echo "$parameter_value"
 # Loop through subdirectories & Execute the script
 for dir in "$target_dir"/*; do
@@ -31,13 +32,16 @@ for dir in "$target_dir"/*; do
       $main_dir_path/01_create_dashboard.sh "$report_path" "$main_dir_path" "$report_name" 
       first_dir_processed=true
       if [ "$report_name" == "State-Report" ]; then
-          echo "Running state-Report.sh"
-          $main_dir_path/State-Report.sh "$report_path" "$main_dir_path" "$parameter_value"
+          echo "Running State-Report.sh"
+          $main_dir_path/State-Report.sh "$report_path" "$main_dir_path" "$parameter_value1"
+      elif [ "$report_name" == "District-Report" ]; then
+          echo "Running District-Report.sh"
+          $main_dir_path/District-Report.sh "$report_path" "$main_dir_path" "$parameter_value1" "$parameter_value2"
       elif [ "$report_name" == "Program-Report" ]; then
-          echo "Running program_report.sh"
-          $main_dir_path/Program-Report.sh "$report_path" "$main_dir_path" "$parameter_value"
+          echo "Running Program-Report.sh"
+          $main_dir_path/Program-Report.sh "$report_path" "$main_dir_path" "$parameter_value1"
       elif [ "$report_name" == "Super-Admin-Report" ]; then
-          echo "Running Super-admin-report.sh"
+          echo "Running Super-Admin-Report.sh"
           $main_dir_path/Super-Admin-Report.sh "$report_path" "$main_dir_path" 
       else
           echo "Invalid report name. Valid options are: State-Report, Program-Report, Super-Admin-Report."
