@@ -18,15 +18,15 @@ echo -e "${NC}"
 
 # Metabase server URL and credentials
 METABASE_URL="http://localhost:3000"
-METABASE_USERNAME="prashanth@shikshalokam.org"
-METABASE_PASSWORD="Pg@9890360246"
+METABASE_USERNAME="analytics@shikshalokam.org"
+METABASE_PASSWORD="analytics@123"
 
 # Collection and dashboard details
 COLLECTION_NAME=$(echo "$report_name" | sed 's/ Report$//; s/$/ Collection/')
 DASHBOARD_NAME="$report_name"
 
 OUTPUT_FILE="$main_dir_path/metadata_file.txt"
-DATABASE_NAME="meta-data" #Local DB
+DATABASE_NAME="Elevate-data" #Local DB
 
 # Check if required commands are installed
 if ! command -v curl &> /dev/null; then
