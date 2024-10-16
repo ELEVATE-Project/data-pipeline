@@ -1,0 +1,36 @@
+{
+  "questionCard": {
+    "name": "Improvement projects status",
+    "collection_id": 212,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "query": "SELECT \n    s.programname AS \"Program Name\",\n    s.name AS \"Improvement Project Name\",\n    p.statename,\n    p.districtname AS \"District Name\",\n    p.orgname AS \"Organisation Name\",\n    SUM(CASE WHEN p.status = 'started' THEN 1 ELSE 0 END) AS \"Started\",\n    SUM(CASE WHEN p.status = 'inProgress' THEN 1 ELSE 0 END) AS \"In-Progress\",\n    SUM(CASE WHEN p.status = 'inProgress' AND p.evidence IS NOT NULL THEN 1 ELSE 0 END) AS \"In progress projects with evidence\",\n    SUM(CASE WHEN p.status = 'submitted' THEN 1 ELSE 0 END) AS \"Submitted\"\nFROM projects p\nJOIN solutions s ON p.solutionid = s.solutionid\nWHERE 1=1\n[[AND statename = {{state_param}}]]\nGROUP BY s.programname, s.name,p.statename, p.districtname, p.orgname\nORDER BY \"Submitted\" DESC; ",
+        "template-tags": {
+          "state_param": {
+            "type": "text",
+            "name": "state_param",
+            "display-name": "State Param"
+          }
+        }
+      }
+    },
+    "display": "table",
+    "visualization_settings": {
+      "table.pivot_column": "Program Name",
+      "table.cell_column": "Started"
+    }
+  },
+  "dashCards": {
+    "card_id": 1418,
+    "dashboard_tab_id": null,
+    "id": 9,
+    "parameter_mappings": [],
+    "col": 0,
+    "row": 15,
+    "size_x": 24,
+    "size_y": 10,
+    "visualization_settings": {}
+  }
+}

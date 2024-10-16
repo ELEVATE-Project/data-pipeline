@@ -1,0 +1,46 @@
+{
+  "questionCard": {
+    "name": "No. of certificates issued",
+    "collection_id": 258,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "query": "SELECT SUM(CAST(taskcount AS INTEGER)) AS total_tasks FROM projects;",
+        "template-tags": {
+          "state_param": {
+            "dimension": [
+              null,
+              80
+            ]
+          },
+          "district_param": {
+            "dimension": [
+              null,
+              87
+            ]
+          },
+          "program_param": {
+            "dimension": [
+              null,
+              118
+            ]
+          }
+        }
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {}
+  },
+  "dashCards": {
+    "card_id": 1767,
+    "dashboard_tab_id": null,
+    "id": 6,
+    "parameter_mappings": [],
+    "col": 16,
+    "row": 6,
+    "size_x": 8,
+    "size_y": 3,
+    "visualization_settings": {}
+  }
+}
