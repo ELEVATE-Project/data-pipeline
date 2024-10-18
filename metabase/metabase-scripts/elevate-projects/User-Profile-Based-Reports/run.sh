@@ -91,4 +91,4 @@ for dir in "$target_dir"/*; do
   fi
 done
 
-echo "Finished processing directories in $target_dir"
+echo "Finished processing directories"

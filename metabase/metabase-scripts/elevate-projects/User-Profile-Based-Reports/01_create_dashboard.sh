@@ -20,8 +20,8 @@ echo -e "${NC}"
 
 # Metabase server URL and credentials
 METABASE_URL="http://localhost:3000"
-METABASE_USERNAME="prashanth@shikshalokam.org"
-METABASE_PASSWORD="Pg@9890360246"
+METABASE_USERNAME="analytics@shikshalokam.org"
+METABASE_PASSWORD="analytics@123"
 
 # Collection and dashboard details
 if [[ "$report_name" == "District Report" ]]; then
@@ -39,7 +39,7 @@ echo "COLLECTION_NAME: $COLLECTION_NAME"
 echo "DASHBOARD_NAME: $DASHBOARD_NAME"
 
 OUTPUT_FILE="$main_dir_path/metadata_file.txt"
-DATABASE_NAME="meta-data" # Local DB
+DATABASE_NAME="Elevate-data" # Local DB
 METADATA_LOG_FILE="$main_dir_path/$3-Metadata.txt"
 
 # Check if required commands are installed
@@ -138,7 +138,7 @@ echo ">>  Saving IDs to $OUTPUT_FILE..."
 
 # Save the same output to another file with a timestamp
 {
-    echo "---------------------------------------"
+    echo "=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+="
     echo "---------$DASHBOARD_NAME---------------"
     echo "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
     echo "COLLECTION_ID: $COLLECTION_ID"
