@@ -6,27 +6,139 @@
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT \n    s.programname AS \"Program Name\",\n    s.name AS \"Improvement Project Name\",\n    p.statename,\n    p.districtname AS \"District Name\",\n    p.orgname AS \"Organisation Name\",\n    SUM(CASE WHEN p.status = 'started' THEN 1 ELSE 0 END) AS \"Started\",\n    SUM(CASE WHEN p.status = 'inProgress' THEN 1 ELSE 0 END) AS \"In-Progress\",\n    SUM(CASE WHEN p.status = 'inProgress' AND p.evidence IS NOT NULL THEN 1 ELSE 0 END) AS \"In progress projects with evidence\",\n    SUM(CASE WHEN p.status = 'submitted' THEN 1 ELSE 0 END) AS \"Submitted\"\nFROM projects p\nJOIN solutions s ON p.solutionid = s.solutionid\nWHERE 1=1\n[[AND statename = {{state_param}}]]\nGROUP BY s.programname, s.name,p.statename, p.districtname, p.orgname\nORDER BY \"Submitted\" DESC; ",
         "template-tags": {
           "state_param": {
-            "type": "text",
+            "type": "dimension",
             "name": "state_param",
-            "display-name": "State Param"
+            "id": "87b1de3a-c3b1-4c83-bf9a-de2d4a00f2b8",
+            "display-name": "State Param",
+            "default": null,
+            "dimension": [
+              "field",
+              80,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "program_param": {
+            "type": "dimension",
+            "name": "program_param",
+            "id": "e14bf3be-6cd0-481e-9cdc-4fa7a28e72c2",
+            "display-name": "Program Param",
+            "default": null,
+            "dimension": [
+              "field",
+              118,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "district_param": {
+            "type": "dimension",
+            "name": "district_param",
+            "id": "40bac699-f5eb-4780-869c-1c2aedc123d7",
+            "display-name": "District Param",
+            "default": null,
+            "dimension": [
+              "field",
+              87,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
           }
-        }
+        },
+        "query": "SELECT \n    solutions.programname AS \"Program Name\",\n    solutions.name AS \"Improvement Project Name\",\n    projects.statename,\n    projects.districtname AS \"District Name\",\n    projects.orgname AS \"Organisation Name\",\n    SUM(CASE WHEN projects.status = 'started' THEN 1 ELSE 0 END) AS \"Started\",\n    SUM(CASE WHEN projects.status = 'inProgress' THEN 1 ELSE 0 END) AS \"In-Progress\",\n    SUM(CASE WHEN projects.status = 'inProgress' AND projects.evidence IS NOT NULL THEN 1 ELSE 0 END) AS \"In progress projects with evidence\",\n    SUM(CASE WHEN projects.status = 'submitted' THEN 1 ELSE 0 END) AS \"Submitted\"\nFROM projects \nJOIN solutions  ON projects.solutionid = solutions.solutionid\nWHERE projects.statename is not null \n[[AND {{state_param}}]]\n[[AND {{program_param}}]]\n[[AND {{district_param}}]]\nGROUP BY solutions.programname, solutions.name,projects.statename, projects.districtname, projects.orgname\nORDER BY \"Submitted\" DESC; "
       }
     },
     "display": "table",
     "visualization_settings": {
       "table.pivot_column": "Program Name",
       "table.cell_column": "Started"
-    }
+    },
+    "parameters": [
+      {
+        "id": "87b1de3a-c3b1-4c83-bf9a-de2d4a00f2b8",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "state_param"
+          ]
+        ],
+        "name": "State Param",
+        "slug": "state_param"
+      },
+      {
+        "id": "e14bf3be-6cd0-481e-9cdc-4fa7a28e72c2",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "program_param"
+          ]
+        ],
+        "name": "Program Param",
+        "slug": "program_param"
+      },
+      {
+        "id": "40bac699-f5eb-4780-869c-1c2aedc123d7",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "district_param"
+          ]
+        ],
+        "name": "District Param",
+        "slug": "district_param"
+      }
+    ]
   },
   "dashCards": {
     "card_id": 474,
     "dashboard_tab_id": null,
     "id": 9,
-    "parameter_mappings": [],
+    "parameter_mappings": [
+      {
+        "parameter_id": "c32c8fc5",
+        "card_id": 2236,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "state_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "8c7d86ea",
+        "card_id": 2236,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "program_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "74a10335",
+        "card_id": 2236,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "district_param"
+          ]
+        ]
+      }
+    ],
     "col": 0,
     "row": 13,
     "size_x": 24,
