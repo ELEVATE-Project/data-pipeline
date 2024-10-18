@@ -1,0 +1,24 @@
+---------------------------------------
+---------Program Report---------------
+Timestamp: 2024-10-17 19:23:01
+COLLECTION_ID: 281
+DASHBOARD_ID: 283
+DATABASE_ID: 2
+METABASE_URL: http://localhost:3000
+SESSION_TOKEN: ae2d41ec-1198-42e5-aa31-2c5c40444942
+---------------------------------------
+---------Program Report [DCPCR School Development Index 2018-19]---------------
+Timestamp: 2024-10-17 19:55:18
+COLLECTION_ID: 286
+DASHBOARD_ID: 286
+DATABASE_ID: 2
+METABASE_URL: http://localhost:3000
+SESSION_TOKEN: 8ee1a723-ec76-46d4-8d0c-f36e86d758a7
+---------------------------------------
+---------Program Report [DCPCR School Development Index 2018-19]---------------
+Timestamp: 2024-10-18 00:03:21
+COLLECTION_ID: 295
+DASHBOARD_ID: 295
+DATABASE_ID: 2
+METABASE_URL: http://localhost:3000
+SESSION_TOKEN: ea6745fd-0ca7-4547-9bbf-7cc61a61b4b2

@@ -1,0 +1,75 @@
+---------------------------------------
+Timestamp: 2024-10-17 18:54:46
+COLLECTION_ID: 275
+DASHBOARD_ID: null
+DATABASE_ID: 2
+METABASE_URL: http://localhost:3000
+SESSION_TOKEN: 9f423fc8-899b-423e-acc7-5cef2dd2bd73
+---------------------------------------
+Timestamp: 2024-10-17 18:59:33
+COLLECTION_ID: 276
+DASHBOARD_ID: null
+DATABASE_ID: 2
+METABASE_URL: http://localhost:3000
+SESSION_TOKEN: 574caef6-20db-4826-a2c9-222d289f17cf
+---------------------------------------
+Timestamp: 2024-10-17 19:04:41
+COLLECTION_ID: 277
+DASHBOARD_ID: 279
+DATABASE_ID: 2
+METABASE_URL: http://localhost:3000
+SESSION_TOKEN: fb97f222-78af-4123-b48c-80fa909f38cd
+---------------------------------------
+Timestamp: 2024-10-17 19:10:16
+COLLECTION_ID: 278
+DASHBOARD_ID: 280
+DATABASE_ID: 2
+METABASE_URL: http://localhost:3000
+SESSION_TOKEN: f0340ce3-e968-4881-a875-657c964288af
+---------------------------------------
+Timestamp: 2024-10-17 19:12:08
+COLLECTION_ID: 279
+DASHBOARD_ID: 281
+DATABASE_ID: 2
+METABASE_URL: http://localhost:3000
+SESSION_TOKEN: ac5d0545-e184-4d3c-a16b-da6823f7d4eb
+---------------------------------------
+---------Super Admin Report []---------------
+Timestamp: 2024-10-17 20:25:44
+COLLECTION_ID: 288
+DASHBOARD_ID: 288
+DATABASE_ID: 2
+METABASE_URL: http://localhost:3000
+SESSION_TOKEN: 5ed4a464-f902-495b-b12e-521c5a222f62
+---------------------------------------
+---------Super Admin Report []---------------
+Timestamp: 2024-10-17 22:47:06
+COLLECTION_ID: 289
+DASHBOARD_ID: 289
+DATABASE_ID: 2
+METABASE_URL: http://localhost:3000
+SESSION_TOKEN: c47feef6-149d-4105-a693-60a22a193d3e
+---------------------------------------
+---------Super Admin Report []---------------
+Timestamp: 2024-10-17 23:05:46
+COLLECTION_ID: 290
+DASHBOARD_ID: 290
+DATABASE_ID: 2
+METABASE_URL: http://localhost:3000
+SESSION_TOKEN: 6c36445e-6359-4f70-b698-bc122f677ce3
+---------------------------------------
+---------Super Admin Report []---------------
+Timestamp: 2024-10-17 23:32:52
+COLLECTION_ID: 291
+DASHBOARD_ID: 291
+DATABASE_ID: 2
+METABASE_URL: http://localhost:3000
+SESSION_TOKEN: 8dec9939-00bd-4358-b9f3-9c6f24e5201d
+---------------------------------------
+---------Super Admin Report---------------
+Timestamp: 2024-10-17 23:39:49
+COLLECTION_ID: 292
+DASHBOARD_ID: 292
+DATABASE_ID: 2
+METABASE_URL: http://localhost:3000
+SESSION_TOKEN: 3d5f0c3c-21ab-4749-9eca-36f4cdaa36bf
