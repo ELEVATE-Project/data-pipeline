@@ -1,10 +1,10 @@
-package org.shikshalokam.project.spec
+package org.shikshalokam.project.stream.processor.spec
 
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
-import org.shikshalokam.job.project.domain.Event
+import org.shikshalokam.job.project.stream.processor.domain.Event
 import org.shikshalokam.job.util.JSONUtil
-import org.shikshalokam.project.fixture.EventsMock
+import org.shikshalokam.project.stream.processor.fixture.EventsMock
 
 class ProjectEventSource extends SourceFunction[Event] {
 

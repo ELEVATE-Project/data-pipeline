@@ -16,7 +16,7 @@
     <name>Projects-Job</name>
 
     <modules>
-        <module>project-event-processor</module>
+        <module>project-stream-processor</module>
     </modules>
 
     <build>

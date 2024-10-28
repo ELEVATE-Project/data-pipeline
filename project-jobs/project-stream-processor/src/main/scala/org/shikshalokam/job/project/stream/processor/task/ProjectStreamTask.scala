@@ -1,4 +1,4 @@
-package org.shikshalokam.job.project.task
+package org.shikshalokam.job.project.stream.processor.task
 
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -6,8 +6,8 @@ import org.apache.flink.api.java.typeutils.TypeExtractor
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.shikshalokam.job.connector.FlinkKafkaConnector
-import org.shikshalokam.job.project.domain.Event
-import org.shikshalokam.job.project.functions.ProjectStreamFunction
+import org.shikshalokam.job.project.stream.processor.domain.Event
+import org.shikshalokam.job.project.stream.processor.functions.ProjectStreamFunction
 import org.shikshalokam.job.util.FlinkUtil
 
 import java.io.File

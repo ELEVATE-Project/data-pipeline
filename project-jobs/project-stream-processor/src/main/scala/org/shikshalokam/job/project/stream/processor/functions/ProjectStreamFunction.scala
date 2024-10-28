@@ -1,10 +1,10 @@
-package org.shikshalokam.job.project.functions
+package org.shikshalokam.job.project.stream.processor.functions
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
-import org.shikshalokam.job.project.domain.Event
-import org.shikshalokam.job.project.task.ProjectStreamConfig
+import org.shikshalokam.job.project.stream.processor.domain.Event
+import org.shikshalokam.job.project.stream.processor.task.ProjectStreamConfig
 import org.shikshalokam.job.util.PostgresUtil
 import org.shikshalokam.job.{BaseProcessFunction, Metrics}
 import org.slf4j.LoggerFactory

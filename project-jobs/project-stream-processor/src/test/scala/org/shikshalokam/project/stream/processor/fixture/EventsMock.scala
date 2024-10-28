@@ -1,4 +1,4 @@
-package org.shikshalokam.project.fixture
+package org.shikshalokam.project.stream.processor.fixture
 
 object EventsMock {
 
