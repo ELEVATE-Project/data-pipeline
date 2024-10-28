@@ -1,4 +1,4 @@
-package org.shikshalokam.job.project.domain
+package org.shikshalokam.job.project.stream.processor.domain
 
 import org.shikshalokam.job.domain.reader.JobRequest
 

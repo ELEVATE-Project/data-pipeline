@@ -1,4 +1,4 @@
-package org.shikshalokam.project.spec
+package org.shikshalokam.project.stream.processor.spec
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -9,8 +9,8 @@ import org.mockito.Mockito
 import org.mockito.Mockito.when
 import org.shikshalokam.BaseTestSpec
 import org.shikshalokam.job.connector.FlinkKafkaConnector
-import org.shikshalokam.job.project.domain.Event
-import org.shikshalokam.job.project.task.{ProjectStreamConfig, ProjectStreamTask}
+import org.shikshalokam.job.project.stream.processor.domain.Event
+import org.shikshalokam.job.project.stream.processor.task.{ProjectStreamConfig, ProjectStreamTask}
 
 
 class ProjectStreamFunctionTestSpec extends BaseTestSpec {
