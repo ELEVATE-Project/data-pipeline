@@ -15,10 +15,10 @@ class ProjectDashboardConfig(override val config: Config) extends BaseJobConfig(
   val inputTopic: String = config.getString("kafka.input.topic")
 
   // Parallelism
-  val mlProjectsParallelism: Int = config.getInt("task.ml.projects.parallelism")
+  val mlProjectsParallelism: Int = config.getInt("task.sl.projects.dashboard.parallelism")
 
   // Consumers
-  val mlProjectsConsumer: String = "ml-project-consumer"
+  val metabaseDashboardProducer: String = "project-dashboard-consumer"
 
   // Functions
   val projectsDashboardFunction: String = "ProjectDashboardFunction"

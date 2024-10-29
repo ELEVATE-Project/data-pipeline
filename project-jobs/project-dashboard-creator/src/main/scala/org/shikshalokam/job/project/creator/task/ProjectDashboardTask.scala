@@ -21,8 +21,8 @@ class ProjectDashboardTask(config: ProjectDashboardConfig, kafkaConnector: Flink
     implicit val eventTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
     val source = kafkaConnector.kafkaJobRequestSource[Event](config.inputTopic)
 
-    env.addSource(source).name(config.mlProjectsConsumer)
-      .uid(config.mlProjectsConsumer).setParallelism(config.mlProjectsParallelism).rebalance
+    env.addSource(source).name(config.metabaseDashboardProducer)
+      .uid(config.metabaseDashboardProducer).setParallelism(config.mlProjectsParallelism).rebalance
       .process(new ProjectDashboardFunction(config))
       .name(config.projectsDashboardFunction).uid(config.projectsDashboardFunction)
       .setParallelism(config.mlProjectsParallelism)
