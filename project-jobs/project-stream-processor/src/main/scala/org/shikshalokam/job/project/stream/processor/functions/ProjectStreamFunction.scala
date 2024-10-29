@@ -5,10 +5,12 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.shikshalokam.job.project.stream.processor.domain.Event
 import org.shikshalokam.job.project.stream.processor.task.ProjectStreamConfig
-import org.shikshalokam.job.util.PostgresUtil
+import org.shikshalokam.job.util.{PostgresUtil, ScalaJsonUtil}
 import org.shikshalokam.job.{BaseProcessFunction, Metrics}
 import org.slf4j.LoggerFactory
 
+import java.util
+import java.util.HashMap
 import scala.collection.immutable._
 
 class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInfo: TypeInformation[Event], @transient var postgresUtil: PostgresUtil = null)
@@ -260,6 +262,12 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
 
     }
 
+    println("calling generateFailedEvents method")
+    val jobName = "ExampleJob"
+    val errMessage = "An error occurred"
+    // Call the function
+    val result = pushProjectDashboardEvents(jobName, errMessage, context)
+
     println(s"***************** End of Processing the Project Event *****************\n")
 
   }
@@ -326,5 +334,22 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     }.getOrElse("Null")
   }
 
+  def pushProjectDashboardEvents(jobName: String, errMessage: String, context: ProcessFunction[Event, Event]#Context): util.HashMap[String, AnyRef] = {
+    println("***************** Inside generateFailedEvents method *****************\n")
+    val objects = new util.HashMap[String, AnyRef]() {
+      put("jobName", jobName)
+      put("failInfo", new HashMap[String, AnyRef]() {
+        put("errorCode", "DATA_ERROR")
+        put("error", errMessage)
+      })
+    }
+    val event = ScalaJsonUtil.serialize(objects)
+    logger.info("MergeCourseBatch: Course batch updated failed")
+    context.output(config.eventOutputTag, event)
+    println(event)
+    println(objects)
+    objects
+
+  }
 
 }

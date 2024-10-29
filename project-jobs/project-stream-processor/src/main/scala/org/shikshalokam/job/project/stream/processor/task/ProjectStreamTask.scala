@@ -19,13 +19,30 @@ class ProjectStreamTask(config: ProjectStreamConfig, kafkaConnector: FlinkKafkaC
   def process(): Unit = {
     implicit val env: StreamExecutionEnvironment = FlinkUtil.getExecutionContext(config)
     implicit val eventTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
+    implicit val stringTypeInfo: TypeInformation[String] = TypeExtractor.getForClass(classOf[String])
     val source = kafkaConnector.kafkaJobRequestSource[Event](config.inputTopic)
 
-    env.addSource(source).name(config.mlProjectsConsumer)
-      .uid(config.mlProjectsConsumer).setParallelism(config.mlProjectsParallelism).rebalance
+    //    env.addSource(source).name(config.mlProjectsConsumer)
+    //      .uid(config.mlProjectsConsumer).setParallelism(config.mlProjectsParallelism).rebalance
+    //      .process(new ProjectStreamFunction(config))
+    //      .name(config.projectsStreamFunction).uid(config.projectsStreamFunction)
+    //      .setParallelism(config.mlProjectsParallelism)
+    //
+    //    env.execute(config.jobName)
+
+
+    val progressStream = env.addSource(source).name(config.projectsStreamConsumer)
+      .uid(config.projectsStreamConsumer).setParallelism(config.kafkaConsumerParallelism)
+      .rebalance
       .process(new ProjectStreamFunction(config))
       .name(config.projectsStreamFunction).uid(config.projectsStreamFunction)
-      .setParallelism(config.mlProjectsParallelism)
+      .setParallelism(config.projectsStreamParallelism)
+
+    progressStream.getSideOutput(config.eventOutputTag)
+      .addSink(kafkaConnector.kafkaStringSink(config.outputTopic))
+      .name(config.metabaseDashboardProducer)
+      .uid(config.metabaseDashboardProducer)
+      .setParallelism(config.projectsDashboardParallelism)
 
     env.execute(config.jobName)
   }

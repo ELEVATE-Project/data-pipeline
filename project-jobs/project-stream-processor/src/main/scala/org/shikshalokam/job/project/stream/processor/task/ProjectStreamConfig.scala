@@ -3,6 +3,7 @@ package org.shikshalokam.job.project.stream.processor.task
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.TypeExtractor
+import org.apache.flink.streaming.api.scala.OutputTag
 import org.shikshalokam.job.project.stream.processor.domain.Event
 import org.shikshalokam.job.BaseJobConfig
 
@@ -12,12 +13,19 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
 
   // Kafka Topics Configuration
   val inputTopic: String = config.getString("kafka.input.topic")
+  val outputTopic: String = config.getString("kafka.output.topic")
+
+  // Output Tags
+  val eventOutputTag: OutputTag[String] = OutputTag[String]("project-dashboard-output-event")
 
   // Parallelism
-  val mlProjectsParallelism: Int = config.getInt("task.ml.projects.parallelism")
+  override val kafkaConsumerParallelism: Int = config.getInt("task.consumer.parallelism")
+  val projectsStreamParallelism: Int = config.getInt("task.sl.projects.stream.parallelism")
+  val projectsDashboardParallelism: Int = config.getInt("task.sl.projects.dashboard.parallelism")
 
   // Consumers
-  val mlProjectsConsumer: String = "ml-project-consumer"
+  val projectsStreamConsumer: String = "project-stream-consumer"
+  val metabaseDashboardProducer = "project-dashboard-producer"
 
   // Functions
   val projectsStreamFunction: String = "ProjectStreamFunction"
