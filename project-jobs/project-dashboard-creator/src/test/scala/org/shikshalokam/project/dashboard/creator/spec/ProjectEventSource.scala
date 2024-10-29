@@ -7,7 +7,7 @@ import org.shikshalokam.job.util.JSONUtil
 import org.shikshalokam.project.dashboard.creator.fixture.EventsMock
 
 
-class ProjectEventDashboardSource extends SourceFunction[Event] {
+class ProjectEventSource extends SourceFunction[Event] {
 
   override def run(ctx: SourceContext[Event]): Unit = {
     ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.PROJECT_EVENT_1), 0, 0))

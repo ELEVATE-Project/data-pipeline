@@ -43,7 +43,7 @@ class ProjectDashboardFunctionTestSpec extends BaseTestSpec {
 
   def initialize() {
     when(mockKafkaUtil.kafkaJobRequestSource[Event](jobConfig.inputTopic))
-      .thenReturn(new ProjectEventDashboardSource)
+      .thenReturn(new ProjectEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.inputTopic)).thenReturn(new GenerateProjectSink)
   }
 
