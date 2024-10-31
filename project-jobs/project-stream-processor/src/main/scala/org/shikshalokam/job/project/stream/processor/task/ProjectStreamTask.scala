@@ -13,7 +13,6 @@ import org.shikshalokam.job.util.FlinkUtil
 import java.io.File
 
 class ProjectStreamTask(config: ProjectStreamConfig, kafkaConnector: FlinkKafkaConnector){
-  println("inside ProjectStreamTask class")
 
   private val serialVersionUID = -7729362727131516112L
   def process(): Unit = {
@@ -21,15 +20,6 @@ class ProjectStreamTask(config: ProjectStreamConfig, kafkaConnector: FlinkKafkaC
     implicit val eventTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
     implicit val stringTypeInfo: TypeInformation[String] = TypeExtractor.getForClass(classOf[String])
     val source = kafkaConnector.kafkaJobRequestSource[Event](config.inputTopic)
-
-    //    env.addSource(source).name(config.mlProjectsConsumer)
-    //      .uid(config.mlProjectsConsumer).setParallelism(config.mlProjectsParallelism).rebalance
-    //      .process(new ProjectStreamFunction(config))
-    //      .name(config.projectsStreamFunction).uid(config.projectsStreamFunction)
-    //      .setParallelism(config.mlProjectsParallelism)
-    //
-    //    env.execute(config.jobName)
-
 
     val progressStream = env.addSource(source).name(config.projectsStreamConsumer)
       .uid(config.projectsStreamConsumer).setParallelism(config.kafkaConsumerParallelism)
@@ -49,7 +39,6 @@ class ProjectStreamTask(config: ProjectStreamConfig, kafkaConnector: FlinkKafkaC
 }
 
 object ProjectStreamTask {
-  println("inside ProjectStreamTask object")
   def main(args: Array[String]): Unit = {
     println("Starting up the Project Stream Job")
     val configFilePath = Option(ParameterTool.fromArgs(args).get("config.file.path"))
