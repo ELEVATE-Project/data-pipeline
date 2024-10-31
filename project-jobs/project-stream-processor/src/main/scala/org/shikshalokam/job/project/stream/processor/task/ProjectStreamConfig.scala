@@ -47,7 +47,10 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
   val solutionsTable = "Solutions"
   val projectsTable = "Projects"
   val tasksTable = "Tasks"
-  val organisationsTable = "Organisations"
+  val adminDashboardTable = "AdminDashboardMetadata"
+  val stateDashboardTable = "StateDashboardMetadata"
+  val districtDashboardTable = "DistrictDashboardMetadata"
+  val programDashboardTable = "ProgramDashboardMetadata"
 
   val createSolutionsTable =
     """CREATE TABLE IF NOT EXISTS Solutions (
@@ -119,4 +122,57 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |    evidence TEXT,
       |    evidenceCount TEXT
       |);""".stripMargin
+
+  val createAdminDashboardTable =
+    """CREATE TABLE IF NOT EXISTS admin_dashboard_metadata (
+      |    id SERIAL PRIMARY KEY,
+      |    solutionId TEXT REFERENCES Solutions(solutionId),
+      |    name TEXT NOT NULL,
+      |    collection_id TEXT,
+      |    dashboard_id TEXT,
+      |    question_ids TEXT,
+      |    status TEXT,
+      |    error_message TEXT,
+      |    UNIQUE (name)
+      |);""".stripMargin
+
+  val createStateDashboardTable =
+    """CREATE TABLE IF NOT EXISTS state_dashboard_metadata (
+      |    id SERIAL PRIMARY KEY,
+      |    solutionId TEXT REFERENCES Solutions(solutionId),
+      |    name TEXT NOT NULL,
+      |    collection_id TEXT,
+      |    dashboard_id TEXT,
+      |    question_ids TEXT,
+      |    status TEXT,
+      |    error_message TEXT,
+      |    UNIQUE (name)
+      |);""".stripMargin
+
+  val createDistrictDashboardTable =
+    """CREATE TABLE IF NOT EXISTS district_dashboard_metadata (
+      |    id SERIAL PRIMARY KEY,
+      |    solutionId TEXT REFERENCES Solutions(solutionId),
+      |    name TEXT NOT NULL,
+      |    collection_id TEXT,
+      |    dashboard_id TEXT,
+      |    question_ids TEXT,
+      |    status TEXT,
+      |    error_message TEXT,
+      |    UNIQUE (name)
+      |);""".stripMargin
+
+  val createProgramDashboardTable =
+    """CREATE TABLE IF NOT EXISTS program_dashboard_metadata (
+      |    id SERIAL PRIMARY KEY,
+      |    solutionId TEXT REFERENCES Solutions(solutionId),
+      |    name TEXT NOT NULL,
+      |    collection_id TEXT,
+      |    dashboard_id TEXT,
+      |    question_ids TEXT,
+      |    status TEXT,
+      |    error_message TEXT,
+      |    UNIQUE (name)
+      |);""".stripMargin
+
 }

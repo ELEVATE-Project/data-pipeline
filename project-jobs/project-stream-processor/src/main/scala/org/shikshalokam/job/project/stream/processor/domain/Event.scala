@@ -92,5 +92,9 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def certificatePdfPath: String = readOrDefault[String]("certificate.pdfPath", "")
 
+  def targetedState: List[String] = readOrDefault[List[String]]("programInformation.state", null)
+
+  def targetedDistrict: List[String] = readOrDefault[List[String]]("programInformation.district", null)
+
 }
 

@@ -29,7 +29,7 @@ class PostgresUtil(dbUrl: String, dbUser: String, dbPassword: String) {
     val connection = getConnection
     try {
       connection.createStatement().executeUpdate(createTableQuery)
-      println(s"${tableName} table created successfully.")
+      //println(s"${tableName} table created successfully.")
     } catch {
       case e: SQLException =>
         println("Error creating table: " + e.getMessage)
@@ -56,10 +56,8 @@ class PostgresUtil(dbUrl: String, dbUser: String, dbPassword: String) {
   def executePreparedUpdate(query: String, params: Seq[Any], table: String, id: String): Unit = {
     val connection = getConnection
     var preparedStatement: PreparedStatement = null
-
     try {
       preparedStatement = connection.prepareStatement(query)
-
       // Loop through params and set them to the PreparedStatement
       for ((param, index) <- params.zipWithIndex) {
         param match {
@@ -78,6 +76,50 @@ class PostgresUtil(dbUrl: String, dbUser: String, dbPassword: String) {
         throw e
     } finally {
       if (preparedStatement != null) preparedStatement.close()
+      connection.close()
+    }
+  }
+
+  def fetchData(query: String): List[Map[String, Any]] = {
+    val connection = getConnection
+    var result = List[Map[String, Any]]()
+    try {
+      val statement = connection.createStatement()
+      val resultSet = statement.executeQuery(query)
+      val metaData = resultSet.getMetaData
+      val columnCount = metaData.getColumnCount
+
+      while (resultSet.next()) {
+        val row = (1 to columnCount).map { i =>
+          metaData.getColumnName(i) -> resultSet.getObject(i)
+        }.toMap
+        result = result :+ row
+      }
+       //println("Fetch data query executed successfully.")
+      result
+
+    } catch {
+      case e: SQLException =>
+        println("Error fetching data: " + e.getMessage)
+        throw e
+    } finally {
+      connection.close()
+    }
+  }
+
+  def insertData(query: String): Int = {
+    val connection = getConnection
+    try {
+      val statement = connection.createStatement()
+      val affectedRows = statement.executeUpdate(query)
+      //println("Insert query executed successfully.")
+      affectedRows
+
+    } catch {
+      case e: SQLException =>
+        println("Error inserting data: " + e.getMessage)
+        throw e
+    } finally {
       connection.close()
     }
   }
