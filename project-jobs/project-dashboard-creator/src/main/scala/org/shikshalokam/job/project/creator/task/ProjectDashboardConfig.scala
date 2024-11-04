@@ -36,4 +36,10 @@ class ProjectDashboardConfig(override val config: Config) extends BaseJobConfig(
   val pgPassword: String = config.getString("postgres.password")
   val pgDataBase: String = config.getString("postgres.database")
 
+  // Metabase connection config
+  val metabaseUrl: String = config.getString("metabase.url")
+  val metabaseUsername: String = config.getString("metabase.username")
+  val metabasePassword: String = config.getString("metabase.password")
+  //val metabaseDatabase: Int = config.getInt("metabase.database")
+
 }
