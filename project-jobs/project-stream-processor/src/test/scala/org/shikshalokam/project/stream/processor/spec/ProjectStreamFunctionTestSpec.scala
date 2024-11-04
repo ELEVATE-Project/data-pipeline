@@ -45,7 +45,8 @@ class ProjectStreamFunctionTestSpec extends BaseTestSpec {
   def initialize() {
     when(mockKafkaUtil.kafkaJobRequestSource[Event](jobConfig.inputTopic))
       .thenReturn(new ProjectEventSource)
-    when(mockKafkaUtil.kafkaStringSink(jobConfig.inputTopic)).thenReturn(new GenerateProjectSinkSink)
+    when(mockKafkaUtil.kafkaStringSink(jobConfig.outputTopic))
+      .thenReturn(new GenerateProjectSink)
   }
 
   "Project Stream Job " should "execute successfully " in {

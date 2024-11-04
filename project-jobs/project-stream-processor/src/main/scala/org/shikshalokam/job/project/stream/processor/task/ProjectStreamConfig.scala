@@ -3,6 +3,7 @@ package org.shikshalokam.job.project.stream.processor.task
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.TypeExtractor
+import org.apache.flink.streaming.api.scala.OutputTag
 import org.shikshalokam.job.project.stream.processor.domain.Event
 import org.shikshalokam.job.BaseJobConfig
 
@@ -12,12 +13,19 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
 
   // Kafka Topics Configuration
   val inputTopic: String = config.getString("kafka.input.topic")
+  val outputTopic: String = config.getString("kafka.output.topic")
+
+  // Output Tags
+  val eventOutputTag: OutputTag[String] = OutputTag[String]("project-dashboard-output-event")
 
   // Parallelism
-  val mlProjectsParallelism: Int = config.getInt("task.ml.projects.parallelism")
+  override val kafkaConsumerParallelism: Int = config.getInt("task.consumer.parallelism")
+  val projectsStreamParallelism: Int = config.getInt("task.sl.projects.stream.parallelism")
+  val projectsDashboardParallelism: Int = config.getInt("task.sl.projects.dashboard.parallelism")
 
   // Consumers
-  val mlProjectsConsumer: String = "ml-project-consumer"
+  val projectsStreamConsumer: String = "project-stream-consumer"
+  val metabaseDashboardProducer = "project-dashboard-producer"
 
   // Functions
   val projectsStreamFunction: String = "ProjectStreamFunction"
@@ -39,7 +47,10 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
   val solutionsTable = "Solutions"
   val projectsTable = "Projects"
   val tasksTable = "Tasks"
-  val organisationsTable = "Organisations"
+  val adminDashboardTable = "AdminDashboardMetadata"
+  val stateDashboardTable = "StateDashboardMetadata"
+  val districtDashboardTable = "DistrictDashboardMetadata"
+  val programDashboardTable = "ProgramDashboardMetadata"
 
   val createSolutionsTable =
     """CREATE TABLE IF NOT EXISTS Solutions (
@@ -111,4 +122,57 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |    evidence TEXT,
       |    evidenceCount TEXT
       |);""".stripMargin
+
+  val createAdminDashboardTable =
+    """CREATE TABLE IF NOT EXISTS admin_dashboard_metadata (
+      |    id SERIAL PRIMARY KEY,
+      |    solutionId TEXT REFERENCES Solutions(solutionId),
+      |    name TEXT NOT NULL,
+      |    collection_id TEXT,
+      |    dashboard_id TEXT,
+      |    question_ids TEXT,
+      |    status TEXT,
+      |    error_message TEXT,
+      |    UNIQUE (name)
+      |);""".stripMargin
+
+  val createStateDashboardTable =
+    """CREATE TABLE IF NOT EXISTS state_dashboard_metadata (
+      |    id SERIAL PRIMARY KEY,
+      |    solutionId TEXT REFERENCES Solutions(solutionId),
+      |    name TEXT NOT NULL,
+      |    collection_id TEXT,
+      |    dashboard_id TEXT,
+      |    question_ids TEXT,
+      |    status TEXT,
+      |    error_message TEXT,
+      |    UNIQUE (name)
+      |);""".stripMargin
+
+  val createDistrictDashboardTable =
+    """CREATE TABLE IF NOT EXISTS district_dashboard_metadata (
+      |    id SERIAL PRIMARY KEY,
+      |    solutionId TEXT REFERENCES Solutions(solutionId),
+      |    name TEXT NOT NULL,
+      |    collection_id TEXT,
+      |    dashboard_id TEXT,
+      |    question_ids TEXT,
+      |    status TEXT,
+      |    error_message TEXT,
+      |    UNIQUE (name)
+      |);""".stripMargin
+
+  val createProgramDashboardTable =
+    """CREATE TABLE IF NOT EXISTS program_dashboard_metadata (
+      |    id SERIAL PRIMARY KEY,
+      |    solutionId TEXT REFERENCES Solutions(solutionId),
+      |    name TEXT NOT NULL,
+      |    collection_id TEXT,
+      |    dashboard_id TEXT,
+      |    question_ids TEXT,
+      |    status TEXT,
+      |    error_message TEXT,
+      |    UNIQUE (name)
+      |);""".stripMargin
+
 }

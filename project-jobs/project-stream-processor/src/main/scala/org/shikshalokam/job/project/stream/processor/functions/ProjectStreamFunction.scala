@@ -5,10 +5,13 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.shikshalokam.job.project.stream.processor.domain.Event
 import org.shikshalokam.job.project.stream.processor.task.ProjectStreamConfig
-import org.shikshalokam.job.util.PostgresUtil
+import org.shikshalokam.job.util.{PostgresUtil, ScalaJsonUtil}
 import org.shikshalokam.job.{BaseProcessFunction, Metrics}
 import org.slf4j.LoggerFactory
 
+import java.util
+import java.time.{Instant, ZoneId}
+import java.time.format.DateTimeFormatter
 import scala.collection.immutable._
 
 class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInfo: TypeInformation[Event], @transient var postgresUtil: PostgresUtil = null)
@@ -37,16 +40,15 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
 
   override def processElement(event: Event, context: ProcessFunction[Event, Event]#Context, metrics: Metrics): Unit = {
 
-    println(s"***************** Start of Processing the Project Event with Id = ${event._id}*****************")
+    println(s"***************** Start of Processing the Project Event with Id = ${event._id} *****************")
 
     //TODO: TO be removed later
     val (projectEvidences, projectEvidencesCount) = extractEvidenceData(event.projectAttachments)
     val (roleIds, roles) = extractUserRolesData(event.userRoles)
-
     val tasksData = extractTasksData(event.tasks)
 
     //TODO: TO be removed later
-    println("\n Solutions data ")
+    println("\n==> Solutions data ")
     println("solutionId = " + event.solutionId)
     println("solutionExternalId = " + event.solutionExternalId)
     println("solutionName = " + event.solutionName)
@@ -61,7 +63,7 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     println("programName = " + event.programName)
     println("programDescription = " + event.programDescription)
 
-    println("\n Project data")
+    println("\n==> Project data")
     println("projectId = " + event.projectId)
     println("solutionId = " + event.solutionId)
     println("createdBy = " + event.createdBy)
@@ -96,13 +98,17 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     println("certificateStatus = " + event.certificateStatus)
     println("certificatePdfPath = " + event.certificatePdfPath)
 
-    println("\n Tasks data")
-    println("tasksData = " + tasksData)
+    println("\n==> Tasks data")
+    println(tasksData)
 
     // Uncomment the bellow lines to create table schema for the first time.
     postgresUtil.createTable(config.createSolutionsTable, config.solutionsTable)
     postgresUtil.createTable(config.createProjectTable, config.projectsTable)
     postgresUtil.createTable(config.createTasksTable, config.tasksTable)
+    postgresUtil.createTable(config.createAdminDashboardTable, config.adminDashboardTable)
+    postgresUtil.createTable(config.createStateDashboardTable, config.stateDashboardTable)
+    postgresUtil.createTable(config.createDistrictDashboardTable, config.districtDashboardTable)
+    postgresUtil.createTable(config.createProgramDashboardTable, config.programDashboardTable)
 
     /**
      * Extracting Solutions data
@@ -260,7 +266,38 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
 
     }
 
-    println(s"***************** End of Processing the Project Event *****************\n")
+    /**
+     * Logic to populate kafka messages for creating metabase dashboard
+     */
+    val dashboardData = new java.util.HashMap[String, java.util.List[String]]()
+    val adminList = new java.util.ArrayList[String]()
+    val programList = new java.util.ArrayList[String]()
+    val stateList = new java.util.ArrayList[String]()
+    val districtList = new java.util.ArrayList[String]()
+
+    checkAndInsert("admin", "admin_dashboard_metadata", solutionId, "Admin", adminList)
+    checkAndInsert("program", "program_dashboard_metadata", solutionId, event.programName, programList)
+    if (event.targetedState != null && !event.targetedState.isEmpty) {
+      event.targetedState.foreach { stateName =>
+        checkAndInsert("state", "state_dashboard_metadata", solutionId, stateName, stateList)
+      }
+    }
+    if (event.targetedDistrict != null && !event.targetedDistrict.isEmpty) {
+      event.targetedDistrict.foreach { districtName =>
+        checkAndInsert("district", "district_dashboard_metadata", solutionId, districtName, districtList)
+      }
+    }
+
+    if (!adminList.isEmpty) dashboardData.put("admin", adminList)
+    if (!programList.isEmpty) dashboardData.put("targetedProgram", programList)
+    if (!stateList.isEmpty) dashboardData.put("targetedState", stateList)
+    if (!districtList.isEmpty) dashboardData.put("targetedDistrict", districtList)
+
+    if (!dashboardData.isEmpty) {
+      pushProjectDashboardEvents(dashboardData, context)
+    }
+
+    println(s"\n***************** End of Processing the Project Event *****************")
 
   }
 
@@ -326,5 +363,37 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     }.getOrElse("Null")
   }
 
+  def checkAndInsert(entityType: String, tableName: String, solutionId: String, name: String, dataList: java.util.ArrayList[String]): Unit = {
+    val query = s"SELECT EXISTS (SELECT 1 FROM $tableName WHERE name = '$name') AS is_${entityType}_present"
+    val result = postgresUtil.fetchData(query)
+
+    result.foreach { row =>
+      row.get(s"is_${entityType}_present") match {
+        case Some(isPresent: Boolean) if isPresent =>
+          println(s"$name $entityType details already exist.")
+        case _ =>
+          dataList.add(name)
+          val insertQuery = s"INSERT INTO $tableName (solutionId, name) VALUES ('$solutionId', '$name')"
+          val affectedRows = postgresUtil.insertData(insertQuery)
+          println(s"Inserted $name details into $tableName. Affected rows: $affectedRows")
+      }
+    }
+  }
+
+  def pushProjectDashboardEvents(dashboardData: util.HashMap[String, util.List[String]], context: ProcessFunction[Event, Event]#Context): util.HashMap[String, AnyRef] = {
+    println(s"----> Push new Kafka message to ${config.outputTopic} topic")
+    val objects = new util.HashMap[String, AnyRef]() {
+      put("_id", java.util.UUID.randomUUID().toString)
+      put("publishedAt", DateTimeFormatter
+        .ofPattern("yyyy-MM-dd HH:mm:ss")
+        .withZone(ZoneId.systemDefault())
+        .format(Instant.ofEpochMilli(System.currentTimeMillis())).asInstanceOf[AnyRef])
+      put("dashboardData", dashboardData)
+    }
+    val event = ScalaJsonUtil.serialize(objects)
+    context.output(config.eventOutputTag, event)
+    println(objects)
+    objects
+  }
 
 }
