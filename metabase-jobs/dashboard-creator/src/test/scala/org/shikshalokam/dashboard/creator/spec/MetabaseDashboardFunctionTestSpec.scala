@@ -47,7 +47,7 @@ class MetabaseDashboardFunctionTestSpec extends BaseTestSpec {
     when(mockKafkaUtil.kafkaStringSink(jobConfig.inputTopic)).thenReturn(new GenerateMetabaseDashboardSink)
   }
 
-  "Project Dashboard Creator Job " should "execute successfully " in {
+  "Metabase Dashboard Creator Job " should "execute successfully " in {
     initialize()
     new MetabaseDashboardTask(jobConfig, mockKafkaUtil).process()
   }
