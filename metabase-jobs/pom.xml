@@ -11,12 +11,12 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>project-jobs</artifactId>
+    <artifactId>metabase-jobs</artifactId>
     <packaging>pom</packaging>
-    <name>Projects-Job</name>
+    <name>Metabase-Job</name>
 
     <modules>
-        <module>project-stream-processor</module>
+        <module>dashboard-creator</module>
     </modules>
 
     <build>
