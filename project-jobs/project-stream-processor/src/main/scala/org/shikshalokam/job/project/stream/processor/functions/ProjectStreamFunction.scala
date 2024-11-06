@@ -275,18 +275,10 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val stateList = new java.util.ArrayList[String]()
     val districtList = new java.util.ArrayList[String]()
 
-    checkAndInsert("admin", "admin_dashboard_metadata", solutionId, "Admin", adminList)
-    checkAndInsert("program", "program_dashboard_metadata", solutionId, event.programName, programList)
-    if (event.targetedState != null && !event.targetedState.isEmpty) {
-      event.targetedState.foreach { stateName =>
-        checkAndInsert("state", "state_dashboard_metadata", solutionId, stateName, stateList)
-      }
-    }
-    if (event.targetedDistrict != null && !event.targetedDistrict.isEmpty) {
-      event.targetedDistrict.foreach { districtName =>
-        checkAndInsert("district", "district_dashboard_metadata", solutionId, districtName, districtList)
-      }
-    }
+    checkAndInsert("admin", "admin_dashboard_metadata", solutionId, "", adminList)
+    checkAndInsert("program", "program_dashboard_metadata", solutionId, event.programId, programList)
+    checkAndInsert("state", "state_dashboard_metadata", solutionId, event.stateId, stateList)
+    checkAndInsert("district", "district_dashboard_metadata", solutionId, event.districtId, districtList)
 
     if (!adminList.isEmpty) dashboardData.put("admin", adminList)
     if (!programList.isEmpty) dashboardData.put("targetedProgram", programList)
@@ -363,19 +355,45 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     }.getOrElse("Null")
   }
 
-  def checkAndInsert(entityType: String, tableName: String, solutionId: String, name: String, dataList: java.util.ArrayList[String]): Unit = {
-    val query = s"SELECT EXISTS (SELECT 1 FROM $tableName WHERE name = '$name') AS is_${entityType}_present"
+  def checkAndInsert(entityType: String, tableName: String, solutionId: String, targetedId: String, dataList: java.util.ArrayList[String]): Unit = {
+    val query = if (entityType == "admin") {
+      s"SELECT EXISTS (SELECT 1 FROM $tableName WHERE name = 'Admin') AS is_${entityType}_present"
+    } else {
+      s"SELECT EXISTS (SELECT 1 FROM $tableName WHERE id = '$targetedId') AS is_${entityType}_present"
+    }
     val result = postgresUtil.fetchData(query)
 
     result.foreach { row =>
       row.get(s"is_${entityType}_present") match {
         case Some(isPresent: Boolean) if isPresent =>
-          println(s"$name $entityType details already exist.")
+          println(s"$entityType details already exist.")
         case _ =>
-          dataList.add(name)
-          val insertQuery = s"INSERT INTO $tableName (solutionId, name) VALUES ('$solutionId', '$name')"
-          val affectedRows = postgresUtil.insertData(insertQuery)
-          println(s"Inserted $name details into $tableName. Affected rows: $affectedRows")
+          if (entityType == "admin") {
+            val insertQuery = s"INSERT INTO $tableName (solutionId, name) VALUES ('$solutionId', 'Admin')"
+            val affectedRows = postgresUtil.insertData(insertQuery)
+            println(s"Inserted Admin details into $tableName. Affected rows: $affectedRows")
+            dataList.add("Admin")
+          } else if (entityType == "program") {
+            val getEntityNameQuery = s"SELECT DISTINCT ${entityType}name AS ${entityType}_name FROM ${config.solutionsTable} WHERE ${entityType}id = '$targetedId'"
+            val result = postgresUtil.fetchData(getEntityNameQuery)
+            result.foreach { id =>
+              val targeted_entity_name = id.get(s"${entityType}_name").map(_.toString).getOrElse("")
+              val insertQuery = s"INSERT INTO $tableName (id, solutionId, name) VALUES ('$targetedId', '$solutionId', '$targeted_entity_name')"
+              val affectedRows = postgresUtil.insertData(insertQuery)
+              println(s"Inserted $targetedId details into $tableName. Affected rows: $affectedRows")
+              dataList.add(targetedId)
+            }
+          } else {
+            val getEntityNameQuery = s"SELECT DISTINCT ${entityType}name AS ${entityType}_name FROM ${config.projectsTable} WHERE ${entityType}id = '$targetedId'"
+            val result = postgresUtil.fetchData(getEntityNameQuery)
+            result.foreach { id =>
+              val targeted_entity_name = id.get(s"${entityType}_name").map(_.toString).getOrElse("")
+              val insertQuery = s"INSERT INTO $tableName (id, solutionId, name) VALUES ('$targetedId', '$solutionId', '$targeted_entity_name')"
+              val affectedRows = postgresUtil.insertData(insertQuery)
+              println(s"Inserted $targetedId details into $tableName. Affected rows: $affectedRows")
+              dataList.add(targetedId)
+            }
+          }
       }
     }
   }
@@ -384,6 +402,7 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     println(s"----> Push new Kafka message to ${config.outputTopic} topic")
     val objects = new util.HashMap[String, AnyRef]() {
       put("_id", java.util.UUID.randomUUID().toString)
+      put("reportType", "Project")
       put("publishedAt", DateTimeFormatter
         .ofPattern("yyyy-MM-dd HH:mm:ss")
         .withZone(ZoneId.systemDefault())
@@ -392,7 +411,6 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     }
     val event = ScalaJsonUtil.serialize(objects)
     context.output(config.eventOutputTag, event)
-    println(objects)
     objects
   }
 
