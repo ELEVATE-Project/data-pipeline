@@ -85,7 +85,11 @@
             <version>4.4.0</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.typesafe.play</groupId>
+            <artifactId>play-json_2.12</artifactId> <!-- Adjust the Scala version as necessary -->
+            <version>2.9.2</version>
+        </dependency>
     </dependencies>
 
     <build>

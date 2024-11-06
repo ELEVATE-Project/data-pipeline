@@ -10,6 +10,7 @@ import org.shikshalokam.job.dashboard.creator.task.MetabaseDashboardConfig
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import org.shikshalokam.job.{BaseProcessFunction, Metrics}
 import org.slf4j.LoggerFactory
+import play.api.libs.json._
 
 import scala.collection.immutable._
 
@@ -44,23 +45,98 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
   override def processElement(event: Event, context: ProcessFunction[Event, Event]#Context, metrics: Metrics): Unit = {
     println(s"***************** Start of Processing the Metabase Dashboard Event with Id = ${event._id}*****************")
 
-    println("targetedProgram = " + event.publishedAt)
+    println("reportType = " + event.reportType)
+    println("admin = " + event.admin)
+    println("targetedProgram = " + event.targetedProgram )
+    println("targetedDistrict = " + event.targetedDistrict)
+    println("targetedState = " + event.targetedState)
+    println("publishedAt = " + event.publishedAt)
+
+    if (event.reportType == "Project") {
+      var ReportType = event.reportType
+      if (event.admin == List("Admin")) {
+        val listCollections = metabaseUtil.listCollections()
+        // Parse the JSON string
+        val json = Json.parse(listCollections)
+
+        // Check if any collection contains "name": "Super Admin Collection"
+        val exists = (json \\ "name").exists(name => name.as[String].trim == "Super Admin Collection")
+
+        if (exists) {
+          println("Super Admin Collection exists in the list.")
+        } else {
+          println("Super Admin Collection does not exist in the list.")
+        }
+
+      }
+      // let's create state report
+      for (state <- event.targetedState) {
+        // get the collection id
+        val collection_name = s"state collection [$state]"
+        val collectionRequestBody =
+          s"""{
+            |  "name": "$collection_name",
+            |  "description": "Collection for $ReportType reports"
+            |}""".stripMargin
+        val collection = metabaseUtil.createCollection(collectionRequestBody)
+        val collectionJson: JsValue = Json.parse(collection)
+//        println("collectionJson = " + collectionJson)
+        val collectionId: Int = (collectionJson \ "id").asOpt[Int].getOrElse {
+          throw new Exception("Failed to extract collection id")
+        }
+        println("CollectionId = " + collectionId)
+
+        //get the dashboard id
+        val dashboard_name = s"state report [$state]"
+        val dashboardRequestBody =
+          s"""{
+            |  "name": "$dashboard_name",
+            |  "collection_id": "$collectionId"
+            |}""".stripMargin
+        val Dashboard = metabaseUtil.createDashboard(dashboardRequestBody)
+        println("Create Dashboard Json = " + Dashboard)
+
+        //get database id
+        val listDatabaseDetails = metabaseUtil.listDatabaseDetails()
+        println("Database Details JSON = " + listDatabaseDetails)
+        // function to fetch database id from the output of listDatabaseDetails API
+        def getDatabaseId(databasesResponse: String, databaseName: String): Option[Int] = {
+          val json = Json.parse(databasesResponse)
+
+          // Extract the ID of the database with the given name
+          (json \ "data").as[Seq[JsValue]].find { db =>
+            (db \ "name").asOpt[String].contains(databaseName)
+          }.flatMap { db =>
+            (db \ "id").asOpt[Int]
+          }
+        }
+
+        val databaseName: String = config.metabaseDatabase
+        val databaseId = getDatabaseId(listDatabaseDetails, databaseName).get
+        println("databaseId = " + databaseId)
+
+        //Update the question cards with the collection id , database id
+
+
+      }
+    }
+
 
     //TODO: Remove the below lines and build actual logic
-    val listCollections = metabaseUtil.listCollections()
-    println("Collections JSON = " + listCollections)
+//    val listCollections = metabaseUtil.listCollections()
+//    println("Collections JSON = " + listCollections)
 
-    val listDashboards = metabaseUtil.listDashboards()
-    println("Dashboards JSON = " + listDashboards)
+//    val listDashboards = metabaseUtil.listDashboards()
+//    println("Dashboards JSON = " + listDashboards)
 
-    val getDashboardInfo = metabaseUtil.getDashboardDetailsById(257)
-    println("Dashboard Info JSON = " + getDashboardInfo)
+//    val getDashboardInfo = metabaseUtil.getDashboardDetailsById(257)
+//    println("Dashboard Info JSON = " + getDashboardInfo)
 
-    val listDatabaseDetails = metabaseUtil.listDatabaseDetails()
-    println("Database Details JSON = " + listDatabaseDetails)
+//    val listDatabaseDetails = metabaseUtil.listDatabaseDetails()
+//    println("Database Details JSON = " + listDatabaseDetails)
 
-    val getDatabaseMetadata = metabaseUtil.getDatabaseMetadata(34)
-    println("Database Metadata JSON = " + getDatabaseMetadata)
+//    val getDatabaseMetadata = metabaseUtil.getDatabaseMetadata(34)
+//    println("Database Metadata JSON = " + getDatabaseMetadata)
 
 //    val collectionRequestBody =
 //      """{
