@@ -21,11 +21,11 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
   // Parallelism
   override val kafkaConsumerParallelism: Int = config.getInt("task.consumer.parallelism")
   val projectsStreamParallelism: Int = config.getInt("task.sl.projects.stream.parallelism")
-  val projectsDashboardParallelism: Int = config.getInt("task.sl.projects.dashboard.parallelism")
+  val metabaseDashboardParallelism: Int = config.getInt("task.sl.metabase.dashboard.parallelism")
 
   // Consumers
   val projectsStreamConsumer: String = "project-stream-consumer"
-  val metabaseDashboardProducer = "project-dashboard-producer"
+  val metabaseDashboardProducer = "metabase-dashboard-producer"
 
   // Functions
   val projectsStreamFunction: String = "ProjectStreamFunction"
@@ -138,7 +138,7 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
 
   val createStateDashboardTable =
     """CREATE TABLE IF NOT EXISTS state_dashboard_metadata (
-      |    id SERIAL PRIMARY KEY,
+      |    id TEXT PRIMARY KEY,
       |    solutionId TEXT REFERENCES Solutions(solutionId),
       |    name TEXT NOT NULL,
       |    collection_id TEXT,
@@ -146,12 +146,12 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |    question_ids TEXT,
       |    status TEXT,
       |    error_message TEXT,
-      |    UNIQUE (name)
+      |    UNIQUE (id)
       |);""".stripMargin
 
   val createDistrictDashboardTable =
     """CREATE TABLE IF NOT EXISTS district_dashboard_metadata (
-      |    id SERIAL PRIMARY KEY,
+      |    id TEXT PRIMARY KEY,
       |    solutionId TEXT REFERENCES Solutions(solutionId),
       |    name TEXT NOT NULL,
       |    collection_id TEXT,
@@ -159,12 +159,12 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |    question_ids TEXT,
       |    status TEXT,
       |    error_message TEXT,
-      |    UNIQUE (name)
+      |    UNIQUE (id)
       |);""".stripMargin
 
   val createProgramDashboardTable =
     """CREATE TABLE IF NOT EXISTS program_dashboard_metadata (
-      |    id SERIAL PRIMARY KEY,
+      |    id TEXT PRIMARY KEY,
       |    solutionId TEXT REFERENCES Solutions(solutionId),
       |    name TEXT NOT NULL,
       |    collection_id TEXT,
@@ -172,7 +172,7 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |    question_ids TEXT,
       |    status TEXT,
       |    error_message TEXT,
-      |    UNIQUE (name)
+      |    UNIQUE (id)
       |);""".stripMargin
 
 }
