@@ -32,7 +32,7 @@ class ProjectStreamTask(config: ProjectStreamConfig, kafkaConnector: FlinkKafkaC
       .addSink(kafkaConnector.kafkaStringSink(config.outputTopic))
       .name(config.metabaseDashboardProducer)
       .uid(config.metabaseDashboardProducer)
-      .setParallelism(config.projectsDashboardParallelism)
+      .setParallelism(config.metabaseDashboardParallelism)
 
     env.execute(config.jobName)
   }
