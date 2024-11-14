@@ -13,13 +13,14 @@ import scala.collection.immutable._
 import scala.io.Source
 import scala.sys.process._
 import scala.util.{Failure, Success, Try}
+import scala.collection.mutable.ListBuffer
 
 
 object addQuestionCards {
   def AddQuestionCardsFunction(metabaseUtil:MetabaseUtil,mainDir:String,dashboardId:Int): Unit = {
+    println(s"---------------Started processing AddQuestionCardsFunction function---------------")
     def appendDashCardToDashboard(mainDir: String, dashboardId: Int): Unit = {
       val mainDirectory = new File(mainDir)
-
       // Step 7: Get the Dashboard response
       val DashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
 
@@ -102,5 +103,6 @@ object addQuestionCards {
       }
     }
     appendDashCardToDashboard(mainDir,dashboardId)
+    println(s"---------------Processed AddQuestionCardsFunction function---------------")
   }
 }

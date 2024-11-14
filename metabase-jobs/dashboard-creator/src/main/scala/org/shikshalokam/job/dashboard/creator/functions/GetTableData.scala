@@ -17,6 +17,7 @@ import scala.util.{Failure, Success, Try}
 object GetTableData {
   def getTableMetadata(databaseId: Int, metabaseUtil: MetabaseUtil = null, config: MetabaseDashboardConfig): (Int,Int,Int) = {
     // Implicit format import for JSON parsing and serialization
+    println(s"-----------------Started processing getTableMetadata function------------------")
     implicit val formats: DefaultFormats.type = DefaultFormats
 
     // Function to extract table names and IDs
@@ -114,6 +115,7 @@ object GetTableData {
     println("statenameID" + statenameId)
     println("districtnameID" + districtnameId)
     println("programnameID" + programnameId)
+    println(s"-----------------Processed getTableMetadata function------------------")
     (statenameId,districtnameId,programnameId)
   }
 }

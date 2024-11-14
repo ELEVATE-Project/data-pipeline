@@ -9,6 +9,7 @@ import scala.collection.immutable.Seq
 
 object CreateDashboard {
     def Get_the_required_ids(CollectionName: String, DashboardName: String, reportType: String, metabaseUtil: MetabaseUtil = null, config: MetabaseDashboardConfig): (Int,Int,Int) = {
+      println(s"--------------Started processing Create dashboard function---------------")
       val ReportType:String = reportType
       val collection_name: String = CollectionName
       val dashboard_name:String = DashboardName
@@ -65,6 +66,7 @@ object CreateDashboard {
         case None => throw new RuntimeException(s"Database $databaseName not found")
       }
       println("databaseId = " + databaseId)
+      println(s"--------------Processed Create dashboard function---------------")
       (collectionId,databaseId,dashboardId)
     }
 
