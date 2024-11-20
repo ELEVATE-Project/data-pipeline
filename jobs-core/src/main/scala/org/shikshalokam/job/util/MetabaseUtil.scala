@@ -5,9 +5,9 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
   private val metabaseUrl: String = url
   private val username: String = metabaseUsername
   private val password: String = metabasePassword
-  println("Metabase URL: " + url)
-  println("Username: " + username)
-  println("Password: " + password)
+  //  println("Metabase URL: " + url)
+  //  println("Username: " + username)
+  //  println("Password: " + password)
 
   private var sessionToken: Option[String] = None
 
@@ -38,12 +38,12 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
     sessionToken match {
       case Some(token) =>
         //TODO : Remove bellow line
-        println(s"SessionToken already exists: $token")
+//        println(s"SessionToken already exists: $token")
         token
       case None =>
         val token = authenticate()
         //TODO : Remove bellow line
-        println(s"Generated new token: $token")
+//        println(s"Generated new token: $token")
         sessionToken = Some(token)
         token
     }
@@ -272,6 +272,181 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
       questionCardToDashboardResponseBody
     } else {
       throw new Exception(s"Failed to add card to dashboard with status code: ${response.statusCode}, message: ${response.text}")
+    }
+  }
+
+  def listUsers(): String = {
+    val url = s"$metabaseUrl/user"
+
+    val response = requests.get(
+      url,
+      headers = Map(
+        "Content-Type" -> "application/json",
+        "X-Metabase-Session" -> getSessionToken
+      )
+    )
+
+    if (response.statusCode == 200) {
+      val usersJson = ujson.read(response.text).render()
+      usersJson
+    } else {
+      throw new Exception(s"Failed to retrieve users with status code: ${response.statusCode}, message: ${response.text}")
+    }
+  }
+
+  /**
+   * Method to create a new user in Metabase
+   *
+   * @param requestData JSON string representing the user data
+   * @return JSON string representing the created user
+   */
+  def createUser(requestData: String): String = {
+    val url = s"$metabaseUrl/user"
+
+    val response = requests.post(
+      url,
+      data = requestData,
+      headers = Map(
+        "Content-Type" -> "application/json",
+        "X-Metabase-Session" -> getSessionToken
+      )
+    )
+
+    if (response.statusCode == 200) {
+      val userResponseBody = ujson.read(response.text).render()
+      userResponseBody
+    } else {
+      throw new Exception(s"Failed to create user with status code: ${response.statusCode}, message: ${response.text}")
+    }
+  }
+
+  /**
+   * Method to update a user in Metabase
+   *
+   * @param userId      ID of the user to update
+   * @param requestData JSON string representing the updated user data
+   * @return JSON string representing the updated user
+   */
+  def updateUser(userId: Int, requestData: String): String = {
+    val url = s"$metabaseUrl/user/$userId"
+
+    val response = requests.put(
+      url,
+      data = requestData,
+      headers = Map(
+        "Content-Type" -> "application/json",
+        "X-Metabase-Session" -> getSessionToken
+      )
+    )
+
+    if (response.statusCode == 200) {
+      val userResponseBody = ujson.read(response.text).render()
+      userResponseBody
+    } else {
+      throw new Exception(s"Failed to update user with status code: ${response.statusCode}, message: ${response.text}")
+    }
+  }
+
+  /**
+   * Method to update a user's password in Metabase
+   *
+   * @param userId      ID of the user to update the password for
+   * @param requestData JSON string representing the new password
+   * @return JSON string representing the updated user with the new password
+   */
+  def updatePassword(userId: Int, requestData: String): String = {
+    val url = s"$metabaseUrl/user/$userId/password"
+
+    val response = requests.put(
+      url,
+      data = requestData,
+      headers = Map(
+        "Content-Type" -> "application/json",
+        "X-Metabase-Session" -> getSessionToken
+      )
+    )
+
+    if (response.statusCode == 204) {
+      val userResponseBody = "Password Updated"
+      userResponseBody
+    } else {
+      throw new Exception(s"Failed to update password with status code: ${response.statusCode}, message: ${response.text}")
+    }
+  }
+
+  /**
+   * Method to list groups from Metabase
+   *
+   * @return JSON string representing the groups
+   */
+  def listGroups(): String = {
+    val url = s"$metabaseUrl/permissions/group"
+
+    val response = requests.get(
+      url,
+      headers = Map(
+        "Content-Type" -> "application/json",
+        "X-Metabase-Session" -> getSessionToken
+      )
+    )
+
+    if (response.statusCode == 200) {
+      val groupsJson = ujson.read(response.text).render()
+      groupsJson
+    } else {
+      throw new Exception(s"Failed to retrieve groups with status code: ${response.statusCode}, message: ${response.text}")
+    }
+  }
+
+  /**
+   * Method to get group details by Id from Metabase
+   *
+   * @param groupId ID of the group to retrieve details for
+   * @return JSON string representing the group details
+   */
+  def getGroupDetails(groupId: Int): String = {
+    val url = s"$metabaseUrl/permissions/group/$groupId"
+
+    val response = requests.get(
+      url,
+      headers = Map(
+        "Content-Type" -> "application/json",
+        "X-Metabase-Session" -> getSessionToken
+      )
+    )
+
+    if (response.statusCode == 200) {
+      val groupsJson = ujson.read(response.text).render()
+      groupsJson
+    } else {
+      throw new Exception(s"Failed to retrieve group details with status code: ${response.statusCode}, message: ${response.text}")
+    }
+  }
+
+
+  /**
+   * Method to add a user to a group in Metabase
+   *
+   * @param requestData JSON string representing the group membership data
+   * @return JSON string representing the updated group with the added user
+   */
+  def addUserToGroup(requestData: String): String = {
+    val url = s"$metabaseUrl/permissions/membership"
+
+    val response = requests.post(
+      url,
+      data = requestData,
+      headers = Map(
+        "Content-Type" -> "application/json",
+        "X-Metabase-Session" -> getSessionToken
+      )
+    )
+
+    if (response.statusCode == 200) {
+      val userResponseBody = ujson.read(response.text).render()
+      userResponseBody
+    } else {
+      throw new Exception(s"Failed to add user to group with status code: ${response.statusCode}, message: ${response.text}")
     }
   }
 
