@@ -53,7 +53,7 @@ object addQuestionCards {
             val subDirs = jsonDir.listFiles().filter(_.isDirectory)
 
             subDirs.foreach { subDir =>
-              println(s"  Processing subdirectory: ${subDir.getName}")
+              println(s"Processing subdirectory: ${subDir.getName}")
 
               val jsonFiles = subDir.listFiles().filter(_.getName.endsWith(".json"))
               jsonFiles.foreach { jsonFile =>

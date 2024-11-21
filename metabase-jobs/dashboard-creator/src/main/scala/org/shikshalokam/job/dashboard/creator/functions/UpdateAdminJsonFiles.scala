@@ -21,7 +21,6 @@ object UpdateAdminJsonFiles {
     val questionCardId = ListBuffer[Int]()
 
     val objectMapper = new ObjectMapper()
-    val questionCardIds = scala.collection.mutable.ListBuffer[Int]()
     def processJsonFiles(mainDir: String): Unit = {
       val mainDirectory = new File(mainDir)
       if (mainDirectory.exists() && mainDirectory.isDirectory) {
@@ -35,51 +34,28 @@ object UpdateAdminJsonFiles {
             val subDirs = jsonDir.listFiles().filter((subDir: File) => subDir.isDirectory && subDir.getName != "heading")
 
             subDirs.foreach { subDir =>
-              println(s"  Processing subdirectory: ${subDir.getName}")
+              println(s"Processing subdirectory: ${subDir.getName}")
               val jsonFiles = subDir.listFiles().filter(_.getName.endsWith(".json"))
 
               jsonFiles.foreach { jsonFile =>
-                println(s"    Reading JSON file: ${jsonFile.getName}")
+                println(s"Reading JSON file: ${jsonFile.getName}")
                 val jsonFileName = jsonFile.getAbsolutePath
                 val jsonOpt = parseJson(jsonFile)
 
                 jsonOpt match {
                   case Some(json) =>
                     val chartName = Option(json.at("/questionCard/name").asText()).getOrElse("Unknown Chart")
-                    println(s"  --- Started Processing For The Chart: $chartName")
+                    println(s" >>>>>>>>>>> Started Processing For The Chart: $chartName")
 
                     if (validateJson(jsonFile)) {
                       val requestBody = json.get("questionCard").asInstanceOf[ObjectNode]
-//                      val datasetQuery = requestBody.path("dataset_query").asInstanceOf[ObjectNode]
-//                      //                      val nativeNode = datasetQuery.path("native").asInstanceOf[ObjectNode]
-//                      val nativeNode = if (datasetQuery.has("native") && datasetQuery.get("native").isObject) {
-//                        datasetQuery.get("native").asInstanceOf[ObjectNode]
-//                      } else {
-//                        throw new IllegalArgumentException("Missing or invalid 'native' node in dataset_query.")
-//                      }
-//
-//                      val query = nativeNode.path("query").asText()
-//                      nativeNode.put("query", query.replace("[[AND {{state_param}}]]", "AND statename = 'Karnataka'"))
-//
-//                      val templateTags = if (nativeNode.has("template-tags") && nativeNode.get("template-tags").isObject) {
-//                        nativeNode.get("template-tags").asInstanceOf[ObjectNode]
-//                      } else {
-//                        throw new IllegalArgumentException("Missing or invalid 'template-tags' node in nativeNode.")
-//                      }
-//
-//                      val parameters = requestBody.path("parameters").asInstanceOf[ArrayNode]
-//                      val updatedParameters = parameters.elements().asScala
-//                        .filterNot(param => param.path("id").asText() == "state_param")
-//                        .toSeq
-//                      requestBody.set("parameters", mapper.valueToTree(updatedParameters))
-
                       val response = metabaseUtil.createQuestionCard(requestBody.toString)
                       val cardIdOpt = extractCardId(response)
                       println(s"cardIdOpt = $cardIdOpt")
                       cardIdOpt match {
                         case Some(cardId) =>
-                          println(s"   >> Successfully created question card with card_id: $cardId for $chartName")
-                          questionCardIds.append(cardId)
+                          println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
+                          questionCardId.append(cardId)
 
                           // Update JSON with the card_id
                           val updatedJsonOpt = updateJsonWithCardId(json, cardId)

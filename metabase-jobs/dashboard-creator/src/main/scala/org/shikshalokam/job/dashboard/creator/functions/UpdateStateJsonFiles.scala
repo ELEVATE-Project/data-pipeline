@@ -124,8 +124,6 @@ object UpdateStateJsonFiles {
       }
     }
 
-    import play.api.libs.json._
-    import scala.collection.immutable.Seq
 
     def updateJsonWithCardId(json: JsValue, cardId: Int): Option[JsValue] = {
       Try {
@@ -175,7 +173,15 @@ object UpdateStateJsonFiles {
           }
         )
       }.flatMap { updatedJson =>
-        // Safely handle the "parameters" field update if it exists
+        // Prune "state_param" in "template-tags" if it exists
+        updatedJson.transform((__ \ "dataset_query" \ "native" \ "template-tags" \ "state_param").json.prune) match {
+          case JsSuccess(prunedJson, _) =>
+            JsSuccess(prunedJson)
+          case JsError(_) =>
+            println("Warning: 'state_param' key does not exist, skipping prune.")
+            JsSuccess(updatedJson) // Proceed with the original JSON if pruning fails
+        }
+      }.flatMap { updatedJson =>
         updatedJson.transform {
           (__ \ "parameters").json.update(
             Reads[JsValue] {
@@ -197,17 +203,16 @@ object UpdateStateJsonFiles {
             JsSuccess(updatedParams)
           case JsError(_) =>
             println("Warning: 'parameters' key does not exist or could not be updated.")
-            JsSuccess(updatedJson) // Proceed with the original JSON if parameters is missing
+            JsSuccess(updatedJson)
         }
       }.flatMap { updatedJson =>
-        // Safely handle the "parameter_mappings" field update if it exists
         updatedJson.transform {
           (__ \ "dashCards" \ "parameter_mappings").json.update(
             Reads[JsValue] {
               case JsArray(mappings) =>
                 JsSuccess(JsArray(mappings.filterNot {
                   case obj: JsObject =>
-                    (obj \ "parameter_id").asOpt[String].contains("c32c8fc5")
+                    (obj \ "parameter_id").asOpt[String].contains("a7e82951")
                   case _ => false
                 }))
               case other =>

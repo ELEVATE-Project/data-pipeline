@@ -48,19 +48,6 @@ object GetTableData {
       val tables = extractTables(metadata)
       val tablesAndFields = extractTablesAndFields(metadata)
 
-      // Creating a JObject with the extracted tables and fields
-//      val result = JObject(
-//        "tables" -> JArray(tables.map { table => JObject(
-//          "name" -> JString(table("name").toString),
-//          "id" -> JInt(table("id").asInstanceOf[Int])
-//        )}),
-//        "fields" -> JArray(tablesAndFields.map { field => JObject(
-//          "table" -> JString(field("table").toString),
-//          "field_name" -> JString(field("field_name").toString),
-//          "field_id" -> JInt(field("field_id").asInstanceOf[Int])
-//        )})
-//      )
-
       val result = JObject(
         "tables" -> JArray(tables.map { table =>
           JObject(
@@ -104,8 +91,6 @@ object GetTableData {
     }
 
     val fieldIdOption = getFieldId(metadataJson, "projects", "statename")
-    println(s"Raw statename ID (BigInt): $fieldIdOption")
-//    val statenameId: Int = fieldIdOption.map(_.toInt).getOrElse(0)
 
     // Assuming getFieldId returns Option[BigInt]
     val statenameId: Int = getFieldId(metadataJson, "projects", "statename").map(_.intValue).getOrElse(0)

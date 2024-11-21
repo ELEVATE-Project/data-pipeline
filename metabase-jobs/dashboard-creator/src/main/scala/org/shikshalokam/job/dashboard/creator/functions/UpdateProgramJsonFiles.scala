@@ -124,8 +124,6 @@ object UpdateProgramJsonFiles {
       }
     }
 
-    import play.api.libs.json._
-    import scala.collection.immutable.Seq
 
     def updateJsonWithCardId(json: JsValue, cardId: Int): Option[JsValue] = {
       Try {

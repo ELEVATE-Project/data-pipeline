@@ -6,7 +6,10 @@ import org.shikshalokam.job.util.MetabaseUtil
 
 import java.io.File
 
-object UpdateAndAddFilter {
+// This script will read the state-filter.json file, update the query by replacing 'STATENAME'
+// with a dynamic state name, use the createQuestionCard API to create a question card, retrieve the question card ID, and update the card ID in the state-parameter.json file.
+
+object UpdateAndAddStateFilter {
   val objectMapper = new ObjectMapper()
 
   def updateAndAddFilter(metabaseUtil: MetabaseUtil, filterFilePath: String, statename: String, districtname: String, programname: String,collectionId:Int,databaseId:Int): Int = {
@@ -34,7 +37,6 @@ object UpdateAndAddFilter {
       def processNode(node: JsonNode): JsonNode = {
         node match {
           case obj: ObjectNode =>
-            // Process each field in the object
             obj.fieldNames().forEachRemaining { fieldName =>
               val childNode = obj.get(fieldName)
               if (childNode.isTextual && childNode.asText().contains("STATENAME")) {
@@ -57,7 +59,7 @@ object UpdateAndAddFilter {
             }
             newArray
 
-          case _ => node // Return other types of nodes unchanged
+          case _ => node
         }
       }
 
@@ -104,12 +106,12 @@ object UpdateAndAddFilter {
         val responseJson = objectMapper.readTree(questionCardResponse)
         Option(responseJson.get("id")).map(_.asInt()).getOrElse {
           println("Error: 'id' field not found in the response.")
-          -1 // Return a default value
+          -1
         }
       } catch {
         case ex: Exception =>
           println(s"Error fetching 'id' from response: ${ex.getMessage}")
-          -1 // Return default value in case of error
+          -1
       }
     }
 
@@ -124,7 +126,7 @@ object UpdateAndAddFilter {
         questionId
       case None =>
         println("Failed to process JSON file.")
-        -1 // Return -1 if JSON file reading fails
+        -1
     }
   }
 }

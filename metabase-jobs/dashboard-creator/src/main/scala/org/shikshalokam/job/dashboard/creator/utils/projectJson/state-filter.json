@@ -1,6 +1,6 @@
 {
   "questionCard": {
-    "name": "district-filter",
+    "name": "state-filter",
     "collection_id": 538,
     "dataset_query": {
       "database": 2,

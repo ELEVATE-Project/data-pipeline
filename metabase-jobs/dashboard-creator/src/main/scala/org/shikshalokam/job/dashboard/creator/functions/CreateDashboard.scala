@@ -34,7 +34,7 @@ object CreateDashboard {
            |}""".stripMargin
       val Dashboard: String = metabaseUtil.createDashboard(dashboardRequestBody)
       val parsedJson: ujson.Value = ujson.read(Dashboard)
-      println("Create Dashboard Json = " + parsedJson)
+
       implicit val formats: DefaultFormats.type = DefaultFormats
       val dashboardId: Int = parsedJson.obj.get("id") match {
         case Some(id: ujson.Num) => id.num.toInt

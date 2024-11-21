@@ -17,6 +17,7 @@ import scala.util.{Failure, Success, Try}
 object UpdateParameters {
   def updateStateParameterFunction(metabaseUtil: MetabaseUtil, parameterFilePath: String, dashboardId: Int, stateId: Int): Unit = {
     // Read the content of the JSON file
+    println(s"-----------Started Processing State dashboard parameter ------------")
     val fileContent = Source.fromFile(parameterFilePath).getLines().mkString
     val parameterJson = Json.parse(fileContent).as[JsArray]
 
@@ -65,6 +66,7 @@ object UpdateParameters {
   }
 
   def UpdateAdminParameterFunction(metabaseUtil:MetabaseUtil,parameterFilePath:String,dashboardId:Int): Unit = {
+    println(s"-----------Started Processing Admin dashboard parameter ------------")
     val fileContent = new String(Files.readAllBytes(Paths.get(parameterFilePath)), "UTF-8")
     val parameterJson = Json.parse(fileContent).as[JsArray]
 
@@ -91,6 +93,7 @@ object UpdateParameters {
   }
 
   def UpdateProgramParameterFunction(metabaseUtil:MetabaseUtil,parameterFilePath:String,dashboardId:Int,programName:String,programId:Int): Unit = {
+    println(s"-----------Started Processing Program dashboard parameter ------------")
     val fileContent = Source.fromFile(parameterFilePath).getLines().mkString
     val parameterJson = Json.parse(fileContent).as[JsArray]
 
@@ -138,6 +141,7 @@ object UpdateParameters {
   }
 
   def UpdateDistrictParameterFunction(metabaseUtil:MetabaseUtil,parameterFilePath:String,dashboardId:Int,stateName:String,districtName:String,districtId:Int): Unit = {
+    println(s"-----------Started Processing District dashboard parameter ------------")
     val fileContent = Source.fromFile(parameterFilePath).getLines().mkString
     val parameterJson = Json.parse(fileContent).as[JsArray]
 
@@ -181,7 +185,7 @@ object UpdateParameters {
     // Update the dashboard with the new parameters
     val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString())
 
-    println(s"----------------successfullly updated Program dashboard parameter $updateResponse----------------")
+    println(s"----------------successfullly updated District dashboard parameter $updateResponse----------------")
   }
 
 }
