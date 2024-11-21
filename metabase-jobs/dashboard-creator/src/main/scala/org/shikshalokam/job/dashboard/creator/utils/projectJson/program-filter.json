@@ -1,0 +1,19 @@
+{
+  "questionCard": {
+    "name": "program-filter",
+    "collection_id": 538,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "query": "SELECT distinct(projects.statename) \nFROM projects join solutions on\nprojects.solutionid = solutions.solutionid\nWHERE solutions.programname = 'PROGRAMNAME'",
+        "template-tags": {}
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {
+      "table.pivot_column": "programname"
+    },
+    "parameters": []
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "questionCard": {
+    "name": "district-filter",
+    "collection_id": 538,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "query": "SELECT distinct(districtname) \nFROM projects \nWHERE statename = 'STATENAME'",
+        "template-tags": {
+        }
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {
+      "table.pivot_column": "districtname"
+    },
+    "parameters": []
+  }
+}

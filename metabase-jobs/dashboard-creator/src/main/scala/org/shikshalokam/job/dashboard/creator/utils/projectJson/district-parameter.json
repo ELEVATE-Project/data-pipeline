@@ -1,42 +1,22 @@
 [
   {
-    "slug": "select_state",
-    "default": [],
-    "name": "Select State",
-    "isMultiSelect": false,
-    "type": "string/=",
-    "sectionId": "location",
-    "values_source_type": "static-list",
-    "id": "c32c8fc5",
-    "values_source_config": {
-      "values": []
-    },
-    "required": true
-  },
-  {
-    "slug": "select_district",
-    "default": [],
-    "name": "Select District",
-    "isMultiSelect": false,
-    "type": "string/=",
-    "sectionId": "location",
-    "values_source_type": "static-list",
-    "id": "74a10335",
-    "values_source_config": {
-      "values": []
-    },
-    "required": true
-  },
-  {
     "slug": "select_program_name",
-    "filteringParameters": [
-      "c32c8fc5",
-      "74a10335"
-    ],
+    "filteringParameters": [],
     "name": "Select Program Name",
     "isMultiSelect": false,
     "type": "string/=",
     "sectionId": "string",
-    "id": "8c7d86ea"
+    "id": "8c7d86ea",
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 2578,
+      "value_field": [
+        "field",
+        "programname",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    }
   }
 ]

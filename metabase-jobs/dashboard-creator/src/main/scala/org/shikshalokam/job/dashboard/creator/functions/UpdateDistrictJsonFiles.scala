@@ -2,6 +2,8 @@ package org.shikshalokam.job.dashboard.creator.functions
 
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
+import org.json4s.jackson.Serialization
+import org.shikshalokam.job.dashboard.creator.task.MetabaseDashboardConfig
 import org.shikshalokam.job.util.MetabaseUtil
 import play.api.libs.json._
 import java.io.File
@@ -14,8 +16,8 @@ import scala.io.Source
 import scala.sys.process._
 import scala.util.{Failure, Success, Try}
 
-object UpdateJsonFiles {
-  def ProcessAndUpdateJsonFiles(mainDir: String, dashboardId: BigInt, collectionId: BigInt, databaseId: BigInt, statenameId: BigInt, districtnameId: BigInt, programnameId: BigInt, metabaseUtil: MetabaseUtil,statename:String): ListBuffer[Int] = {
+object UpdateDistrictJsonFiles {
+  def ProcessAndUpdateJsonFiles(mainDir: String, dashboardId: BigInt, collectionId: BigInt, databaseId: BigInt, statenameId: BigInt, districtnameId: BigInt, programnameId: BigInt, metabaseUtil: MetabaseUtil,statename:String,districtname:String): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
 
@@ -50,15 +52,15 @@ object UpdateJsonFiles {
         val dirs = mainDirectory.listFiles().filter(_.isDirectory)
 
         dirs.foreach { dir =>
-          println(s"Started Processing The directory: ${dir.getName}")
+          println(s"Processing directory: ${dir.getName}")
           val jsonDir = new File(dir, "json")
           if (jsonDir.exists() && jsonDir.isDirectory) {
             val subDirs = jsonDir.listFiles().filter(dir => dir.isDirectory && dir.getName != "heading")
             subDirs.foreach { subDir =>
-              println(s"Started Processing The subdirectory: ${subDir.getName}")
+              println(s"  Processing subdirectory: ${subDir.getName}")
               val jsonFiles = subDir.listFiles().filter(_.getName.endsWith(".json"))
               jsonFiles.foreach { jsonFile =>
-                println(s"Started Reading JSON file: ${jsonFile.getName}")
+                println(s"    Reading JSON file: ${jsonFile.getName}")
                 val jsonFileName = jsonFile.getAbsolutePath
                 println(s"jsonFileName = $jsonFileName")
 
@@ -66,20 +68,20 @@ object UpdateJsonFiles {
                 jsonOpt match {
                   case Some(json) =>
                     val chartName = (json \ "questionCard" \ "name").asOpt[String].getOrElse("Unknown Chart")
-                    println(s"---------Started Processing For The Chart: $chartName--------")
+                    println(s"  --- Started Processing For The Chart: $chartName")
 
                     if (validateJson(jsonFileName)) {
                       val requestBody = (json \ "questionCard").get
 
-                      val updatedJson = updateQuery(requestBody)
+                      val updatedJson = updateJson(requestBody,statename, districtname)
 
                       updatedJson match {
                         case JsSuccess(updated, _) =>
-//                          println("Original JSON:")
-//                          println(Json.prettyPrint(requestBody))
-//
-//                          println("\nUpdated JSON:")
-//                          println(Json.prettyPrint(updated))
+                          println("Original JSON:")
+                          println(Json.prettyPrint(requestBody))
+
+                          println("\nUpdated JSON:")
+                          println(Json.prettyPrint(updated))
 
                           val response = metabaseUtil.createQuestionCard(updated.toString())
 
@@ -88,7 +90,7 @@ object UpdateJsonFiles {
 
                           cardIdOpt match {
                             case Some(cardId) =>
-                              println(s">>>>>>> Successfully created question card with card_id: $cardId for $chartName >>>>>>>>")
+                              println(s"   >> Successfully created question card with card_id: $cardId for $chartName")
 
                               val updatedJsonOpt  = updateJsonWithCardId(json,cardId)
                               println(s"updatedJsonOpt = $updatedJsonOpt")
@@ -122,6 +124,8 @@ object UpdateJsonFiles {
       }
     }
 
+    import play.api.libs.json._
+    import scala.collection.immutable.Seq
 
     def updateJsonWithCardId(json: JsValue, cardId: Int): Option[JsValue] = {
       Try {
@@ -155,7 +159,7 @@ object UpdateJsonFiles {
     }
 
     // Helper function to update JSON
-    def updateQuery(json: JsValue): JsResult[JsValue] = {
+    def updateJson(json: JsValue, statename: String, districtname: String): JsResult[JsValue] = {
       // Log the structure of the JSON at the beginning
       println("Original JSON:")
       println(Json.prettyPrint(json))
@@ -165,7 +169,11 @@ object UpdateJsonFiles {
         (__ \ "dataset_query" \ "native" \ "query").json.update(
           Reads[JsValue] {
             case JsString(query) =>
-              JsSuccess(JsString(query.replace("[[AND {{state_param}}]]", s"AND statename = '$statename'")))
+              // Replace the placeholders in the query with the actual values
+              val updatedQuery = query
+                .replace("[[AND {{state_param}}]]", s"AND statename = '$statename'")
+                .replace("[[AND {{district_param}}]]", s"AND districtname = '$districtname'")
+              JsSuccess(JsString(updatedQuery))
             case other =>
               JsError(s"Expected a string, but got: $other")
           }
@@ -178,7 +186,7 @@ object UpdateJsonFiles {
               case JsArray(parameters) =>
                 JsSuccess(JsArray(parameters.filterNot {
                   case obj: JsObject =>
-                    (obj \ "id").asOpt[String].contains("state_param")
+                    (obj \ "id").asOpt[String].contains("program_param")
                   case _ => false
                 }))
               case other =>
@@ -194,6 +202,31 @@ object UpdateJsonFiles {
           case JsError(_) =>
             println("Warning: 'parameters' key does not exist or could not be updated.")
             JsSuccess(updatedJson) // Proceed with the original JSON if parameters is missing
+        }
+      }.flatMap { updatedJson =>
+        // Safely handle the "parameter_mappings" field update if it exists
+        updatedJson.transform {
+          (__ \ "dashCards" \ "parameter_mappings").json.update(
+            Reads[JsValue] {
+              case JsArray(mappings) =>
+                JsSuccess(JsArray(mappings.filterNot {
+                  case obj: JsObject =>
+                    (obj \ "parameter_id").asOpt[String].contains("8c7d86ea")
+                  case _ => false
+                }))
+              case other =>
+                JsSuccess(other)
+            }
+          )
+        } match {
+          case JsSuccess(updatedMappings, _) =>
+            // Log the updated "parameter_mappings"
+            println("Updated parameter_mappings:")
+            println(Json.prettyPrint(updatedMappings))
+            JsSuccess(updatedMappings)
+          case JsError(_) =>
+            println("Warning: 'parameter_mappings' key does not exist or could not be updated.")
+            JsSuccess(updatedJson) // Proceed with the original JSON if parameter_mappings is missing
         }
       }
     }

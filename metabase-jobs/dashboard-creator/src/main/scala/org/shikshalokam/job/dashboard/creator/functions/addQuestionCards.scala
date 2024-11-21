@@ -14,95 +14,96 @@ import scala.io.Source
 import scala.sys.process._
 import scala.util.{Failure, Success, Try}
 import scala.collection.mutable.ListBuffer
-
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
+import java.io.{File, IOException}
+import scala.util.{Failure, Success, Try}
+import scala.collection.JavaConverters._
 
 object addQuestionCards {
-  def AddQuestionCardsFunction(metabaseUtil:MetabaseUtil,mainDir:String,dashboardId:Int): Unit = {
-    println(s"---------------Started processing AddQuestionCardsFunction function---------------")
+
+  def addQuestionCardsFunction(metabaseUtil: MetabaseUtil, mainDir: String, dashboardId: Int): Unit = {
+    println(s"---------------Started processing AddQuestionCardsFunction---------------")
+    val objectMapper = new ObjectMapper()
+
     def appendDashCardToDashboard(mainDir: String, dashboardId: Int): Unit = {
       val mainDirectory = new File(mainDir)
-      // Step 7: Get the Dashboard response
-      val DashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
 
-      // Step 8: Extract the existing dashcards
-      val DashboardJson = Json.parse(DashboardResponse)
-      var existingDashcards = (DashboardJson \ "dashcards").asOpt[JsArray] match {
-        case Some(dashcards) => dashcards
-        case None => JsArray()
+      // Step 7: Get the Dashboard response
+      val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
+
+      // Step 8: Parse existing dashcards
+      val dashboardJson = objectMapper.readTree(dashboardResponse)
+      val existingDashcards = dashboardJson.path("dashcards") match {
+        case array: ArrayNode => array
+        case _ => objectMapper.createArrayNode()
       }
-      println(s"existingDashcards = $existingDashcards")
-      // Step 1: Check if the main directory exists and is a directory
+      println(s"existingDashcards: $existingDashcards")
+
+      // Step 1: Validate main directory
       if (mainDirectory.exists() && mainDirectory.isDirectory) {
-        // Step 2: Get all directories inside the main directory
         val dirs = mainDirectory.listFiles().filter(_.isDirectory)
 
-        // Loop through each directory inside the main directory
         dirs.foreach { dir =>
           println(s"Processing directory: ${dir.getName}")
 
-          // Step 3: Look for "json" sub-directory
+          // Step 3: Check for "json" subdirectory
           val jsonDir = new File(dir, "json")
           if (jsonDir.exists() && jsonDir.isDirectory) {
-            // Step 4: Get all directories inside the "json" directory
             val subDirs = jsonDir.listFiles().filter(_.isDirectory)
 
-            // Loop through each subdirectory
             subDirs.foreach { subDir =>
               println(s"  Processing subdirectory: ${subDir.getName}")
 
-              // Step 5: Loop through each JSON file inside the subdirectory
               val jsonFiles = subDir.listFiles().filter(_.getName.endsWith(".json"))
               jsonFiles.foreach { jsonFile =>
                 println(s"Reading JSON file: ${jsonFile.getName}")
 
-                // Step 6: Read JSON file and fetch the value of the "dashboard" key
-                val dashboardValue = readJsonFile(jsonFile)
-                println(s"dashboardValue : $dashboardValue")
-                dashboardValue match {
-                  case Some(value) =>
-                    // If a valid dashboard value exists, append it to the existingDashcards (as JsObject or JsArray)
-                    val newCard = Json.obj("dashCards" -> value)
-                    val dashCards: JsValue = (newCard \ "dashCards").get
-                    println(s"dashCards = $dashCards")
-                    existingDashcards = existingDashcards :+ dashCards
-                    println(s"existingDashcards = $existingDashcards")
-                  case None =>
-                    println("dashCards key not found in the JSON.")
+                // Step 6: Extract "dashCards" key from the JSON file
+                val dashCardsNode = readJsonFile(jsonFile)
+                dashCardsNode.foreach { value =>
+                  println(s"Extracted dashCards: $value")
+                  existingDashcards.add(value)
                 }
               }
             }
           }
         }
-        // Convert JsArray to String
-        val finalDashcards: JsObject = Json.obj("dashcards" -> existingDashcards)
-        println(s"finalDashcards = $finalDashcards")
-        val DashcardString: String = Json.stringify(finalDashcards)
-        val UpdateDashcards = metabaseUtil.addQuestionCardToDashboard(dashboardId,DashcardString)
-        println(s"********************* successfully updated Dashcard : $UpdateDashcards  *********************")
+
+        // Step 9: Update the dashboard with the new dashcards
+        val finalDashboardJson = objectMapper.createObjectNode()
+        finalDashboardJson.set("dashcards", existingDashcards)
+        val dashcardsString = objectMapper.writeValueAsString(finalDashboardJson)
+        println(s"finalDashcards: $dashcardsString")
+
+        val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, dashcardsString)
+        println(s"********************* Successfully updated Dashcard: $updateResponse *********************")
       } else {
         println(s"$mainDir is not a valid directory.")
       }
+    }
 
-      def readJsonFile(file: File): Option[JsValue] = {
-        Try {
-          val source = Source.fromFile(file)
-          val content = try source.mkString finally source.close()
-          //              println(s"File content from ${file.getName}: $content")
-          Json.parse(content) \ "dashCards" // Extract the "dashboard" key
-        } match {
-          case Success(JsDefined(value)) =>
+    // Helper method to read JSON file and extract "dashCards"
+    def readJsonFile(file: File): Option[JsonNode] = {
+      Try {
+        val rootNode = objectMapper.readTree(file)
+        rootNode.path("dashCards") match {
+          case value if !value.isMissingNode =>
             println(s"Successfully extracted 'dashCards' key: $value")
             Some(value)
-          case Success(JsUndefined()) =>
+          case _ =>
             println(s"'dashCards' key not found in file: ${file.getName}")
             None
-          case Failure(exception) =>
-            println(s"Error reading or parsing JSON file ${file.getName}: ${exception.getMessage}")
-            None
         }
+      } match {
+        case Success(value) => value
+        case Failure(exception) =>
+          println(s"Error reading or parsing JSON file ${file.getName}: ${exception.getMessage}")
+          None
       }
     }
-    appendDashCardToDashboard(mainDir,dashboardId)
-    println(s"---------------Processed AddQuestionCardsFunction function---------------")
+
+    appendDashCardToDashboard(mainDir, dashboardId)
+    println(s"---------------Processed AddQuestionCardsFunction---------------")
   }
 }

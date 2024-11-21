@@ -1,29 +1,22 @@
 [
   {
-    "slug": "select_program_name",
-    "default": [],
-    "name": "Select Program Name",
-    "isMultiSelect": false,
-    "type": "string/=",
-    "sectionId": "string",
-    "values_source_type": "static-list",
-    "id": "8c7d86ea",
-    "values_source_config": {
-      "values": []
-    },
-    "required": true
-  },
-  {
     "slug": "select_state",
     "name": "Select State",
     "isMultiSelect": false,
     "type": "string/=",
     "sectionId": "location",
     "id": "c32c8fc5",
-    "required": false,
-    "filteringParameters": [
-      "8c7d86ea"
-    ]
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 2578,
+      "value_field": [
+        "field",
+        "statename",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    }
   },
   {
     "slug": "select_district",

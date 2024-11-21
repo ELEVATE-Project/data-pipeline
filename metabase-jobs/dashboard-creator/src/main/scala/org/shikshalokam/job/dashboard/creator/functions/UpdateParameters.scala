@@ -15,37 +15,53 @@ import scala.sys.process._
 import scala.util.{Failure, Success, Try}
 
 object UpdateParameters {
-  def UpdateStateParameterFunction(metabaseUtil:MetabaseUtil,parameterFilePath:String,dashboardId:Int,stateName:String): Unit = {
-    val fileContent = new String(Files.readAllBytes(Paths.get(parameterFilePath)), "UTF-8")
+  def updateStateParameterFunction(metabaseUtil: MetabaseUtil, parameterFilePath: String, dashboardId: Int, stateId: Int): Unit = {
+    // Read the content of the JSON file
+    val fileContent = Source.fromFile(parameterFilePath).getLines().mkString
     val parameterJson = Json.parse(fileContent).as[JsArray]
 
+    // Update parameters with new 'card_id' for "select_district"
     val updatedParameterJson = parameterJson.value.map { param =>
       val updatedParam = param.as[JsObject]
-      if ((updatedParam \ "slug").as[String] == "select_state") {
+      if ((updatedParam \ "slug").as[String] == "select_district") {
+        // Update only the card_id in values_source_config
+        val updatedValuesSourceConfig = (updatedParam \ "values_source_config").as[JsObject] + (
+          "card_id" -> JsNumber(stateId)
+          )
+
+        // Update the parameter object for "select_district"
         updatedParam ++ Json.obj(
-          "default" -> Json.arr(stateName),
-          "values_source_config" -> Json.obj("values" -> Json.arr(stateName))
+          "values_source_config" -> updatedValuesSourceConfig
         )
       } else {
+        // Return the parameter as-is for other slugs
         updatedParam
       }
     }
 
-    // Fetch existing dashboard details
+    println(s"updatedParameterJson = $updatedParameterJson")
+
+    // Fetch existing dashboard details using the dashboardId
     val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
 
-    // Parse current parameters
+    // Parse the current parameters of the dashboard
     val currentParametersJson = (Json.parse(dashboardResponse) \ "parameters").as[JsArray]
 
-    // Combine current parameters with the updated ones
-    val finalParametersJson = Json.toJson(currentParametersJson.value ++ updatedParameterJson)
+    // Combine current parameters with the updated "select_district" parameter
+    val finalParametersJson = Json.toJson(
+      currentParametersJson.value.filterNot(param =>
+        (param \ "slug").asOpt[String].contains("select_district")
+      ) ++ updatedParameterJson
+    )
 
-    // Update the dashboard with new parameters
+    // Prepare the update payload with the new parameters
     val updatePayload = Json.obj("parameters" -> finalParametersJson)
 
-    val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId , updatePayload.toString())
+    // Update the dashboard with the new parameters
+    val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString())
 
-    println(s"----------------successfullly updated State dashboard parameter $updateResponse----------------")
+    // Log the successful update response
+    println(s"----------------Successfully updated State dashboard parameter: $updateResponse----------------")
   }
 
   def UpdateAdminParameterFunction(metabaseUtil:MetabaseUtil,parameterFilePath:String,dashboardId:Int): Unit = {
@@ -74,82 +90,96 @@ object UpdateParameters {
     println(s"----------------successfullly updated Admin dashboard parameter $updateResponse----------------")
   }
 
-  def UpdateProgramParameterFunction(metabaseUtil:MetabaseUtil,parameterFilePath:String,dashboardId:Int,programName:String): Unit = {
-    val fileContent = new String(Files.readAllBytes(Paths.get(parameterFilePath)), "UTF-8")
+  def UpdateProgramParameterFunction(metabaseUtil:MetabaseUtil,parameterFilePath:String,dashboardId:Int,programName:String,programId:Int): Unit = {
+    val fileContent = Source.fromFile(parameterFilePath).getLines().mkString
     val parameterJson = Json.parse(fileContent).as[JsArray]
 
+    // Update parameters with new 'card_id' for "select_district"
     val updatedParameterJson = parameterJson.value.map { param =>
       val updatedParam = param.as[JsObject]
-      if ((updatedParam \ "slug").as[String] == "select_program_name") {
+      if ((updatedParam \ "slug").as[String] == "select_state") {
+        // Update only the card_id in values_source_config
+        val updatedValuesSourceConfig = (updatedParam \ "values_source_config").as[JsObject] + (
+          "card_id" -> JsNumber(programId)
+          )
+
+        // Update the parameter object for "select_district"
         updatedParam ++ Json.obj(
-          "default" -> Json.arr(programName),
-          "values_source_config" -> Json.obj("values" -> Json.arr(programName))
+          "values_source_config" -> updatedValuesSourceConfig
         )
       } else {
+        // Return the parameter as-is for other slugs
         updatedParam
       }
     }
 
-    // Fetch existing dashboard details
+    println(s"updatedParameterJson = $updatedParameterJson")
+
+    // Fetch existing dashboard details using the dashboardId
     val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
 
-    // Parse current parameters
+    // Parse the current parameters of the dashboard
     val currentParametersJson = (Json.parse(dashboardResponse) \ "parameters").as[JsArray]
 
-    // Combine current parameters with the updated ones
-    val finalParametersJson = Json.toJson(currentParametersJson.value ++ updatedParameterJson)
+    // Combine current parameters with the updated "select_district" parameter
+    val finalParametersJson = Json.toJson(
+      currentParametersJson.value.filterNot(param =>
+        (param \ "slug").asOpt[String].contains("select_state")
+      ) ++ updatedParameterJson
+    )
 
-    // Update the dashboard with new parameters
+    // Prepare the update payload with the new parameters
     val updatePayload = Json.obj("parameters" -> finalParametersJson)
 
-    val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId , updatePayload.toString())
+    // Update the dashboard with the new parameters
+    val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString())
 
     println(s"----------------successfullly updated Program dashboard parameter $updateResponse----------------")
   }
 
-  def UpdateDistrictParameterFunction(metabaseUtil:MetabaseUtil,parameterFilePath:String,dashboardId:Int,stateName:String,districtName:String): Unit = {
-    val fileContent = new String(Files.readAllBytes(Paths.get(parameterFilePath)), "UTF-8")
+  def UpdateDistrictParameterFunction(metabaseUtil:MetabaseUtil,parameterFilePath:String,dashboardId:Int,stateName:String,districtName:String,districtId:Int): Unit = {
+    val fileContent = Source.fromFile(parameterFilePath).getLines().mkString
     val parameterJson = Json.parse(fileContent).as[JsArray]
 
+    // Update parameters with new 'card_id' for "select_district"
     val updatedParameterJson = parameterJson.value.map { param =>
       val updatedParam = param.as[JsObject]
+      if ((updatedParam \ "slug").as[String] == "select_program_name") {
+        // Update only the card_id in values_source_config
+        val updatedValuesSourceConfig = (updatedParam \ "values_source_config").as[JsObject] + (
+          "card_id" -> JsNumber(districtId)
+          )
 
-      // Update state parameter
-      val updatedStateParam = if ((updatedParam \ "slug").as[String] == "select_state") {
+        // Update the parameter object for "select_district"
         updatedParam ++ Json.obj(
-          "default" -> Json.arr(stateName),
-          "values_source_config" -> Json.obj("values" -> Json.arr(stateName))
+          "values_source_config" -> updatedValuesSourceConfig
         )
       } else {
+        // Return the parameter as-is for other slugs
         updatedParam
       }
-
-      // Update district parameter
-      val updatedDistrictParam = if ((updatedStateParam \ "slug").as[String] == "select_district") {
-        updatedStateParam ++ Json.obj(
-          "default" -> Json.arr(districtName),
-          "values_source_config" -> Json.obj("values" -> Json.arr(districtName))
-        )
-      } else {
-        updatedStateParam
-      }
-
-      updatedDistrictParam
     }
 
-    // Fetch existing dashboard details
+    println(s"updatedParameterJson = $updatedParameterJson")
+
+    // Fetch existing dashboard details using the dashboardId
     val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
 
-    // Parse current parameters
+    // Parse the current parameters of the dashboard
     val currentParametersJson = (Json.parse(dashboardResponse) \ "parameters").as[JsArray]
 
-    // Combine current parameters with the updated ones
-    val finalParametersJson = Json.toJson(currentParametersJson.value ++ updatedParameterJson)
+    // Combine current parameters with the updated "select_district" parameter
+    val finalParametersJson = Json.toJson(
+      currentParametersJson.value.filterNot(param =>
+        (param \ "slug").asOpt[String].contains("select_program_name")
+      ) ++ updatedParameterJson
+    )
 
-    // Update the dashboard with new parameters
+    // Prepare the update payload with the new parameters
     val updatePayload = Json.obj("parameters" -> finalParametersJson)
 
-    val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId , updatePayload.toString())
+    // Update the dashboard with the new parameters
+    val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString())
 
     println(s"----------------successfullly updated Program dashboard parameter $updateResponse----------------")
   }
