@@ -38,12 +38,12 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
     sessionToken match {
       case Some(token) =>
         //TODO : Remove bellow line
-//        println(s"SessionToken already exists: $token")
+        //        println(s"SessionToken already exists: $token")
         token
       case None =>
         val token = authenticate()
         //TODO : Remove bellow line
-//        println(s"Generated new token: $token")
+        //        println(s"Generated new token: $token")
         sessionToken = Some(token)
         token
     }
@@ -275,6 +275,87 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
     }
   }
 
+  /**
+   * Method to create a new group in Metabase
+   *
+   * @param requestData JSON string representing the group data
+   * @return JSON string representing the created group
+   */
+  def createGroup(requestData: String): String = {
+    val url = s"$metabaseUrl/permissions/group"
+
+    val response = requests.post(
+      url,
+      data = requestData,
+      headers = Map(
+        "Content-Type" -> "application/json",
+        "X-Metabase-Session" -> getSessionToken
+      )
+    )
+
+    if (response.statusCode == 200) {
+      val groupResponseBody = ujson.read(response.text).render()
+      groupResponseBody
+    } else {
+      throw new Exception(s"Failed to create group with status code: ${response.statusCode}, message: ${response.text}")
+    }
+  }
+
+  /**
+   * Method to get revision id from Metabase
+   *
+   * @return JSON string representing the revision id
+   */
+  def getRevisionId(): String = {
+    val url = s"$metabaseUrl/collection/graph"
+
+    val response = requests.get(
+      url,
+      headers = Map(
+        "Content-Type" -> "application/json",
+        "X-Metabase-Session" -> getSessionToken
+      )
+    )
+
+    if (response.statusCode == 200) {
+      val revisionId = ujson.read(response.text).render()
+      revisionId
+    } else {
+      throw new Exception(s"Failed to get revision id with status code: ${response.statusCode}, message: ${response.text}")
+    }
+  }
+
+
+  /**
+   * Method to add collection to group in Metabase
+   *
+   * @param requestData JSON string representing the collection and group data
+   * @return JSON string representing the updated group with the added collection
+   */
+  def addCollectionToGroup(requestData: String): String = {
+    val url = s"$metabaseUrl/collection/graph"
+
+    val response = requests.put(
+      url,
+      data = requestData,
+      headers = Map(
+        "Content-Type" -> "application/json",
+        "X-Metabase-Session" -> getSessionToken
+      )
+    )
+
+    if (response.statusCode == 200) {
+      val addCollectionToGroupResponseBody = ujson.read(response.text).render()
+      addCollectionToGroupResponseBody
+    } else {
+      throw new Exception(s"Failed to add collection to group with status code: ${response.statusCode}, message: ${response.text}")
+    }
+  }
+
+  /**
+   * Method to list users from Metabase
+   * @return JSON string representing the users
+   */
   def listUsers(): String = {
     val url = s"$metabaseUrl/user"
 
