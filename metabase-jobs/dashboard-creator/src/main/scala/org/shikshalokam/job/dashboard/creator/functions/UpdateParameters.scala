@@ -116,7 +116,7 @@ object UpdateParameters {
       }
     }
 
-    println(s"updatedParameterJson = $updatedParameterJson")
+//    println(s"updatedParameterJson = $updatedParameterJson")
 
     // Fetch existing dashboard details using the dashboardId
     val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
@@ -164,7 +164,7 @@ object UpdateParameters {
       }
     }
 
-    println(s"updatedParameterJson = $updatedParameterJson")
+//    println(s"updatedParameterJson = $updatedParameterJson")
 
     // Fetch existing dashboard details using the dashboardId
     val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)

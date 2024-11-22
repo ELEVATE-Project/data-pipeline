@@ -77,11 +77,11 @@ object UpdateDistrictJsonFiles {
 
                       updatedJson match {
                         case JsSuccess(updated, _) =>
-                          println("Original JSON:")
-                          println(Json.prettyPrint(requestBody))
+//                          println("Original JSON:")
+//                          println(Json.prettyPrint(requestBody))
 
-                          println("\nUpdated JSON:")
-                          println(Json.prettyPrint(updated))
+//                          println("\nUpdated JSON:")
+//                          println(Json.prettyPrint(updated))
 
                           val response = metabaseUtil.createQuestionCard(updated.toString())
 
@@ -161,8 +161,8 @@ object UpdateDistrictJsonFiles {
     // Helper function to update JSON
     def updateJson(json: JsValue, statename: String, districtname: String): JsResult[JsValue] = {
       // Log the structure of the JSON at the beginning
-      println("Original JSON:")
-      println(Json.prettyPrint(json))
+//      println("Original JSON:")
+//      println(Json.prettyPrint(json))
 
       // Update "query" field
       json.transform {
@@ -196,8 +196,8 @@ object UpdateDistrictJsonFiles {
         } match {
           case JsSuccess(updatedParams, _) =>
             // Log the updated "parameters"
-            println("Updated parameters:")
-            println(Json.prettyPrint(updatedParams))
+//            println("Updated parameters:")
+//            println(Json.prettyPrint(updatedParams))
             JsSuccess(updatedParams)
           case JsError(_) =>
             println("Warning: 'parameters' key does not exist or could not be updated.")
@@ -221,8 +221,8 @@ object UpdateDistrictJsonFiles {
         } match {
           case JsSuccess(updatedMappings, _) =>
             // Log the updated "parameter_mappings"
-            println("Updated parameter_mappings:")
-            println(Json.prettyPrint(updatedMappings))
+//            println("Updated parameter_mappings:")
+//            println(Json.prettyPrint(updatedMappings))
             JsSuccess(updatedMappings)
           case JsError(_) =>
             println("Warning: 'parameter_mappings' key does not exist or could not be updated.")

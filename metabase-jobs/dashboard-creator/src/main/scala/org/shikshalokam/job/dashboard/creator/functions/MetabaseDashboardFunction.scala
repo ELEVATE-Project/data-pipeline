@@ -43,21 +43,6 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
   }
 
   override def processElement(event: Event, context: ProcessFunction[Event, Event]#Context, metrics: Metrics): Unit = {
-    object AsciiArtPrinter extends App {
-      // Define ANSI color codes
-      val BOLD_CYAN = "\u001b[1;36m" // Bold Cyan
-      val RESET = "\u001b[0m"         // Reset color
-
-      // Print the ASCII art with applied colors
-      println(s"${BOLD_CYAN}")
-      println("███    ███ ███████ ████████  █████  ██████   █████  ███████ ███████ ")
-      println("████  ████ ██         ██    ██   ██ ██   ██ ██   ██ ██      ██      ")
-      println("██ ████ ██ █████      ██    ███████ ██████  ███████ ███████ █████   ")
-      println("██  ██  ██ ██         ██    ██   ██ ██   ██ ██   ██      ██ ██      ")
-      println("██      ██ ███████    ██    ██   ██ ██████  ██   ██ ███████ ███████ ")
-      println(s"${RESET}")
-    }
-
 
     println(s"***************** Start of Processing the Metabase Dashboard Event with Id = ${event._id}*****************")
     println(event)

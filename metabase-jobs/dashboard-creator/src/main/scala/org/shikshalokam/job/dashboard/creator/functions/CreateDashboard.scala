@@ -46,7 +46,7 @@ object CreateDashboard {
 
       //get database id
       val listDatabaseDetails = metabaseUtil.listDatabaseDetails()
-      println("Database Details JSON = " + listDatabaseDetails)
+
 
       // function to fetch database id from the output of listDatabaseDetails API
       def getDatabaseId(databasesResponse: String, databaseName: String): Option[Int] = {

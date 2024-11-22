@@ -113,7 +113,7 @@ object UpdateAndAddDistrictFilter {
         val questionCardResponse = metabaseUtil.createQuestionCard(requestBody.toString)
 
         // Log the response for debugging
-        println(s"API Response: $questionCardResponse")
+//        println(s"API Response: $questionCardResponse")
 
         // Parse the JSON response
         val responseJson = objectMapper.readTree(questionCardResponse)
