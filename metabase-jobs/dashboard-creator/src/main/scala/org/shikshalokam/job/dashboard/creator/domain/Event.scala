@@ -12,20 +12,13 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def publishedAt: String = readOrDefault[String]("publishedAt", "")
 
-  def admin: List[String] = readList("dashboardData.admin")
+  def admin: String = readOrDefault("dashboardData.admin","")
 
-  def targetedProgram: List[String] = readList("dashboardData.targetedProgram")
+  def targetedProgram: String = readOrDefault("dashboardData.targetedProgram","")
 
-  def targetedDistrict: List[String] = readList("dashboardData.targetedDistrict")
+  def targetedDistrict: String = readOrDefault("dashboardData.targetedDistrict","")
 
-  def targetedState: List[String] = readList("dashboardData.targetedState")
+  def targetedState: String = readOrDefault("dashboardData.targetedState","")
 
   // Helper function to read list fields, handling both Java and Scala lists
-  private def readList(key: String): List[String] = {
-    readOrDefault[Any](key, List.empty[String]) match {
-      case list: java.util.List[_] => list.asScala.toList.map(_.toString)
-      case list: List[_] => list.map(_.toString)
-      case _ => List.empty[String]
-    }
-  }
 }
