@@ -17,6 +17,7 @@
 
     <modules>
         <module>dashboard-creator</module>
+        <module>users-via-csv</module>
     </modules>
 
     <build>
