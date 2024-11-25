@@ -1,18 +1,13 @@
 package org.shikshalokam.job.dashboard.creator.functions
 
-import org.json4s.jackson.JsonMethods.{mapper, _}
 import org.shikshalokam.job.util.MetabaseUtil
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
-
-import scala.collection.JavaConverters._
 import scala.io.Source
-
 import java.io.{File, PrintWriter}
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 import com.fasterxml.jackson.databind.node.{JsonNodeFactory, ObjectNode}
-
 
 
 object UpdateAdminJsonFiles {

@@ -16,10 +16,10 @@ object CreateAndAssignGroup {
 
 
     val revisionData = metabaseUtil.getRevisionId()
-    println(revisionData)
+//    println(revisionData)
 
     val revisionId = mapper.readTree(revisionData).get("revision").asInt()
-    println("RevisionId = " + revisionId)
+//    println("RevisionId = " + revisionId)
 
     val addCollectionToUserRequestBody =
       s"""
@@ -33,7 +33,7 @@ object CreateAndAssignGroup {
          |}
          |""".stripMargin
 
-    println(addCollectionToUserRequestBody)
+//    println(addCollectionToUserRequestBody)
     val addCollectionToUser = metabaseUtil.addCollectionToGroup(addCollectionToUserRequestBody)
     println(addCollectionToUser)
   }

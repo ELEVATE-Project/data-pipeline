@@ -1,24 +1,10 @@
 package org.shikshalokam.job.dashboard.creator.functions
 
-import org.json4s._
-import org.json4s.jackson.JsonMethods._
-import org.json4s.jackson.Serialization
-import org.shikshalokam.job.dashboard.creator.task.MetabaseDashboardConfig
 import org.shikshalokam.job.util.MetabaseUtil
-import play.api.libs.json._
-
 import java.io.{File, PrintWriter}
-import java.nio.file.{Files, Paths}
-import scala.collection.immutable._
-import scala.io.Source
-import scala.sys.process._
 import scala.util.{Failure, Success, Try}
-import scala.collection.mutable.ListBuffer
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
-import java.io.{File, IOException}
-import scala.util.{Failure, Success, Try}
-import scala.collection.JavaConverters._
 
 object addQuestionCards {
 
@@ -38,7 +24,7 @@ object addQuestionCards {
         case array: ArrayNode => array
         case _ => objectMapper.createArrayNode()
       }
-      println(s"existingDashcards: $existingDashcards")
+//      println(s"existingDashcards: $existingDashcards")
 
       // Step 1: Validate main directory
       if (mainDirectory.exists() && mainDirectory.isDirectory) {

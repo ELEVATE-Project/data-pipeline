@@ -1,7 +1,7 @@
 {
   "questionCard" : {
     "name" : "No. of certificates issued",
-    "collection_id" : 644,
+    "collection_id" : 658,
     "dataset_query" : {
       "database" : 2,
       "type" : "native",
@@ -9,13 +9,31 @@
         "query" : "SELECT COUNT(DISTINCT  projects.certificatePdfPath) \nFROM projects\nJOIN solutions on projects.solutionid = solutions.solutionid\nWHERE  projects.certificatePdfPath IS NOT NULL \nAND  projects.certificatePdfPath <> '' \n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{program_param}}]]",
         "template-tags" : {
           "state_param" : {
-            "dimension" : [ 80, 80 ]
+            "type" : "dimension",
+            "name" : "state_param",
+            "display-name" : "State Param",
+            "default" : null,
+            "dimension" : [ "field", 80, null ],
+            "widget-type" : "string/=",
+            "options" : null
           },
           "district_param" : {
-            "dimension" : [ 87, 87 ]
+            "type" : "dimension",
+            "name" : "district_param",
+            "display-name" : "District Param",
+            "default" : null,
+            "dimension" : [ "field", 87, null ],
+            "widget-type" : "string/=",
+            "options" : null
           },
           "program_param" : {
-            "dimension" : [ 118, 118 ]
+            "type" : "dimension",
+            "name" : "program_param",
+            "display-name" : "Program Param",
+            "default" : null,
+            "dimension" : [ "field", 118, null ],
+            "widget-type" : "string/=",
+            "options" : null
           }
         }
       }
@@ -46,19 +64,19 @@
     } ]
   },
   "dashCards" : {
-    "card_id" : 6931,
+    "card_id" : 7362,
     "dashboard_tab_id" : null,
     "id" : 5,
     "parameter_mappings" : [ {
-      "card_id" : 6931,
+      "card_id" : 7362,
       "parameter_id" : "c32c8fc5",
       "target" : [ "dimension", [ "template-tag", "state_param" ] ]
     }, {
-      "card_id" : 6931,
+      "card_id" : 7362,
       "parameter_id" : "8c7d86ea",
       "target" : [ "dimension", [ "template-tag", "program_param" ] ]
     }, {
-      "card_id" : 6931,
+      "card_id" : 7362,
       "parameter_id" : "74a10335",
       "target" : [ "dimension", [ "template-tag", "district_param" ] ]
     } ],

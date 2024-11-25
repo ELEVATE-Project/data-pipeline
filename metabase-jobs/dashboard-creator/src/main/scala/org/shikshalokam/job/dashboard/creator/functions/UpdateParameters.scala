@@ -1,18 +1,10 @@
 package org.shikshalokam.job.dashboard.creator.functions
 
-import org.json4s._
-import org.json4s.jackson.JsonMethods._
-import org.json4s.jackson.Serialization
-import org.shikshalokam.job.dashboard.creator.task.MetabaseDashboardConfig
 import org.shikshalokam.job.util.MetabaseUtil
 import play.api.libs.json._
-
-import java.io.{File, PrintWriter}
 import java.nio.file.{Files, Paths}
-import scala.collection.immutable._
 import scala.io.Source
-import scala.sys.process._
-import scala.util.{Failure, Success, Try}
+
 
 object UpdateParameters {
   def updateStateParameterFunction(metabaseUtil: MetabaseUtil, parameterFilePath: String, dashboardId: Int, stateId: Int): Unit = {

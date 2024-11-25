@@ -6,8 +6,6 @@ import org.shikshalokam.job.util.MetabaseUtil
 
 import java.io.File
 
-// This script will read the state-filter.json file, update the query by replacing 'STATENAME'
-// with a dynamic state name, use the createQuestionCard API to create a question card, retrieve the question card ID, and update the card ID in the state-parameter.json file.
 
 object UpdateAndAddStateFilter {
   val objectMapper = new ObjectMapper()

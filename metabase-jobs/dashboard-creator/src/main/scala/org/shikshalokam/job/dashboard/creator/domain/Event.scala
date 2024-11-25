@@ -9,8 +9,6 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def reportType: String = readOrDefault[String]("reportType", "")
 
-  def publishedAt: String = readOrDefault[String]("publishedAt", "")
-
   def admin: String = readOrDefault("dashboardData.admin","")
 
   def targetedProgram: String = readOrDefault("dashboardData.targetedProgram","")
