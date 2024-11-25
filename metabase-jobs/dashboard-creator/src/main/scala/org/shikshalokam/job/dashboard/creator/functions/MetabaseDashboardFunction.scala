@@ -56,7 +56,8 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
     println(s"Targeted District ID: $targetedDistrictId")
     println(s"admin: $admin")
 
-    if (event.reportType == "Project") {
+    event.reportType match {
+      case "Project" =>
       println(s">>>>>>>>>>> Started Processing Metabase Project Dashboards >>>>>>>>>>>>")
       val mainDir: String = "metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson"
       val mainDirAbsolutePath: String = new java.io.File(mainDir).getCanonicalPath
@@ -73,7 +74,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val dashboardName: String = s"Project Admin Report"
               val GroupName: String = s"Report_Admin"
               val metabaseDatabase: String = config.metabaseDatabase
-              val parameterFilePath: String = "metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/admin-parameter.json"
+              val parameterFilePath: String = s"$mainDir/admin-parameter.json"
               val parameterFileAbsPath: String = new java.io.File(parameterFilePath).getCanonicalPath
               val CollectionQuery = s"UPDATE admin_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE name = '$admin';"
               val collectionId : Int = CreateDashboard.checkAndCreateCollection(collectionName = collectionName, ReportType = "Project", metabaseUtil = metabaseUtil, postgresUtil = postgresUtil,metaTableQuery = CollectionQuery)
@@ -129,7 +130,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
             val dashboardName = s"Project State Report [$stateName]"
             val GroupName: String = s"${stateName}_State_Manager"
             val metabaseDatabase: String = config.metabaseDatabase
-            val parameterFilePath: String = "metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/state-parameter.json"
+            val parameterFilePath: String = s"$mainDir/state-parameter.json"
             val parameterFileAbsPath: String = new java.io.File(parameterFilePath).getCanonicalPath
             val CollectionQuery = s"UPDATE state_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$targetedStateId';"
             val collectionId : Int = CreateDashboard.checkAndCreateCollection(collectionName = collectionName, ReportType = "Project", metabaseUtil = metabaseUtil, postgresUtil = postgresUtil,metaTableQuery = CollectionQuery)
@@ -142,7 +143,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
             val questionCardIdList = UpdateStateJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDirAbsolutePath, dashboardId = dashboardId, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil, stateName)
             val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
             addQuestionCards.addQuestionCardsFunction(metabaseUtil, mainDirAbsolutePath, dashboardId)
-            val filterFilePath: String = "metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/state-filter.json"
+            val filterFilePath: String = s"$mainDir/state-filter.json"
             val filterFileAbsPath: String = new java.io.File(filterFilePath).getCanonicalPath
             val stateIdFilter: Int = UpdateAndAddStateFilter.updateAndAddFilter(metabaseUtil = metabaseUtil, filterFilePath = filterFileAbsPath, statename = s"$stateName", districtname = null, programname = null, collectionId, databaseId)
             UpdateParameters.updateStateParameterFunction(metabaseUtil, parameterFileAbsPath, dashboardId, stateIdFilter)
@@ -182,7 +183,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
             val collectionName = s"Program Collection [$programName]"
             val dashboardName = s"Project Program Report [$programName]"
             val GroupName: String = s"Program_Manager[$programName]"
-            val parameterFilePath: String = "metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/program-parameter.json"
+            val parameterFilePath: String = s"$mainDir/program-parameter.json"
             val parameterFileAbsPath: String = new java.io.File(parameterFilePath).getCanonicalPath
             val metabaseDatabase: String = config.metabaseDatabase
             val CollectionQuery = s"UPDATE admin_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE name = '$admin';"
@@ -196,7 +197,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
             val questionCardIdList = UpdateProgramJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDirAbsolutePath, dashboardId = dashboardId, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil, programName)
             val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
             addQuestionCards.addQuestionCardsFunction(metabaseUtil, mainDirAbsolutePath, dashboardId)
-            val filterFilePath: String = "metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/program-filter.json"
+            val filterFilePath: String = s"$mainDir/program-filter.json"
             val filterFileAbsPath: String = new java.io.File(filterFilePath).getCanonicalPath
             val programIdFilter: Int = UpdateAndAddProgramFilter.updateAndAddFilter(metabaseUtil = metabaseUtil, filterFilePath = filterFileAbsPath, statename = null, districtname = null, programname = s"$programName", collectionId, databaseId)
             UpdateParameters.UpdateProgramParameterFunction(metabaseUtil, parameterFileAbsPath, dashboardId, programName, programIdFilter)
@@ -241,7 +242,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
             val dashboardName = s"Project District Report [$districtname - $statename]"
             val GroupName: String = s"${districtname}_District_Manager[$statename]"
             val metabaseDatabase: String = config.metabaseDatabase
-            val parameterFilePath:String = "metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/district-parameter.json"
+            val parameterFilePath:String = s"$mainDir/district-parameter.json"
             val parameterFileAbsPath: String = new java.io.File(parameterFilePath).getCanonicalPath
             val CollectionQuery = s"UPDATE district_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$targetedDistrictId';"
             val collectionId : Int = CreateDashboard.checkAndCreateCollection(collectionName = collectionName, ReportType = "Project", metabaseUtil = metabaseUtil, postgresUtil = postgresUtil,metaTableQuery = CollectionQuery)
@@ -254,7 +255,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
             val questionCardIdList = UpdateDistrictJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDirAbsolutePath, dashboardId = dashboardId, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil,statename,districtname)
             val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
             addQuestionCards.addQuestionCardsFunction(metabaseUtil, mainDirAbsolutePath, dashboardId)
-            val filterFilePath:String = "metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/district-filter.json"
+            val filterFilePath:String = s"$mainDir/district-filter.json"
             val filterFileAbsPath: String = new java.io.File(filterFilePath).getCanonicalPath
             val districtIdFilter : Int = UpdateAndAddDistrictFilter.updateAndAddFilter(metabaseUtil = metabaseUtil, filterFilePath = filterFileAbsPath, statename = s"$statename", districtname = s"$districtname", programname = null,collectionId,databaseId)
             UpdateParameters.UpdateDistrictParameterFunction(metabaseUtil,parameterFileAbsPath,dashboardId,statename,districtname,districtIdFilter)
@@ -274,7 +275,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
         }
       }else {
         println("targetedDistrict key is either not present or empty")
-      }
+    }
     println(s"***************** End of Processing the Metabase Project Dashboard *****************\n")
   }
 }
