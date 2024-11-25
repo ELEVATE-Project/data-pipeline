@@ -76,14 +76,13 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val metabaseDatabase: String = config.metabaseDatabase
               val parameterFilePath: String = s"$mainDir/admin-parameter.json"
               val parameterFileAbsPath: String = new java.io.File(parameterFilePath).getCanonicalPath
-              val CollectionQuery = s"UPDATE admin_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE name = '$admin';"
-              val collectionId : Int = CreateDashboard.checkAndCreateCollection(collectionName = collectionName, ReportType = "Project", metabaseUtil = metabaseUtil, postgresUtil = postgresUtil,metaTableQuery = CollectionQuery)
-              val DashboardQuery = s"UPDATE admin_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE name = '$admin';"
-              val dashboardId : Int = CreateDashboard.checkAndCreateDashboard(collectionId = collectionId, dashboardName = dashboardName, metabaseUtil = metabaseUtil, postgresUtil = postgresUtil, metaTableQuery = DashboardQuery)
+              val CreateDashboardQuery = s"UPDATE admin_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE name = '$admin';"
+              val collectionId : Int = CreateDashboard.checkAndCreateCollection(collectionName = collectionName, ReportType = "Project", metabaseUtil = metabaseUtil, postgresUtil = postgresUtil,metaTableQuery = CreateDashboardQuery)
+              val dashboardId : Int = CreateDashboard.checkAndCreateDashboard(collectionId = collectionId, dashboardName = dashboardName, metabaseUtil = metabaseUtil, postgresUtil = postgresUtil, metaTableQuery = CreateDashboardQuery)
               val databaseId : Int = CreateDashboard.getDatabaseId(metabaseDatabase = metabaseDatabase, metabaseUtil = metabaseUtil)
-              val statenameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId,"projects", "statename")
-              val districtnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "projects", "districtname")
-              val programnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "solutions", "programname")
+              val statenameId : Int = CreateDashboard.getTableMetadataId(databaseId = databaseId, metabaseUtil = metabaseUtil, tableName = "projects", columnName = "statename",postgresUtil = postgresUtil,metaTableQuery = CreateDashboardQuery)
+              val districtnameId : Int = CreateDashboard.getTableMetadataId(databaseId = databaseId, metabaseUtil = metabaseUtil, tableName = "projects", columnName = "districtname",postgresUtil = postgresUtil,metaTableQuery = CreateDashboardQuery)
+              val programnameId : Int = CreateDashboard.getTableMetadataId(databaseId = databaseId, metabaseUtil = metabaseUtil, tableName = "solutions", columnName = "programname",postgresUtil = postgresUtil,metaTableQuery = CreateDashboardQuery)
               val questionCardIdList = UpdateAdminJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDirAbsolutePath, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil)
               val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
               println(s"questionIdsString = $questionIdsString")
@@ -123,20 +122,19 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               case _ => ""
             }
             println(s"stateName = $stateName")
-            val collectionName = s"State Collection [$stateName]"
-            val dashboardName = s"Project State Report [$stateName]"
+            val collectionName = s"State Collection [1]"
+            val dashboardName = s"Project State Report [1]"
             val GroupName: String = s"${stateName}_State_Manager"
             val metabaseDatabase: String = config.metabaseDatabase
             val parameterFilePath: String = s"$mainDir/state-parameter.json"
             val parameterFileAbsPath: String = new java.io.File(parameterFilePath).getCanonicalPath
-            val CollectionQuery = s"UPDATE state_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$targetedStateId';"
-            val collectionId : Int = CreateDashboard.checkAndCreateCollection(collectionName = collectionName, ReportType = "Project", metabaseUtil = metabaseUtil, postgresUtil = postgresUtil,metaTableQuery = CollectionQuery)
-            val DashboardQuery = s"UPDATE state_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$targetedStateId';"
-            val dashboardId : Int = CreateDashboard.checkAndCreateDashboard(collectionId = collectionId, dashboardName = dashboardName, metabaseUtil = metabaseUtil, postgresUtil = postgresUtil, metaTableQuery = DashboardQuery)
+            val CreateDashboardQuery = s"UPDATE state_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$targetedStateId';"
+            val collectionId : Int = CreateDashboard.checkAndCreateCollection(collectionName = collectionName, ReportType = "Project", metabaseUtil = metabaseUtil, postgresUtil = postgresUtil,metaTableQuery = CreateDashboardQuery)
+            val dashboardId : Int = CreateDashboard.checkAndCreateDashboard(collectionId = collectionId, dashboardName = dashboardName, metabaseUtil = metabaseUtil, postgresUtil = postgresUtil, metaTableQuery = CreateDashboardQuery)
             val databaseId : Int = CreateDashboard.getDatabaseId(metabaseDatabase = metabaseDatabase, metabaseUtil = metabaseUtil)
-            val statenameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId,"projects", "statename")
-            val districtnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "projects", "districtname")
-            val programnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "solutions", "programname")
+            val statenameId : Int = CreateDashboard.getTableMetadataId(databaseId = databaseId, metabaseUtil = metabaseUtil, tableName = "projects", columnName = "statename",postgresUtil = postgresUtil,metaTableQuery = CreateDashboardQuery)
+            val districtnameId : Int = CreateDashboard.getTableMetadataId(databaseId = databaseId, metabaseUtil = metabaseUtil, tableName = "projects", columnName = "districtname",postgresUtil = postgresUtil,metaTableQuery = CreateDashboardQuery)
+            val programnameId : Int = CreateDashboard.getTableMetadataId(databaseId = databaseId, metabaseUtil = metabaseUtil, tableName = "solutions", columnName = "programname",postgresUtil = postgresUtil,metaTableQuery = CreateDashboardQuery)
             val questionCardIdList = UpdateStateJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDirAbsolutePath, dashboardId = dashboardId, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil, stateName)
             val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
             addQuestionCards.addQuestionCardsFunction(metabaseUtil, mainDirAbsolutePath, dashboardId)
@@ -183,14 +181,13 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
             val parameterFilePath: String = s"$mainDir/program-parameter.json"
             val parameterFileAbsPath: String = new java.io.File(parameterFilePath).getCanonicalPath
             val metabaseDatabase: String = config.metabaseDatabase
-            val CollectionQuery = s"UPDATE admin_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE name = '$admin';"
-            val collectionId : Int = CreateDashboard.checkAndCreateCollection(collectionName = collectionName, ReportType = "Project", metabaseUtil = metabaseUtil, postgresUtil = postgresUtil,metaTableQuery = CollectionQuery)
-            val DashboardQuery = s"UPDATE admin_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE name = '$admin';"
-            val dashboardId : Int = CreateDashboard.checkAndCreateDashboard(collectionId = collectionId, dashboardName = dashboardName, metabaseUtil = metabaseUtil, postgresUtil = postgresUtil, metaTableQuery = DashboardQuery)
+            val CreateDashboardQuery = s"UPDATE program_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$targetedProgramId';"
+            val collectionId : Int = CreateDashboard.checkAndCreateCollection(collectionName = collectionName, ReportType = "Project", metabaseUtil = metabaseUtil, postgresUtil = postgresUtil,metaTableQuery = CreateDashboardQuery)
+            val dashboardId : Int = CreateDashboard.checkAndCreateDashboard(collectionId = collectionId, dashboardName = dashboardName, metabaseUtil = metabaseUtil, postgresUtil = postgresUtil, metaTableQuery = CreateDashboardQuery)
             val databaseId : Int = CreateDashboard.getDatabaseId(metabaseDatabase = metabaseDatabase, metabaseUtil = metabaseUtil)
-            val statenameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId,"projects", "statename")
-            val districtnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "projects", "districtname")
-            val programnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "solutions", "programname")
+            val statenameId : Int = CreateDashboard.getTableMetadataId(databaseId = databaseId, metabaseUtil = metabaseUtil, tableName = "projects", columnName = "statename",postgresUtil = postgresUtil,metaTableQuery = CreateDashboardQuery)
+            val districtnameId : Int = CreateDashboard.getTableMetadataId(databaseId = databaseId, metabaseUtil = metabaseUtil, tableName = "projects", columnName = "districtname",postgresUtil = postgresUtil,metaTableQuery = CreateDashboardQuery)
+            val programnameId : Int = CreateDashboard.getTableMetadataId(databaseId = databaseId, metabaseUtil = metabaseUtil, tableName = "solutions", columnName = "programname",postgresUtil = postgresUtil,metaTableQuery = CreateDashboardQuery)
             val questionCardIdList = UpdateProgramJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDirAbsolutePath, dashboardId = dashboardId, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil, programName)
             val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
             addQuestionCards.addQuestionCardsFunction(metabaseUtil, mainDirAbsolutePath, dashboardId)
@@ -241,14 +238,13 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
             val metabaseDatabase: String = config.metabaseDatabase
             val parameterFilePath:String = s"$mainDir/district-parameter.json"
             val parameterFileAbsPath: String = new java.io.File(parameterFilePath).getCanonicalPath
-            val CollectionQuery = s"UPDATE district_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$targetedDistrictId';"
-            val collectionId : Int = CreateDashboard.checkAndCreateCollection(collectionName = collectionName, ReportType = "Project", metabaseUtil = metabaseUtil, postgresUtil = postgresUtil,metaTableQuery = CollectionQuery)
-            val DashboardQuery = s"UPDATE district_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$targetedDistrictId';"
-            val dashboardId : Int = CreateDashboard.checkAndCreateDashboard(collectionId = collectionId, dashboardName = dashboardName, metabaseUtil = metabaseUtil, postgresUtil = postgresUtil, metaTableQuery = DashboardQuery)
+            val CreateDashboardQuery = s"UPDATE district_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$targetedDistrictId';"
+            val collectionId : Int = CreateDashboard.checkAndCreateCollection(collectionName = collectionName, ReportType = "Project", metabaseUtil = metabaseUtil, postgresUtil = postgresUtil,metaTableQuery = CreateDashboardQuery)
+            val dashboardId : Int = CreateDashboard.checkAndCreateDashboard(collectionId = collectionId, dashboardName = dashboardName, metabaseUtil = metabaseUtil, postgresUtil = postgresUtil, metaTableQuery = CreateDashboardQuery)
             val databaseId : Int = CreateDashboard.getDatabaseId(metabaseDatabase = metabaseDatabase, metabaseUtil = metabaseUtil)
-            val statenameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId,"projects", "statename")
-            val districtnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "projects", "districtname")
-            val programnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "solutions", "programname")
+            val statenameId : Int = CreateDashboard.getTableMetadataId(databaseId = databaseId, metabaseUtil = metabaseUtil, tableName = "projects", columnName = "statename",postgresUtil = postgresUtil,metaTableQuery = CreateDashboardQuery)
+            val districtnameId : Int = CreateDashboard.getTableMetadataId(databaseId = databaseId, metabaseUtil = metabaseUtil, tableName = "projects", columnName = "districtname",postgresUtil = postgresUtil,metaTableQuery = CreateDashboardQuery)
+            val programnameId : Int = CreateDashboard.getTableMetadataId(databaseId = databaseId, metabaseUtil = metabaseUtil, tableName = "solutions", columnName = "programname",postgresUtil = postgresUtil,metaTableQuery = CreateDashboardQuery)
             val questionCardIdList = UpdateDistrictJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDirAbsolutePath, dashboardId = dashboardId, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil,statename,districtname)
             val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
             addQuestionCards.addQuestionCardsFunction(metabaseUtil, mainDirAbsolutePath, dashboardId)
