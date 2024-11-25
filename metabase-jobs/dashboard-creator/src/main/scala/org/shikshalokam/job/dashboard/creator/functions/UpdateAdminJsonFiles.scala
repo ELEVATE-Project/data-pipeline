@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.node.{JsonNodeFactory, ObjectNode}
 
 
 object UpdateAdminJsonFiles {
-  def ProcessAndUpdateJsonFiles(mainDir: String, dashboardId: Int, collectionId: Int, databaseId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, metabaseUtil: MetabaseUtil): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(mainDir: String, collectionId: Int, databaseId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, metabaseUtil: MetabaseUtil): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
 

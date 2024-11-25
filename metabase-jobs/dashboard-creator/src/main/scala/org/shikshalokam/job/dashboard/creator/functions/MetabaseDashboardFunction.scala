@@ -81,13 +81,10 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val DashboardQuery = s"UPDATE admin_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE name = '$admin';"
               val dashboardId : Int = CreateDashboard.checkAndCreateDashboard(collectionId = collectionId, dashboardName = dashboardName, metabaseUtil = metabaseUtil, postgresUtil = postgresUtil, metaTableQuery = DashboardQuery)
               val databaseId : Int = CreateDashboard.getDatabaseId(metabaseDatabase = metabaseDatabase, metabaseUtil = metabaseUtil)
-              println(s"collectionId = $collectionId")
-              println(s"dashboardId = $dashboardId")
-              println(s"databaseId = $databaseId")
               val statenameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId,"projects", "statename")
               val districtnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "projects", "districtname")
               val programnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "solutions", "programname")
-              val questionCardIdList = UpdateAdminJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDirAbsolutePath, dashboardId = dashboardId, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil)
+              val questionCardIdList = UpdateAdminJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDirAbsolutePath, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil)
               val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
               println(s"questionIdsString = $questionIdsString")
               addQuestionCards.addQuestionCardsFunction(metabaseUtil, mainDirAbsolutePath, dashboardId)
