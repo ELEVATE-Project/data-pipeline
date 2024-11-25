@@ -1,8 +1,8 @@
 [
   {
     "name": "Select District ",
-    "slug": "select_district_",
-    "id": "a7e82951",
+    "slug": "select_district",
+    "id": "74a10335",
     "type": "string/=",
     "sectionId": "location",
     "values_source_type": "card",
