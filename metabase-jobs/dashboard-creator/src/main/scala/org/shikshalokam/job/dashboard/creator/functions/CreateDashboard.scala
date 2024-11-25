@@ -1,73 +1,69 @@
 package org.shikshalokam.job.dashboard.creator.functions
 
-import org.json4s.DefaultFormats
-import org.shikshalokam.job.dashboard.creator.task.MetabaseDashboardConfig
-import org.shikshalokam.job.util.MetabaseUtil
-import play.api.libs.json.{JsValue, Json}
-
-import scala.collection.immutable.Seq
+import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
+import org.shikshalokam.job.util.JSONUtil.mapper
+import scala.collection.JavaConverters._
 
 object CreateDashboard {
-    def Get_the_required_ids(CollectionName: String, DashboardName: String, reportType: String, metabaseUtil: MetabaseUtil = null, config: MetabaseDashboardConfig): (Int,Int,Int) = {
-      println(s"--------------Started processing Create dashboard function---------------")
-      val ReportType:String = reportType
-      val collection_name: String = CollectionName
-      val dashboard_name:String = DashboardName
-      //Get Collection Id
-      val collectionRequestBody =
-        s"""{
-           |  "name": "$collection_name",
-           |  "description": "Collection for $ReportType reports"
-           |}""".stripMargin
-      val collection = metabaseUtil.createCollection(collectionRequestBody)
-      val collectionJson: JsValue = Json.parse(collection)
-      val collectionId: Int = (collectionJson \ "id").asOpt[Int].getOrElse {
-        throw new Exception("Failed to extract collection id")
+    def checkAndCreateCollection(collectionName: String,ReportType: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil,metaTableQuery:String): Int = {
+      val collectionListJson = mapper.readTree(metabaseUtil.listCollections())
+      val existingCollectionId = collectionListJson.elements().asScala
+        .find(_.path("name").asText() == collectionName)
+        .map(_.path("id").asInt())
+
+      existingCollectionId match {
+        case Some(id) =>
+          val errorMessage = s"$collectionName already exists with ID: $id."
+          val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'${errorMessage.replace("'", "''")}'")
+          postgresUtil.insertData(updateTableQuery)
+          throw new IllegalStateException(s"$errorMessage. Process stopped.")
+
+        case None =>
+          println(s"Collection '$collectionName' does not exist. Creating new collection.")
+          val collectionRequestBody =
+                  s"""{
+                     |  "name": "$collectionName",
+                     |  "description": "Collection for $ReportType reports"
+                     |}""".stripMargin
+          val collectionId = mapper.readTree(metabaseUtil.createCollection(collectionRequestBody)).path("id").asInt()
+          println(s"New Collection ID = $collectionId")
+          collectionId
       }
-      println("CollectionId = " + collectionId)
-
-      //get the dashboard id
-      val dashboardRequestBody =
-        s"""{
-           |  "name": "$dashboard_name",
-           |  "collection_id": "$collectionId"
-           |}""".stripMargin
-      val Dashboard: String = metabaseUtil.createDashboard(dashboardRequestBody)
-      val parsedJson: ujson.Value = ujson.read(Dashboard)
-
-      implicit val formats: DefaultFormats.type = DefaultFormats
-      val dashboardId: Int = parsedJson.obj.get("id") match {
-        case Some(id: ujson.Num) => id.num.toInt
-        case _ =>
-          println("Error: Could not extract dashboard ID from response.")
-          -1
-      }
-      println(s"dashboardId = $dashboardId")
-
-      //get database id
-      val listDatabaseDetails = metabaseUtil.listDatabaseDetails()
-
-
-      // function to fetch database id from the output of listDatabaseDetails API
-      def getDatabaseId(databasesResponse: String, databaseName: String): Option[Int] = {
-        val json = Json.parse(databasesResponse)
-
-        // Extract the ID of the database with the given name
-        (json \ "data").as[Seq[JsValue]].find { db =>
-          (db \ "name").asOpt[String].contains(databaseName)
-        }.flatMap { db =>
-          (db \ "id").asOpt[Int]
-        }
-      }
-
-      val databaseName: String = config.metabaseDatabase
-      val databaseId: Int = getDatabaseId(listDatabaseDetails, databaseName) match {
-        case Some(id) => id
-        case None => throw new RuntimeException(s"Database $databaseName not found")
-      }
-      println("databaseId = " + databaseId)
-      println(s"--------------Processed Create dashboard function---------------")
-      (collectionId,databaseId,dashboardId)
     }
 
+    def checkAndCreateDashboard(collectionId: Int, dashboardName: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil,metaTableQuery: String): Int = {
+      val dashboardListJson = mapper.readTree(metabaseUtil.listDashboards())
+      val existingDashboardId = dashboardListJson.elements().asScala
+        .find(_.path("name").asText() == dashboardName)
+        .map(_.path("id").asInt())
+
+      existingDashboardId match {
+        case Some(id) =>
+          val errorMessage = s"$dashboardName already exists with ID: $id."
+          val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'${errorMessage.replace("'", "''")}'")
+          postgresUtil.insertData(updateTableQuery)
+          throw new IllegalStateException(s"$errorMessage. Process stopped.")
+
+        case None =>
+          println(s"Collection '$dashboardName' does not exist. Creating new dashboard.")
+          val dashboardRequestBody = s"""{
+             |  "name": "$dashboardName",
+             |  "collection_id": "$collectionId"
+             |}""".stripMargin
+          val dashboardId = mapper.readTree(metabaseUtil.createDashboard(dashboardRequestBody)).path("id").asInt()
+          println(s"New Dashboard ID = $dashboardId")
+          dashboardId
+      }
+    }
+
+    def getDatabaseId(metabaseDatabase: String, metabaseUtil: MetabaseUtil): Int = {
+      val databaseListJson = mapper.readTree(metabaseUtil.listDatabaseDetails())
+      println(databaseListJson)
+      val databaseId = databaseListJson.path("data").elements().asScala
+        .find(_.path("name").asText() == metabaseDatabase)
+        .map(_.path("id").asInt())
+        .getOrElse(throw new IllegalStateException(s"Database '$metabaseDatabase' not found. Process stopped."))
+      println(s"Database ID = $databaseId")
+      databaseId
+    }
 }

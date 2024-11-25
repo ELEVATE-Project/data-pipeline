@@ -1,6 +1,5 @@
 package org.shikshalokam.job.dashboard.creator.functions
 
-import com.twitter.util.Config.intoOption
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
@@ -11,6 +10,7 @@ import org.shikshalokam.job.dashboard.creator.task.MetabaseDashboardConfig
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import org.shikshalokam.job.{BaseProcessFunction, Metrics}
 import org.slf4j.LoggerFactory
+
 
 import scala.collection.immutable._
 
@@ -45,7 +45,6 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
   override def processElement(event: Event, context: ProcessFunction[Event, Event]#Context, metrics: Metrics): Unit = {
 
     println(s"***************** Start of Processing the Metabase Dashboard Event with Id = ${event._id}*****************")
-    println(event)
 
     val targetedStateId = event.targetedState
     val targetedProgramId = event.targetedProgram
@@ -59,29 +58,43 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
 
     if (event.reportType == "Project") {
       println(s">>>>>>>>>>> Started Processing Metabase Project Dashboards >>>>>>>>>>>>")
-      val mainDir: String = "/home/user1/Documents/elevate-data-pipeline3/elevate-data-pipeline/metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson"
+      val mainDir: String = "metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson"
+      val mainDirAbsolutePath: String = new java.io.File(mainDir).getCanonicalPath
         if (admin.nonEmpty) {
           println(s"********** Started Processing Metabase Admin Dashboard ***********")
-          val AdminIdCheckQuery: String = s"SELECT CASE WHEN EXISTS (SELECT 1 FROM admin_dashboard_metadata WHERE name = '$admin') THEN CASE WHEN COALESCE((SELECT status FROM admin_dashboard_metadata WHERE name = '$admin'), '') = 'success' THEN 'success' ELSE 'failed' END ELSE 'failed' END AS result;"
+          val AdminIdCheckQuery: String = s"SELECT CASE WHEN EXISTS (SELECT 1 FROM admin_dashboard_metadata WHERE name = '$admin') THEN CASE WHEN COALESCE((SELECT status FROM admin_dashboard_metadata WHERE name = '$admin'), '') = 'Success' THEN 'success' ELSE 'Failed' END ELSE 'Failed' END AS result;"
           val AdminIdStatus = postgresUtil.fetchData(AdminIdCheckQuery) match {
             case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
             case _ => ""
           }
-          if (AdminIdStatus == "failed") {
+          if (AdminIdStatus == "Failed") {
             try {
               val collectionName: String = s"Admin Collection"
               val dashboardName: String = s"Project Admin Report"
-              val parameterFilePath: String = "/home/user1/Documents/elevate-data-pipeline3/elevate-data-pipeline/metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/admin-parameter.json"
-              val (collectionId, databaseId, dashboardId) = CreateDashboard.Get_the_required_ids(CollectionName = collectionName, DashboardName = dashboardName, reportType = event.reportType, metabaseUtil, config)
-              val (statenameId, districtnameId, programnameId) = GetTableData.getTableMetadata(databaseId, metabaseUtil, config)
-              val questionCardIdList = UpdateAdminJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDir, dashboardId = dashboardId, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil)
-              println(s"questionCardIdList = $questionCardIdList")
+              val GroupName: String = s"Report_Admin"
+              val metabaseDatabase: String = config.metabaseDatabase
+              val parameterFilePath: String = "metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/admin-parameter.json"
+              val parameterFileAbsPath: String = new java.io.File(parameterFilePath).getCanonicalPath
+              val CollectionQuery = s"UPDATE admin_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE name = '$admin';"
+              val collectionId : Int = CreateDashboard.checkAndCreateCollection(collectionName = collectionName, ReportType = "Project", metabaseUtil = metabaseUtil, postgresUtil = postgresUtil,metaTableQuery = CollectionQuery)
+              val DashboardQuery = s"UPDATE admin_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE name = '$admin';"
+              val dashboardId : Int = CreateDashboard.checkAndCreateDashboard(collectionId = collectionId, dashboardName = dashboardName, metabaseUtil = metabaseUtil, postgresUtil = postgresUtil, metaTableQuery = DashboardQuery)
+              val databaseId : Int = CreateDashboard.getDatabaseId(metabaseDatabase = metabaseDatabase, metabaseUtil = metabaseUtil)
+              println(s"collectionId = $collectionId")
+              println(s"dashboardId = $dashboardId")
+              println(s"databaseId = $databaseId")
+              val statenameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId,"projects", "statename")
+              val districtnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "projects", "districtname")
+              val programnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "solutions", "programname")
+              val questionCardIdList = UpdateAdminJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDirAbsolutePath, dashboardId = dashboardId, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil)
               val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
               println(s"questionIdsString = $questionIdsString")
-              addQuestionCards.addQuestionCardsFunction(metabaseUtil, mainDir, dashboardId)
-              UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parameterFilePath, dashboardId)
-              val updateTableQuery = s"UPDATE admin_dashboard_metadata SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Success',error_message = '' WHERE name = 'Admin';"
+              addQuestionCards.addQuestionCardsFunction(metabaseUtil, mainDirAbsolutePath, dashboardId)
+              UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parameterFileAbsPath, dashboardId)
+              val updateTableQuery = s"UPDATE admin_dashboard_metadata SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Success', error_message = '' WHERE name = 'Admin';"
+              println(s"Generated query: $updateTableQuery")
               postgresUtil.insertData(updateTableQuery)
+              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil,GroupName,collectionId)
             } catch {
               case e: Exception =>
                 val updateTableQuery = s"UPDATE admin_dashboard_metadata SET status = 'Failed',error_message = '${e.getMessage}'  WHERE name = 'Admin';"
@@ -99,15 +112,12 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
 
       if (targetedStateId.nonEmpty) {
         println(s"********** Started Processing Metabase State Dashboard ***********")
-        // check if the stateId present in the state_dashboard_metadata table if yes then check the
-        // status of the report if status is failed then create the report
-        // if status is success then skip the report creation
-        val stateIdCheckQuery: String = s"SELECT CASE WHEN EXISTS (SELECT 1 FROM state_dashboard_metadata WHERE id = '$targetedStateId') THEN CASE WHEN COALESCE((SELECT status FROM state_dashboard_metadata WHERE id = '$targetedStateId'), '') = 'success' THEN 'success' ELSE 'failed' END ELSE 'failed' END AS result;"
+        val stateIdCheckQuery: String = s"SELECT CASE WHEN EXISTS (SELECT 1 FROM state_dashboard_metadata WHERE id = '$targetedStateId') THEN CASE WHEN COALESCE((SELECT status FROM state_dashboard_metadata WHERE id = '$targetedStateId'), '') = 'Success' THEN 'Success' ELSE 'Failed' END ELSE 'Failed' END AS result;"
         val stateIdStatus = postgresUtil.fetchData(stateIdCheckQuery) match {
           case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
           case _ => ""
         }
-        if (stateIdStatus == "failed") {
+        if (stateIdStatus == "Failed") {
           try {
             val stateNameQuery = s"SELECT name from state_dashboard_metadata where id = '$targetedStateId'"
             val stateName = postgresUtil.fetchData(stateNameQuery) match {
@@ -117,20 +127,31 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
             println(s"stateName = $stateName")
             val collectionName = s"State Collection [$stateName]"
             val dashboardName = s"Project State Report [$stateName]"
-            val parameterFilePath: String = "/home/user1/Documents/elevate-data-pipeline3/elevate-data-pipeline/metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/state-parameter.json"
-            val (collectionId, databaseId, dashboardId) = CreateDashboard.Get_the_required_ids(CollectionName = collectionName, DashboardName = dashboardName, reportType = event.reportType, metabaseUtil, config)
-            val (statenameId, districtnameId, programnameId) = GetTableData.getTableMetadata(databaseId, metabaseUtil, config)
-            val questionCardIdList = UpdateStateJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDir, dashboardId = dashboardId, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil, stateName)
+            val GroupName: String = s"${stateName}_State_Manager"
+            val metabaseDatabase: String = config.metabaseDatabase
+            val parameterFilePath: String = "metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/state-parameter.json"
+            val parameterFileAbsPath: String = new java.io.File(parameterFilePath).getCanonicalPath
+            val CollectionQuery = s"UPDATE state_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$targetedStateId';"
+            val collectionId : Int = CreateDashboard.checkAndCreateCollection(collectionName = collectionName, ReportType = "Project", metabaseUtil = metabaseUtil, postgresUtil = postgresUtil,metaTableQuery = CollectionQuery)
+            val DashboardQuery = s"UPDATE state_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$targetedStateId';"
+            val dashboardId : Int = CreateDashboard.checkAndCreateDashboard(collectionId = collectionId, dashboardName = dashboardName, metabaseUtil = metabaseUtil, postgresUtil = postgresUtil, metaTableQuery = DashboardQuery)
+            val databaseId : Int = CreateDashboard.getDatabaseId(metabaseDatabase = metabaseDatabase, metabaseUtil = metabaseUtil)
+            val statenameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId,"projects", "statename")
+            val districtnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "projects", "districtname")
+            val programnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "solutions", "programname")
+            val questionCardIdList = UpdateStateJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDirAbsolutePath, dashboardId = dashboardId, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil, stateName)
             val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
-            addQuestionCards.addQuestionCardsFunction(metabaseUtil, mainDir, dashboardId)
-            val filterFilePath: String = "/home/user1/Documents/elevate-data-pipeline3/elevate-data-pipeline/metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/state-filter.json"
-            val stateIdFilter: Int = UpdateAndAddStateFilter.updateAndAddFilter(metabaseUtil = metabaseUtil, filterFilePath = filterFilePath, statename = s"$stateName", districtname = null, programname = null, collectionId, databaseId)
-            UpdateParameters.updateStateParameterFunction(metabaseUtil, parameterFilePath, dashboardId, stateIdFilter)
-            val updateTableQuery = s"UPDATE state_dashboard_metadata SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Completed' WHERE id = '$targetedStateId';"
+            addQuestionCards.addQuestionCardsFunction(metabaseUtil, mainDirAbsolutePath, dashboardId)
+            val filterFilePath: String = "metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/state-filter.json"
+            val filterFileAbsPath: String = new java.io.File(filterFilePath).getCanonicalPath
+            val stateIdFilter: Int = UpdateAndAddStateFilter.updateAndAddFilter(metabaseUtil = metabaseUtil, filterFilePath = filterFileAbsPath, statename = s"$stateName", districtname = null, programname = null, collectionId, databaseId)
+            UpdateParameters.updateStateParameterFunction(metabaseUtil, parameterFileAbsPath, dashboardId, stateIdFilter)
+            val updateTableQuery = s"UPDATE state_dashboard_metadata SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Success',error_message = '' WHERE id = '$targetedStateId';"
             postgresUtil.insertData(updateTableQuery)
+            CreateAndAssignGroup.createGroupToDashboard(metabaseUtil,GroupName,collectionId)
           } catch {
             case e: Exception =>
-              val updateTableQuery = s"UPDATE state_dashboard_metadata SET status = 'Incomplete',error_message = '${e.getMessage}'  WHERE id = '$targetedStateId';"
+              val updateTableQuery = s"UPDATE state_dashboard_metadata SET status = 'Failed',error_message = '${e.getMessage}'  WHERE id = '$targetedStateId';"
               postgresUtil.insertData(updateTableQuery)
               println(s"An error occurred: ${e.getMessage}")
               e.printStackTrace()
@@ -146,12 +167,12 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
 
       if (targetedProgramId.nonEmpty) {
         println(s"********** Started Processing Metabase Program Dashboard ***********")
-        val programIdCheckQuery: String = s"SELECT CASE WHEN EXISTS (SELECT 1 FROM program_dashboard_metadata WHERE id = '$targetedProgramId') THEN CASE WHEN COALESCE((SELECT status FROM program_dashboard_metadata WHERE id = '$targetedProgramId'), '') = 'success' THEN 'success' ELSE 'failed' END ELSE 'failed' END AS result;"
+        val programIdCheckQuery: String = s"SELECT CASE WHEN EXISTS (SELECT 1 FROM program_dashboard_metadata WHERE id = '$targetedProgramId') THEN CASE WHEN COALESCE((SELECT status FROM program_dashboard_metadata WHERE id = '$targetedProgramId'), '') = 'Success' THEN 'Success' ELSE 'Failed' END ELSE 'Failed' END AS result;"
         val programIdStatus = postgresUtil.fetchData(programIdCheckQuery) match {
           case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
           case _ => ""
         }
-        if (programIdStatus == "failed") {
+        if (programIdStatus == "Failed") {
           try {
             val programNameQuery = s"SELECT name from program_dashboard_metadata where id = '$targetedProgramId'"
             val programName = postgresUtil.fetchData(programNameQuery) match {
@@ -160,20 +181,31 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
             }
             val collectionName = s"Program Collection [$programName]"
             val dashboardName = s"Project Program Report [$programName]"
-            val parameterFilePath: String = "/home/user1/Documents/elevate-data-pipeline3/elevate-data-pipeline/metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/program-parameter.json"
-            val (collectionId, databaseId, dashboardId) = CreateDashboard.Get_the_required_ids(CollectionName = collectionName, DashboardName = dashboardName, reportType = event.reportType, metabaseUtil, config)
-            val (statenameId, districtnameId, programnameId) = GetTableData.getTableMetadata(databaseId, metabaseUtil, config)
-            val questionCardIdList = UpdateProgramJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDir, dashboardId = dashboardId, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil, programName)
+            val GroupName: String = s"Program_Manager[$programName]"
+            val parameterFilePath: String = "metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/program-parameter.json"
+            val parameterFileAbsPath: String = new java.io.File(parameterFilePath).getCanonicalPath
+            val metabaseDatabase: String = config.metabaseDatabase
+            val CollectionQuery = s"UPDATE admin_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE name = '$admin';"
+            val collectionId : Int = CreateDashboard.checkAndCreateCollection(collectionName = collectionName, ReportType = "Project", metabaseUtil = metabaseUtil, postgresUtil = postgresUtil,metaTableQuery = CollectionQuery)
+            val DashboardQuery = s"UPDATE admin_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE name = '$admin';"
+            val dashboardId : Int = CreateDashboard.checkAndCreateDashboard(collectionId = collectionId, dashboardName = dashboardName, metabaseUtil = metabaseUtil, postgresUtil = postgresUtil, metaTableQuery = DashboardQuery)
+            val databaseId : Int = CreateDashboard.getDatabaseId(metabaseDatabase = metabaseDatabase, metabaseUtil = metabaseUtil)
+            val statenameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId,"projects", "statename")
+            val districtnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "projects", "districtname")
+            val programnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "solutions", "programname")
+            val questionCardIdList = UpdateProgramJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDirAbsolutePath, dashboardId = dashboardId, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil, programName)
             val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
-            addQuestionCards.addQuestionCardsFunction(metabaseUtil, mainDir, dashboardId)
-            val filterFilePath: String = "/home/user1/Documents/elevate-data-pipeline3/elevate-data-pipeline/metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/program-filter.json"
-            val programIdFilter: Int = UpdateAndAddProgramFilter.updateAndAddFilter(metabaseUtil = metabaseUtil, filterFilePath = filterFilePath, statename = null, districtname = null, programname = s"$programName", collectionId, databaseId)
-            UpdateParameters.UpdateProgramParameterFunction(metabaseUtil, parameterFilePath, dashboardId, programName, programIdFilter)
-            val updateTableQuery = s"UPDATE program_dashboard_metadata SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Completed',error_message = '' WHERE id = '$targetedProgramId';"
+            addQuestionCards.addQuestionCardsFunction(metabaseUtil, mainDirAbsolutePath, dashboardId)
+            val filterFilePath: String = "metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/program-filter.json"
+            val filterFileAbsPath: String = new java.io.File(filterFilePath).getCanonicalPath
+            val programIdFilter: Int = UpdateAndAddProgramFilter.updateAndAddFilter(metabaseUtil = metabaseUtil, filterFilePath = filterFileAbsPath, statename = null, districtname = null, programname = s"$programName", collectionId, databaseId)
+            UpdateParameters.UpdateProgramParameterFunction(metabaseUtil, parameterFileAbsPath, dashboardId, programName, programIdFilter)
+            val updateTableQuery = s"UPDATE program_dashboard_metadata SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Success',error_message = '' WHERE id = '$targetedProgramId';"
             postgresUtil.insertData(updateTableQuery)
+            CreateAndAssignGroup.createGroupToDashboard(metabaseUtil,GroupName,collectionId)
           } catch {
             case e: Exception =>
-              val updateTableQuery = s"UPDATE program_dashboard_metadata SET status = 'Incomplete',error_message = '${e.getMessage}'  WHERE id = '$targetedProgramId';"
+              val updateTableQuery = s"UPDATE program_dashboard_metadata SET status = 'Failed',error_message = '${e.getMessage}'  WHERE id = '$targetedProgramId';"
               postgresUtil.insertData(updateTableQuery)
               println(s"An error occurred: ${e.getMessage}")
               e.printStackTrace()
@@ -188,12 +220,12 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
 
       if (targetedDistrictId.nonEmpty){
         println(s"********** Started Processing Metabase District Dashboard ***********")
-        val districtIdCheckQuery: String = s"SELECT CASE WHEN EXISTS (SELECT 1 FROM district_dashboard_metadata WHERE id = '$targetedDistrictId') THEN CASE WHEN COALESCE((SELECT status FROM district_dashboard_metadata WHERE id = '$targetedDistrictId'), '') = 'success' THEN 'success' ELSE 'failed' END ELSE 'failed' END AS result;"
+        val districtIdCheckQuery: String = s"SELECT CASE WHEN EXISTS (SELECT 1 FROM district_dashboard_metadata WHERE id = '$targetedDistrictId') THEN CASE WHEN COALESCE((SELECT status FROM district_dashboard_metadata WHERE id = '$targetedDistrictId'), '') = 'Success' THEN 'Success' ELSE 'Failed' END ELSE 'Failed' END AS result;"
         val districtIdStatus = postgresUtil.fetchData(districtIdCheckQuery) match {
           case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
           case _ => ""
         }
-        if (districtIdStatus == "failed") {
+        if (districtIdStatus == "Failed") {
           try {
             val DistrictNameQuery = s"SELECT name from district_dashboard_metadata where id = '$targetedDistrictId'"
             val districtname = postgresUtil.fetchData(DistrictNameQuery) match {
@@ -207,20 +239,31 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
             }
             val collectionName = s"District collection [$districtname - $statename]"
             val dashboardName = s"Project District Report [$districtname - $statename]"
-            val parameterFilePath:String = "/home/user1/Documents/elevate-data-pipeline3/elevate-data-pipeline/metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/district-parameter.json"
-            val (collectionId, databaseId, dashboardId) = CreateDashboard.Get_the_required_ids(CollectionName = collectionName, DashboardName = dashboardName, reportType = event.reportType,metabaseUtil,config)
-            val (statenameId,districtnameId,programnameId) = GetTableData.getTableMetadata(databaseId, metabaseUtil, config)
-            val questionCardIdList = UpdateDistrictJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDir, dashboardId = dashboardId, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil,statename,districtname)
+            val GroupName: String = s"${districtname}_District_Manager[$statename]"
+            val metabaseDatabase: String = config.metabaseDatabase
+            val parameterFilePath:String = "metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/district-parameter.json"
+            val parameterFileAbsPath: String = new java.io.File(parameterFilePath).getCanonicalPath
+            val CollectionQuery = s"UPDATE district_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$targetedDistrictId';"
+            val collectionId : Int = CreateDashboard.checkAndCreateCollection(collectionName = collectionName, ReportType = "Project", metabaseUtil = metabaseUtil, postgresUtil = postgresUtil,metaTableQuery = CollectionQuery)
+            val DashboardQuery = s"UPDATE district_dashboard_metadata SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$targetedDistrictId';"
+            val dashboardId : Int = CreateDashboard.checkAndCreateDashboard(collectionId = collectionId, dashboardName = dashboardName, metabaseUtil = metabaseUtil, postgresUtil = postgresUtil, metaTableQuery = DashboardQuery)
+            val databaseId : Int = CreateDashboard.getDatabaseId(metabaseDatabase = metabaseDatabase, metabaseUtil = metabaseUtil)
+            val statenameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId,"projects", "statename")
+            val districtnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "projects", "districtname")
+            val programnameId: Int = GetTableData.getFieldId(metabaseUtil: MetabaseUtil,databaseId, "solutions", "programname")
+            val questionCardIdList = UpdateDistrictJsonFiles.ProcessAndUpdateJsonFiles(mainDir = mainDirAbsolutePath, dashboardId = dashboardId, collectionId = collectionId, databaseId = databaseId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, metabaseUtil,statename,districtname)
             val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
-            addQuestionCards.addQuestionCardsFunction(metabaseUtil, mainDir, dashboardId)
-            val filterFilePath:String = "/home/user1/Documents/elevate-data-pipeline3/elevate-data-pipeline/metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/district-filter.json"
-            val districtIdFilter : Int = UpdateAndAddDistrictFilter.updateAndAddFilter(metabaseUtil = metabaseUtil, filterFilePath = filterFilePath, statename = s"$statename", districtname = s"$districtname", programname = null,collectionId,databaseId)
-            UpdateParameters.UpdateDistrictParameterFunction(metabaseUtil,parameterFilePath,dashboardId,statename,districtname,districtIdFilter)
-            val updateTableQuery = s"UPDATE district_dashboard_metadata SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Completed' WHERE id = '$targetedDistrictId';"
+            addQuestionCards.addQuestionCardsFunction(metabaseUtil, mainDirAbsolutePath, dashboardId)
+            val filterFilePath:String = "metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/utils/projectJson/district-filter.json"
+            val filterFileAbsPath: String = new java.io.File(filterFilePath).getCanonicalPath
+            val districtIdFilter : Int = UpdateAndAddDistrictFilter.updateAndAddFilter(metabaseUtil = metabaseUtil, filterFilePath = filterFileAbsPath, statename = s"$statename", districtname = s"$districtname", programname = null,collectionId,databaseId)
+            UpdateParameters.UpdateDistrictParameterFunction(metabaseUtil,parameterFileAbsPath,dashboardId,statename,districtname,districtIdFilter)
+            val updateTableQuery = s"UPDATE district_dashboard_metadata SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Success',error_message = '' WHERE id = '$targetedDistrictId';"
             postgresUtil.insertData(updateTableQuery)
+            CreateAndAssignGroup.createGroupToDashboard(metabaseUtil,GroupName,collectionId)
           } catch {
             case e: Exception =>
-              val updateTableQuery = s"UPDATE district_dashboard_metadata SET status = 'Incomplete',error_message = '${e.getMessage}'  WHERE id = '$targetedDistrictId';"
+              val updateTableQuery = s"UPDATE district_dashboard_metadata SET status = 'Failed',error_message = '${e.getMessage}'  WHERE id = '$targetedDistrictId';"
               postgresUtil.insertData(updateTableQuery)
               println(s"An error occurred: ${e.getMessage}")
               e.printStackTrace()
