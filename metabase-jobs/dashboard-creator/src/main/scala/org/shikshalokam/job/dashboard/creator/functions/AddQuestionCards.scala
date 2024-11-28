@@ -6,7 +6,7 @@ import scala.util.{Failure, Success, Try}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.fasterxml.jackson.databind.node.{ArrayNode}
 
-object addQuestionCards {
+object AddQuestionCards {
   def addQuestionCardsFunction(metabaseUtil: MetabaseUtil, mainDir: String, dashboardId: Int): Unit = {
     println(s"---------------Started processing AddQuestionCardsFunction---------------")
     val objectMapper = new ObjectMapper()

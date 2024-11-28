@@ -5,7 +5,7 @@ import org.shikshalokam.job.util.JSONUtil.mapper
 import scala.collection.JavaConverters._
 
 object CreateDashboard {
-    def checkAndCreateCollection(collectionName: String,ReportType: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil,metaTableQuery:String): Int = {
+    def checkAndCreateCollection(collectionName: String,reportType: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil,metaTableQuery:String): Int = {
       val collectionListJson = mapper.readTree(metabaseUtil.listCollections())
       val existingCollectionId = collectionListJson.elements().asScala
         .find(_.path("name").asText() == collectionName)
@@ -23,7 +23,7 @@ object CreateDashboard {
           val collectionRequestBody =
                   s"""{
                      |  "name": "$collectionName",
-                     |  "description": "Collection for $ReportType reports"
+                     |  "description": "Collection for $reportType reports"
                      |}""".stripMargin
           val collectionId = mapper.readTree(metabaseUtil.createCollection(collectionRequestBody)).path("id").asInt()
           println(s"New Collection ID = $collectionId")
@@ -64,24 +64,6 @@ object CreateDashboard {
         .getOrElse(throw new IllegalStateException(s"Database '$metabaseDatabase' not found. Process stopped."))
       println(s"Database ID = $databaseId")
       databaseId
-    }
-
-    def getTableMetadataId(databaseId: Int, metabaseUtil: MetabaseUtil, tableName: String, columnName: String,postgresUtil: PostgresUtil,metaTableQuery: String): Int = {
-      val metadataJson = mapper.readTree(metabaseUtil.getDatabaseMetadata(databaseId))
-      metadataJson.path("tables").elements().asScala
-        .find(_.path("name").asText() == s"$tableName")
-        .flatMap(table => table.path("fields").elements().asScala
-          .find(_.path("name").asText() == s"$columnName"))
-        .map(field => {
-          val fieldId = field.path("id").asInt()
-          println(s"Field ID for $columnName: $fieldId")
-          fieldId
-        }).getOrElse {
-          val errorMessage = s"$columnName field not found"
-          val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'${errorMessage.replace("'", "''")}'")
-          postgresUtil.insertData(updateTableQuery)
-          throw new Exception(s"$columnName field not found")
-        }
     }
 
 }

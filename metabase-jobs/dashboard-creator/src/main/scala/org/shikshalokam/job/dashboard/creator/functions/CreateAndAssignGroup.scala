@@ -3,11 +3,11 @@ import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import org.shikshalokam.job.util.JSONUtil.mapper
 
 object CreateAndAssignGroup {
-  def createGroupToDashboard(metabaseUtil: MetabaseUtil = null,GroupName:String,collectionId:Int) {
+  def createGroupToDashboard(metabaseUtil: MetabaseUtil = null,groupName:String,collectionId:Int) {
     val createGroupRequestData =
       s"""
         |{
-        |  "name": "$GroupName"
+        |  "name": "$groupName"
         |}
         |""".stripMargin
 
