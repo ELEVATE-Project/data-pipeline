@@ -1,13 +1,12 @@
 package org.shikshalokam.job.dashboard.creator.functions
 
 import org.shikshalokam.job.util.MetabaseUtil
-import java.io.{File, PrintWriter}
+import java.io.{File}
 import scala.util.{Failure, Success, Try}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
-import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
+import com.fasterxml.jackson.databind.node.{ArrayNode}
 
 object addQuestionCards {
-
   def addQuestionCardsFunction(metabaseUtil: MetabaseUtil, mainDir: String, dashboardId: Int): Unit = {
     println(s"---------------Started processing AddQuestionCardsFunction---------------")
     val objectMapper = new ObjectMapper()
@@ -24,7 +23,6 @@ object addQuestionCards {
         case array: ArrayNode => array
         case _ => objectMapper.createArrayNode()
       }
-//      println(s"existingDashcards: $existingDashcards")
 
       // Step 1: Validate main directory
       if (mainDirectory.exists() && mainDirectory.isDirectory) {

@@ -11,12 +11,11 @@ import com.fasterxml.jackson.databind.node.{JsonNodeFactory, ObjectNode}
 
 
 object UpdateAdminJsonFiles {
-  def ProcessAndUpdateJsonFiles(mainDir: String, collectionId: Int, databaseId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, metabaseUtil: MetabaseUtil): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(mainDir: String, collectionId: Int, databaseId: Int, dashboardId : Int , statenameId: Int, districtnameId: Int, programnameId: Int, metabaseUtil: MetabaseUtil): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
-
     val objectMapper = new ObjectMapper()
-    def processJsonFiles(mainDir: String): Unit = {
+    def processJsonFiles(mainDir: String,dashboardId:Int): Unit = {
       val mainDirectory = new File(mainDir)
       if (mainDirectory.exists() && mainDirectory.isDirectory) {
         val dirs = mainDirectory.listFiles().filter(_.isDirectory)
@@ -54,12 +53,14 @@ object UpdateAdminJsonFiles {
 
                           // Update JSON with the card_id
                           val updatedJsonOpt = updateJsonWithCardId(json, cardId)
+                          println(s"updatedJsonOpt = $updatedJsonOpt")
                           updatedJsonOpt match {
                             case Some(updatedJson) =>
                               writeToFile(jsonFile, updatedJson.toPrettyString)
                             case None =>
                               println("Failed to update JSON: jsonOpt is None.")
                           }
+                          appendDashCardToDashboard(updatedJsonOpt,dashboardId)
                           println(s"--------Successfully updated the json file---------")
                       }}
                   case None => println(s"Warning: File '$jsonFileName' could not be parsed as JSON. Skipping...")
@@ -71,6 +72,51 @@ object UpdateAdminJsonFiles {
       }
     }
 
+    def appendDashCardToDashboard(jsonFile:Option[JsonNode], dashboardId: Int): Unit = {
+
+      // Step 7: Get the Dashboard response
+      val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
+
+      // Step 8: Parse existing dashcards
+      val dashboardJson = objectMapper.readTree(dashboardResponse)
+      val existingDashcards = dashboardJson.path("dashcards") match {
+        case array: ArrayNode => array
+        case _ => objectMapper.createArrayNode()
+      }
+      val dashCardsNode = readJsonFile(jsonFile)
+      dashCardsNode.foreach { value =>
+        println(s"Extracted dashCards: $value")
+        existingDashcards.add(value)
+      }
+      println(s"existingDashcards: $existingDashcards")
+      val finalDashboardJson = objectMapper.createObjectNode()
+      finalDashboardJson.set("dashcards", existingDashcards)
+      val dashcardsString = objectMapper.writeValueAsString(finalDashboardJson)
+      println(s"finalDashcards: $dashcardsString")
+      val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, dashcardsString)
+      println(s"********************* Successfully updated Dashcard: $updateResponse *********************")
+    }
+
+    def readJsonFile(jsonContent: Option[JsonNode]): Option[JsonNode] = {
+      jsonContent.flatMap { content =>
+        Try {
+          val dashCardsNode = content.path("dashCards")
+
+          if (!dashCardsNode.isMissingNode) {
+            println(s"Successfully extracted 'dashCards' key: $dashCardsNode")
+            Some(dashCardsNode)
+          } else {
+            println(s"'dashCards' key not found in JSON content.")
+            None
+          }
+        } match {
+          case Success(value) => value // Return the result if successful
+          case Failure(exception) =>
+            println(s"Error processing JSON content: ${exception.getMessage}")
+            None // Handle exceptions gracefully
+        }
+      }
+    }
 
     def parseJson(file: File): Option[JsonNode] = {
       Try(objectMapper.readTree(file)) match {
@@ -232,7 +278,7 @@ object UpdateAdminJsonFiles {
     }
 
     updateJsonFiles(mainDir, collectionId = collectionId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, databaseId = databaseId)
-    processJsonFiles(mainDir)
+    processJsonFiles(mainDir,dashboardId)
     println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardId
   }
