@@ -74,10 +74,8 @@ object UpdateAdminJsonFiles {
 
     def appendDashCardToDashboard(jsonFile:Option[JsonNode], dashboardId: Int): Unit = {
 
-      // Step 7: Get the Dashboard response
       val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
 
-      // Step 8: Parse existing dashcards
       val dashboardJson = objectMapper.readTree(dashboardResponse)
       val existingDashcards = dashboardJson.path("dashcards") match {
         case array: ArrayNode => array
@@ -85,16 +83,13 @@ object UpdateAdminJsonFiles {
       }
       val dashCardsNode = readJsonFile(jsonFile)
       dashCardsNode.foreach { value =>
-        println(s"Extracted dashCards: $value")
         existingDashcards.add(value)
       }
-      println(s"existingDashcards: $existingDashcards")
       val finalDashboardJson = objectMapper.createObjectNode()
       finalDashboardJson.set("dashcards", existingDashcards)
       val dashcardsString = objectMapper.writeValueAsString(finalDashboardJson)
-      println(s"finalDashcards: $dashcardsString")
       val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, dashcardsString)
-      println(s"********************* Successfully updated Dashcard: $updateResponse *********************")
+      println(s"********************* Successfully updated Dashcards  *************************")
     }
 
     def readJsonFile(jsonContent: Option[JsonNode]): Option[JsonNode] = {
