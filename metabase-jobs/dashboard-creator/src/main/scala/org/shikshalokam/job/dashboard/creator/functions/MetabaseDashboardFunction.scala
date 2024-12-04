@@ -75,7 +75,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val parameterFilePath: String = s"$mainDir/admin-parameter.json"
               println(s"parameterFilePath = $parameterFilePath")
               val createDashboardQuery = s"UPDATE $adminMetaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE name = '$admin';"
-              val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, "Project", metabaseUtil, postgresUtil, createDashboardQuery)
+              val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, s"Admin Report", metabaseUtil, postgresUtil, createDashboardQuery)
               val dashboardId: Int = CreateDashboard.checkAndCreateDashboard(collectionId, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
               val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
               val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, "projects", "statename", postgresUtil, createDashboardQuery)
@@ -126,7 +126,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val metabaseDatabase: String = config.metabaseDatabase
               val parameterFilePath: String = s"$mainDir/state-parameter.json"
               val createDashboardQuery = s"UPDATE $stateMetaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$targetedStateId';"
-              val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, "Project", metabaseUtil, postgresUtil, createDashboardQuery)
+              val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
               val dashboardId: Int = CreateDashboard.checkAndCreateDashboard(collectionId, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
               val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
               val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, "projects", "statename", postgresUtil, createDashboardQuery)
@@ -177,7 +177,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val parameterFilePath: String = s"$mainDir/program-parameter.json"
               val metabaseDatabase: String = config.metabaseDatabase
               val createDashboardQuery = s"UPDATE $programMetaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$targetedProgramId';"
-              val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, "Project", metabaseUtil, postgresUtil, createDashboardQuery)
+              val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
               val dashboardId: Int = CreateDashboard.checkAndCreateDashboard(collectionId, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
               val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
               val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, "projects", "statename", postgresUtil, createDashboardQuery)
@@ -193,7 +193,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
             } catch {
               case e: Exception =>
-                val updateTableQuery = s"UPDATE program_dashboard_metadata SET status = 'Failed',error_message = '${e.getMessage}'  WHERE id = '$targetedProgramId';"
+                val updateTableQuery = s"UPDATE $programMetaDataTable SET status = 'Failed',error_message = '${e.getMessage}'  WHERE id = '$targetedProgramId';"
                 postgresUtil.insertData(updateTableQuery)
                 println(s"An error occurred: ${e.getMessage}")
                 e.printStackTrace()
@@ -232,7 +232,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val metabaseDatabase: String = config.metabaseDatabase
               val parameterFilePath: String = s"$mainDir/district-parameter.json"
               val createDashboardQuery = s"UPDATE $districtMetaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$targetedDistrictId';"
-              val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, "Project", metabaseUtil, postgresUtil, createDashboardQuery)
+              val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
               val dashboardId: Int = CreateDashboard.checkAndCreateDashboard(collectionId, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
               val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
               val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, "projects", "statename", postgresUtil, createDashboardQuery)
