@@ -10,9 +10,9 @@ import java.io.File
 object UpdateAndAddStateFilter {
   val objectMapper = new ObjectMapper()
 
-  def updateAndAddFilter(metabaseUtil: MetabaseUtil, filterFilePath: String, statename: String, districtname: String, programname: String,collectionId:Int,databaseId:Int): Int = {
+  def updateAndAddFilter(metabaseUtil: MetabaseUtil, filterFilePath: String, statename: String, districtname: String, programname: String, collectionId: Int, databaseId: Int): Int = {
     println(s"---------------- started processing updateAndAddFilter Function -------------------")
-    // Read JSON from file
+
     def readJsonFile(filePath: String): Option[JsonNode] = {
       try {
         val file = new File(filePath)
@@ -30,7 +30,6 @@ object UpdateAndAddStateFilter {
       }
     }
 
-    // Replace "STATENAME" in the JSON with the provided state name
     def replaceStateName(json: JsonNode, stateName: String): JsonNode = {
       def processNode(node: JsonNode): JsonNode = {
         node match {
@@ -38,17 +37,14 @@ object UpdateAndAddStateFilter {
             obj.fieldNames().forEachRemaining { fieldName =>
               val childNode = obj.get(fieldName)
               if (childNode.isTextual && childNode.asText().contains("STATENAME")) {
-                // Replace "STATENAME" in text fields
                 obj.put(fieldName, childNode.asText().replace("STATENAME", stateName))
               } else {
-                // Recursively process child nodes
                 obj.set(fieldName, processNode(childNode))
               }
             }
             obj
 
           case array: ArrayNode =>
-            // Process each element in the array
             val updatedArray = array.elements()
             val newArray = array.deepCopy().asInstanceOf[ArrayNode]
             newArray.removeAll()
@@ -66,22 +62,16 @@ object UpdateAndAddStateFilter {
 
     def updateCollectionIdAndDatabaseId(jsonFile: JsonNode, collectionId: Int, databaseId: Int): JsonNode = {
       try {
-        // Ensure the root node contains the "questionCard" field
         val questionCardNode = jsonFile.get("questionCard").asInstanceOf[ObjectNode]
         if (questionCardNode == null) {
           throw new IllegalArgumentException("'questionCard' node not found.")
         }
-        // Update "collection_id"
         questionCardNode.put("collection_id", collectionId)
-
-        // Access and update "database" inside "dataset_query"
         val datasetQueryNode = questionCardNode.get("dataset_query").asInstanceOf[ObjectNode]
         if (datasetQueryNode == null) {
           throw new IllegalArgumentException("'dataset_query' node not found.")
         }
         datasetQueryNode.put("database", databaseId)
-
-        // Return the updated JSON
         jsonFile
       } catch {
         case ex: Exception =>
@@ -89,18 +79,10 @@ object UpdateAndAddStateFilter {
       }
     }
 
-    // Get 'id' from the response JSON
     def getTheQuestionId(json: JsonNode): Int = {
-      println(s"Request JSON: ${json.toString}") // Log the request
-
       try {
         val requestBody = json.get("questionCard")
         val questionCardResponse = metabaseUtil.createQuestionCard(requestBody.toString)
-
-        // Log the response for debugging
-//        println(s"API Response: $questionCardResponse")
-
-        // Parse the JSON response
         val responseJson = objectMapper.readTree(questionCardResponse)
         Option(responseJson.get("id")).map(_.asInt()).getOrElse {
           println("Error: 'id' field not found in the response.")
@@ -113,13 +95,10 @@ object UpdateAndAddStateFilter {
       }
     }
 
-
-    // Read and process JSON file
     readJsonFile(filterFilePath) match {
       case Some(json) =>
-        // Replace the state name and get the question ID
         val ReplacedStateNameJson = replaceStateName(json, statename)
-        val updatedJson = updateCollectionIdAndDatabaseId(ReplacedStateNameJson,collectionId, databaseId)
+        val updatedJson = updateCollectionIdAndDatabaseId(ReplacedStateNameJson, collectionId, databaseId)
         val questionId = getTheQuestionId(updatedJson)
         questionId
       case None =>

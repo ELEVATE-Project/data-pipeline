@@ -1,21 +1,22 @@
 package org.shikshalokam.job.dashboard.creator.functions
 
-import org.shikshalokam.job.util.MetabaseUtil
+import com.fasterxml.jackson.databind.node.{ArrayNode, JsonNodeFactory, ObjectNode}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
-import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
-import scala.io.Source
+import org.shikshalokam.job.util.MetabaseUtil
+
 import java.io.{File, PrintWriter}
 import scala.collection.mutable.ListBuffer
+import scala.io.Source
 import scala.util.{Failure, Success, Try}
-import com.fasterxml.jackson.databind.node.{JsonNodeFactory, ObjectNode}
 
 
 object UpdateAdminJsonFiles {
-  def ProcessAndUpdateJsonFiles(mainDir: String, collectionId: Int, databaseId: Int, dashboardId : Int , statenameId: Int, districtnameId: Int, programnameId: Int, metabaseUtil: MetabaseUtil): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(mainDir: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, metabaseUtil: MetabaseUtil): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
-    def processJsonFiles(mainDir: String,dashboardId:Int): Unit = {
+
+    def processJsonFiles(mainDir: String, dashboardId: Int): Unit = {
       val mainDirectory = new File(mainDir)
       if (mainDirectory.exists() && mainDirectory.isDirectory) {
         val dirs = mainDirectory.listFiles().filter(_.isDirectory)
@@ -50,8 +51,6 @@ object UpdateAdminJsonFiles {
                         case Some(cardId) =>
                           println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
                           questionCardId.append(cardId)
-
-                          // Update JSON with the card_id
                           val updatedJsonOpt = updateJsonWithCardId(json, cardId)
                           println(s"updatedJsonOpt = $updatedJsonOpt")
                           updatedJsonOpt match {
@@ -60,9 +59,10 @@ object UpdateAdminJsonFiles {
                             case None =>
                               println("Failed to update JSON: jsonOpt is None.")
                           }
-                          appendDashCardToDashboard(updatedJsonOpt,dashboardId)
+                          AddQuestionCards.appendDashCardToDashboard(metabaseUtil,updatedJsonOpt, dashboardId)
                           println(s"--------Successfully updated the json file---------")
-                      }}
+                      }
+                    }
                   case None => println(s"Warning: File '$jsonFileName' could not be parsed as JSON. Skipping...")
                 }
               }
@@ -72,46 +72,46 @@ object UpdateAdminJsonFiles {
       }
     }
 
-    def appendDashCardToDashboard(jsonFile:Option[JsonNode], dashboardId: Int): Unit = {
-
-      val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
-
-      val dashboardJson = objectMapper.readTree(dashboardResponse)
-      val existingDashcards = dashboardJson.path("dashcards") match {
-        case array: ArrayNode => array
-        case _ => objectMapper.createArrayNode()
-      }
-      val dashCardsNode = readJsonFile(jsonFile)
-      dashCardsNode.foreach { value =>
-        existingDashcards.add(value)
-      }
-      val finalDashboardJson = objectMapper.createObjectNode()
-      finalDashboardJson.set("dashcards", existingDashcards)
-      val dashcardsString = objectMapper.writeValueAsString(finalDashboardJson)
-      val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, dashcardsString)
-      println(s"********************* Successfully updated Dashcards  *************************")
-    }
-
-    def readJsonFile(jsonContent: Option[JsonNode]): Option[JsonNode] = {
-      jsonContent.flatMap { content =>
-        Try {
-          val dashCardsNode = content.path("dashCards")
-
-          if (!dashCardsNode.isMissingNode) {
-            println(s"Successfully extracted 'dashCards' key: $dashCardsNode")
-            Some(dashCardsNode)
-          } else {
-            println(s"'dashCards' key not found in JSON content.")
-            None
-          }
-        } match {
-          case Success(value) => value // Return the result if successful
-          case Failure(exception) =>
-            println(s"Error processing JSON content: ${exception.getMessage}")
-            None // Handle exceptions gracefully
-        }
-      }
-    }
+//    def appendDashCardToDashboard(metabaseUtil: MetabaseUtil,jsonFile: Option[JsonNode], dashboardId: Int): Unit = {
+//
+//      val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
+//
+//      val dashboardJson = objectMapper.readTree(dashboardResponse)
+//      val existingDashcards = dashboardJson.path("dashcards") match {
+//        case array: ArrayNode => array
+//        case _ => objectMapper.createArrayNode()
+//      }
+//      val dashCardsNode = readJsonFile(jsonFile)
+//      dashCardsNode.foreach { value =>
+//        existingDashcards.add(value)
+//      }
+//      val finalDashboardJson = objectMapper.createObjectNode()
+//      finalDashboardJson.set("dashcards", existingDashcards)
+//      val dashcardsString = objectMapper.writeValueAsString(finalDashboardJson)
+//      val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, dashcardsString)
+//      println(s"********************* Successfully updated Dashcards  *************************")
+//    }
+//
+//    def readJsonFile(jsonContent: Option[JsonNode]): Option[JsonNode] = {
+//      jsonContent.flatMap { content =>
+//        Try {
+//          val dashCardsNode = content.path("dashCards")
+//
+//          if (!dashCardsNode.isMissingNode) {
+//            println(s"Successfully extracted 'dashCards' key: $dashCardsNode")
+//            Some(dashCardsNode)
+//          } else {
+//            println(s"'dashCards' key not found in JSON content.")
+//            None
+//          }
+//        } match {
+//          case Success(value) => value // Return the result if successful
+//          case Failure(exception) =>
+//            println(s"Error processing JSON content: ${exception.getMessage}")
+//            None // Handle exceptions gracefully
+//        }
+//      }
+//    }
 
     def parseJson(file: File): Option[JsonNode] = {
       Try(objectMapper.readTree(file)) match {
@@ -197,34 +197,22 @@ object UpdateAdminJsonFiles {
                 try {
                   val jsonStr = Source.fromFile(jsonFile).mkString
                   val rootNode = mapper.readTree(jsonStr).asInstanceOf[ObjectNode]
-
-                  // Update "collection_id"
                   if (rootNode.has("questionCard")) {
                     val questionCard = rootNode.get("questionCard").asInstanceOf[ObjectNode]
                     questionCard.put("collection_id", collectionId)
-
-                    // Update "dataset_query"
                     if (questionCard.has("dataset_query")) {
                       val datasetQuery = questionCard.get("dataset_query").asInstanceOf[ObjectNode]
                       datasetQuery.put("database", databaseId)
-
-                      // Update "native" -> "template-tags"
                       if (datasetQuery.has("native")) {
                         val nativeNode = datasetQuery.get("native").asInstanceOf[ObjectNode]
                         if (nativeNode.has("template-tags")) {
                           val templateTags = nativeNode.get("template-tags").asInstanceOf[ObjectNode]
-
-                          // Update "state_param"
                           if (templateTags.has("state_param")) {
                             updateDimension(templateTags.get("state_param").asInstanceOf[ObjectNode], statenameId)
                           }
-
-                          // Update "district_param"
                           if (templateTags.has("district_param")) {
                             updateDimension(templateTags.get("district_param").asInstanceOf[ObjectNode], districtnameId)
                           }
-
-                          // Update "program_param"
                           if (templateTags.has("program_param")) {
                             updateDimension(templateTags.get("program_param").asInstanceOf[ObjectNode], programnameId)
                           }
@@ -232,10 +220,6 @@ object UpdateAdminJsonFiles {
                       }
                     }
                   }
-
-                  // Update "dashCards" -> "id"
-
-                  // Write updated JSON back to the file
                   val writer = new PrintWriter(jsonFile)
                   try {
                     writer.write(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode))
@@ -273,7 +257,7 @@ object UpdateAdminJsonFiles {
     }
 
     updateJsonFiles(mainDir, collectionId = collectionId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, databaseId = databaseId)
-    processJsonFiles(mainDir,dashboardId)
+    processJsonFiles(mainDir, dashboardId)
     println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardId
   }
