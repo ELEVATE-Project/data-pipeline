@@ -14,14 +14,6 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def solutionDescription: String = readOrDefault[String]("solutionInformation.programDescription", "")
 
-  def projectDuration: String = readOrDefault[String]("metaInformation.duration", "")
-
-  def hasAcceptedTAndC: Boolean = readOrDefault[Boolean]("hasAcceptedTAndC", false)
-
-  def projectIsDeleted: Boolean = readOrDefault[Boolean]("isDeleted", false)
-
-  def projectCreatedType: String = if (readOrDefault[String]("projectTemplateId", "").nonEmpty) "project imported from library" else "user created project"
-
   def privateProgram: Boolean = readOrDefault[Boolean]("isAPrivateProgram", false)
 
   def programId: String = readOrDefault[String]("programInformation._id", "")

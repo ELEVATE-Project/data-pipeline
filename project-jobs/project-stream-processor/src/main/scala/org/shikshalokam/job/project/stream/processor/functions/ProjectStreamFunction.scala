@@ -53,10 +53,6 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     println("solutionExternalId = " + event.solutionExternalId)
     println("solutionName = " + event.solutionName)
     println("solutionDescription = " + event.solutionDescription)
-    println("projectDuration = " + event.projectDuration)
-    println("hasAcceptedTAndC = " + event.hasAcceptedTAndC)
-    println("projectIsDeleted = " + event.projectIsDeleted)
-    println("projectCreatedType = " + event.projectCreatedType)
     println("privateProgram = " + event.privateProgram)
     println("programId = " + event.programId)
     println("programExternalId = " + event.programExternalId)
@@ -117,10 +113,6 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val solutionExternalId = event.solutionExternalId
     val solutionName = event.solutionName
     val solutionDescription = event.solutionDescription
-    val projectDuration = event.projectDuration
-    val hasAcceptedTAndC = event.hasAcceptedTAndC
-    val projectIsDeleted = event.projectIsDeleted
-    val projectCreatedType = event.projectCreatedType
     val programId = event.programId
     val programName = event.programName
     val programExternalId = event.programExternalId
@@ -128,16 +120,12 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val privateProgram = event.privateProgram
 
     val upsertSolutionQuery =
-      """INSERT INTO Solutions (solutionId, externalId, name, description, duration, hasAcceptedTAndC, isDeleted, createdType, programId, programName, programExternalId, programDescription, privateProgram)
-        |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      """INSERT INTO Solutions (solutionId, externalId, name, description, programId, programName, programExternalId, programDescription, privateProgram)
+        |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         |ON CONFLICT (solutionId) DO UPDATE SET
         |    externalId = ?,
         |    name = ?,
         |    description = ?,
-        |    duration = ?,
-        |    hasAcceptedTAndC = ?,
-        |    isDeleted = ?,
-        |    createdType = ?,
         |    programId = ?,
         |    programName = ?,
         |    programExternalId = ?,
@@ -147,14 +135,10 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
 
     val solutionParams = Seq(
       // Insert parameters
-      solutionId, solutionExternalId, solutionName, solutionDescription, projectDuration,
-      hasAcceptedTAndC, projectIsDeleted, projectCreatedType, programId, programName,
-      programExternalId, programDescription, privateProgram,
+      solutionId, solutionExternalId, solutionName, solutionDescription, programId, programName, programExternalId, programDescription, privateProgram,
 
       // Update parameters (matching columns in the ON CONFLICT clause)
-      solutionExternalId, solutionName, solutionDescription, projectDuration,
-      hasAcceptedTAndC, projectIsDeleted, projectCreatedType, programId,
-      programName, programExternalId, programDescription, privateProgram
+      solutionExternalId, solutionName, solutionDescription, programId, programName, programExternalId, programDescription, privateProgram
     )
 
     postgresUtil.executePreparedUpdate(upsertSolutionQuery, solutionParams, config.solutionsTable, solutionId)
