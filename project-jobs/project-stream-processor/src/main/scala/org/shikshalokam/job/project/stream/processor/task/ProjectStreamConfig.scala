@@ -47,10 +47,7 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
   val solutionsTable = "Solutions"
   val projectsTable = "Projects"
   val tasksTable = "Tasks"
-  val adminDashboardTable = "AdminDashboardMetadata"
-  val stateDashboardTable = "StateDashboardMetadata"
-  val districtDashboardTable = "DistrictDashboardMetadata"
-  val programDashboardTable = "ProgramDashboardMetadata"
+  val dashboardMetadataTable = "dashboard_metadata"
 
   val createSolutionsTable =
     """CREATE TABLE IF NOT EXISTS Solutions (
@@ -119,56 +116,18 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |    evidenceCount TEXT
       |);""".stripMargin
 
-  val createAdminDashboardTable =
-    """CREATE TABLE IF NOT EXISTS admin_dashboard_metadata (
+  val createDashboardMetadataTable =
+    """CREATE TABLE IF NOT EXISTS dashboard_metadata (
       |    id SERIAL PRIMARY KEY,
-      |    solutionId TEXT REFERENCES Solutions(solutionId),
-      |    name TEXT NOT NULL,
+      |    entity_type TEXT NOT NULL,
+      |    entity_name TEXT NOT NULL,
+      |    entity_id TEXT UNIQUE NOT NULL,
       |    collection_id TEXT,
       |    dashboard_id TEXT,
       |    question_ids TEXT,
       |    status TEXT,
-      |    error_message TEXT,
-      |    UNIQUE (name)
-      |);""".stripMargin
-
-  val createStateDashboardTable =
-    """CREATE TABLE IF NOT EXISTS state_dashboard_metadata (
-      |    id TEXT PRIMARY KEY,
-      |    solutionId TEXT REFERENCES Solutions(solutionId),
-      |    name TEXT NOT NULL,
-      |    collection_id TEXT,
-      |    dashboard_id TEXT,
-      |    question_ids TEXT,
-      |    status TEXT,
-      |    error_message TEXT,
-      |    UNIQUE (id)
-      |);""".stripMargin
-
-  val createDistrictDashboardTable =
-    """CREATE TABLE IF NOT EXISTS district_dashboard_metadata (
-      |    id TEXT PRIMARY KEY,
-      |    solutionId TEXT REFERENCES Solutions(solutionId),
-      |    name TEXT NOT NULL,
-      |    collection_id TEXT,
-      |    dashboard_id TEXT,
-      |    question_ids TEXT,
-      |    status TEXT,
-      |    error_message TEXT,
-      |    UNIQUE (id)
-      |);""".stripMargin
-
-  val createProgramDashboardTable =
-    """CREATE TABLE IF NOT EXISTS program_dashboard_metadata (
-      |    id TEXT PRIMARY KEY,
-      |    solutionId TEXT REFERENCES Solutions(solutionId),
-      |    name TEXT NOT NULL,
-      |    collection_id TEXT,
-      |    dashboard_id TEXT,
-      |    question_ids TEXT,
-      |    status TEXT,
-      |    error_message TEXT,
-      |    UNIQUE (id)
-      |);""".stripMargin
+      |    error_message TEXT
+      |);
+      |""".stripMargin
 
 }

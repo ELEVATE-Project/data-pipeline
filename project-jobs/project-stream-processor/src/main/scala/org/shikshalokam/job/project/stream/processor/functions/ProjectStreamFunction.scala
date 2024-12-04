@@ -101,10 +101,7 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     postgresUtil.createTable(config.createSolutionsTable, config.solutionsTable)
     postgresUtil.createTable(config.createProjectTable, config.projectsTable)
     postgresUtil.createTable(config.createTasksTable, config.tasksTable)
-    postgresUtil.createTable(config.createAdminDashboardTable, config.adminDashboardTable)
-    postgresUtil.createTable(config.createStateDashboardTable, config.stateDashboardTable)
-    postgresUtil.createTable(config.createDistrictDashboardTable, config.districtDashboardTable)
-    postgresUtil.createTable(config.createProgramDashboardTable, config.programDashboardTable)
+    postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboardMetadataTable)
 
     /**
      * Extracting Solutions data
@@ -254,10 +251,10 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
      * Logic to populate kafka messages for creating metabase dashboard
      */
     val dashboardData = new java.util.HashMap[String, String]()
-    checkAndInsert("admin", "admin_dashboard_metadata", solutionId, "", dashboardData, "admin")
-    checkAndInsert("program", "program_dashboard_metadata", solutionId, event.programId, dashboardData, "targetedProgram")
-    checkAndInsert("state", "state_dashboard_metadata", solutionId, event.stateId, dashboardData, "targetedState")
-    checkAndInsert("district", "district_dashboard_metadata", solutionId, event.districtId, dashboardData, "targetedDistrict")
+    checkAndInsert("admin", "1", dashboardData, "admin")
+    checkAndInsert("program", event.programId, dashboardData, "targetedProgram")
+    checkAndInsert("state", event.stateId, dashboardData, "targetedState")
+    checkAndInsert("district", event.districtId, dashboardData, "targetedDistrict")
 
     if (!dashboardData.isEmpty) {
       pushProjectDashboardEvents(dashboardData, context)
@@ -329,12 +326,8 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     }.getOrElse("Null")
   }
 
-  def checkAndInsert(entityType: String, tableName: String, solutionId: String, targetedId: String, dashboardData: java.util.HashMap[String, String], dashboardKey: String): Unit = {
-    val query = if (entityType == "admin") {
-      s"SELECT EXISTS (SELECT 1 FROM $tableName WHERE name = 'Admin') AS is_${entityType}_present"
-    } else {
-      s"SELECT EXISTS (SELECT 1 FROM $tableName WHERE id = '$targetedId') AS is_${entityType}_present"
-    }
+  def checkAndInsert(entityType: String, targetedId: String, dashboardData: java.util.HashMap[String, String], dashboardKey: String): Unit = {
+    val query = s"SELECT EXISTS (SELECT 1 FROM ${config.dashboardMetadataTable} WHERE entity_id = '$targetedId') AS is_${entityType}_present"
     val result = postgresUtil.fetchData(query)
 
     result.foreach { row =>
@@ -343,18 +336,18 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
           println(s"$entityType details already exist.")
         case _ =>
           if (entityType == "admin") {
-            val insertQuery = s"INSERT INTO $tableName (solutionId, name) VALUES ('$solutionId', 'Admin')"
+            val insertQuery = s"INSERT INTO ${config.dashboardMetadataTable} (entity_type, entity_name, entity_id) VALUES ('$entityType', 'Admin', '$targetedId')"
             val affectedRows = postgresUtil.insertData(insertQuery)
-            println(s"Inserted Admin details into $tableName. Affected rows: $affectedRows")
+            println(s"Inserted Admin details. Affected rows: $affectedRows")
             dashboardData.put(dashboardKey, "Admin")
           } else {
             val getEntityNameQuery = s"SELECT DISTINCT ${entityType}name AS ${entityType}_name FROM ${if (entityType == "program") config.solutionsTable else config.projectsTable} WHERE ${entityType}id = '$targetedId'"
             val result = postgresUtil.fetchData(getEntityNameQuery)
             result.foreach { id =>
-              val targeted_entity_name = id.get(s"${entityType}_name").map(_.toString).getOrElse("")
-              val insertQuery = s"INSERT INTO $tableName (id, solutionId, name) VALUES ('$targetedId', '$solutionId', '$targeted_entity_name')"
+              val entityName = id.get(s"${entityType}_name").map(_.toString).getOrElse("")
+              val insertQuery = s"INSERT INTO ${config.dashboardMetadataTable} (entity_type, entity_name, entity_id) VALUES ('$entityType', '$entityName', '$targetedId')"
               val affectedRows = postgresUtil.insertData(insertQuery)
-              println(s"Inserted $targetedId details into $tableName. Affected rows: $affectedRows")
+              println(s"Inserted [$entityName:$targetedId] details. Affected rows: $affectedRows")
               dashboardData.put(dashboardKey, targetedId)
             }
           }
