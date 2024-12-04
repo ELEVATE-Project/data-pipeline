@@ -117,17 +117,17 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val privateProgram = event.privateProgram
 
     val upsertSolutionQuery =
-      """INSERT INTO Solutions (solutionId, externalId, name, description, programId, programName, programExternalId, programDescription, privateProgram)
+      """INSERT INTO solutions (solution_id, external_id, name, description, program_id, program_name, program_external_id, program_description, private_program)
         |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        |ON CONFLICT (solutionId) DO UPDATE SET
-        |    externalId = ?,
+        |ON CONFLICT (solution_id) DO UPDATE SET
+        |    external_id = ?,
         |    name = ?,
         |    description = ?,
-        |    programId = ?,
-        |    programName = ?,
-        |    programExternalId = ?,
-        |    programDescription = ?,
-        |    privateProgram = ?;
+        |    program_id = ?,
+        |    program_name = ?,
+        |    program_external_id = ?,
+        |    program_description = ?,
+        |    private_program = ?;
         |""".stripMargin
 
     val solutionParams = Seq(
@@ -174,19 +174,19 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val certificatePdfPath = event.certificatePdfPath
 
     val upsertProjectQuery =
-      """INSERT INTO Projects (
-        |    projectId, solutionId, createdBy, createdDate, completedDate, lastSync, updatedDate, status, remarks,
-        |    evidence, evidenceCount, programId, taskCount, userRoleIds, userRoles, orgId, orgName, orgCode, stateId,
-        |    stateName, districtId, districtName, blockId, blockName, clusterId, clusterName, schoolId, schoolName,
-        |    certificateTemplateId, certificateTemplateUrl, certificateIssuedOn, certificateStatus, certificatePdfPath
+      """INSERT INTO projects (
+        |    project_id, solution_id, created_by, created_date, completed_date, last_sync, updated_date, status, remarks,
+        |    evidence, evidence_count, program_id, task_count, user_role_ids, user_roles, org_id, org_name, org_code, state_id,
+        |    state_name, district_id, district_name, block_id, block_name, cluster_id, cluster_name, school_id, school_name,
+        |    certificate_template_id, certificate_template_url, certificate_issued_on, certificate_status, certificate_pdf_path
         |) VALUES (
         |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-        |) ON CONFLICT (projectId) DO UPDATE SET
-        |    solutionId = ?, createdBy = ?, createdDate = ?, completedDate = ?, lastSync = ?, updatedDate = ?,
-        |    status = ?, remarks = ?, evidence = ?, evidenceCount = ?, programId = ?, taskCount = ?, userRoleIds = ?,
-        |    userRoles = ?, orgId = ?, orgName = ?, orgCode = ?, stateId = ?, stateName = ?, districtId = ?,
-        |    districtName = ?, blockId = ?, blockName = ?, clusterId = ?, clusterName = ?, schoolId = ?, schoolName = ?,
-        |    certificateTemplateId = ?, certificateTemplateUrl = ?, certificateIssuedOn = ?, certificateStatus = ?, certificatePdfPath = ?;
+        |) ON CONFLICT (project_id) DO UPDATE SET
+        |    solution_id = ?, created_by = ?, created_date = ?, completed_date = ?, last_sync = ?, updated_date = ?,
+        |    status = ?, remarks = ?, evidence = ?, evidence_count = ?, program_id = ?, task_count = ?, user_role_ids = ?,
+        |    user_roles = ?, org_id = ?, org_name = ?, org_code = ?, state_id = ?, state_name = ?, district_id = ?,
+        |    district_name = ?, block_id = ?, block_name = ?, cluster_id = ?, cluster_name = ?, school_id = ?, school_name = ?,
+        |    certificate_template_id = ?, certificate_template_url = ?, certificate_issued_on = ?, certificate_status = ?, certificate_pdf_path = ?;
         |""".stripMargin
 
     val projectParams = Seq(
@@ -223,14 +223,14 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
       val taskEvidenceCount = task("taskEvidenceCount")
 
       val upsertTaskQuery =
-        """INSERT INTO Tasks (
-          |    taskId, projectId, name, assignedTo, startDate, endDate, syncedAt, isDeleted, isDeletable,
-          |    remarks, status, evidence, evidenceCount
+        """INSERT INTO tasks (
+          |    task_id, project_id, name, assigned_to, start_date, end_date, synced_at, is_deleted, is_deletable,
+          |    remarks, status, evidence, evidence_count
           |) VALUES (
           |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-          |) ON CONFLICT (taskId) DO UPDATE SET
-          |    name = ?, projectId = ?, assignedTo = ?, startDate = ?, endDate = ?, syncedAt = ?,
-          |    isDeleted = ?, isDeletable = ?, remarks = ?, status = ?, evidence = ?, evidenceCount = ?;
+          |) ON CONFLICT (task_id) DO UPDATE SET
+          |    name = ?, project_id = ?, assigned_to = ?, start_date = ?, end_date = ?, synced_at = ?,
+          |    is_deleted = ?, is_deletable = ?, remarks = ?, status = ?, evidence = ?, evidence_count = ?;
           |""".stripMargin
 
       val taskParams = Seq(
@@ -341,7 +341,7 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
             println(s"Inserted Admin details. Affected rows: $affectedRows")
             dashboardData.put(dashboardKey, "Admin")
           } else {
-            val getEntityNameQuery = s"SELECT DISTINCT ${entityType}name AS ${entityType}_name FROM ${if (entityType == "program") config.solutionsTable else config.projectsTable} WHERE ${entityType}id = '$targetedId'"
+            val getEntityNameQuery = s"SELECT DISTINCT ${entityType}_name AS ${entityType}_name FROM ${if (entityType == "program") config.solutionsTable else config.projectsTable} WHERE ${entityType}_id = '$targetedId'"
             val result = postgresUtil.fetchData(getEntityNameQuery)
             result.foreach { id =>
               val entityName = id.get(s"${entityType}_name").map(_.toString).getOrElse("")

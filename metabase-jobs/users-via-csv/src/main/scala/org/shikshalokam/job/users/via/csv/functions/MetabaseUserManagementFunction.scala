@@ -140,8 +140,8 @@ object MetabaseUserManagementFunction {
   private def handleManager(managerType: String, stateId: Option[String] = None, districtId: Option[String] = None, programName: Option[String] = None, existingGroupDetails: String, userId: Int): Unit = {
 
     println(s"--> $managerType Manager method called")
-    val stateName = stateId.map(id => fetchName(s"SELECT DISTINCT statename FROM projects WHERE stateid = '$id';", "statename")).getOrElse("")
-    val districtName = districtId.map(id => fetchName(s"SELECT DISTINCT districtname FROM projects WHERE districtid = '$id';", "districtname")).getOrElse("")
+    val stateName = stateId.map(id => fetchName(s"SELECT DISTINCT state_name FROM projects WHERE state_id = '$id';", "state_name")).getOrElse("")
+    val districtName = districtId.map(id => fetchName(s"SELECT DISTINCT district_name FROM projects WHERE district_id = '$id';", "district_name")).getOrElse("")
 
     val groupName = managerType match {
       case "State" => s"${stateName}_State_Manager"
