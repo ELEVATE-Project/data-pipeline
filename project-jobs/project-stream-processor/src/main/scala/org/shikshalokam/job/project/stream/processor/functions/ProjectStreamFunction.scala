@@ -251,10 +251,18 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
      * Logic to populate kafka messages for creating metabase dashboard
      */
     val dashboardData = new java.util.HashMap[String, String]()
-    checkAndInsert("admin", "1", dashboardData, "admin")
-    checkAndInsert("program", event.programId, dashboardData, "targetedProgram")
-    checkAndInsert("state", event.stateId, dashboardData, "targetedState")
-    checkAndInsert("district", event.districtId, dashboardData, "targetedDistrict")
+    val dashboardConfig = Seq(
+      ("admin", "1", "admin"),
+      ("program", event.programId, "targetedProgram"),
+      ("state", event.stateId, "targetedState"),
+      ("district", event.districtId, "targetedDistrict")
+    )
+
+    dashboardConfig
+      .filter { case (key, _, _) => config.reportsEnabled.contains(key) }
+      .foreach { case (key, value, target) =>
+        checkAndInsert(key, value, dashboardData, target)
+      }
 
     if (!dashboardData.isEmpty) {
       pushProjectDashboardEvents(dashboardData, context)

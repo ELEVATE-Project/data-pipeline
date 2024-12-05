@@ -6,6 +6,7 @@ import org.apache.flink.api.java.typeutils.TypeExtractor
 import org.apache.flink.streaming.api.scala.OutputTag
 import org.shikshalokam.job.project.stream.processor.domain.Event
 import org.shikshalokam.job.BaseJobConfig
+import scala.collection.JavaConverters._
 
 class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(config, "ProjectsStreamJob") {
 
@@ -35,6 +36,9 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
   val skipCount = "skipped-message-count"
   val successCount = "success-message-count"
   val totalEventsCount = "total-project-events-count"
+
+  //report-config
+  val reportsEnabled: Set[String]= config.getStringList("reports.enabled").asScala.toSet
 
   // PostgreSQL connection config
   val pgHost: String = config.getString("postgres.host")
