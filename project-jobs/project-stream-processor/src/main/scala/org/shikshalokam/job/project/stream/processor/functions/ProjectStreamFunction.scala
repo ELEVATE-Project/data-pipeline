@@ -339,7 +339,7 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
             val insertQuery = s"INSERT INTO ${config.dashboardMetadataTable} (entity_type, entity_name, entity_id) VALUES ('$entityType', 'Admin', '$targetedId')"
             val affectedRows = postgresUtil.insertData(insertQuery)
             println(s"Inserted Admin details. Affected rows: $affectedRows")
-            dashboardData.put(dashboardKey, "Admin")
+            dashboardData.put(dashboardKey, "1")
           } else {
             val getEntityNameQuery = s"SELECT DISTINCT ${entityType}_name AS ${entityType}_name FROM ${if (entityType == "program") config.solutionsTable else config.projectsTable} WHERE ${entityType}_id = '$targetedId'"
             val result = postgresUtil.fetchData(getEntityNameQuery)
