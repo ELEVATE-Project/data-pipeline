@@ -53,10 +53,6 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     println("solutionExternalId = " + event.solutionExternalId)
     println("solutionName = " + event.solutionName)
     println("solutionDescription = " + event.solutionDescription)
-    println("projectDuration = " + event.projectDuration)
-    println("hasAcceptedTAndC = " + event.hasAcceptedTAndC)
-    println("projectIsDeleted = " + event.projectIsDeleted)
-    println("projectCreatedType = " + event.projectCreatedType)
     println("privateProgram = " + event.privateProgram)
     println("programId = " + event.programId)
     println("programExternalId = " + event.programExternalId)
@@ -105,10 +101,7 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     postgresUtil.createTable(config.createSolutionsTable, config.solutionsTable)
     postgresUtil.createTable(config.createProjectTable, config.projectsTable)
     postgresUtil.createTable(config.createTasksTable, config.tasksTable)
-    postgresUtil.createTable(config.createAdminDashboardTable, config.adminDashboardTable)
-    postgresUtil.createTable(config.createStateDashboardTable, config.stateDashboardTable)
-    postgresUtil.createTable(config.createDistrictDashboardTable, config.districtDashboardTable)
-    postgresUtil.createTable(config.createProgramDashboardTable, config.programDashboardTable)
+    postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboardMetadataTable)
 
     /**
      * Extracting Solutions data
@@ -117,10 +110,6 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val solutionExternalId = event.solutionExternalId
     val solutionName = event.solutionName
     val solutionDescription = event.solutionDescription
-    val projectDuration = event.projectDuration
-    val hasAcceptedTAndC = event.hasAcceptedTAndC
-    val projectIsDeleted = event.projectIsDeleted
-    val projectCreatedType = event.projectCreatedType
     val programId = event.programId
     val programName = event.programName
     val programExternalId = event.programExternalId
@@ -128,33 +117,25 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val privateProgram = event.privateProgram
 
     val upsertSolutionQuery =
-      """INSERT INTO Solutions (solutionId, externalId, name, description, duration, hasAcceptedTAndC, isDeleted, createdType, programId, programName, programExternalId, programDescription, privateProgram)
-        |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        |ON CONFLICT (solutionId) DO UPDATE SET
-        |    externalId = ?,
+      """INSERT INTO solutions (solution_id, external_id, name, description, program_id, program_name, program_external_id, program_description, private_program)
+        |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        |ON CONFLICT (solution_id) DO UPDATE SET
+        |    external_id = ?,
         |    name = ?,
         |    description = ?,
-        |    duration = ?,
-        |    hasAcceptedTAndC = ?,
-        |    isDeleted = ?,
-        |    createdType = ?,
-        |    programId = ?,
-        |    programName = ?,
-        |    programExternalId = ?,
-        |    programDescription = ?,
-        |    privateProgram = ?;
+        |    program_id = ?,
+        |    program_name = ?,
+        |    program_external_id = ?,
+        |    program_description = ?,
+        |    private_program = ?;
         |""".stripMargin
 
     val solutionParams = Seq(
       // Insert parameters
-      solutionId, solutionExternalId, solutionName, solutionDescription, projectDuration,
-      hasAcceptedTAndC, projectIsDeleted, projectCreatedType, programId, programName,
-      programExternalId, programDescription, privateProgram,
+      solutionId, solutionExternalId, solutionName, solutionDescription, programId, programName, programExternalId, programDescription, privateProgram,
 
       // Update parameters (matching columns in the ON CONFLICT clause)
-      solutionExternalId, solutionName, solutionDescription, projectDuration,
-      hasAcceptedTAndC, projectIsDeleted, projectCreatedType, programId,
-      programName, programExternalId, programDescription, privateProgram
+      solutionExternalId, solutionName, solutionDescription, programId, programName, programExternalId, programDescription, privateProgram
     )
 
     postgresUtil.executePreparedUpdate(upsertSolutionQuery, solutionParams, config.solutionsTable, solutionId)
@@ -193,19 +174,19 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val certificatePdfPath = event.certificatePdfPath
 
     val upsertProjectQuery =
-      """INSERT INTO Projects (
-        |    projectId, solutionId, createdBy, createdDate, completedDate, lastSync, updatedDate, status, remarks,
-        |    evidence, evidenceCount, programId, taskCount, userRoleIds, userRoles, orgId, orgName, orgCode, stateId,
-        |    stateName, districtId, districtName, blockId, blockName, clusterId, clusterName, schoolId, schoolName,
-        |    certificateTemplateId, certificateTemplateUrl, certificateIssuedOn, certificateStatus, certificatePdfPath
+      """INSERT INTO projects (
+        |    project_id, solution_id, created_by, created_date, completed_date, last_sync, updated_date, status, remarks,
+        |    evidence, evidence_count, program_id, task_count, user_role_ids, user_roles, org_id, org_name, org_code, state_id,
+        |    state_name, district_id, district_name, block_id, block_name, cluster_id, cluster_name, school_id, school_name,
+        |    certificate_template_id, certificate_template_url, certificate_issued_on, certificate_status, certificate_pdf_path
         |) VALUES (
         |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-        |) ON CONFLICT (projectId) DO UPDATE SET
-        |    solutionId = ?, createdBy = ?, createdDate = ?, completedDate = ?, lastSync = ?, updatedDate = ?,
-        |    status = ?, remarks = ?, evidence = ?, evidenceCount = ?, programId = ?, taskCount = ?, userRoleIds = ?,
-        |    userRoles = ?, orgId = ?, orgName = ?, orgCode = ?, stateId = ?, stateName = ?, districtId = ?,
-        |    districtName = ?, blockId = ?, blockName = ?, clusterId = ?, clusterName = ?, schoolId = ?, schoolName = ?,
-        |    certificateTemplateId = ?, certificateTemplateUrl = ?, certificateIssuedOn = ?, certificateStatus = ?, certificatePdfPath = ?;
+        |) ON CONFLICT (project_id) DO UPDATE SET
+        |    solution_id = ?, created_by = ?, created_date = ?, completed_date = ?, last_sync = ?, updated_date = ?,
+        |    status = ?, remarks = ?, evidence = ?, evidence_count = ?, program_id = ?, task_count = ?, user_role_ids = ?,
+        |    user_roles = ?, org_id = ?, org_name = ?, org_code = ?, state_id = ?, state_name = ?, district_id = ?,
+        |    district_name = ?, block_id = ?, block_name = ?, cluster_id = ?, cluster_name = ?, school_id = ?, school_name = ?,
+        |    certificate_template_id = ?, certificate_template_url = ?, certificate_issued_on = ?, certificate_status = ?, certificate_pdf_path = ?;
         |""".stripMargin
 
     val projectParams = Seq(
@@ -242,14 +223,14 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
       val taskEvidenceCount = task("taskEvidenceCount")
 
       val upsertTaskQuery =
-        """INSERT INTO Tasks (
-          |    taskId, projectId, name, assignedTo, startDate, endDate, syncedAt, isDeleted, isDeletable,
-          |    remarks, status, evidence, evidenceCount
+        """INSERT INTO tasks (
+          |    task_id, project_id, name, assigned_to, start_date, end_date, synced_at, is_deleted, is_deletable,
+          |    remarks, status, evidence, evidence_count
           |) VALUES (
           |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-          |) ON CONFLICT (taskId) DO UPDATE SET
-          |    name = ?, projectId = ?, assignedTo = ?, startDate = ?, endDate = ?, syncedAt = ?,
-          |    isDeleted = ?, isDeletable = ?, remarks = ?, status = ?, evidence = ?, evidenceCount = ?;
+          |) ON CONFLICT (task_id) DO UPDATE SET
+          |    name = ?, project_id = ?, assigned_to = ?, start_date = ?, end_date = ?, synced_at = ?,
+          |    is_deleted = ?, is_deletable = ?, remarks = ?, status = ?, evidence = ?, evidence_count = ?;
           |""".stripMargin
 
       val taskParams = Seq(
@@ -270,10 +251,10 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
      * Logic to populate kafka messages for creating metabase dashboard
      */
     val dashboardData = new java.util.HashMap[String, String]()
-    checkAndInsert("admin", "admin_dashboard_metadata", solutionId, "", dashboardData, "admin")
-    checkAndInsert("program", "program_dashboard_metadata", solutionId, event.programId, dashboardData, "targetedProgram")
-    checkAndInsert("state", "state_dashboard_metadata", solutionId, event.stateId, dashboardData, "targetedState")
-    checkAndInsert("district", "district_dashboard_metadata", solutionId, event.districtId, dashboardData, "targetedDistrict")
+    checkAndInsert("admin", "1", dashboardData, "admin")
+    checkAndInsert("program", event.programId, dashboardData, "targetedProgram")
+    checkAndInsert("state", event.stateId, dashboardData, "targetedState")
+    checkAndInsert("district", event.districtId, dashboardData, "targetedDistrict")
 
     if (!dashboardData.isEmpty) {
       pushProjectDashboardEvents(dashboardData, context)
@@ -345,12 +326,8 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     }.getOrElse("Null")
   }
 
-  def checkAndInsert(entityType: String, tableName: String, solutionId: String, targetedId: String, dashboardData: java.util.HashMap[String, String], dashboardKey: String): Unit = {
-    val query = if (entityType == "admin") {
-      s"SELECT EXISTS (SELECT 1 FROM $tableName WHERE name = 'Admin') AS is_${entityType}_present"
-    } else {
-      s"SELECT EXISTS (SELECT 1 FROM $tableName WHERE id = '$targetedId') AS is_${entityType}_present"
-    }
+  def checkAndInsert(entityType: String, targetedId: String, dashboardData: java.util.HashMap[String, String], dashboardKey: String): Unit = {
+    val query = s"SELECT EXISTS (SELECT 1 FROM ${config.dashboardMetadataTable} WHERE entity_id = '$targetedId') AS is_${entityType}_present"
     val result = postgresUtil.fetchData(query)
 
     result.foreach { row =>
@@ -359,18 +336,18 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
           println(s"$entityType details already exist.")
         case _ =>
           if (entityType == "admin") {
-            val insertQuery = s"INSERT INTO $tableName (solutionId, name) VALUES ('$solutionId', 'Admin')"
+            val insertQuery = s"INSERT INTO ${config.dashboardMetadataTable} (entity_type, entity_name, entity_id) VALUES ('$entityType', 'Admin', '$targetedId')"
             val affectedRows = postgresUtil.insertData(insertQuery)
-            println(s"Inserted Admin details into $tableName. Affected rows: $affectedRows")
-            dashboardData.put(dashboardKey, "Admin")
+            println(s"Inserted Admin details. Affected rows: $affectedRows")
+            dashboardData.put(dashboardKey, "1")
           } else {
-            val getEntityNameQuery = s"SELECT DISTINCT ${entityType}name AS ${entityType}_name FROM ${if (entityType == "program") config.solutionsTable else config.projectsTable} WHERE ${entityType}id = '$targetedId'"
+            val getEntityNameQuery = s"SELECT DISTINCT ${entityType}_name AS ${entityType}_name FROM ${if (entityType == "program") config.solutionsTable else config.projectsTable} WHERE ${entityType}_id = '$targetedId'"
             val result = postgresUtil.fetchData(getEntityNameQuery)
             result.foreach { id =>
-              val targeted_entity_name = id.get(s"${entityType}_name").map(_.toString).getOrElse("")
-              val insertQuery = s"INSERT INTO $tableName (id, solutionId, name) VALUES ('$targetedId', '$solutionId', '$targeted_entity_name')"
+              val entityName = id.get(s"${entityType}_name").map(_.toString).getOrElse("")
+              val insertQuery = s"INSERT INTO ${config.dashboardMetadataTable} (entity_type, entity_name, entity_id) VALUES ('$entityType', '$entityName', '$targetedId')"
               val affectedRows = postgresUtil.insertData(insertQuery)
-              println(s"Inserted $targetedId details into $tableName. Affected rows: $affectedRows")
+              println(s"Inserted [$entityName:$targetedId] details. Affected rows: $affectedRows")
               dashboardData.put(dashboardKey, targetedId)
             }
           }
