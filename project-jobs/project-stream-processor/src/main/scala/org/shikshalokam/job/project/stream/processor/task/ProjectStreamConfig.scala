@@ -42,15 +42,13 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
   val pgUsername: String = config.getString("postgres.username")
   val pgPassword: String = config.getString("postgres.password")
   val pgDataBase: String = config.getString("postgres.database")
-
-  // PostgreSQL query config
-  val solutionsTable = "solutions"
-  val projectsTable = "projects"
-  val tasksTable = "tasks"
-  val dashboardMetadataTable = "dashboard_metadata"
+  val solutions: String = config.getString("postgres.tables.solutionsTable")
+  val projects: String = config.getString("postgres.tables.projectsTable")
+  val tasks: String = config.getString("postgres.tables.tasksTable")
+  val dashboard_metadata: String = config.getString("postgres.tables.dashboardMetadataTable")
 
   val createSolutionsTable =
-    """CREATE TABLE IF NOT EXISTS solutions (
+    s"""CREATE TABLE IF NOT EXISTS $solutions (
       |    solution_id TEXT PRIMARY KEY,
       |    external_id TEXT,
       |    name TEXT,
@@ -63,9 +61,9 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |);""".stripMargin
 
   val createProjectTable =
-    """CREATE TABLE IF NOT EXISTS projects (
+    s"""CREATE TABLE IF NOT EXISTS $projects (
       |    project_id TEXT PRIMARY KEY,
-      |    solution_id TEXT REFERENCES solutions(solution_id),
+      |    solution_id TEXT REFERENCES $solutions(solution_id),
       |    created_by TEXT,
       |    created_date TEXT,
       |    completed_date TEXT,
@@ -100,9 +98,9 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |);""".stripMargin
 
   val createTasksTable =
-    """CREATE TABLE IF NOT EXISTS tasks (
+    s"""CREATE TABLE IF NOT EXISTS $tasks (
       |    task_id TEXT PRIMARY KEY,
-      |    project_id TEXT REFERENCES projects(project_id),
+      |    project_id TEXT REFERENCES $projects(project_id),
       |    name TEXT,
       |    assigned_to TEXT,
       |    start_date TEXT,
@@ -117,7 +115,7 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |);""".stripMargin
 
   val createDashboardMetadataTable =
-    """CREATE TABLE IF NOT EXISTS dashboard_metadata (
+    s"""CREATE TABLE IF NOT EXISTS $dashboard_metadata (
       |    id SERIAL PRIMARY KEY,
       |    entity_type TEXT NOT NULL,
       |    entity_name TEXT NOT NULL,
