@@ -9,7 +9,8 @@ import scala.util.{Failure, Success, Try}
 object AddQuestionCards {
 
   val objectMapper = new ObjectMapper()
-  def appendDashCardToDashboard(metabaseUtil: MetabaseUtil,jsonFile: Option[JsonNode], dashboardId: Int): Unit = {
+
+  def appendDashCardToDashboard(metabaseUtil: MetabaseUtil, jsonFile: Option[JsonNode], dashboardId: Int): Unit = {
 
     val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
 

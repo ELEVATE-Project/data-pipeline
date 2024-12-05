@@ -84,48 +84,6 @@ object UpdateDistrictJsonFiles {
       }
     }
 
-    //    def appendDashCardToDashboard(jsonFile:Option[JsonNode], dashboardId: Int): Unit = {
-    //
-    //      val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
-    //
-    //      val dashboardJson = objectMapper.readTree(dashboardResponse)
-    //      val existingDashcards = dashboardJson.path("dashcards") match {
-    //        case array: ArrayNode => array
-    //        case _ => objectMapper.createArrayNode()
-    //      }
-    //      val dashCardsNode = readJsonFile(jsonFile)
-    //      dashCardsNode.foreach { value =>
-    ////        println(s"Extracted dashCards: $value")
-    //        existingDashcards.add(value)
-    //      }
-    //      val finalDashboardJson = objectMapper.createObjectNode()
-    //      finalDashboardJson.set("dashcards", existingDashcards)
-    //      val dashcardsString = objectMapper.writeValueAsString(finalDashboardJson)
-    //      val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, dashcardsString)
-    //      println(s"********************* Successfully updated Dashcards  ***********************")
-    //    }
-    //
-    //    def readJsonFile(jsonContent: Option[JsonNode]): Option[JsonNode] = {
-    //      jsonContent.flatMap { content =>
-    //        Try {
-    //          val dashCardsNode = content.path("dashCards")
-    //
-    //          if (!dashCardsNode.isMissingNode) {
-    ////            println(s"Successfully extracted 'dashCards' key: $dashCardsNode")
-    //            Some(dashCardsNode)
-    //          } else {
-    //            println(s"'dashCards' key not found in JSON content.")
-    //            None
-    //          }
-    //        } match {
-    //          case Success(value) => value // Return the result if successful
-    //          case Failure(exception) =>
-    //            println(s"Error processing JSON content: ${exception.getMessage}")
-    //            None // Handle exceptions gracefully
-    //        }
-    //      }
-    //    }
-
     def updateQuery(json: JsonNode, statename: String, districtname: String): Option[JsonNode] = {
       Try {
         // Update the query

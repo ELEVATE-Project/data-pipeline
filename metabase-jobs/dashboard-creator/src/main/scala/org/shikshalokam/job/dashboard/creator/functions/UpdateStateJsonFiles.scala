@@ -9,11 +9,12 @@ import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
 object UpdateStateJsonFiles {
-  def ProcessAndUpdateJsonFiles(mainDir: String, collectionId: Int, databaseId: Int, dashboardId : Int , statenameId: Int, districtnameId: Int, programnameId: Int, metabaseUtil: MetabaseUtil,statename:String): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(mainDir: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, metabaseUtil: MetabaseUtil, statename: String): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
-    def processJsonFiles(mainDir: String,dashboardId:Int): Unit = {
+
+    def processJsonFiles(mainDir: String, dashboardId: Int): Unit = {
       val mainDirectory = new File(mainDir)
       if (mainDirectory.exists() && mainDirectory.isDirectory) {
         val dirs = mainDirectory.listFiles().filter(_.isDirectory)
@@ -69,7 +70,7 @@ object UpdateStateJsonFiles {
                                     println("Failed to update JSON: updatedJsonOpt is None.")
                                 }
 
-                                AddQuestionCards.appendDashCardToDashboard(metabaseUtil,updatedJsonOpt, dashboardId)
+                                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedJsonOpt, dashboardId)
                                 println("Successfully updated the JSON file.")
                               case None =>
                                 println("Failed to extract card ID from response.")
@@ -91,47 +92,6 @@ object UpdateStateJsonFiles {
       }
     }
 
-//    def appendDashCardToDashboard(jsonFile:Option[JsonNode], dashboardId: Int): Unit = {
-//
-//      val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
-//
-//      val dashboardJson = objectMapper.readTree(dashboardResponse)
-//      val existingDashcards = dashboardJson.path("dashcards") match {
-//        case array: ArrayNode => array
-//        case _ => objectMapper.createArrayNode()
-//      }
-//      val dashCardsNode = readJsonFile(jsonFile)
-//      dashCardsNode.foreach { value =>
-//        existingDashcards.add(value)
-//      }
-//      val finalDashboardJson = objectMapper.createObjectNode()
-//      finalDashboardJson.set("dashcards", existingDashcards)
-//      val dashcardsString = objectMapper.writeValueAsString(finalDashboardJson)
-//      val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, dashcardsString)
-//      println(s"********************* Successfully updated Dashcards *********************")
-//    }
-//
-//    def readJsonFile(jsonContent: Option[JsonNode]): Option[JsonNode] = {
-//      jsonContent.flatMap { content =>
-//        Try {
-//          val dashCardsNode = content.path("dashCards")
-//
-//          if (!dashCardsNode.isMissingNode) {
-//            println(s"Successfully extracted 'dashCards' key: $dashCardsNode")
-//            Some(dashCardsNode)
-//          } else {
-//            println(s"'dashCards' key not found in JSON content.")
-//            None
-//          }
-//        } match {
-//          case Success(value) => value // Return the result if successful
-//          case Failure(exception) =>
-//            println(s"Error processing JSON content: ${exception.getMessage}")
-//            None // Handle exceptions gracefully
-//        }
-//      }
-//    }
-
     def updateQuery(json: JsonNode, stateName: String): Option[JsonNode] = {
       Try {
         // Update the query
@@ -149,46 +109,46 @@ object UpdateStateJsonFiles {
           }.getOrElse(json)
 
         // Remove "state_param" from template-tags
-//        val prunedTemplateTagsJson = Option(updatedQueryJson.at("/dataset_query/native/template-tags/state_param"))
-//          .map { _ =>
-//            val datasetQuery = updatedQueryJson.get("dataset_query").deepCopy().asInstanceOf[ObjectNode]
-//            val nativeNode = datasetQuery.get("native").deepCopy().asInstanceOf[ObjectNode]
-//            nativeNode.remove("template-tags")
-//            datasetQuery.set("native", nativeNode)
-//            val updatedJson = updatedQueryJson.deepCopy().asInstanceOf[ObjectNode]
-//            updatedJson.set("dataset_query", datasetQuery)
-//            updatedJson
-//          }.getOrElse(updatedQueryJson)
+        //        val prunedTemplateTagsJson = Option(updatedQueryJson.at("/dataset_query/native/template-tags/state_param"))
+        //          .map { _ =>
+        //            val datasetQuery = updatedQueryJson.get("dataset_query").deepCopy().asInstanceOf[ObjectNode]
+        //            val nativeNode = datasetQuery.get("native").deepCopy().asInstanceOf[ObjectNode]
+        //            nativeNode.remove("template-tags")
+        //            datasetQuery.set("native", nativeNode)
+        //            val updatedJson = updatedQueryJson.deepCopy().asInstanceOf[ObjectNode]
+        //            updatedJson.set("dataset_query", datasetQuery)
+        //            updatedJson
+        //          }.getOrElse(updatedQueryJson)
 
         // Remove "state_param" from parameters
-//        val updatedParametersJson = Option(updatedQueryJson.at("/parameters"))
-//          .filter(_.isArray)
-//          .map { parametersNode =>
-//            val filteredParams = parametersNode.elements().asScala.collect {
-//              case objNode: ObjectNode if Option(objNode.get("id")).exists(_.asText() != "state_param") => objNode
-//            }
-//            val newParamsArray = mapper.createArrayNode()
-//            filteredParams.foreach(newParamsArray.add)
-//            val updatedJson = updatedQueryJson.deepCopy().asInstanceOf[ObjectNode]
-//            updatedJson.set("parameters", newParamsArray)
-//            updatedJson
-//          }.getOrElse(updatedQueryJson)
+        //        val updatedParametersJson = Option(updatedQueryJson.at("/parameters"))
+        //          .filter(_.isArray)
+        //          .map { parametersNode =>
+        //            val filteredParams = parametersNode.elements().asScala.collect {
+        //              case objNode: ObjectNode if Option(objNode.get("id")).exists(_.asText() != "state_param") => objNode
+        //            }
+        //            val newParamsArray = mapper.createArrayNode()
+        //            filteredParams.foreach(newParamsArray.add)
+        //            val updatedJson = updatedQueryJson.deepCopy().asInstanceOf[ObjectNode]
+        //            updatedJson.set("parameters", newParamsArray)
+        //            updatedJson
+        //          }.getOrElse(updatedQueryJson)
 
         // Remove parameter mappings
-//        val updatedMappingsJson = Option(updatedQueryJson.at("/dashCards/parameter_mappings"))
-//          .filter(_.isArray)
-//          .map { mappingsNode =>
-//            val filteredMappings = mappingsNode.elements().asScala.collect {
-//              case objNode: ObjectNode if Option(objNode.get("parameter_id")).exists(_.asText() != "a7e82951") => objNode
-//            }
-//            val newMappingsArray = mapper.createArrayNode()
-//            filteredMappings.foreach(newMappingsArray.add)
-//            val dashCards = updatedQueryJson.get("dashCards").deepCopy().asInstanceOf[ObjectNode]
-//            dashCards.set("parameter_mappings", newMappingsArray)
-//            val updatedJson = updatedQueryJson.deepCopy().asInstanceOf[ObjectNode]
-//            updatedJson.set("dashCards", dashCards)
-//            updatedJson
-//          }.getOrElse(updatedQueryJson)
+        //        val updatedMappingsJson = Option(updatedQueryJson.at("/dashCards/parameter_mappings"))
+        //          .filter(_.isArray)
+        //          .map { mappingsNode =>
+        //            val filteredMappings = mappingsNode.elements().asScala.collect {
+        //              case objNode: ObjectNode if Option(objNode.get("parameter_id")).exists(_.asText() != "a7e82951") => objNode
+        //            }
+        //            val newMappingsArray = mapper.createArrayNode()
+        //            filteredMappings.foreach(newMappingsArray.add)
+        //            val dashCards = updatedQueryJson.get("dashCards").deepCopy().asInstanceOf[ObjectNode]
+        //            dashCards.set("parameter_mappings", newMappingsArray)
+        //            val updatedJson = updatedQueryJson.deepCopy().asInstanceOf[ObjectNode]
+        //            updatedJson.set("dashCards", dashCards)
+        //            updatedJson
+        //          }.getOrElse(updatedQueryJson)
 
         updatedQueryJson
       } match {
@@ -360,7 +320,7 @@ object UpdateStateJsonFiles {
     }
 
     updateJsonFiles(mainDir, collectionId = collectionId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, databaseId = databaseId)
-    processJsonFiles(mainDir,dashboardId)
+    processJsonFiles(mainDir, dashboardId)
     println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardId
   }
