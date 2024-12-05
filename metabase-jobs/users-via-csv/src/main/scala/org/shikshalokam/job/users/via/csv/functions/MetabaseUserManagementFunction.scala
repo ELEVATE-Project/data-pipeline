@@ -19,6 +19,7 @@ object MetabaseUserManagementFunction {
   private val pgUsername = config.getString("postgres.username")
   private val pgPassword = config.getString("postgres.password")
   private val pgDataBase = config.getString("postgres.database")
+  private val projects: String = config.getString("postgres.tables.projectsTable")
   private val metabaseUrl = config.getString("metabase.url")
   private val metabaseUsername = config.getString("metabase.username")
   private val metabasePassword = config.getString("metabase.password")
@@ -110,6 +111,8 @@ object MetabaseUserManagementFunction {
     val userRolesList = userRoles.split(",").map(_.trim).toList
     val existingUserGroups = metabaseUtil.listGroups()
     userRolesList.foreach {
+      case "report_admin" => handleManager("Admin", existingGroupDetails = existingUserGroups, userId = userId)
+
       case "state_manager" =>
         if (stateId == null || stateId.isEmpty) {
           println("Error: stateId is null or empty. Cannot proceed with handling State Manager.")
@@ -140,10 +143,11 @@ object MetabaseUserManagementFunction {
   private def handleManager(managerType: String, stateId: Option[String] = None, districtId: Option[String] = None, programName: Option[String] = None, existingGroupDetails: String, userId: Int): Unit = {
 
     println(s"--> $managerType Manager method called")
-    val stateName = stateId.map(id => fetchName(s"SELECT DISTINCT state_name FROM projects WHERE state_id = '$id';", "state_name")).getOrElse("")
-    val districtName = districtId.map(id => fetchName(s"SELECT DISTINCT district_name FROM projects WHERE district_id = '$id';", "district_name")).getOrElse("")
+    val stateName = stateId.map(id => fetchName(s"SELECT DISTINCT state_name FROM $projects WHERE state_id = '$id';", "state_name")).getOrElse("")
+    val districtName = districtId.map(id => fetchName(s"SELECT DISTINCT district_name FROM $projects WHERE district_id = '$id';", "district_name")).getOrElse("")
 
     val groupName = managerType match {
+      case "Admin" => s"Report_Admin"
       case "State" => s"${stateName}_State_Manager"
       case "District" => s"${districtName}_District_Manager[$stateName]"
       case "Program" => s"Program_Manager[${programName.getOrElse("")}]"
