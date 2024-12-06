@@ -6,6 +6,14 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def _id: String = readOrDefault[String]("_id", "")
 
-  def publishedAt: String = readOrDefault[String]("publishedAt", "")
+  def reportType: String = readOrDefault[String]("reportType", "")
+
+  def admin: String = readOrDefault("dashboardData.admin", "")
+
+  def targetedProgram: String = readOrDefault("dashboardData.targetedProgram", "")
+
+  def targetedDistrict: String = readOrDefault("dashboardData.targetedDistrict", "")
+
+  def targetedState: String = readOrDefault("dashboardData.targetedState", "")
 
 }

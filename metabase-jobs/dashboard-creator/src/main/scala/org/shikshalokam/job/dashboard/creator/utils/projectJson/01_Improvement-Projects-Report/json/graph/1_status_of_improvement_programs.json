@@ -1,6 +1,6 @@
 {
   "questionCard" : {
-    "name" : "Status of users state wise",
+    "name" : "Status of improvement programs",
     "collection_id" : 644,
     "dataset_query" : {
       "database" : 2,
@@ -10,7 +10,7 @@
           "state_param" : {
             "type" : "dimension",
             "name" : "state_param",
-            "id" : "f83c21f9-6a17-4c7d-b517-d89a4ef9e502",
+            "id" : "d1a52499-2ae6-4417-8f1e-a54781cc8865",
             "display-name" : "State Param",
             "default" : null,
             "dimension" : [ "field", 80, null ],
@@ -20,65 +20,70 @@
           "program_param" : {
             "type" : "dimension",
             "name" : "program_param",
-            "id" : "fef949a8-7696-4d6c-a67a-0850e04ffa2f",
+            "id" : "28161efe-dce5-4a8c-a7a3-974e694c39f9",
             "display-name" : "Program Param",
-            "default" : null,
             "dimension" : [ "field", 118, null ],
-            "widget-type" : "string/=",
-            "options" : null
+            "widget-type" : "string/="
           },
           "district_param" : {
             "type" : "dimension",
             "name" : "district_param",
-            "id" : "c8635e49-b3f3-471b-8c7e-abf8869dfbaf",
+            "id" : "6d03215d-4822-44dd-97a4-0795bb46ae31",
             "display-name" : "District Param",
-            "default" : null,
             "dimension" : [ "field", 87, null ],
-            "widget-type" : "string/=",
-            "options" : null
+            "widget-type" : "string/="
           }
         },
-        "query" : "WITH UserProjectCounts AS (\n    SELECT\n        projects.statename,\n        projects.createdby,\n        COUNT(DISTINCT CASE WHEN projects.status = 'started' THEN projects.projectid END) AS \"Started Projects\",\n        COUNT(DISTINCT CASE WHEN projects.status = 'inProgress' THEN projects.projectid END) AS \"In Progress Projects\",\n        COUNT(DISTINCT CASE WHEN projects.status = 'submitted' THEN projects.projectid END) AS \"Submitted Projects\"\n    FROM projects\n    JOIN solutions on projects.solutionid = solutions.solutionid\n    WHERE \n        projects.statename is not null \n        [[AND {{state_param}}]] \n        [[AND {{program_param}}]]\n        [[AND {{district_param}}]]\n    GROUP BY projects.statename, projects.createdby\n)\nSELECT \n    statename AS \"State\",\n    COUNT(DISTINCT CASE WHEN \"Started Projects\" > 0 THEN createdby END) AS \"Started Users\",\n    COUNT(DISTINCT CASE WHEN \"In Progress Projects\" > 0 THEN createdby END) AS \"In Progress Users\",\n    COUNT(DISTINCT CASE WHEN \"Submitted Projects\" > 0 THEN createdby END) AS \"Submitted Users\"\nFROM UserProjectCounts\nGROUP BY statename\nORDER BY \"Submitted Users\" DESC;"
+        "query" : "SELECT DISTINCT(solutions.programname) AS \"Programs\", \nCOUNT(DISTINCT CASE WHEN projects.status = 'started' THEN projects.projectid END) AS \"Started Projects\", \nCOUNT(DISTINCT CASE WHEN projects.status = 'inProgress' THEN projects.projectid END) AS \"In Progress Projects\", \nCOUNT(DISTINCT CASE WHEN projects.status = 'submitted' THEN projects.projectid END) AS \"Submitted Projects\", \nCOUNT(DISTINCT projects.projectid) AS \"Total Projects\" \nFROM projects \njoin solutions on projects.solutionid = solutions.solutionid\nWHERE solutions.programname is not null\n [[AND {{state_param}}]] \n[[AND {{program_param}}]]\n[[AND {{district_param}}]]\nGROUP BY solutions.programname\nORDER BY \"Total Projects\" DESC;"
       }
     },
     "display" : "bar",
     "visualization_settings" : {
       "graph.show_goal" : false,
-      "graph.y_axis.title_text" : "No. of users",
+      "graph.y_axis.title_text" : "No. of Improvements",
       "graph.show_values" : false,
       "graph.x_axis.axis_enabled" : true,
       "graph.y_axis.scale" : "linear",
-      "graph.metrics" : [ "Submitted Users", "In Progress Users", "Started Users" ],
+      "graph.metrics" : [ "Started Projects", "In Progress Projects", "Submitted Projects" ],
       "graph.y_axis.axis_enabled" : true,
       "graph.label_value_formatting" : "auto",
       "series_settings" : {
-        "In Progress" : {
-          "color" : "#FBE499"
+        "In Progress Projects" : {
+          "color" : "#509EE3"
+        },
+        "Started" : {
+          "color" : "#F7C4C4"
         },
         "Submitted" : {
           "color" : "#A7D07C"
         },
-        "Started" : {
-          "color" : "#F7C4C4"
+        "In Progress" : {
+          "color" : "#FBE499"
+        },
+        "Submitted Projects" : {
+          "color" : "#F2A86F"
+        },
+        "Started Projects" : {
+          "color" : "#88BF4D"
         }
       },
-      "graph.dimensions" : [ "State" ],
+      "graph.dimensions" : [ "Programs" ],
       "stackable.stack_type" : "stacked"
     },
     "parameters" : [ {
-      "id" : "f83c21f9-6a17-4c7d-b517-d89a4ef9e502",
+      "id" : "d1a52499-2ae6-4417-8f1e-a54781cc8865",
       "type" : "string/=",
       "target" : [ "dimension", [ "template-tag", "state_param" ] ],
       "name" : "State Param",
       "slug" : "state_param"
     }, {
-      "id" : "fef949a8-7696-4d6c-a67a-0850e04ffa2f",
+      "id" : "28161efe-dce5-4a8c-a7a3-974e694c39f9",
       "type" : "string/=",
       "target" : [ "dimension", [ "template-tag", "program_param" ] ],
       "name" : "Program Param",
       "slug" : "program_param"
     }, {
-      "id" : "c8635e49-b3f3-471b-8c7e-abf8869dfbaf",
+      "id" : "6d03215d-4822-44dd-97a4-0795bb46ae31",
       "type" : "string/=",
       "target" : [ "dimension", [ "template-tag", "district_param" ] ],
       "name" : "District Param",
@@ -86,24 +91,24 @@
     } ]
   },
   "dashCards" : {
-    "card_id" : 6928,
+    "card_id" : 6930,
     "dashboard_tab_id" : null,
-    "id" : 2,
+    "id" : 4,
     "parameter_mappings" : [ {
-      "card_id" : 6928,
+      "card_id" : 6930,
       "parameter_id" : "c32c8fc5",
       "target" : [ "dimension", [ "template-tag", "state_param" ] ]
     }, {
-      "card_id" : 6928,
+      "card_id" : 6930,
       "parameter_id" : "74a10335",
       "target" : [ "dimension", [ "template-tag", "district_param" ] ]
     }, {
-      "card_id" : 6928,
+      "card_id" : 6930,
       "parameter_id" : "8c7d86ea",
       "target" : [ "dimension", [ "template-tag", "program_param" ] ]
     } ],
     "col" : 0,
-    "row" : 15,
+    "row" : 8,
     "size_x" : 24,
     "size_y" : 6,
     "visualization_settings" : { }

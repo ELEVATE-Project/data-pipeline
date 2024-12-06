@@ -35,11 +35,18 @@ class MetabaseDashboardConfig(override val config: Config) extends BaseJobConfig
   val pgUsername: String = config.getString("postgres.username")
   val pgPassword: String = config.getString("postgres.password")
   val pgDataBase: String = config.getString("postgres.database")
+  val pgAdminTable: String = config.getString("postgres.tables.adminMetadata")
+  val pgStateTable: String = config.getString("postgres.tables.stateMetadata")
+  val pgProgramTable: String = config.getString("postgres.tables.programMetadata")
+  val pgDistrictTable: String = config.getString("postgres.tables.districtMetadata")
 
   // Metabase connection config
   val metabaseUrl: String = config.getString("metabase.url")
   val metabaseUsername: String = config.getString("metabase.username")
   val metabasePassword: String = config.getString("metabase.password")
-  //val metabaseDatabase: Int = config.getInt("metabase.database")
+  val metabaseDatabase: String = config.getString("metabase.database")
+
+  // Json File Path
+  val projectJsonPath: String = config.getString("filePath.ProjectJsonDir")
 
 }

@@ -1,0 +1,33 @@
+[
+  {
+    "slug": "select_state",
+    "name": "Select State",
+    "isMultiSelect": false,
+    "type": "string/=",
+    "sectionId": "location",
+    "id": "c32c8fc5",
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 2578,
+      "value_field": [
+        "field",
+        "statename",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    }
+  },
+  {
+    "slug": "select_district",
+    "filteringParameters": [
+      "c32c8fc5",
+      "8c7d86ea"
+    ],
+    "name": "Select District",
+    "isMultiSelect": false,
+    "type": "string/=",
+    "sectionId": "location",
+    "id": "74a10335"
+  }
+]

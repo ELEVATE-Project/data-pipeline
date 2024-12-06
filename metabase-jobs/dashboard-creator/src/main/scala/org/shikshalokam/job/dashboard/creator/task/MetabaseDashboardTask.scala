@@ -16,6 +16,7 @@ class MetabaseDashboardTask(config: MetabaseDashboardConfig, kafkaConnector: Fli
   println("inside MetabaseDashboardTask class")
 
   private val serialVersionUID = -7729362727131516112L
+
   def process(): Unit = {
     implicit val env: StreamExecutionEnvironment = FlinkUtil.getExecutionContext(config)
     implicit val eventTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])

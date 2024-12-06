@@ -85,7 +85,6 @@
             <version>4.4.0</version>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -134,7 +133,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <!-- change the main class -->
-                                    <mainClass>org.shikshalokam.job.metabase.creator.task.MetabaseDashboardTask</mainClass>
+                                    <mainClass>org.shikshalokam.job.dashboard.creator.task.MetabaseDashboardTask</mainClass>
                                 </transformer>
                                 <!-- append default configs -->
                                 <transformer
