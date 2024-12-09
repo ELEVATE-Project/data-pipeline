@@ -27,6 +27,7 @@ object AddQuestionCards {
     finalDashboardJson.set("dashcards", existingDashcards)
     val dashcardsString = objectMapper.writeValueAsString(finalDashboardJson)
     val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, dashcardsString)
+    println(s"updateResponse = $updateResponse")
     println(s"********************* Successfully updated Dashcards  *************************")
   }
 

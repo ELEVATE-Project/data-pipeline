@@ -2,7 +2,7 @@ package org.shikshalokam.job.dashboard.creator.functions
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
-import org.shikshalokam.job.util.MetabaseUtil
+import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 
 import java.nio.file.{Files, Paths}
 import scala.collection.JavaConverters._
@@ -43,26 +43,46 @@ object UpdateParameters {
   }
 
 
-  def UpdateAdminParameterFunction(metabaseUtil: MetabaseUtil, parameterFilePath: String, dashboardId: Int): Unit = {
+  def UpdateAdminParameterFunction(metabaseUtil: MetabaseUtil, parametersQuery: String, dashboardId: Int, postgresUtil: PostgresUtil): Unit = {
     println(s"-----------Started Processing Admin dashboard parameter ------------")
 
     val objectMapper = new ObjectMapper()
-    val fileContent = new String(Files.readAllBytes(Paths.get(parameterFilePath)), "UTF-8")
-    val parameterJson = objectMapper.readTree(fileContent).asInstanceOf[ArrayNode]
-    val updatedParameterJson = parameterJson.elements().asScala.map { param =>
-      param.asInstanceOf[ObjectNode]
+    val parameterData: List[Any] = postgresUtil.fetchData(parametersQuery).flatMap(_.get("query"))
+    val parameterJsonString: String = parameterData.headOption match {
+      case Some(value: String) => value
+      case Some(value) => value.toString
+      case None => throw new Exception("No parameter data found")
+    }
+
+    val parameterJson: ArrayNode = objectMapper.readTree(parameterJsonString) match {
+      case array: ArrayNode => array
+      case _ => throw new Exception("Expected parameter data to be an ArrayNode")
+    }
+
+    val updatedParameterJson: List[ObjectNode] = parameterJson.elements().asScala.map {
+      case param: ObjectNode => param
+      case _ => throw new Exception("Expected all parameters to be ObjectNodes")
     }.toList
-    val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
+
+    val dashboardResponse: String = metabaseUtil.getDashboardDetailsById(dashboardId)
     val dashboardJson = objectMapper.readTree(dashboardResponse)
-    val currentParametersJson = dashboardJson.path("parameters").asInstanceOf[ArrayNode]
+    val currentParametersJson: ArrayNode = dashboardJson.path("parameters") match {
+      case array: ArrayNode => array
+      case _ => objectMapper.createArrayNode()
+    }
+
     val finalParametersJson = objectMapper.createArrayNode()
     currentParametersJson.elements().asScala.foreach(finalParametersJson.add)
     updatedParameterJson.foreach(finalParametersJson.add)
+
     val updatePayload = objectMapper.createObjectNode()
     updatePayload.set("parameters", finalParametersJson)
+
     val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString)
+    println(s"updateResponse = $updateResponse")
     println(s"----------------Successfully updated Admin dashboard parameter ----------------")
   }
+
 
   def UpdateProgramParameterFunction(metabaseUtil: MetabaseUtil, parameterFilePath: String, dashboardId: Int, programId: Int): Unit = {
     println(s"-----------Started Processing Program dashboard parameter ------------")

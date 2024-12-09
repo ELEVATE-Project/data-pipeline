@@ -1,176 +1,141 @@
 package org.shikshalokam.job.dashboard.creator.functions
 
-import org.shikshalokam.job.util.MetabaseUtil
-import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.fasterxml.jackson.databind.node.{ArrayNode, JsonNodeFactory, ObjectNode, TextNode}
-import scala.io.Source
-import java.io.{File, PrintWriter}
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+import org.postgresql.util.PGobject
+import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
+
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
 object UpdateStateJsonFiles {
-  def ProcessAndUpdateJsonFiles(mainDir: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, metabaseUtil: MetabaseUtil, statename: String): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(report_config_query: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, projects : String, solutions: String, metabaseUtil: MetabaseUtil,postgresUtil: PostgresUtil, targetedStateId:String): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    def processJsonFiles(mainDir: String, dashboardId: Int): Unit = {
-      val mainDirectory = new File(mainDir)
-      if (mainDirectory.exists() && mainDirectory.isDirectory) {
-        val dirs = mainDirectory.listFiles().filter(_.isDirectory)
+    def processJsonFiles(report_config_query: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int): Unit = {
+      val adminIdStatus = postgresUtil.fetchData(report_config_query)
+      adminIdStatus.foreach { row =>
+        if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
+          row.get("query") match {
+            case Some(queryValue: PGobject) =>
+              val jsonString = queryValue.getValue
+              val rootNode = objectMapper.readTree(jsonString)
+              if (rootNode != null) {
+                val questionCardNode = rootNode.path("questionCard")
+                val chartName = Option(questionCardNode.path("name").asText()).getOrElse("Unknown Chart")
+                println(s" >>>>>>>>>>> Started Processing For The Chart: $chartName")
+                val updatedJson = updateJsonFiles(rootNode, collectionId = collectionId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, databaseId = databaseId)
+                println(s"updateJson = $updatedJson")
+                val updatedJsonWithQuery = updateQuery(json = updatedJson.path("questionCard"), projectsTable = projects, solutionsTable = solutions, targetedStateId)
+                println(s"updatedJsonWithQuery = $updatedJsonWithQuery")
+                val requestBody = updatedJsonWithQuery.asInstanceOf[ObjectNode]
+                val response = metabaseUtil.createQuestionCard(requestBody.toString)
+                println(s"response = $response")
+                val cardIdOpt = extractCardId(response)
+                println(s"cardIdOpt = $cardIdOpt")
 
-        dirs.foreach { dir =>
-          println(s"Processing directory: ${dir.getName}")
-
-          val jsonDir = new File(dir, "json")
-          if (jsonDir.exists() && jsonDir.isDirectory) {
-            val subDirs = jsonDir.listFiles().filter((subDir: File) => subDir.isDirectory && subDir.getName != "heading")
-
-            subDirs.foreach { subDir =>
-              println(s"Processing subdirectory: ${subDir.getName}")
-              val jsonFiles = subDir.listFiles().filter(_.getName.endsWith(".json"))
-
-              jsonFiles.foreach { jsonFile =>
-                println(s"Reading JSON file: ${jsonFile.getName}")
-                val jsonFileName = jsonFile.getAbsolutePath
-                val jsonOpt = parseJson(jsonFile)
-
-                jsonOpt match {
-                  case Some(json) =>
-                    val chartName = Option(json.at("/questionCard/name").asText()).getOrElse("Unknown Chart")
-                    println(s" >>>>>>>>>>> Started Processing For The Chart: $chartName")
-
-                    if (validateJson(jsonFile)) {
-                      val mapper = new ObjectMapper()
-
-                      val requestBody = json.get("questionCard").asInstanceOf[ObjectNode]
-
-                      val updatedJson = updateQuery(requestBody, statename)
-                      updatedJson match {
-                        case Some(updated) =>
-                          val jsonString = mapper.writeValueAsString(updated)
-                          try {
-                            val response = metabaseUtil.createQuestionCard(jsonString)
-                            val cardIdOpt = extractCardId(response)
-                            println(s"Card ID Option: $cardIdOpt")
-
-                            cardIdOpt match {
-                              case Some(cardId) =>
-                                println(s"Successfully created question card with card_id: $cardId for $chartName")
-                                questionCardId.append(cardId)
-
-                                // Update JSON with the card_id
-                                val updatedJsonOpt = updateJsonWithCardId(json, cardId)
-                                println(s"Updated JSON with Card ID: $updatedJsonOpt")
-
-                                updatedJsonOpt match {
-                                  case Some(finalUpdatedJson) =>
-                                    writeToFile(jsonFile, finalUpdatedJson.toPrettyString)
-                                  case None =>
-                                    println("Failed to update JSON: updatedJsonOpt is None.")
-                                }
-
-                                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedJsonOpt, dashboardId)
-                                println("Successfully updated the JSON file.")
-                              case None =>
-                                println("Failed to extract card ID from response.")
-                            }
-                          } catch {
-                            case e: Exception =>
-                              println(s"Error occurred while creating question card: ${e.getMessage}")
-                          }
-                        case None =>
-                          println("Failed to update JSON: updateQuery returned None.")
-                      }
-                    }
-                  case None => println(s"Warning: File '$jsonFileName' could not be parsed as JSON. Skipping...")
+                cardIdOpt match {
+                  case Some(cardId) =>
+                    println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
+                    questionCardId.append(cardId)
+                    val updatedJsonOpt = updateJsonWithCardId(updatedJson, cardId)
+                    println(s"updatedJsonOpt = $updatedJsonOpt")
+                    println(s"--------Successfully updated the json file---------")
+                    AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedJsonOpt, dashboardId)
+                  case None =>
+                    println(s"Error: Unable to extract card ID for $chartName. Skipping...")
                 }
+              } else {
+                println("Warning: File could not be parsed as JSON. Skipping...")
               }
-            }
+
+            case Some(_) =>
+              println("Unexpected type for 'query' key value.")
+
+            case None =>
+              println("Key 'query' not found in the result row.")
+          }
+        } else {
+          row.get("query") match {
+            case Some(queryValue: PGobject) =>
+              val jsonString = queryValue.getValue
+              val rootNode = objectMapper.readTree(jsonString)
+              println(s"rootNodeAtElse = $rootNode")
+              if (rootNode != null) {
+                val optJsonNode = toOption(rootNode)
+                println(s"optJsonNodeAtElse = $optJsonNode")
+                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, optJsonNode, dashboardId)
+              }
           }
         }
       }
     }
 
-    def updateQuery(json: JsonNode, stateName: String): Option[JsonNode] = {
+    def toOption(jsonNode: JsonNode): Option[JsonNode] = {
+      if (jsonNode == null || jsonNode.isMissingNode) None else Some(jsonNode)
+    }
+
+//    def updateQuery(json: JsonNode, stateName: String): Option[JsonNode] = {
+//      Try {
+//        // Update the query
+//        val updatedQueryJson = Option(json.at("/dataset_query/native/query"))
+//          .filter(_.isTextual)
+//          .map { queryNode =>
+//            val updatedQuery = queryNode.asText().replace("[[AND {{state_param}}]]", s"AND statename = '$stateName'")
+//            val datasetQuery = json.get("dataset_query").deepCopy().asInstanceOf[ObjectNode]
+//            val nativeNode = datasetQuery.get("native").deepCopy().asInstanceOf[ObjectNode]
+//            nativeNode.set("query", TextNode.valueOf(updatedQuery))
+//            datasetQuery.set("native", nativeNode)
+//            val updatedJson = json.deepCopy().asInstanceOf[ObjectNode]
+//            updatedJson.set("dataset_query", datasetQuery)
+//            updatedJson
+//          }.getOrElse(json)
+//        updatedQueryJson
+//      } match {
+//        case Success(updatedJson) => Some(updatedJson)
+//        case Failure(exception) =>
+//          println(s"Error updating JSON: ${exception.getMessage}")
+//          None
+//      }
+//    }
+
+    def updateQuery(json: JsonNode, projectsTable: String, solutionsTable: String ,targetedStateId:String): JsonNode = {
       Try {
-        // Update the query
-        val updatedQueryJson = Option(json.at("/dataset_query/native/query"))
-          .filter(_.isTextual)
-          .map { queryNode =>
-            val updatedQuery = queryNode.asText().replace("[[AND {{state_param}}]]", s"AND statename = '$stateName'")
-            val datasetQuery = json.get("dataset_query").deepCopy().asInstanceOf[ObjectNode]
-            val nativeNode = datasetQuery.get("native").deepCopy().asInstanceOf[ObjectNode]
-            nativeNode.set("query", TextNode.valueOf(updatedQuery))
-            datasetQuery.set("native", nativeNode)
-            val updatedJson = json.deepCopy().asInstanceOf[ObjectNode]
-            updatedJson.set("dataset_query", datasetQuery)
-            updatedJson
-          }.getOrElse(json)
 
-        // Remove "state_param" from template-tags
-        //        val prunedTemplateTagsJson = Option(updatedQueryJson.at("/dataset_query/native/template-tags/state_param"))
-        //          .map { _ =>
-        //            val datasetQuery = updatedQueryJson.get("dataset_query").deepCopy().asInstanceOf[ObjectNode]
-        //            val nativeNode = datasetQuery.get("native").deepCopy().asInstanceOf[ObjectNode]
-        //            nativeNode.remove("template-tags")
-        //            datasetQuery.set("native", nativeNode)
-        //            val updatedJson = updatedQueryJson.deepCopy().asInstanceOf[ObjectNode]
-        //            updatedJson.set("dataset_query", datasetQuery)
-        //            updatedJson
-        //          }.getOrElse(updatedQueryJson)
+        val queryPath = "/dataset_query/native/query"
+        val queryNode = json.at(queryPath)
+        if (queryNode.isMissingNode || !queryNode.isTextual) {
+          throw new IllegalArgumentException(s"Query node at path $queryPath is missing or not textual.")
+        }
 
-        // Remove "state_param" from parameters
-        //        val updatedParametersJson = Option(updatedQueryJson.at("/parameters"))
-        //          .filter(_.isArray)
-        //          .map { parametersNode =>
-        //            val filteredParams = parametersNode.elements().asScala.collect {
-        //              case objNode: ObjectNode if Option(objNode.get("id")).exists(_.asText() != "state_param") => objNode
-        //            }
-        //            val newParamsArray = mapper.createArrayNode()
-        //            filteredParams.foreach(newParamsArray.add)
-        //            val updatedJson = updatedQueryJson.deepCopy().asInstanceOf[ObjectNode]
-        //            updatedJson.set("parameters", newParamsArray)
-        //            updatedJson
-        //          }.getOrElse(updatedQueryJson)
+        val updatedQuery = queryNode.asText()
+          .replace("${config.projects}", projectsTable)
+          .replace("${config.solutions}", solutionsTable)
+          .replaceAllLiterally(
+            s"""[[AND state_id = (
+                  SELECT state_id
+                  FROM $projectsTable
+                  WHERE {{state_param}}
+                  LIMIT 1
+                 )
+            ]]""",
+            s"""AND $projectsTable.state_id = $targetedStateId"""
+          )
+        val datasetQuery = json.get("dataset_query").deepCopy().asInstanceOf[ObjectNode]
+        val nativeNode = datasetQuery.get("native").deepCopy().asInstanceOf[ObjectNode]
+        nativeNode.set("query", TextNode.valueOf(updatedQuery))
+        datasetQuery.set("native", nativeNode)
 
-        // Remove parameter mappings
-        //        val updatedMappingsJson = Option(updatedQueryJson.at("/dashCards/parameter_mappings"))
-        //          .filter(_.isArray)
-        //          .map { mappingsNode =>
-        //            val filteredMappings = mappingsNode.elements().asScala.collect {
-        //              case objNode: ObjectNode if Option(objNode.get("parameter_id")).exists(_.asText() != "a7e82951") => objNode
-        //            }
-        //            val newMappingsArray = mapper.createArrayNode()
-        //            filteredMappings.foreach(newMappingsArray.add)
-        //            val dashCards = updatedQueryJson.get("dashCards").deepCopy().asInstanceOf[ObjectNode]
-        //            dashCards.set("parameter_mappings", newMappingsArray)
-        //            val updatedJson = updatedQueryJson.deepCopy().asInstanceOf[ObjectNode]
-        //            updatedJson.set("dashCards", dashCards)
-        //            updatedJson
-        //          }.getOrElse(updatedQueryJson)
-
-        updatedQueryJson
+        val updatedJson = json.deepCopy().asInstanceOf[ObjectNode]
+        updatedJson.set("dataset_query", datasetQuery)
+        updatedJson
       } match {
-        case Success(updatedJson) => Some(updatedJson)
+        case Success(updatedQueryJson) => updatedQueryJson
         case Failure(exception) =>
-          println(s"Error updating JSON: ${exception.getMessage}")
-          None
+          throw new IllegalArgumentException("Failed to update query in JSON", exception)
       }
-    }
-
-
-    def parseJson(file: File): Option[JsonNode] = {
-      Try(objectMapper.readTree(file)) match {
-        case Success(jsonNode) => Some(jsonNode)
-        case Failure(exception) =>
-          println(s"Error parsing JSON: ${exception.getMessage}")
-          None
-      }
-    }
-
-    def validateJson(file: File): Boolean = {
-      Try(objectMapper.readTree(file)).isSuccess
     }
 
     def extractCardId(response: String): Option[Int] = {
@@ -206,105 +171,48 @@ object UpdateStateJsonFiles {
       }.toOption
     }
 
+    def updateJsonFiles(jsonNode: JsonNode, collectionId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, databaseId: Int): JsonNode = {
+      try {
+        val rootNode = jsonNode.deepCopy().asInstanceOf[ObjectNode]
 
-    def writeToFile(file: File, content: String): Unit = {
-      Try {
-        val writer = new java.io.PrintWriter(file)
-        try {
-          writer.write(content)
-        } finally {
-          writer.close()
-        }
-      } match {
-        case Success(_) => println(s"File '${file.getAbsolutePath}' updated successfully.")
-        case Failure(exception) => println(s"Error writing to file: ${exception.getMessage}")
-      }
-    }
+        if (rootNode.has("questionCard")) {
+          val questionCard = rootNode.get("questionCard").asInstanceOf[ObjectNode]
+          questionCard.put("collection_id", collectionId)
+          println(s"Updated questionCard: $questionCard")
 
-    def updateJsonFiles(mainDir: String, collectionId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, databaseId: Int): Unit = {
-      val mapper = new ObjectMapper()
-      val mainDirectory = new File(mainDir)
+          if (questionCard.has("dataset_query")) {
+            val datasetQuery = questionCard.get("dataset_query").asInstanceOf[ObjectNode]
+            datasetQuery.put("database", databaseId)
 
-      if (mainDirectory.exists() && mainDirectory.isDirectory) {
-        val dirs = mainDirectory.listFiles().filter(_.isDirectory)
+            if (datasetQuery.has("native")) {
+              val nativeNode = datasetQuery.get("native").asInstanceOf[ObjectNode]
+              if (nativeNode.has("template-tags")) {
+                val templateTags = nativeNode.get("template-tags").asInstanceOf[ObjectNode]
 
-        dirs.foreach { dir =>
-          println(s"Processing directory: ${dir.getName}")
+                if (templateTags.has("state_param")) {
+                  updateDimension(templateTags.get("state_param").asInstanceOf[ObjectNode], statenameId)
+                }
 
-          val jsonDir = new File(dir, "json")
-          if (jsonDir.exists() && jsonDir.isDirectory) {
-            val subDirs = jsonDir.listFiles().filter(_.isDirectory)
+                if (templateTags.has("district_param")) {
+                  updateDimension(templateTags.get("district_param").asInstanceOf[ObjectNode], districtnameId)
+                }
 
-            subDirs.foreach { subDir =>
-              println(s"  Processing subdirectory: ${subDir.getName}")
-
-              val jsonFiles = subDir.listFiles().filter(_.getName.endsWith(".json"))
-              jsonFiles.foreach { jsonFile =>
-                println(s"    Reading JSON file: ${jsonFile.getName}")
-                try {
-                  val jsonStr = Source.fromFile(jsonFile).mkString
-                  val rootNode = mapper.readTree(jsonStr).asInstanceOf[ObjectNode]
-
-                  // Update "collection_id"
-                  if (rootNode.has("questionCard")) {
-                    val questionCard = rootNode.get("questionCard").asInstanceOf[ObjectNode]
-                    questionCard.put("collection_id", collectionId)
-
-                    // Update "dataset_query"
-                    if (questionCard.has("dataset_query")) {
-                      val datasetQuery = questionCard.get("dataset_query").asInstanceOf[ObjectNode]
-                      datasetQuery.put("database", databaseId)
-
-                      // Update "native" -> "template-tags"
-                      if (datasetQuery.has("native")) {
-                        val nativeNode = datasetQuery.get("native").asInstanceOf[ObjectNode]
-                        if (nativeNode.has("template-tags")) {
-                          val templateTags = nativeNode.get("template-tags").asInstanceOf[ObjectNode]
-
-                          // Update "state_param"
-                          if (templateTags.has("state_param")) {
-                            updateDimension(templateTags.get("state_param").asInstanceOf[ObjectNode], statenameId)
-                          }
-
-                          // Update "district_param"
-                          if (templateTags.has("district_param")) {
-                            updateDimension(templateTags.get("district_param").asInstanceOf[ObjectNode], districtnameId)
-                          }
-
-                          // Update "program_param"
-                          if (templateTags.has("program_param")) {
-                            updateDimension(templateTags.get("program_param").asInstanceOf[ObjectNode], programnameId)
-                          }
-                        }
-                      }
-                    }
-                  }
-
-                  // Update "dashCards" -> "id"
-
-                  // Write updated JSON back to the file
-                  val writer = new PrintWriter(jsonFile)
-                  try {
-                    writer.write(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode))
-                    println(s"    Updated ${jsonFile.getName} successfully.")
-                  } finally {
-                    writer.close()
-                  }
-                } catch {
-                  case e: Exception =>
-                    println(s"    Warning: File '${jsonFile.getName}' is not valid JSON or could not be updated. Error: ${e.getMessage}")
+                if (templateTags.has("program_param")) {
+                  updateDimension(templateTags.get("program_param").asInstanceOf[ObjectNode], programnameId)
                 }
               }
             }
-          } else {
-            println(s"  Warning: Directory 'json' not found in ${dir.getName}. Skipping...")
           }
         }
-      } else {
-        println(s"Error: Main directory '$mainDir' does not exist or is not a directory.")
+
+        println(s"Updated rootNode: $rootNode")
+        rootNode
+      } catch {
+        case e: Exception =>
+          println(s"Warning: JSON node could not be updated. Error: ${e.getMessage}")
+          jsonNode
       }
     }
-
 
     def updateDimension(node: ObjectNode, newId: Int): Unit = {
       if (node.has("dimension") && node.get("dimension").isArray) {
@@ -319,8 +227,8 @@ object UpdateStateJsonFiles {
       }
     }
 
-    updateJsonFiles(mainDir, collectionId = collectionId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, databaseId = databaseId)
-    processJsonFiles(mainDir, dashboardId)
+//    updateJsonFiles(mainDir, collectionId = collectionId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, databaseId = databaseId)
+    processJsonFiles(report_config_query, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId)
     println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardId
   }
