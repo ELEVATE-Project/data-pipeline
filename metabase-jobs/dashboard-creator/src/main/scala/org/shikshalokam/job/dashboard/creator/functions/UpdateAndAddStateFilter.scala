@@ -2,42 +2,58 @@ package org.shikshalokam.job.dashboard.creator.functions
 
 import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
-import org.shikshalokam.job.util.MetabaseUtil
+import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 
-import java.io.File
-
+import scala.util.Try
 
 object UpdateAndAddStateFilter {
   val objectMapper = new ObjectMapper()
 
-  def updateAndAddFilter(metabaseUtil: MetabaseUtil, filterFilePath: String, statename: String, districtname: String, programname: String, collectionId: Int, databaseId: Int): Int = {
+  def updateAndAddFilter(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, filterQuery: String, stateid: String, districtname: String, programname: String, collectionId: Int, databaseId: Int, projectTable: String): Int = {
     println(s"---------------- started processing updateAndAddFilter Function -------------------")
 
-    def readJsonFile(filePath: String): Option[JsonNode] = {
+    val objectMapper = new ObjectMapper()
+
+    def readJsonFromQuery(filterQuery: String): Option[JsonNode] = {
       try {
-        val file = new File(filePath)
-        if (file.exists() && file.isFile) {
-          val jsonNode = objectMapper.readTree(file)
-          Some(jsonNode)
-        } else {
-          println(s"Error: File '$filePath' does not exist or is not a valid file.")
-          None
+        val queryResult = postgresUtil.fetchData(filterQuery).flatMap(_.get("config"))
+        val filterString: String = queryResult.headOption match {
+          case Some(value: String) => value
+          case Some(value) => value.toString
+          case None => throw new Exception("No parameter data found")
         }
+
+        Try(objectMapper.readTree(filterString)).toOption match {
+          case Some(jsonNode) => Some(jsonNode)
+          case None =>
+            println(s"Error: Invalid JSON format in parameterString: $filterString")
+            None
+        }
+
       } catch {
         case ex: Exception =>
-          println(s"Error reading JSON file: ${ex.getMessage}")
+          println(s"Error reading or parsing the query result: ${ex.getMessage}")
           None
       }
     }
 
-    def replaceStateName(json: JsonNode, stateName: String): JsonNode = {
+    def replaceStateName(json: JsonNode, stateid: String, projectTable: String): JsonNode = {
       def processNode(node: JsonNode): JsonNode = {
         node match {
           case obj: ObjectNode =>
             obj.fieldNames().forEachRemaining { fieldName =>
               val childNode = obj.get(fieldName)
-              if (childNode.isTextual && childNode.asText().contains("STATENAME")) {
-                obj.put(fieldName, childNode.asText().replace("STATENAME", stateName))
+              if (childNode.isTextual) {
+                var updatedText = childNode.asText()
+
+                if (updatedText.contains("STATEID")) {
+                  updatedText = updatedText.replace("STATEID", stateid)
+                }
+                if (updatedText.contains("${config.projects}")) {
+                  updatedText = updatedText.replace("${config.projects}", projectTable)
+                }
+
+                obj.put(fieldName, updatedText)
               } else {
                 obj.set(fieldName, processNode(childNode))
               }
@@ -45,11 +61,10 @@ object UpdateAndAddStateFilter {
             obj
 
           case array: ArrayNode =>
-            val updatedArray = array.elements()
             val newArray = array.deepCopy().asInstanceOf[ArrayNode]
             newArray.removeAll()
-            while (updatedArray.hasNext) {
-              newArray.add(processNode(updatedArray.next()))
+            array.elements().forEachRemaining { child =>
+              newArray.add(processNode(child))
             }
             newArray
 
@@ -57,7 +72,8 @@ object UpdateAndAddStateFilter {
         }
       }
 
-      processNode(json)
+      val updatedJson = processNode(json.deepCopy())
+      updatedJson
     }
 
     def updateCollectionIdAndDatabaseId(jsonFile: JsonNode, collectionId: Int, databaseId: Int): JsonNode = {
@@ -95,9 +111,9 @@ object UpdateAndAddStateFilter {
       }
     }
 
-    readJsonFile(filterFilePath) match {
+    readJsonFromQuery(filterQuery) match {
       case Some(json) =>
-        val ReplacedStateNameJson = replaceStateName(json, statename)
+        val ReplacedStateNameJson = replaceStateName(json, stateid, projectTable)
         val updatedJson = updateCollectionIdAndDatabaseId(ReplacedStateNameJson, collectionId, databaseId)
         val questionId = getTheQuestionId(updatedJson)
         questionId

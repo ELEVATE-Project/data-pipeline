@@ -12,10 +12,8 @@ object AddQuestionCards {
 
   def appendDashCardToDashboard(metabaseUtil: MetabaseUtil, jsonFile: Option[JsonNode], dashboardId: Int): Unit = {
 
-    val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
-
-    val dashboardJson = objectMapper.readTree(dashboardResponse)
-    val existingDashcards = dashboardJson.path("dashcards") match {
+    val dashboardResponse = objectMapper.readTree(metabaseUtil.getDashboardDetailsById(dashboardId))
+    val existingDashcards = dashboardResponse.path("dashcards") match {
       case array: ArrayNode => array
       case _ => objectMapper.createArrayNode()
     }
@@ -26,7 +24,7 @@ object AddQuestionCards {
     val finalDashboardJson = objectMapper.createObjectNode()
     finalDashboardJson.set("dashcards", existingDashcards)
     val dashcardsString = objectMapper.writeValueAsString(finalDashboardJson)
-    val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, dashcardsString)
+    metabaseUtil.addQuestionCardToDashboard(dashboardId, dashcardsString)
     println(s"********************* Successfully updated Dashcards  *************************")
   }
 
@@ -36,7 +34,6 @@ object AddQuestionCards {
         val dashCardsNode = content.path("dashCards")
 
         if (!dashCardsNode.isMissingNode) {
-          println(s"Successfully extracted 'dashCards' key: $dashCardsNode")
           Some(dashCardsNode)
         } else {
           println(s"'dashCards' key not found in JSON content.")
@@ -46,7 +43,7 @@ object AddQuestionCards {
         case Success(value) => value // Return the result if successful
         case Failure(exception) =>
           println(s"Error processing JSON content: ${exception.getMessage}")
-          None // Handle exceptions gracefully
+          None
       }
     }
   }

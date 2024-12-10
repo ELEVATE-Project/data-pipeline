@@ -2,41 +2,64 @@ package org.shikshalokam.job.dashboard.creator.functions
 
 import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
-import org.shikshalokam.job.util.MetabaseUtil
+import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 
-import java.io.File
+import scala.util.Try
 
 object UpdateAndAddProgramFilter {
   val objectMapper = new ObjectMapper()
 
-  def updateAndAddFilter(metabaseUtil: MetabaseUtil, filterFilePath: String, statename: String, districtname: String, programname: String, collectionId: Int, databaseId: Int): Int = {
+  def updateAndAddFilter(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, filterQuery: String, targetedProgramId: String, collectionId: Int, databaseId: Int, projectTable: String, solutionTable: String): Int = {
     println(s"---------------- started processing updateAndAddFilter Function -------------------")
 
-    def readJsonFile(filePath: String): Option[JsonNode] = {
+    def readJsonFromQuery(filterQuery: String): Option[JsonNode] = {
       try {
-        val file = new File(filePath)
-        if (file.exists() && file.isFile) {
-          val jsonNode = objectMapper.readTree(file)
-          Some(jsonNode)
-        } else {
-          println(s"Error: File '$filePath' does not exist or is not a valid file.")
-          None
+        // Fetching data from the database or any external source
+        val queryResult = postgresUtil.fetchData(filterQuery).flatMap(_.get("config")) // Assuming this fetches JSON data
+
+        // Convert the fetched result to a String (parameterString)
+        val filterString: String = queryResult.headOption match {
+          case Some(value: String) => value
+          case Some(value) => value.toString
+          case None => throw new Exception("No parameter data found")
         }
+
+        // Convert parameterString to JsonNode using Jackson's ObjectMapper
+        Try(objectMapper.readTree(filterString)).toOption match {
+          case Some(jsonNode) => Some(jsonNode) // Successfully parsed JSON
+          case None =>
+            println(s"Error: Invalid JSON format in parameterString: $filterString")
+            None
+        }
+
       } catch {
         case ex: Exception =>
-          println(s"Error reading JSON file: ${ex.getMessage}")
+          println(s"Error reading or parsing the query result: ${ex.getMessage}")
           None
       }
     }
 
-    def replaceProgramName(json: JsonNode, ProgramName: String): JsonNode = {
+    def replaceProgramName(json: JsonNode, targatedProgramId: String, projectTable: String, solutionTable: String): JsonNode = {
       def processNode(node: JsonNode): JsonNode = {
         node match {
           case obj: ObjectNode =>
             obj.fieldNames().forEachRemaining { fieldName =>
               val childNode = obj.get(fieldName)
-              if (childNode.isTextual && childNode.asText().contains("PROGRAMNAME")) {
-                obj.put(fieldName, childNode.asText().replace("PROGRAMNAME", ProgramName))
+              if (childNode.isTextual) {
+                var updatedText = childNode.asText()
+                if (updatedText.contains("PROGRAMID")) {
+                  updatedText = updatedText.replace("PROGRAMID", targatedProgramId)
+                }
+
+                if (updatedText.contains("${config.projects}")) {
+                  updatedText = updatedText.replace("${config.projects}", projectTable)
+                }
+
+                if (updatedText.contains("${config.solutions}")) {
+                  updatedText = updatedText.replace("${config.solutions}", solutionTable)
+                }
+
+                obj.put(fieldName, updatedText)
               } else {
                 obj.set(fieldName, processNode(childNode))
               }
@@ -44,11 +67,10 @@ object UpdateAndAddProgramFilter {
             obj
 
           case array: ArrayNode =>
-            val updatedArray = array.elements()
             val newArray = array.deepCopy().asInstanceOf[ArrayNode]
             newArray.removeAll()
-            while (updatedArray.hasNext) {
-              newArray.add(processNode(updatedArray.next()))
+            array.elements().forEachRemaining { child =>
+              newArray.add(processNode(child))
             }
             newArray
 
@@ -56,7 +78,8 @@ object UpdateAndAddProgramFilter {
         }
       }
 
-      processNode(json)
+      val updatedJson = processNode(json.deepCopy())
+      updatedJson
     }
 
     def updateCollectionIdAndDatabaseId(jsonFile: JsonNode, collectionId: Int, databaseId: Int): JsonNode = {
@@ -95,9 +118,9 @@ object UpdateAndAddProgramFilter {
       }
     }
 
-    readJsonFile(filterFilePath) match {
+    readJsonFromQuery(filterQuery) match {
       case Some(json) =>
-        val ReplacedProgramNameJson = replaceProgramName(json, programname)
+        val ReplacedProgramNameJson = replaceProgramName(json, targetedProgramId, projectTable, solutionTable)
         val updatedJson = updateCollectionIdAndDatabaseId(ReplacedProgramNameJson, collectionId, databaseId)
         val questionId = getTheQuestionId(updatedJson)
         questionId
