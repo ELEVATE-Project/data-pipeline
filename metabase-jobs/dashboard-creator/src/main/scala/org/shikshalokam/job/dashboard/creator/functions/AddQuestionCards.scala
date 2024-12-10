@@ -12,10 +12,8 @@ object AddQuestionCards {
 
   def appendDashCardToDashboard(metabaseUtil: MetabaseUtil, jsonFile: Option[JsonNode], dashboardId: Int): Unit = {
 
-    val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
-
-    val dashboardJson = objectMapper.readTree(dashboardResponse)
-    val existingDashcards = dashboardJson.path("dashcards") match {
+    val dashboardResponse = objectMapper.readTree(metabaseUtil.getDashboardDetailsById(dashboardId))
+    val existingDashcards = dashboardResponse.path("dashcards") match {
       case array: ArrayNode => array
       case _ => objectMapper.createArrayNode()
     }

@@ -18,7 +18,7 @@ object UpdateStateJsonFiles {
       val adminIdStatus = postgresUtil.fetchData(report_config_query)
       adminIdStatus.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
-          row.get("query") match {
+          row.get("config") match {
             case Some(queryValue: PGobject) =>
               val jsonString = queryValue.getValue
               val rootNode = objectMapper.readTree(jsonString)
@@ -58,7 +58,7 @@ object UpdateStateJsonFiles {
               println("Key 'query' not found in the result row.")
           }
         } else {
-          row.get("query") match {
+          row.get("config") match {
             case Some(queryValue: PGobject) =>
               val jsonString = queryValue.getValue
               val rootNode = objectMapper.readTree(jsonString)
@@ -106,26 +106,23 @@ object UpdateStateJsonFiles {
 
         val queryPath = "/dataset_query/native/query"
         val queryNode = json.at(queryPath)
+        println(s"Original query = ${queryNode.asText()}")
         if (queryNode.isMissingNode || !queryNode.isTextual) {
           throw new IllegalArgumentException(s"Query node at path $queryPath is missing or not textual.")
         }
 
-        val updatedQuery = queryNode.asText()
+        val stateIdRegex = """(?s)\[\[\s*AND\s+\$\{config\.projects\}\.state_id\s+=\s+\(.*?WHERE\s+\{\{state_param\}\}.*?\)\s*\]\]""".r
+        println(s"Does State ID match? ${stateIdRegex.findFirstIn(queryNode.asText()).isDefined}")
+        val updateTableFilter = queryNode.asText().replaceAll(stateIdRegex.regex, s"AND $projectsTable.state_id = '$targetedStateId'")
+
+        val updatedTableName = updateTableFilter
           .replace("${config.projects}", projectsTable)
           .replace("${config.solutions}", solutionsTable)
-          .replaceAllLiterally(
-            s"""[[AND state_id = (
-                  SELECT state_id
-                  FROM $projectsTable
-                  WHERE {{state_param}}
-                  LIMIT 1
-                 )
-            ]]""",
-            s"""AND $projectsTable.state_id = $targetedStateId"""
-          )
+        println(s"updatedQuery = $updatedTableName")
+
         val datasetQuery = json.get("dataset_query").deepCopy().asInstanceOf[ObjectNode]
         val nativeNode = datasetQuery.get("native").deepCopy().asInstanceOf[ObjectNode]
-        nativeNode.set("query", TextNode.valueOf(updatedQuery))
+        nativeNode.set("query", TextNode.valueOf(updatedTableName))
         datasetQuery.set("native", nativeNode)
 
         val updatedJson = json.deepCopy().asInstanceOf[ObjectNode]
