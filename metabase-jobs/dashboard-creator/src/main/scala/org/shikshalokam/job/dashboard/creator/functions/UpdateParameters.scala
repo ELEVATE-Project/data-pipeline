@@ -7,7 +7,7 @@ import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import scala.collection.JavaConverters._
 
 object UpdateParameters {
-  def updateStateParameterFunction(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil,parametersQuery: String, dashboardId: Int, stateId: Int): Unit = {
+  def updateStateParameterFunction(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, parametersQuery: String, dashboardId: Int, stateId: Int): Unit = {
     println(s"-----------Started Processing State dashboard parameter ------------")
 
     val objectMapper = new ObjectMapper()
@@ -40,7 +40,6 @@ object UpdateParameters {
     val finalParametersJson = currentParametersJson.elements().asScala.filterNot { param =>
       param.path("slug").asText() == "select_district"
     }.toList ++ updatedParameterJson
-
     val finalParametersArray = objectMapper.createArrayNode()
     finalParametersJson.foreach(finalParametersArray.add)
     val updatePayload = objectMapper.createObjectNode()
@@ -91,7 +90,7 @@ object UpdateParameters {
   }
 
 
-  def UpdateProgramParameterFunction(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil,parametersQuery: String, dashboardId: Int, programId: Int): Unit = {
+  def UpdateProgramParameterFunction(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, parametersQuery: String, dashboardId: Int, programId: Int): Unit = {
     println(s"-----------Started Processing Program dashboard parameter ------------")
 
     val objectMapper = new ObjectMapper()
@@ -133,7 +132,7 @@ object UpdateParameters {
     println(s"----------------Successfully updated Program dashboard parameter ----------------")
   }
 
-  def UpdateDistrictParameterFunction(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil,parametersQuery: String, dashboardId: Int, districtId: Int): Unit = {
+  def UpdateDistrictParameterFunction(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, parametersQuery: String, dashboardId: Int, districtId: Int): Unit = {
     println(s"-----------Started Processing District dashboard parameter ------------")
     val objectMapper = new ObjectMapper()
     val parameterData: List[Any] = postgresUtil.fetchData(parametersQuery).flatMap(_.get("config"))

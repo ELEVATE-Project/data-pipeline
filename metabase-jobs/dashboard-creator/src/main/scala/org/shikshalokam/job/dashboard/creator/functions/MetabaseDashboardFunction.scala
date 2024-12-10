@@ -63,8 +63,6 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
     event.reportType match {
       case "Project" =>
         println(s">>>>>>>>>>> Started Processing Metabase Project Dashboards >>>>>>>>>>>>")
-        println(s"projects = $projects")
-        println(s"solutions = $solutions")
         if (admin.nonEmpty) {
           println(s"********** Started Processing Metabase Admin Dashboard ***********")
           val adminIdCheckQuery: String = s"SELECT CASE WHEN EXISTS (SELECT 1 FROM $metaDataTable WHERE id = '$admin') THEN CASE WHEN COALESCE((SELECT status FROM $metaDataTable WHERE id = '$admin'), '') = 'Success' THEN 'success' ELSE 'Failed' END ELSE 'Failed' END AS result;"
@@ -85,15 +83,11 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "district_name", postgresUtil, createDashboardQuery)
               val programnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, solutions, "program_name", postgresUtil, createDashboardQuery)
               val report_config_query: String = s"SELECT question_type, config FROM $report_config WHERE report_name IN ('Improvement-Projects-Report', 'Improvement-Consumption-Report', 'Unique-User-Improvement-Project-Report')"
-              println("report_config_query -> " + report_config_query)
               val questionCardIdList = UpdateAdminJsonFiles.ProcessAndUpdateJsonFiles(report_config_query, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, projects, solutions, metabaseUtil, postgresUtil)
               val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
-              println(s"questionIdsString = $questionIdsString")
               val parametersQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'project-admin-parameter'"
-              println(s"parametersQuery = $parametersQuery")
               UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil)
               val updateTableQuery = s"UPDATE $metaDataTable SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Success', error_message = '' WHERE entity_id = '$admin';"
-              println(s"Generated query: $updateTableQuery")
               postgresUtil.insertData(updateTableQuery)
               CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
             } catch {
@@ -172,7 +166,6 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
           if (programIdStatus == "Failed") {
             try {
               val programNameQuery = s"SELECT entity_name from $metaDataTable where entity_id = '$targetedProgramId'"
-              println(s"programNameQuery = $programNameQuery")
               val programName = postgresUtil.fetchData(programNameQuery) match {
                 case List(map: Map[_, _]) => map.get("entity_name").map(_.toString).getOrElse("")
                 case _ => ""
@@ -228,14 +221,12 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
                 case List(map: Map[_, _]) => map.get("entity_name").map(_.toString).getOrElse("")
                 case _ => ""
               }
-              println(s"districtNameQuery = $districtNameQuery")
               println(s"districtname = $districtname")
               val statenamequery = s"SELECT distinct(state_name) AS name from $projects where district_id = '$targetedDistrictId'"
               val statename = postgresUtil.fetchData(statenamequery) match {
                 case List(map: Map[_, _]) => map.get("name").map(_.toString).getOrElse("")
                 case _ => ""
               }
-              println(s"statenamequery = $statenamequery")
               println(s"statename = $statename")
               val collectionName = s"District collection [$districtname - $statename]"
               val dashboardName = s"Project District Report [$districtname - $statename]"

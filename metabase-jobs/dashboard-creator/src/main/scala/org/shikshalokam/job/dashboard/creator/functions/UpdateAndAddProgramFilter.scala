@@ -51,18 +51,15 @@ object UpdateAndAddProgramFilter {
 
                 // Replace "STATEID"
                 if (updatedText.contains("PROGRAMID")) {
-                  println(s"Replacing 'PROGRAMID' in field '$fieldName': $updatedText")
                   updatedText = updatedText.replace("PROGRAMID", targatedProgramId)
                 }
 
                 // Replace "${config.projects}"
                 if (updatedText.contains("${config.projects}")) {
-                  println(s"Replacing '{config.projects}' in field '$fieldName': $updatedText")
                   updatedText = updatedText.replace("${config.projects}", projectTable)
                 }
 
                 if (updatedText.contains("${config.solutions}")) {
-                  println(s"Replacing '{config.solutions}' in field '$fieldName': $updatedText")
                   updatedText = updatedText.replace("${config.solutions}", solutionTable)
                 }
 
@@ -85,7 +82,6 @@ object UpdateAndAddProgramFilter {
         }
       }
       val updatedJson = processNode(json.deepCopy())
-      println(s"Updated JSON: ${updatedJson.toPrettyString}")
       updatedJson
     }
 

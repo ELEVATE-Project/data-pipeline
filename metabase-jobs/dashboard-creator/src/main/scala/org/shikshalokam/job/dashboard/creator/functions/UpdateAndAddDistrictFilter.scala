@@ -47,19 +47,15 @@ object UpdateAndAddDistrictFilter {
                 var updatedText = childNode.asText()
 
                 if (updatedText.contains("STATEID")) {
-                  println(s"Replacing 'STATEID' in field '$fieldName': $updatedText")
                   updatedText = updatedText.replace("STATEID", targetedStateId)
                 }
                 if (updatedText.contains("DISTRICTID")) {
-                  println(s"Replacing 'DISTRICTID' in field '$fieldName': $updatedText")
                   updatedText = updatedText.replace("DISTRICTID", targetedDistrictId)
                 }
                 if (updatedText.contains("${config.projects}")) {
-                  println(s"Replacing '{config.projects}' in field '$fieldName': $updatedText")
                   updatedText = updatedText.replace("${config.projects}", projectTable)
                 }
                 if (updatedText.contains("${config.solutions}")) {
-                  println(s"Replacing '{config.solutions}' in field '$fieldName': $updatedText")
                   updatedText = updatedText.replace("${config.solutions}", solutionTable)
                 }
                 obj.put(fieldName, updatedText)
@@ -82,7 +78,6 @@ object UpdateAndAddDistrictFilter {
       }
 
       val updatedJson = processNode(json.deepCopy())
-      println(s"Updated JSON: ${updatedJson.toPrettyString}")
       updatedJson
     }
 

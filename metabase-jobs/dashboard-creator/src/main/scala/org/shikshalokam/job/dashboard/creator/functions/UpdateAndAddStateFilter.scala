@@ -46,11 +46,9 @@ object UpdateAndAddStateFilter {
                 var updatedText = childNode.asText()
 
                 if (updatedText.contains("STATEID")) {
-                  println(s"Replacing 'STATEID' in field '$fieldName': $updatedText")
                   updatedText = updatedText.replace("STATEID", stateid)
                 }
                 if (updatedText.contains("${config.projects}")) {
-                  println(s"Replacing '{config.projects}' in field '$fieldName': $updatedText")
                   updatedText = updatedText.replace("${config.projects}", projectTable)
                 }
 
@@ -74,7 +72,6 @@ object UpdateAndAddStateFilter {
       }
 
       val updatedJson = processNode(json.deepCopy())
-      println(s"Updated JSON: ${updatedJson.toPrettyString}")
       updatedJson
     }
 

@@ -28,21 +28,16 @@ object UpdateDistrictJsonFiles {
                 val chartName = Option(questionCardNode.path("name").asText()).getOrElse("Unknown Chart")
                 println(s" >>>>>>>>>>> Started Processing For The Chart: $chartName")
                 val updatedJson = updateJsonFiles(rootNode, collectionId = collectionId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, databaseId = databaseId)
-//                println(s"updateJson = $updatedJson")
                 val updatedJsonWithQuery = updateQuery(json = updatedJson.path("questionCard"), projectsTable = projects, solutionsTable = solutions, targetedStateId,targetedDistrictId)
-//                println(s"updatedJsonWithQuery = $updatedJsonWithQuery")
                 val requestBody = updatedJsonWithQuery.asInstanceOf[ObjectNode]
                 val response = metabaseUtil.createQuestionCard(requestBody.toString)
-//                println(s"response = $response")
                 val cardIdOpt = extractCardId(response)
-//                println(s"cardIdOpt = $cardIdOpt")
 
                 cardIdOpt match {
                   case Some(cardId) =>
                     println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
                     questionCardId.append(cardId)
                     val updatedJsonOpt = updateJsonWithCardId(updatedJson, cardId)
-//                    println(s"updatedJsonOpt = $updatedJsonOpt")
                     println(s"--------Successfully updated the json file---------")
                     AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedJsonOpt, dashboardId)
                   case None =>
@@ -63,10 +58,8 @@ object UpdateDistrictJsonFiles {
             case Some(queryValue: PGobject) =>
               val jsonString = queryValue.getValue
               val rootNode = objectMapper.readTree(jsonString)
-//              println(s"rootNodeAtElse = $rootNode")
               if (rootNode != null) {
                 val optJsonNode = toOption(rootNode)
-//                println(s"optJsonNodeAtElse = $optJsonNode")
                 AddQuestionCards.appendDashCardToDashboard(metabaseUtil, optJsonNode, dashboardId)
               }
           }
@@ -83,7 +76,6 @@ object UpdateDistrictJsonFiles {
 
         val queryPath = "/dataset_query/native/query"
         val queryNode = json.at(queryPath)
-//        println(s"Original query = ${queryNode.asText()}")
         if (queryNode.isMissingNode || !queryNode.isTextual) {
           throw new IllegalArgumentException(s"Query node at path $queryPath is missing or not textual.")
         }
@@ -97,8 +89,6 @@ object UpdateDistrictJsonFiles {
         val updatedTableName = updateTableFilter
           .replace("${config.projects}", projectsTable)
           .replace("${config.solutions}", solutionsTable)
-//        println(s"updatedQuery = $updatedTableName")
-
         val datasetQuery = json.get("dataset_query").deepCopy().asInstanceOf[ObjectNode]
         val nativeNode = datasetQuery.get("native").deepCopy().asInstanceOf[ObjectNode]
         nativeNode.set("query", TextNode.valueOf(updatedTableName))
