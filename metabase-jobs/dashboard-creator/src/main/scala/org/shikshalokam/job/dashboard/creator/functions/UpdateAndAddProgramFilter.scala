@@ -9,7 +9,7 @@ import scala.util.Try
 object UpdateAndAddProgramFilter {
   val objectMapper = new ObjectMapper()
 
-  def updateAndAddFilter(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, filterQuery: String, targetedProgramId: String, collectionId: Int, databaseId: Int ,projectTable:String, solutionTable:String): Int = {
+  def updateAndAddFilter(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, filterQuery: String, targetedProgramId: String, collectionId: Int, databaseId: Int, projectTable: String, solutionTable: String): Int = {
     println(s"---------------- started processing updateAndAddFilter Function -------------------")
 
     def readJsonFromQuery(filterQuery: String): Option[JsonNode] = {
@@ -26,7 +26,7 @@ object UpdateAndAddProgramFilter {
 
         // Convert parameterString to JsonNode using Jackson's ObjectMapper
         Try(objectMapper.readTree(filterString)).toOption match {
-          case Some(jsonNode) => Some(jsonNode)  // Successfully parsed JSON
+          case Some(jsonNode) => Some(jsonNode) // Successfully parsed JSON
           case None =>
             println(s"Error: Invalid JSON format in parameterString: $filterString")
             None
@@ -34,13 +34,12 @@ object UpdateAndAddProgramFilter {
 
       } catch {
         case ex: Exception =>
-          // Log and return None in case of any error
           println(s"Error reading or parsing the query result: ${ex.getMessage}")
           None
       }
     }
 
-    def replaceProgramName(json: JsonNode, targatedProgramId: String, projectTable:String, solutionTable:String): JsonNode = {
+    def replaceProgramName(json: JsonNode, targatedProgramId: String, projectTable: String, solutionTable: String): JsonNode = {
       def processNode(node: JsonNode): JsonNode = {
         node match {
           case obj: ObjectNode =>
@@ -48,13 +47,10 @@ object UpdateAndAddProgramFilter {
               val childNode = obj.get(fieldName)
               if (childNode.isTextual) {
                 var updatedText = childNode.asText()
-
-                // Replace "STATEID"
                 if (updatedText.contains("PROGRAMID")) {
                   updatedText = updatedText.replace("PROGRAMID", targatedProgramId)
                 }
 
-                // Replace "${config.projects}"
                 if (updatedText.contains("${config.projects}")) {
                   updatedText = updatedText.replace("${config.projects}", projectTable)
                 }
@@ -81,6 +77,7 @@ object UpdateAndAddProgramFilter {
           case _ => node
         }
       }
+
       val updatedJson = processNode(json.deepCopy())
       updatedJson
     }
@@ -123,7 +120,7 @@ object UpdateAndAddProgramFilter {
 
     readJsonFromQuery(filterQuery) match {
       case Some(json) =>
-        val ReplacedProgramNameJson = replaceProgramName(json, targetedProgramId , projectTable , solutionTable )
+        val ReplacedProgramNameJson = replaceProgramName(json, targetedProgramId, projectTable, solutionTable)
         val updatedJson = updateCollectionIdAndDatabaseId(ReplacedProgramNameJson, collectionId, databaseId)
         val questionId = getTheQuestionId(updatedJson)
         questionId

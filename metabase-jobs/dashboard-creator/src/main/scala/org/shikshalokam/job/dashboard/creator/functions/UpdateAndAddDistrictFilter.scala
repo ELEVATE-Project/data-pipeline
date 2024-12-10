@@ -4,16 +4,16 @@ import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 
-import java.io.File
 import scala.util.Try
 
 object UpdateAndAddDistrictFilter {
   val objectMapper = new ObjectMapper()
 
-  def updateAndAddFilter(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, filterQuery: String, targetedStateId: String, targetedDistrictId: String, collectionId: Int, databaseId: Int,projectTable: String,solutionTable: String): Int = {
+  def updateAndAddFilter(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, filterQuery: String, targetedStateId: String, targetedDistrictId: String, collectionId: Int, databaseId: Int, projectTable: String, solutionTable: String): Int = {
     println(s"---------------- started processing updateAndAddFilter Function -------------------")
 
     val objectMapper = new ObjectMapper()
+
     def readJsonFromQuery(filterQuery: String): Option[JsonNode] = {
       try {
         val queryResult = postgresUtil.fetchData(filterQuery).flatMap(_.get("config"))
@@ -37,7 +37,7 @@ object UpdateAndAddDistrictFilter {
       }
     }
 
-    def replaceDistrictName(json: JsonNode, targetedStateId: String, targetedDistrictId: String, projectTable: String,solutionTable: String): JsonNode = {
+    def replaceDistrictName(json: JsonNode, targetedStateId: String, targetedDistrictId: String, projectTable: String, solutionTable: String): JsonNode = {
       def processNode(node: JsonNode): JsonNode = {
         node match {
           case obj: ObjectNode =>

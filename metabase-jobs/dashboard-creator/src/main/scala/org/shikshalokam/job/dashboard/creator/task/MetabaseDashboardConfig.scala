@@ -46,7 +46,4 @@ class MetabaseDashboardConfig(override val config: Config) extends BaseJobConfig
   val metabasePassword: String = config.getString("metabase.password")
   val metabaseDatabase: String = config.getString("metabase.database")
 
-  // Json File Path
-  val projectJsonPath: String = config.getString("filePath.ProjectJsonDir")
-
 }

@@ -9,10 +9,11 @@ import scala.util.Try
 object UpdateAndAddStateFilter {
   val objectMapper = new ObjectMapper()
 
-  def updateAndAddFilter(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, filterQuery: String, stateid: String, districtname: String, programname: String, collectionId: Int, databaseId: Int, projectTable:String): Int = {
+  def updateAndAddFilter(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, filterQuery: String, stateid: String, districtname: String, programname: String, collectionId: Int, databaseId: Int, projectTable: String): Int = {
     println(s"---------------- started processing updateAndAddFilter Function -------------------")
 
     val objectMapper = new ObjectMapper()
+
     def readJsonFromQuery(filterQuery: String): Option[JsonNode] = {
       try {
         val queryResult = postgresUtil.fetchData(filterQuery).flatMap(_.get("config"))

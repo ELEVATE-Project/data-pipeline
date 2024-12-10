@@ -27,7 +27,6 @@ object CreateAndAssignGroup {
          |    }
          |}
          |""".stripMargin
-    val addCollectionToUser = metabaseUtil.addCollectionToGroup(addCollectionToUserRequestBody)
-    println(addCollectionToUser)
+    metabaseUtil.addCollectionToGroup(addCollectionToUserRequestBody)
   }
 }

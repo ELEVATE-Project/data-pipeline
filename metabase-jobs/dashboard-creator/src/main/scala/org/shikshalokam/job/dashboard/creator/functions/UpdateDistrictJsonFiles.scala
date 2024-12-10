@@ -10,13 +10,13 @@ import scala.util.{Failure, Success, Try}
 
 
 object UpdateDistrictJsonFiles {
-  def ProcessAndUpdateJsonFiles(report_config_query: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, metabaseUtil: MetabaseUtil,postgresUtil: PostgresUtil, projects:String,solutions:String,targetedStateId:String,targetedDistrictId:String): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, projects: String, solutions: String, targetedStateId: String, targetedDistrictId: String): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    def processJsonFiles(report_config_query: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int,targetedStateId:String,targetedDistrictId:String): Unit = {
-      val adminIdStatus = postgresUtil.fetchData(report_config_query)
+    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, targetedStateId: String, targetedDistrictId: String): Unit = {
+      val adminIdStatus = postgresUtil.fetchData(reportConfigQuery)
       adminIdStatus.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
           row.get("config") match {
@@ -27,8 +27,8 @@ object UpdateDistrictJsonFiles {
                 val questionCardNode = rootNode.path("questionCard")
                 val chartName = Option(questionCardNode.path("name").asText()).getOrElse("Unknown Chart")
                 println(s" >>>>>>>>>>> Started Processing For The Chart: $chartName")
-                val updatedJson = updateJsonFiles(rootNode, collectionId = collectionId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, databaseId = databaseId)
-                val updatedJsonWithQuery = updateQuery(json = updatedJson.path("questionCard"), projectsTable = projects, solutionsTable = solutions, targetedStateId,targetedDistrictId)
+                val updatedJson = updateJsonFiles(rootNode, collectionId, statenameId, districtnameId, programnameId, databaseId)
+                val updatedJsonWithQuery = updateQuery(updatedJson.path("questionCard"), projects, solutions, targetedStateId, targetedDistrictId)
                 val requestBody = updatedJsonWithQuery.asInstanceOf[ObjectNode]
                 val response = metabaseUtil.createQuestionCard(requestBody.toString)
                 val cardIdOpt = extractCardId(response)
@@ -71,7 +71,7 @@ object UpdateDistrictJsonFiles {
       if (jsonNode == null || jsonNode.isMissingNode) None else Some(jsonNode)
     }
 
-    def updateQuery(json: JsonNode, projectsTable: String, solutionsTable: String ,targetedStateId:String,targetedDistrictId:String): JsonNode = {
+    def updateQuery(json: JsonNode, projectsTable: String, solutionsTable: String, targetedStateId: String, targetedDistrictId: String): JsonNode = {
       Try {
 
         val queryPath = "/dataset_query/native/query"
@@ -84,7 +84,7 @@ object UpdateDistrictJsonFiles {
         val stateIdRegex = """(?s)\[\[\s*AND\s+\$\{config\.projects\}\.state_id\s+=\s+\(.*?WHERE\s+\{\{state_param\}\}.*?\)\s*\]\]""".r
 
         val updateTableFilter = queryNode.asText().replaceAll(districtIdRegex.regex, s"AND $projectsTable.district_id = '$targetedDistrictId'")
-                                .replaceAll(stateIdRegex.regex, s"AND $projectsTable.state_id = '$targetedStateId'")
+          .replaceAll(stateIdRegex.regex, s"AND $projectsTable.state_id = '$targetedStateId'")
 
         val updatedTableName = updateTableFilter
           .replace("${config.projects}", projectsTable)
@@ -145,7 +145,6 @@ object UpdateDistrictJsonFiles {
         if (rootNode.has("questionCard")) {
           val questionCard = rootNode.get("questionCard").asInstanceOf[ObjectNode]
           questionCard.put("collection_id", collectionId)
-          println(s"Updated questionCard: $questionCard")
 
           if (questionCard.has("dataset_query")) {
             val datasetQuery = questionCard.get("dataset_query").asInstanceOf[ObjectNode]
@@ -171,8 +170,6 @@ object UpdateDistrictJsonFiles {
             }
           }
         }
-
-        println(s"Updated rootNode: $rootNode")
         rootNode
       } catch {
         case e: Exception =>
@@ -195,7 +192,7 @@ object UpdateDistrictJsonFiles {
       }
     }
 
-    processJsonFiles(report_config_query, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId,targetedStateId, targetedDistrictId)
+    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, targetedStateId, targetedDistrictId)
     println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardId
   }

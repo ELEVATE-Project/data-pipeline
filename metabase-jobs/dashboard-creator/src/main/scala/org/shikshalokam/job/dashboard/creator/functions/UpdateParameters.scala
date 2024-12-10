@@ -44,7 +44,7 @@ object UpdateParameters {
     finalParametersJson.foreach(finalParametersArray.add)
     val updatePayload = objectMapper.createObjectNode()
     updatePayload.set("parameters", finalParametersArray)
-    val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString)
+    metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString)
     println(s"----------------Successfully updated State dashboard parameter----------------")
   }
 
@@ -84,8 +84,7 @@ object UpdateParameters {
     val updatePayload = objectMapper.createObjectNode()
     updatePayload.set("parameters", finalParametersJson)
 
-    val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString)
-    println(s"updateResponse = $updateResponse")
+    metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString)
     println(s"----------------Successfully updated Admin dashboard parameter ----------------")
   }
 
@@ -128,7 +127,7 @@ object UpdateParameters {
     finalParametersJson.foreach(finalParametersArray.add)
     val updatePayload = objectMapper.createObjectNode()
     updatePayload.set("parameters", finalParametersArray)
-    val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString)
+    metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString)
     println(s"----------------Successfully updated Program dashboard parameter ----------------")
   }
 
@@ -169,7 +168,7 @@ object UpdateParameters {
     finalParametersJson.foreach(finalParametersArray.add)
     val updatePayload = objectMapper.createObjectNode()
     updatePayload.set("parameters", finalParametersArray)
-    val updateResponse = metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString)
+    metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString)
     println(s"----------------Successfully updated District dashboard parameter ----------------------")
   }
 
