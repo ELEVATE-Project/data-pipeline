@@ -18,34 +18,33 @@ object UpdateAdminJsonFiles {
 
     def processJsonFiles(report_config_query: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int): Unit = {
       val queryResult = postgresUtil.fetchData(report_config_query)
-      println(s"\n\nqueryResult = $queryResult")
+//      println(s"\n\nqueryResult = $queryResult")
       queryResult.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
           row.get("config") match {
             case Some(queryValue: PGobject) =>
               val configJson = objectMapper.readTree(queryValue.getValue)
-              println(s"configAsJson = $configJson")
+//              println(s"configAsJson = $configJson")
               if (configJson != null) {
                 val originalQuestionCard = configJson.path("questionCard")
                 val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
-                println(s"originalQuestionCard = $originalQuestionCard") //TODO comment this line
+//                println(s"originalQuestionCard = $originalQuestionCard") //TODO comment this line
                 val updatedQuestionCard = updateQuestionCardJsonValues(configJson, collectionId, statenameId, districtnameId, programnameId, databaseId)
-                println(s"updatedQuestionCard = $updatedQuestionCard") //TODO comment this line
+//                println(s"updatedQuestionCard = $updatedQuestionCard") //TODO comment this line
                 val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, projectsTable = projects, solutionsTable = solutions)
-                println(s"updatedDatabaseQuery = $finalQuestionCard") //TODO comment this line
+//                println(s"updatedDatabaseQuery = $finalQuestionCard") //TODO comment this line
 
                 val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
-                println(s"cardId = $cardId")
+//                println(s"cardId = $cardId")
                 println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
                 questionCardId.append(cardId)
 
                 val originalDashCards = configJson.path("dashCards")
-                println(s"originalDashCards = $originalDashCards") //TODO comment this line
+//                println(s"originalDashCards = $originalDashCards") //TODO comment this line
                 val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(configJson, cardId)
-                println(s"updatedDashCards = $updatedQuestionIdInDashCard")
+//                println(s"updatedDashCards = $updatedQuestionIdInDashCard")
                 AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedQuestionIdInDashCard, dashboardId)
-                //todo work on this appendDashCardToDashboard
               }
             case None =>
               println("Key 'config' not found in the result row.")
@@ -56,10 +55,10 @@ object UpdateAdminJsonFiles {
             case Some(queryValue: PGobject) =>
               val jsonString = queryValue.getValue
               val rootNode = objectMapper.readTree(jsonString)
-              println(s"rootNodeAtElse = $rootNode")
+//              println(s"rootNodeAtElse = $rootNode")
               if (rootNode != null) {
                 val optJsonNode = toOption(rootNode)
-                println(s"optJsonNodeAtElse = $optJsonNode")
+//                println(s"optJsonNodeAtElse = $optJsonNode")
                 AddQuestionCards.appendDashCardToDashboard(metabaseUtil, optJsonNode, dashboardId)
               }
           }

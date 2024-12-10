@@ -82,19 +82,19 @@ object UpdateProgramJsonFiles {
 
         val queryPath = "/dataset_query/native/query"
         val queryNode = json.at(queryPath)
-        println(s"Original query = ${queryNode.asText()}")
+//        println(s"Original query = ${queryNode.asText()}")
         if (queryNode.isMissingNode || !queryNode.isTextual) {
           throw new IllegalArgumentException(s"Query node at path $queryPath is missing or not textual.")
         }
 
         val programIdRegex = """(?s)\[\[\s*AND\s+\$\{config\.projects\}\.program_id\s+=\s+\(.*?WHERE\s+\{\{program_param\}\}.*?\)\s*\]\]""".r
-        println(s"Does State ID match? ${programIdRegex.findFirstIn(queryNode.asText()).isDefined}")
-        val updateTableFilter = queryNode.asText().replaceAll(programIdRegex.regex, s"AND $projectsTable.program_id = '$targetedProgramId'")
+//        println(s"Does State ID match? ${programIdRegex.findFirstIn(queryNode.asText()).isDefined}")
+        val updateTableFilter = queryNode.asText().replaceAll(programIdRegex.regex, s"AND $projectsTab'le.program_id = '$targetedProgramId'")
 
         val updatedTableName = updateTableFilter
           .replace("${config.projects}", projectsTable)
           .replace("${config.solutions}", solutionsTable)
-        println(s"updatedQuery = $updatedTableName")
+//        println(s"updatedQuery = $updatedTableName")
 
         val datasetQuery = json.get("dataset_query").deepCopy().asInstanceOf[ObjectNode]
         val nativeNode = datasetQuery.get("native").deepCopy().asInstanceOf[ObjectNode]
@@ -151,7 +151,7 @@ object UpdateProgramJsonFiles {
         if (rootNode.has("questionCard")) {
           val questionCard = rootNode.get("questionCard").asInstanceOf[ObjectNode]
           questionCard.put("collection_id", collectionId)
-          println(s"Updated questionCard: $questionCard")
+//          println(s"Updated questionCard: $questionCard")
 
           if (questionCard.has("dataset_query")) {
             val datasetQuery = questionCard.get("dataset_query").asInstanceOf[ObjectNode]
@@ -178,7 +178,7 @@ object UpdateProgramJsonFiles {
           }
         }
 
-        println(s"Updated rootNode: $rootNode")
+//        println(s"Updated rootNode: $rootNode")
         rootNode
       } catch {
         case e: Exception =>

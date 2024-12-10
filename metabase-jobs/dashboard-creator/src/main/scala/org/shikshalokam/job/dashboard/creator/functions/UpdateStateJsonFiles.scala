@@ -27,21 +27,21 @@ object UpdateStateJsonFiles {
                 val chartName = Option(questionCardNode.path("name").asText()).getOrElse("Unknown Chart")
                 println(s" >>>>>>>>>>> Started Processing For The Chart: $chartName")
                 val updatedJson = updateJsonFiles(rootNode, collectionId = collectionId, statenameId = statenameId, districtnameId = districtnameId, programnameId = programnameId, databaseId = databaseId)
-                println(s"updateJson = $updatedJson")
+//                println(s"updateJson = $updatedJson")
                 val updatedJsonWithQuery = updateQuery(json = updatedJson.path("questionCard"), projectsTable = projects, solutionsTable = solutions, targetedStateId)
-                println(s"updatedJsonWithQuery = $updatedJsonWithQuery")
+//                println(s"updatedJsonWithQuery = $updatedJsonWithQuery")
                 val requestBody = updatedJsonWithQuery.asInstanceOf[ObjectNode]
                 val response = metabaseUtil.createQuestionCard(requestBody.toString)
-                println(s"response = $response")
+//                println(s"response = $response")
                 val cardIdOpt = extractCardId(response)
-                println(s"cardIdOpt = $cardIdOpt")
+//                println(s"cardIdOpt = $cardIdOpt")
 
                 cardIdOpt match {
                   case Some(cardId) =>
                     println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
                     questionCardId.append(cardId)
                     val updatedJsonOpt = updateJsonWithCardId(updatedJson, cardId)
-                    println(s"updatedJsonOpt = $updatedJsonOpt")
+//                    println(s"updatedJsonOpt = $updatedJsonOpt")
                     println(s"--------Successfully updated the json file---------")
                     AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedJsonOpt, dashboardId)
                   case None =>
@@ -62,10 +62,10 @@ object UpdateStateJsonFiles {
             case Some(queryValue: PGobject) =>
               val jsonString = queryValue.getValue
               val rootNode = objectMapper.readTree(jsonString)
-              println(s"rootNodeAtElse = $rootNode")
+//              println(s"rootNodeAtElse = $rootNode")
               if (rootNode != null) {
                 val optJsonNode = toOption(rootNode)
-                println(s"optJsonNodeAtElse = $optJsonNode")
+//                println(s"optJsonNodeAtElse = $optJsonNode")
                 AddQuestionCards.appendDashCardToDashboard(metabaseUtil, optJsonNode, dashboardId)
               }
           }
@@ -77,48 +77,24 @@ object UpdateStateJsonFiles {
       if (jsonNode == null || jsonNode.isMissingNode) None else Some(jsonNode)
     }
 
-//    def updateQuery(json: JsonNode, stateName: String): Option[JsonNode] = {
-//      Try {
-//        // Update the query
-//        val updatedQueryJson = Option(json.at("/dataset_query/native/query"))
-//          .filter(_.isTextual)
-//          .map { queryNode =>
-//            val updatedQuery = queryNode.asText().replace("[[AND {{state_param}}]]", s"AND statename = '$stateName'")
-//            val datasetQuery = json.get("dataset_query").deepCopy().asInstanceOf[ObjectNode]
-//            val nativeNode = datasetQuery.get("native").deepCopy().asInstanceOf[ObjectNode]
-//            nativeNode.set("query", TextNode.valueOf(updatedQuery))
-//            datasetQuery.set("native", nativeNode)
-//            val updatedJson = json.deepCopy().asInstanceOf[ObjectNode]
-//            updatedJson.set("dataset_query", datasetQuery)
-//            updatedJson
-//          }.getOrElse(json)
-//        updatedQueryJson
-//      } match {
-//        case Success(updatedJson) => Some(updatedJson)
-//        case Failure(exception) =>
-//          println(s"Error updating JSON: ${exception.getMessage}")
-//          None
-//      }
-//    }
-
     def updateQuery(json: JsonNode, projectsTable: String, solutionsTable: String ,targetedStateId:String): JsonNode = {
       Try {
 
         val queryPath = "/dataset_query/native/query"
         val queryNode = json.at(queryPath)
-        println(s"Original query = ${queryNode.asText()}")
+//        println(s"Original query = ${queryNode.asText()}")
         if (queryNode.isMissingNode || !queryNode.isTextual) {
           throw new IllegalArgumentException(s"Query node at path $queryPath is missing or not textual.")
         }
 
         val stateIdRegex = """(?s)\[\[\s*AND\s+\$\{config\.projects\}\.state_id\s+=\s+\(.*?WHERE\s+\{\{state_param\}\}.*?\)\s*\]\]""".r
-        println(s"Does State ID match? ${stateIdRegex.findFirstIn(queryNode.asText()).isDefined}")
+//        println(s"Does State ID match? ${stateIdRegex.findFirstIn(queryNode.asText()).isDefined}")
         val updateTableFilter = queryNode.asText().replaceAll(stateIdRegex.regex, s"AND $projectsTable.state_id = '$targetedStateId'")
 
         val updatedTableName = updateTableFilter
           .replace("${config.projects}", projectsTable)
           .replace("${config.solutions}", solutionsTable)
-        println(s"updatedQuery = $updatedTableName")
+//        println(s"updatedQuery = $updatedTableName")
 
         val datasetQuery = json.get("dataset_query").deepCopy().asInstanceOf[ObjectNode]
         val nativeNode = datasetQuery.get("native").deepCopy().asInstanceOf[ObjectNode]
@@ -175,7 +151,7 @@ object UpdateStateJsonFiles {
         if (rootNode.has("questionCard")) {
           val questionCard = rootNode.get("questionCard").asInstanceOf[ObjectNode]
           questionCard.put("collection_id", collectionId)
-          println(s"Updated questionCard: $questionCard")
+//          println(s"Updated questionCard: $questionCard")
 
           if (questionCard.has("dataset_query")) {
             val datasetQuery = questionCard.get("dataset_query").asInstanceOf[ObjectNode]

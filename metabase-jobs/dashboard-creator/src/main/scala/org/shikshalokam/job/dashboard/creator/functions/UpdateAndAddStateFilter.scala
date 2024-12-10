@@ -1,11 +1,9 @@
 package org.shikshalokam.job.dashboard.creator.functions
 
-import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 
-import java.io.{File, IOException}
 import scala.util.Try
 
 object UpdateAndAddStateFilter {
@@ -17,19 +15,15 @@ object UpdateAndAddStateFilter {
     val objectMapper = new ObjectMapper()
     def readJsonFromQuery(filterQuery: String): Option[JsonNode] = {
       try {
-        // Fetching data from the database or any external source
-        val queryResult = postgresUtil.fetchData(filterQuery).flatMap(_.get("config")) // Assuming this fetches JSON data
-
-        // Convert the fetched result to a String (parameterString)
+        val queryResult = postgresUtil.fetchData(filterQuery).flatMap(_.get("config"))
         val filterString: String = queryResult.headOption match {
           case Some(value: String) => value
           case Some(value) => value.toString
           case None => throw new Exception("No parameter data found")
         }
 
-        // Convert parameterString to JsonNode using Jackson's ObjectMapper
         Try(objectMapper.readTree(filterString)).toOption match {
-          case Some(jsonNode) => Some(jsonNode)  // Successfully parsed JSON
+          case Some(jsonNode) => Some(jsonNode)
           case None =>
             println(s"Error: Invalid JSON format in parameterString: $filterString")
             None
@@ -37,7 +31,6 @@ object UpdateAndAddStateFilter {
 
       } catch {
         case ex: Exception =>
-          // Log and return None in case of any error
           println(s"Error reading or parsing the query result: ${ex.getMessage}")
           None
       }
@@ -52,13 +45,10 @@ object UpdateAndAddStateFilter {
               if (childNode.isTextual) {
                 var updatedText = childNode.asText()
 
-                // Replace "STATEID"
                 if (updatedText.contains("STATEID")) {
                   println(s"Replacing 'STATEID' in field '$fieldName': $updatedText")
                   updatedText = updatedText.replace("STATEID", stateid)
                 }
-
-                // Replace "${config.projects}"
                 if (updatedText.contains("${config.projects}")) {
                   println(s"Replacing '{config.projects}' in field '$fieldName': $updatedText")
                   updatedText = updatedText.replace("${config.projects}", projectTable)
