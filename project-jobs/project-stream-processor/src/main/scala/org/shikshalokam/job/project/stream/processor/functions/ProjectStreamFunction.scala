@@ -46,6 +46,7 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val (projectEvidences, projectEvidencesCount) = extractEvidenceData(event.projectAttachments)
     val (roleIds, roles) = extractUserRolesData(event.userRoles)
     val tasksData = extractTasksData(event.tasks)
+    val projectCategories = Option(event.projectCategories).map(extractProjectCategories).getOrElse("")
 
     //TODO: TO be removed later
     println("\n==> Solutions data ")
@@ -53,6 +54,8 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     println("solutionExternalId = " + event.solutionExternalId)
     println("solutionName = " + event.solutionName)
     println("solutionDescription = " + event.solutionDescription)
+    println("duration = " + event.projectDuration)
+    println("categories = " + projectCategories)
     println("privateProgram = " + event.privateProgram)
     println("programId = " + event.programId)
     println("programExternalId = " + event.programExternalId)
@@ -110,6 +113,7 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val solutionExternalId = event.solutionExternalId
     val solutionName = event.solutionName
     val solutionDescription = event.solutionDescription
+    val projectDuration = event.projectDuration
     val programId = event.programId
     val programName = event.programName
     val programExternalId = event.programExternalId
@@ -117,25 +121,27 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val privateProgram = event.privateProgram
 
     val upsertSolutionQuery =
-      s"""INSERT INTO ${config.solutions} (solution_id, external_id, name, description, program_id, program_name, program_external_id, program_description, private_program)
-        |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        |ON CONFLICT (solution_id) DO UPDATE SET
-        |    external_id = ?,
-        |    name = ?,
-        |    description = ?,
-        |    program_id = ?,
-        |    program_name = ?,
-        |    program_external_id = ?,
-        |    program_description = ?,
-        |    private_program = ?;
-        |""".stripMargin
+      s"""INSERT INTO ${config.solutions} (solution_id, external_id, name, description, duration, categories, program_id, program_name, program_external_id, program_description, private_program)
+         |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         |ON CONFLICT (solution_id) DO UPDATE SET
+         |    external_id = ?,
+         |    name = ?,
+         |    description = ?,
+         |    duration = ?,
+         |    categories = ?,
+         |    program_id = ?,
+         |    program_name = ?,
+         |    program_external_id = ?,
+         |    program_description = ?,
+         |    private_program = ?;
+         |""".stripMargin
 
     val solutionParams = Seq(
       // Insert parameters
-      solutionId, solutionExternalId, solutionName, solutionDescription, programId, programName, programExternalId, programDescription, privateProgram,
+      solutionId, solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram,
 
       // Update parameters (matching columns in the ON CONFLICT clause)
-      solutionExternalId, solutionName, solutionDescription, programId, programName, programExternalId, programDescription, privateProgram
+      solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram
     )
 
     postgresUtil.executePreparedUpdate(upsertSolutionQuery, solutionParams, config.solutions, solutionId)
@@ -175,19 +181,19 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
 
     val upsertProjectQuery =
       s"""INSERT INTO ${config.projects} (
-        |    project_id, solution_id, created_by, created_date, completed_date, last_sync, updated_date, status, remarks,
-        |    evidence, evidence_count, program_id, task_count, user_role_ids, user_roles, org_id, org_name, org_code, state_id,
-        |    state_name, district_id, district_name, block_id, block_name, cluster_id, cluster_name, school_id, school_name,
-        |    certificate_template_id, certificate_template_url, certificate_issued_on, certificate_status, certificate_pdf_path
-        |) VALUES (
-        |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-        |) ON CONFLICT (project_id) DO UPDATE SET
-        |    solution_id = ?, created_by = ?, created_date = ?, completed_date = ?, last_sync = ?, updated_date = ?,
-        |    status = ?, remarks = ?, evidence = ?, evidence_count = ?, program_id = ?, task_count = ?, user_role_ids = ?,
-        |    user_roles = ?, org_id = ?, org_name = ?, org_code = ?, state_id = ?, state_name = ?, district_id = ?,
-        |    district_name = ?, block_id = ?, block_name = ?, cluster_id = ?, cluster_name = ?, school_id = ?, school_name = ?,
-        |    certificate_template_id = ?, certificate_template_url = ?, certificate_issued_on = ?, certificate_status = ?, certificate_pdf_path = ?;
-        |""".stripMargin
+         |    project_id, solution_id, created_by, created_date, completed_date, last_sync, updated_date, status, remarks,
+         |    evidence, evidence_count, program_id, task_count, user_role_ids, user_roles, org_id, org_name, org_code, state_id,
+         |    state_name, district_id, district_name, block_id, block_name, cluster_id, cluster_name, school_id, school_name,
+         |    certificate_template_id, certificate_template_url, certificate_issued_on, certificate_status, certificate_pdf_path
+         |) VALUES (
+         |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+         |) ON CONFLICT (project_id) DO UPDATE SET
+         |    solution_id = ?, created_by = ?, created_date = ?, completed_date = ?, last_sync = ?, updated_date = ?,
+         |    status = ?, remarks = ?, evidence = ?, evidence_count = ?, program_id = ?, task_count = ?, user_role_ids = ?,
+         |    user_roles = ?, org_id = ?, org_name = ?, org_code = ?, state_id = ?, state_name = ?, district_id = ?,
+         |    district_name = ?, block_id = ?, block_name = ?, cluster_id = ?, cluster_name = ?, school_id = ?, school_name = ?,
+         |    certificate_template_id = ?, certificate_template_url = ?, certificate_issued_on = ?, certificate_status = ?, certificate_pdf_path = ?;
+         |""".stripMargin
 
     val projectParams = Seq(
       // Insert parameters
@@ -224,14 +230,14 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
 
       val upsertTaskQuery =
         s"""INSERT INTO ${config.tasks} (
-          |    task_id, project_id, name, assigned_to, start_date, end_date, synced_at, is_deleted, is_deletable,
-          |    remarks, status, evidence, evidence_count
-          |) VALUES (
-          |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-          |) ON CONFLICT (task_id) DO UPDATE SET
-          |    name = ?, project_id = ?, assigned_to = ?, start_date = ?, end_date = ?, synced_at = ?,
-          |    is_deleted = ?, is_deletable = ?, remarks = ?, status = ?, evidence = ?, evidence_count = ?;
-          |""".stripMargin
+           |    task_id, project_id, name, assigned_to, start_date, end_date, synced_at, is_deleted, is_deletable,
+           |    remarks, status, evidence, evidence_count
+           |) VALUES (
+           |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+           |) ON CONFLICT (task_id) DO UPDATE SET
+           |    name = ?, project_id = ?, assigned_to = ?, start_date = ?, end_date = ?, synced_at = ?,
+           |    is_deleted = ?, is_deletable = ?, remarks = ?, status = ?, evidence = ?, evidence_count = ?;
+           |""".stripMargin
 
       val taskParams = Seq(
         // Insert parameters
@@ -287,6 +293,16 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val roleId = roles.map { role => role.get("id").map(_.toString).getOrElse("") }
     val roleName = roles.map { role => role.get("title").map(_.toString).getOrElse("") }
     (roleId.mkString(", "), roleName.mkString(", "))
+  }
+
+  def extractProjectCategories(categories: List[Map[String, Any]]): String = {
+    Option(categories)
+      .getOrElse(Nil)
+      .flatMap(_.get("name") match {
+        case Some(value) if value != null && value.toString.trim.nonEmpty => Some(value.toString)
+        case _ => None
+      })
+      .mkString(",")
   }
 
   def extractLocationsData(locations: List[Map[String, Any]]): List[Map[String, String]] = {
