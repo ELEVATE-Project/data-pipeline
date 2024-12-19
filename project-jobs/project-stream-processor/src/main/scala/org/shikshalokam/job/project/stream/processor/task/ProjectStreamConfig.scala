@@ -57,6 +57,8 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |    external_id TEXT,
       |    name TEXT,
       |    description TEXT,
+      |    duration TEXT,
+      |    categories TEXT,
       |    program_id TEXT,
       |    program_name TEXT,
       |    program_external_id TEXT,

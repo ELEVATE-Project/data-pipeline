@@ -16,6 +16,10 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def privateProgram: Boolean = readOrDefault[Boolean]("isAPrivateProgram", false)
 
+  def projectDuration: String = readOrDefault[String]("metaInformation.duration", "")
+
+  def projectCategories: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("categories", null)
+
   def programId: String = readOrDefault[String]("programInformation._id", "")
 
   def programExternalId: String = readOrDefault[String]("programInformation.externalId", "")
