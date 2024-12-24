@@ -70,7 +70,7 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def schoolName: String = readOrDefault[String]("userProfile.school.label", "")
 
-  def userRoles: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("userProfile.user_roles", null)
+  def userRoles: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("userProfile.user_roles", List.empty)
 
   def projectAttachments: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("attachments", null)
 

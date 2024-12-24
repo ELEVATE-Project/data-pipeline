@@ -290,9 +290,13 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
   }
 
   def extractUserRolesData(roles: List[Map[String, Any]]): (String, String) = {
-    val roleId = roles.map { role => role.get("id").map(_.toString).getOrElse("") }
-    val roleName = roles.map { role => role.get("title").map(_.toString).getOrElse("") }
-    (roleId.mkString(", "), roleName.mkString(", "))
+    if (roles == null || roles.isEmpty) {
+      ("", "")
+    } else {
+      val roleId = roles.map { role => role.get("id").map(_.toString).getOrElse("") }
+      val roleName = roles.map { role => role.get("title").map(_.toString).getOrElse("") }
+      (roleId.mkString(", "), roleName.mkString(", "))
+    }
   }
 
   def extractProjectCategories(categories: List[Map[String, Any]]): String = {
