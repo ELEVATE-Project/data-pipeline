@@ -2,12 +2,11 @@
 
 ENVIRONMENT=$1  # Input: dev or qa environment
 JOB_NAME="${ENVIRONMENT}_"
-SUDO_PASSWORD="1234"
 FLINK_SERVER_URL="http://localhost:8081"
 FLINK_DIR="/opt/flink-1.13.2"
 CODE_BASE_PATH=$(dirname "$(pwd)")
 DEV_REPLACE_DIR="/opt/work-shop/dev/resource/replacementFile/"
-QA_REPLACE_DIR="/opt/work-shop/qa/resource/replacementFile"
+QA_REPLACE_DIR="/opt/work-shop/qa/resource/replacementFile/"
 
 # Define color codes for better visibility
 GREEN='\033[0;32m'
@@ -57,7 +56,7 @@ if [[ -n "$JOB_IDS" ]]; then
   echo -e "\n${CYAN}Found running jobs with the prefix '$JOB_NAME'. Proceeding with cancellation...${NC}"
   for JOB_ID in $JOB_IDS; do
     echo -e "${CYAN}Attempting to cancel job with ID: $JOB_ID${NC}"
-    OUTPUT=$(echo "$SUDO_PASSWORD" | sudo -S "$FLINK_DIR/bin/flink" cancel "$JOB_ID" -m "localhost:8081")
+    OUTPUT=$("$FLINK_DIR/bin/flink" cancel "$JOB_ID" -m "localhost:8081")
 
     if echo "$OUTPUT" | grep -q "Cancelled job $JOB_ID"; then
       echo -e "${GREEN}Success:${NC} Job $JOB_ID successfully canceled."
@@ -175,8 +174,8 @@ for JOB_PATH in "$PROJECT_JOB_PATH" "$DASHBOARD_JOB_PATH"; do
   LOG_FILE="$LOG_DIR/$ENVIRONMENT-$JOB_NAME.log"
 
   echo -e "${YELLOW}Submitting ${MAGENTA}$JOB_NAME${CYAN} to Flink...${NC}"
-  echo "sudo nohup $FLINK_CMD $PROJECT_JOB_PATH > "$LOG_FILE" 2>&1 &"
-  OUTPUT=$(echo "$SUDO_PASSWORD" | sudo nohup $FLINK_CMD $PROJECT_JOB_PATH > "$LOG_FILE" 2>&1 &)
+  echo -e "${CYAN}Command:${NC} nohup $FLINK_CMD $JOB_PATH > \"$LOG_FILE\" 2>&1 &"
+  nohup $FLINK_CMD $JOB_PATH > "$LOG_FILE" 2>&1 &
   if [[ $? -eq 0 ]]; then
     echo -e "${GREEN}Success:${NC} Job $JOB_NAME submitted successfully."
   else
