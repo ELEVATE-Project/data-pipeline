@@ -10,12 +10,12 @@ import scala.util.{Failure, Success, Try}
 
 
 object UpdateDistrictJsonFiles {
-  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, projects: String, solutions: String, targetedStateId: String, targetedDistrictId: String): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, blocknameId: Int, clusternameId: Int, orgnameId: Int, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, projects: String, solutions: String, targetedStateId: String, targetedDistrictId: String): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, targetedStateId: String, targetedDistrictId: String): Unit = {
+    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, blocknameId: Int, clusternameId: Int, orgnameId: Int, targetedStateId: String, targetedDistrictId: String): Unit = {
       val adminIdStatus = postgresUtil.fetchData(reportConfigQuery)
       adminIdStatus.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -27,7 +27,7 @@ object UpdateDistrictJsonFiles {
                 val questionCardNode = rootNode.path("questionCard")
                 val chartName = Option(questionCardNode.path("name").asText()).getOrElse("Unknown Chart")
                 println(s" >>>>>>>>>>> Started Processing For The Chart: $chartName")
-                val updatedJson = updateJsonFiles(rootNode, collectionId, statenameId, districtnameId, programnameId, databaseId)
+                val updatedJson = updateJsonFiles(rootNode, collectionId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, databaseId)
                 val updatedJsonWithQuery = updateQuery(updatedJson.path("questionCard"), projects, solutions, targetedStateId, targetedDistrictId)
                 val requestBody = updatedJsonWithQuery.asInstanceOf[ObjectNode]
                 val response = metabaseUtil.createQuestionCard(requestBody.toString)
@@ -138,7 +138,7 @@ object UpdateDistrictJsonFiles {
       }.toOption
     }
 
-    def updateJsonFiles(jsonNode: JsonNode, collectionId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, databaseId: Int): JsonNode = {
+    def updateJsonFiles(jsonNode: JsonNode, collectionId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, blocknameId: Int, clusternameId: Int, orgnameId: Int, databaseId: Int): JsonNode = {
       try {
         val rootNode = jsonNode.deepCopy().asInstanceOf[ObjectNode]
 
@@ -166,6 +166,18 @@ object UpdateDistrictJsonFiles {
                 if (templateTags.has("program_param")) {
                   updateDimension(templateTags.get("program_param").asInstanceOf[ObjectNode], programnameId)
                 }
+
+                if (templateTags.has("block_param")) {
+                  updateDimension(templateTags.get("block_param").asInstanceOf[ObjectNode], blocknameId)
+                }
+
+                if (templateTags.has("cluster_param")) {
+                  updateDimension(templateTags.get("cluster_param").asInstanceOf[ObjectNode], clusternameId)
+                }
+
+                if (templateTags.has("org_param")) {
+                  updateDimension(templateTags.get("org_param").asInstanceOf[ObjectNode], orgnameId)
+                }
               }
             }
           }
@@ -192,7 +204,7 @@ object UpdateDistrictJsonFiles {
       }
     }
 
-    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, targetedStateId, targetedDistrictId)
+    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, targetedStateId, targetedDistrictId)
     println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardId
   }

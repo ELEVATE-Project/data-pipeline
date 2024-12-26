@@ -37,6 +37,7 @@ class MetabaseDashboardConfig(override val config: Config) extends BaseJobConfig
   val pgDataBase: String = config.getString("postgres.database")
   val solutions: String = config.getString("postgres.tables.solutionsTable")
   val projects: String = config.getString("postgres.tables.projectsTable")
+  val tasks: String = config.getString("postgres.tables.tasksTable")
   val dashboard_metadata: String = config.getString("postgres.tables.dashboardMetadataTable")
   val report_config: String = config.getString("postgres.tables.reportConfigTable")
 
