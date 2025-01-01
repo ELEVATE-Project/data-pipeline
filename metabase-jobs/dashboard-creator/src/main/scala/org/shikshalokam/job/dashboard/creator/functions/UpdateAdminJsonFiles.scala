@@ -98,7 +98,7 @@ object UpdateAdminJsonFiles {
                   "district_param" -> districtnameId,
                   "program_param" -> programnameId,
                   "block_param" -> blocknameId,
-                  "cluster_parma" -> clusternameId,
+                  "cluster_param" -> clusternameId,
                   "org_param" -> orgnameId
                 )
                 params.foreach { case (paramName, paramId) =>
