@@ -12,7 +12,7 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def solutionName: String = readOrDefault[String]("solutionInformation.name", "")
 
-  def solutionDescription: String = readOrDefault[String]("solutionInformation.programDescription", "")
+  def solutionDescription: String = readOrDefault[String]("solutionInformation.description", "")
 
   def privateProgram: Boolean = readOrDefault[Boolean]("isAPrivateProgram", false)
 
