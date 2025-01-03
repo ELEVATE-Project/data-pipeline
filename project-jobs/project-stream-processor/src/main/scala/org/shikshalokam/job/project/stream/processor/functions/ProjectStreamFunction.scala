@@ -373,9 +373,21 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
             val result = postgresUtil.fetchData(getEntityNameQuery)
             result.foreach { id =>
               val entityName = id.get(s"${entityType}_name").map(_.toString).getOrElse("")
-              val insertQuery = s"INSERT INTO ${config.dashboard_metadata} (entity_type, entity_name, entity_id) VALUES ('$entityType', '$entityName', '$targetedId')"
-              val affectedRows = postgresUtil.insertData(insertQuery)
-              println(s"Inserted [$entityName:$targetedId] details. Affected rows: $affectedRows")
+              val upsertMetaDataQuery =
+              s"""INSERT INTO ${config.dashboard_metadata} (
+                 |    entity_type, entity_name, entity_id
+                 |) VALUES (
+                 |    ?, ?, ?
+                 |) ON CONFLICT (entity_id) DO UPDATE SET
+                 |    entity_type = ?, entity_name = ?;
+                 |""".stripMargin
+
+              val dashboardParams = Seq(
+                entityType, entityName, targetedId, // Insert parameters
+                entityType, entityName // Update parameters (matching columns in the ON CONFLICT clause)
+              )
+              postgresUtil.executePreparedUpdate(upsertMetaDataQuery, dashboardParams, config.dashboard_metadata, targetedId)
+              println(s"Inserted [$entityName : $targetedId] details.")
               dashboardData.put(dashboardKey, targetedId)
             }
           }
