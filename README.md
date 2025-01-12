@@ -71,7 +71,6 @@ docker-compose up -d
 **metabase url**
 ```
 localhost:3000
-
 ```
 # Setup Kafka 
 
@@ -117,6 +116,7 @@ Kafka requires Zookeeper to run.
 1 . Start Zookeeper:
    ```
    cd /usr/local/kafka
+
    bin/zookeeper-server-start.sh config/zookeeper.properties
    ```
 
@@ -141,7 +141,7 @@ Kafka requires Zookeeper to run.
 ### Step 5: Create a consumer group :
 ```
 ./kafka-consumer-groups.sh --describe --group    ml_survey_faust --bootstrap-server localhost:9092
-   ```
+```
 
 ### Step 6: Set Up Kafka as a Service (Optional)
 1 . Create a systemd unit file for Kafka:
@@ -179,19 +179,16 @@ Now Kafka should be up and running on your Ubuntu system.
 1 . Use the following wget command to download 
 ``` 
 wget https://archive.apache.org/dist/flink/flink-1.13.2/flink-1.13.2-bin-scala_2.12.tgz
-
 ```
 2 . Extract the Flink Archive
 After the download completes, extract the downloaded .tgz file:
 ```
 tar xzf flink-1.13.2-bin-scala_2.12.tgz
-
 ```
 3 . Navigate to the Flink Directory
 Change into the Flink directory:
 ```
 cd flink-1.13.2/
-
 ```
 4 . Start/Stop the Flink Cluster
 To start and stop the Flink cluster, use the following commands:
@@ -211,7 +208,6 @@ sudo ./bin/stop-cluster.sh
 
 ```
 localhost:8081
-
 ```
 
 6 . Once the flink , metabase and postgres is up and running update the necessary configuration in [metabase-dashboard.conf](https://github.com/prashanthShiksha/data-pipeline/blob/dev-deploy/metabase-jobs/dashboard-creator/src/main/resources/metabase-dashboard.conf) file and save the changes.
@@ -220,7 +216,6 @@ localhost:8081
 
 ```
 mvn clean install -DskipTests
-
 ```
 8 . after Building the job get this jar file path  
 
@@ -232,7 +227,6 @@ mvn clean install -DskipTests
 │           ├── target
 │               ├── dashboard-creator-1.0.0.jar
 └── ...
-
 ```
 
 
@@ -242,7 +236,6 @@ To submit a Flink job to the cluster, use the following command:
 
 ```
 sudo ./bin/flink run -m localhost:8081 /opt/dev/data-pipeline/metabase-jobs/dashboard-creator/target/dashboard-creator-1.0.0.jar
-
 ```
 
 
