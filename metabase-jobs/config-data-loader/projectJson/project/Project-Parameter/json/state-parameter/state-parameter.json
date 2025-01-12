@@ -1,0 +1,81 @@
+[
+  {
+    "name": "Select District ",
+    "slug": "select_district",
+    "id": "74a10335",
+    "type": "string/=",
+    "sectionId": "location",
+    "values_source_type": "card",
+    "isMultiSelect": false,
+    "values_source_config": {
+      "card_id": 2578,
+      "value_field": [
+        "field",
+        "district_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    }
+  },
+  {
+    "name": "Select Block",
+    "slug": "select_block",
+    "id": "6e5c08dc",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "c32c8fc5",
+      "74a10335",
+      "efa886d3",
+      "8c7d86ea",
+      "5088d3e5"
+    ]
+  },
+  {
+    "name": "Select Cluster",
+    "slug": "select_cluster",
+    "id": "efa886d3",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "c32c8fc5",
+      "74a10335",
+      "6e5c08dc",
+      "8c7d86ea",
+      "5088d3e5"
+    ]
+  },
+  {
+    "slug": "select_program",
+    "filteringParameters": [
+      "c32c8fc5",
+      "74a10335",
+      "6e5c08dc",
+      "efa886d3",
+      "5088d3e5"
+    ],
+    "name": "Select Program",
+    "isMultiSelect": false,
+    "type": "string/=",
+    "sectionId": "string",
+    "id": "8c7d86ea"
+  },
+  {
+    "name": "Select Organisation",
+    "slug": "select_organisation",
+    "id": "5088d3e5",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "c32c8fc5",
+      "74a10335",
+      "6e5c08dc",
+      "efa886d3",
+      "8c7d86ea"
+    ]
+  }
+]
