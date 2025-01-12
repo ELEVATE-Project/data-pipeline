@@ -49,6 +49,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
     val admin = event.admin
     val solutions: String = config.solutions
     val projects: String = config.projects
+    val tasks: String = config.tasks
     val metaDataTable = config.dashboard_metadata
     val report_config: String = config.report_config
     val metabaseDatabase: String = config.metabaseDatabase
@@ -81,8 +82,11 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "state_name", postgresUtil, createDashboardQuery)
               val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "district_name", postgresUtil, createDashboardQuery)
               val programnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, solutions, "program_name", postgresUtil, createDashboardQuery)
-              val reportConfigQuery: String = s"SELECT question_type, config FROM $report_config WHERE report_name IN ('Improvement-Projects-Report', 'Improvement-Consumption-Report', 'Unique-User-Improvement-Project-Report')"
-              val questionCardIdList = UpdateAdminJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, projects, solutions, metabaseUtil, postgresUtil)
+              val blocknameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "block_name", postgresUtil, createDashboardQuery)
+              val clusternameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "cluster_name", postgresUtil, createDashboardQuery)
+              val orgnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "org_name", postgresUtil, createDashboardQuery)
+              val reportConfigQuery: String = s"SELECT question_type, config FROM $report_config WHERE dashboard_name = 'Admin';"
+              val questionCardIdList = UpdateAdminJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, projects, solutions, metabaseUtil, postgresUtil)
               val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
               val parametersQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Parameter' AND question_type = 'admin-parameter'"
               UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil)
@@ -131,8 +135,11 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "state_name", postgresUtil, createDashboardQuery)
               val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "district_name", postgresUtil, createDashboardQuery)
               val programnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, solutions, "program_name", postgresUtil, createDashboardQuery)
-              val reportConfigQuery: String = s"SELECT question_type , config FROM $report_config WHERE report_name IN ('Improvement-Projects-Report', 'Improvement-Consumption-Report', 'Unique-User-Improvement-Project-Report')"
-              val questionCardIdList = UpdateStateJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, projects, solutions, metabaseUtil, postgresUtil, targetedStateId)
+              val blocknameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "block_name", postgresUtil, createDashboardQuery)
+              val clusternameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "cluster_name", postgresUtil, createDashboardQuery)
+              val orgnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "org_name", postgresUtil, createDashboardQuery)
+              val reportConfigQuery: String = s"SELECT question_type , config FROM $report_config WHERE dashboard_name = 'State';"
+              val questionCardIdList = UpdateStateJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, projects, solutions, metabaseUtil, postgresUtil, targetedStateId)
               val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
               val filterQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Filters' AND question_type = 'state-filter'"
               val stateIdFilter: Int = UpdateAndAddStateFilter.updateAndAddFilter(metabaseUtil, postgresUtil, filterQuery, s"$targetedStateId", null, null, collectionId, databaseId, projects)
@@ -182,8 +189,11 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "state_name", postgresUtil, createDashboardQuery)
               val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "district_name", postgresUtil, createDashboardQuery)
               val programnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, solutions, "program_name", postgresUtil, createDashboardQuery)
-              val reportConfigQuery: String = s"SELECT question_type , config FROM $report_config WHERE report_name IN ('Improvement-Projects-Report', 'Improvement-Consumption-Report', 'Unique-User-Improvement-Project-Report')"
-              val questionCardIdList = UpdateProgramJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, projects, solutions, metabaseUtil, postgresUtil, targetedProgramId)
+              val blocknameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "block_name", postgresUtil, createDashboardQuery)
+              val clusternameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "cluster_name", postgresUtil, createDashboardQuery)
+              val orgnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "org_name", postgresUtil, createDashboardQuery)
+              val reportConfigQuery: String = s"SELECT question_type , config FROM $report_config WHERE dashboard_name = 'Program';"
+              val questionCardIdList = UpdateProgramJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, projects, solutions, tasks, metabaseUtil, postgresUtil, targetedProgramId)
               val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
               val filterQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Filters' AND question_type = 'program-filter'"
               val programIdFilter: Int = UpdateAndAddProgramFilter.updateAndAddFilter(metabaseUtil, postgresUtil, filterQuery, targetedProgramId, collectionId, databaseId, projects, solutions)
@@ -239,8 +249,11 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "state_name", postgresUtil, createDashboardQuery)
               val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "district_name", postgresUtil, createDashboardQuery)
               val programnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, solutions, "program_name", postgresUtil, createDashboardQuery)
-              val reportConfigQuery: String = s"SELECT question_type , config FROM $report_config WHERE report_name IN ('Improvement-Projects-Report', 'Improvement-Consumption-Report', 'Unique-User-Improvement-Project-Report')"
-              val questionCardIdList = UpdateDistrictJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, metabaseUtil, postgresUtil, projects, solutions, targetedStateId, targetedDistrictId)
+              val blocknameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "block_name", postgresUtil, createDashboardQuery)
+              val clusternameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "cluster_name", postgresUtil, createDashboardQuery)
+              val orgnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "org_name", postgresUtil, createDashboardQuery)
+              val reportConfigQuery: String = s"SELECT question_type , config FROM $report_config WHERE dashboard_name = 'District';"
+              val questionCardIdList = UpdateDistrictJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, metabaseUtil, postgresUtil, projects, solutions, targetedStateId, targetedDistrictId)
               val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
               val filterQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Filters' AND question_type = 'district-filter'"
               val districtIdFilter: Int = UpdateAndAddDistrictFilter.updateAndAddFilter(metabaseUtil, postgresUtil, filterQuery, targetedStateId, targetedDistrictId, collectionId, databaseId, projects, solutions)
