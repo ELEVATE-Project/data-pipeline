@@ -42,6 +42,15 @@ check_maven() {
     fi
 }
 
+check_curl() {
+    if command -v curl &> /dev/null; then
+        echo -e "${GREEN}curl is installed.${NC}"
+        echo -e "${GREEN}curl version:${NC}"
+        curl --version | head -n 1
+    else
+        echo -e "${RED}curl is NOT installed.${NC}"
+    fi
+}
 
 check_zookeeper() {
   if nc -z $ZOOKEEPER_HOST $ZOOKEEPER_PORT; then
@@ -78,23 +87,13 @@ check_metabase_process() {
   fi
 }
 
-echo -e "${BLUE}>>>>>>>> Starting Scala, Java and maven check >>>>>>>>${NC}"
+echo -e "${BLUE}>>>>>>>> Prerequisites check started >>>>>>>>${NC}"
 check_scala
-echo ""
 check_java
-echo ""
 check_maven
-echo -e "${BLUE}******** Scala, Java and Maven check completed ********${NC}"
-echo ""
-echo -e "${BLUE}>>>>>>>> Starting Flink checks >>>>>>>>${NC}"
+check_curl
 check_flink_process
-echo -e "${BLUE}******** Flink checks completed ********${NC}"
-echo ""
-echo -e "${BLUE}>>>>>>>> Starting Zookeeper and Kafka check >>>>>>>>${NC}"
 check_zookeeper
 check_kafka
-echo -e "${BLUE}******** Zookeeper and Kafka check completed ********${NC}"
-echo ""
-echo -e "${BLUE}>>>>>>>> Starting Metabase check >>>>>>>>${NC}"
 check_metabase_process
-echo -e "${BLUE}******** Metabase check completed ********${NC}"
+echo -e "${BLUE}>>>>>>>> Prerequisites check completed >>>>>>>>${NC}"
