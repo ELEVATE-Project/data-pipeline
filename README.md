@@ -58,25 +58,111 @@ To set up the Metabase application, ensure you have Docker and Docker Compose in
 
 > Example Command: `mkdir data-pipeline && cd data-pipeline/`
 > **Caution:** Before proceeding, please ensure that the ports given here are available and open. It is essential to verify their availability prior to moving forward. You can run below command in your terminal to check this
+
+## 1 . Setup Java 
+
+### Step 1: Update and Install Java
+
+1. Update packages:
+   ```bash
+   sudo apt update
+   ```
+
+2. Install Java:
+   ```bash
+   sudo apt install openjdk-11-jdk
+   ```
+
+3. Verify the installation:
+   ```bash
+   java -version
+   ```
+
+## 2 . Setup Scala 
+
+### **Install a Specific Scala Version Manually**
+
+1. **Download the Scala Archive**:
+   Visit the [Scala Downloads Page](https://www.scala-lang.org/download/) and copy the link for the version you want. For Scala 2.12.11:
+   ```bash
+   wget https://downloads.lightbend.com/scala/2.12.11/scala-2.12.11.tgz
+   ```
+
+2. **Extract the Archive**:
+   ```bash
+   tar -xzf scala-2.12.11.tgz
+   ```
+
+3. **Move Scala to a System Directory**:
+   ```bash
+   sudo mv scala-2.12.11 /usr/local/scala
+   ```
+
+4. **Set Environment Variables**:
+   Add Scala to your `PATH` by editing your `.bashrc` file:
+   ```bash
+   nano ~/.bashrc
+   ```
+
+5. **Add the following lines**:
+   ```bash
+   export SCALA_HOME=/usr/local/scala
+   export PATH=$SCALA_HOME/bin:$PATH
+   ```
+
+6. **Save and reload your `.bashrc` file**:
+   ```bash
+   source ~/.bashrc
+   ```
+
+7. **Verify Installation**:
+   ```bash
+   scala -version
+   ```
+
+---
 ## 1 . PostgreSQL setup 
 
 To setup PostgreSQL follow these documentation : [To install PostgreSQL on Ubuntu](https://www.postgresql.org/download/linux/ubuntu/) 
+** step1 : create a database and user in postgresql**
+```bash        
+sudo -u postgres psql
+```
+```sql      
+CREATE DATABASE metabase_dev;
+```
+```sql
+CREATE USER metabase_user WITH ENCRYPTED PASSWORD 'elevatedata';  
+```
+```sql
+GRANT ALL PRIVILEGES ON DATABASE metabase_dev TO metabase_user;
+```
+```bash
+\q
+```
+** step3 : To load the config in the postgresql**
+
+Note : first navigate to the documentation directory inside sample-data folder
+changes the postgres config such as host, port, user, password and database name in the data-loader.sh file
+   ```bash
+       ./data-loader.sh
+   ```
 
 ## 2 . Metabase service setup using docker
 
-**Run the container with below command**
-```         
-docker run -d -p 3000:3000 \\
---platform linux/amd64 \\
--e MB_DB_TYPE=postgres \\
--e MB_DB_DBNAME=metabase_dev \\
--e MB_DB_PORT=5432 \\
--e MB_DB_USER=postgres \\
--e MB_DB_PASS=elevatedata \\
--e MB_DB_HOST=10.148.0.49 \\
---name dev-elevate-metabase \\
-metabase/metabase
-```
+1. **Run the container with below command**
+   ```bash      
+   docker run -d -p 3000:3000 \\
+   --platform linux/amd64 \\
+   -e MB_DB_TYPE=postgres \\
+   -e MB_DB_DBNAME=metabase_dev \\
+   -e MB_DB_PORT=5432 \\
+   -e MB_DB_USER=postgres \\
+   -e MB_DB_PASS=elevatedata \\
+   -e MB_DB_HOST=10.148.0.49 \\
+   --name dev-elevate-metabase \\
+   metabase/metabase
+   ```
 **Explanation of the Command**
 
 ```-d``` : Run the container in detached mode (in the background).
@@ -101,11 +187,11 @@ metabase/metabase
 
 ```metabase/metabase``` : The official Metabase Docker image.
 
-**Start Containers**
-```
+1. **Start Containers**
+```bash
 docker-compose up -d
 ```
-**metabase url**
+2. **metabase url**
 ```
 localhost:3000
 ```
@@ -116,36 +202,21 @@ Here is a step-by-step guide to setting up **Apache Kafka** on **Ubuntu**:
 ### Step 1: Update and Install Java
 
 Kafka requires Java. Update your system and install **OpenJDK**.
-
-1 . Update packages:
-   ```
-   sudo apt update
-   ```
-
-2 . Install Java:
-   ```
-   sudo apt install openjdk-11-jdk
-   ```
-
-3 . Verify the installation:
-   ```
-   java -version
-   ```
-
+[1 . Setup Java #]
 ### Step 2: Install Kafka
 
-1 . Download the latest Kafka version from the official site:
-   ```
-   wget https://downloads.apache.org/kafka/3.5.0/kafka_2.13-3.5.0.tgz
+1. Download the latest Kafka version from the official site:
+   ```bash
+      wget https://downloads.apache.org/kafka/3.5.0/kafka_2.13-3.5.0.tgz
    ```
 
-2 . Extract the downloaded file:
-   ```
+2. Extract the downloaded file:
+   ```bash
    tar -xvzf kafka_2.13-3.5.0.tgz
    ```
 
-3 . Move it to a preferred directory:
-   ```
+3. Move it to a preferred directory:
+   ```bash
    sudo mv kafka_2.13-3.5.0 /usr/local/kafka
    ```
 
@@ -153,44 +224,44 @@ Kafka requires Java. Update your system and install **OpenJDK**.
 
 Kafka requires Zookeeper to run.
 
-1 . Start Zookeeper:
-   ```
+1. Start Zookeeper:
+   ```bash
    cd /usr/local/kafka
 
    bin/zookeeper-server-start.sh config/zookeeper.properties
    ```
 
-2 . Open a new terminal or tab to keep Zookeeper running.
+2. Open a new terminal or tab to keep Zookeeper running.
 
 ### Step 4: Start Kafka Server
 1 . Start the Kafka server in another terminal:
-   ```
+   ```bash
    bin/kafka-server-start.sh config/server.properties
    ```
 
 ### Step 5: Create a Topic
-1 . Create a topic named `test`:
-   ```
+1. Create a topic named `test`:
+   ```bash
    bin/kafka-topics.sh --create --topic test --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
    ```
 
-2 . List all topics to verify:
-   ```
+2. List all topics to verify:
+   ```bash
    bin/kafka-topics.sh --list --bootstrap-server localhost:9092
    ```
 ### Step 5: Create a consumer group :
-```
-./kafka-consumer-groups.sh --describe --group    ml_survey_faust --bootstrap-server localhost:9092
-```
+   ```bash
+   ./kafka-consumer-groups.sh --describe --group    ml_survey_faust --bootstrap-server localhost:9092
+   ```
 
 ### Step 6: Set Up Kafka as a Service (Optional)
 
-1 . Create a systemd unit file for Kafka:
-   ```
+1. Create a systemd unit file for Kafka:
+   ```bash
    sudo nano /etc/systemd/system/kafka.service
    ```
-2 . Add the following content:
-   ```
+2. Add the following content:
+   ```bash
    [Unit]
    Description=Apache Kafka Server
    After=network.target
@@ -205,12 +276,12 @@ Kafka requires Zookeeper to run.
    [Install]
    WantedBy=multi-user.target
    ```
-3 . Reload systemd:
+3. Reload systemd:
    ```
    sudo systemctl daemon-reload
    ```
 
-4 . Start Kafka service:
+4. Start Kafka service:
    ```
    sudo systemctl start kafka
    ```
@@ -218,30 +289,30 @@ Now Kafka should be up and running on your Ubuntu system.
 
 # Setup Flink
 
-1 . Use the following wget command to download 
-``` 
-wget https://archive.apache.org/dist/flink/flink-1.13.2/flink-1.13.2-bin-scala_2.12.tgz
-```
-2 . Extract the Flink Archive
+1. Use the following wget command to download 
+   ```bash
+   wget https://archive.apache.org/dist/flink/flink-1.13.2/flink-1.13.2-bin-scala_2.12.tgz
+   ```
+2. Extract the Flink Archive
 
 After the download completes, extract the downloaded .tgz file:
-```
-tar xzf flink-1.13.2-bin-scala_2.12.tgz
-```
-3 . Navigate to the Flink Directory
+   ```bash
+   tar xzf flink-1.13.2-bin-scala_2.12.tgz
+   ```
+3. Navigate to the Flink Directory
 
 Change into the Flink directory:
-```
-cd flink-1.13.2/
-```
+   ```
+   cd flink-1.13.2/
+   ```
 4 . Start/Stop the Flink Cluster
 
 To start and stop the Flink cluster, use the following commands:
 
 a .Start the Flink cluster:
-```
-sudo ./bin/start-cluster.sh
-```
+   ```
+   sudo ./bin/start-cluster.sh
+   ```
 b . Stop the Flink cluster:
 ```
 sudo ./bin/stop-cluster.sh
@@ -315,3 +386,5 @@ Add Postgres db configuration in metabase
 ![database](documentation/images/Screenshot from 2025-01-14 21-42-04.png)
 
 Fill the required configuration details 
+
+# Add the user-via-csv 
