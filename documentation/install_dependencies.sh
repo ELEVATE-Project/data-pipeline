@@ -28,6 +28,18 @@ install_scala() {
     fi
 }
 
+install_curl () {
+    if ! command_exists curl; then
+        echo "Installing curl..."
+        sudo apt update
+        sudo DEBIAN_FRONTEND=noninteractive apt install -y curl
+        echo "curl installed successfully."
+    else
+        echo "curl is already installed."
+    fi
+
+
+
 # Function to install PostgreSQL
 install_postgresql() {
     echo "Installing PostgreSQL..."

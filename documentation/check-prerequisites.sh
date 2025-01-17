@@ -38,17 +38,16 @@ check_maven() {
         mvn -v
     else
         echo -e "${RED}Maven is NOT installed.${NC}"
-        echo -e "${RED}You can install it using: sudo apt install maven${NC}"
     fi
 }
 
 check_curl() {
     if command -v curl &> /dev/null; then
-        echo -e "${GREEN}curl is installed.${NC}"
-        echo -e "${GREEN}curl version:${NC}"
+        echo -e "${GREEN}Curl is installed.${NC}"
+        echo -e "${GREEN}Curl version:${NC}"
         curl --version | head -n 1
     else
-        echo -e "${RED}curl is NOT installed.${NC}"
+        echo -e "${RED}Curl is NOT installed.${NC}"
     fi
 }
 
