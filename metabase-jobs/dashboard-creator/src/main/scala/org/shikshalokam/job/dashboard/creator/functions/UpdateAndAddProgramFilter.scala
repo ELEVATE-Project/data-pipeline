@@ -94,6 +94,7 @@ object UpdateAndAddProgramFilter {
     val ReplacedProgramNameJson = replaceProgramName(queryResult, programId, projectTable, solutionTable)
     val updatedJson = updateCollectionIdAndDatabaseId(ReplacedProgramNameJson, collectionId, databaseId)
     val questionId = getTheQuestionId(updatedJson)
+    println(s"---------------- completed processing updateAndAddFilter Function -------------------")
     questionId
   }
 }

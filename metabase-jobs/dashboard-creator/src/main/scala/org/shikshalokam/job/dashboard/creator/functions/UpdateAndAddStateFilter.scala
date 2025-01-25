@@ -94,7 +94,7 @@ object UpdateAndAddStateFilter {
     val ReplacedStateNameJson = replaceStateName(queryResult, stateid, projectTable, solutionTable)
     val updatedJson = updateCollectionIdAndDatabaseId(ReplacedStateNameJson, collectionId, databaseId)
     val questionId = getTheQuestionId(updatedJson)
-    println(s"questionId: $questionId")
+    println(s"---------------- completed processing updateAndAddFilter Function -------------------")
     questionId
   }
 }

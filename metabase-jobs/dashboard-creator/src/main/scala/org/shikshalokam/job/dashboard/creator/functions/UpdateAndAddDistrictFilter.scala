@@ -96,6 +96,7 @@ object UpdateAndAddDistrictFilter {
     val ReplacedDistrictNameJson = replaceDistrictName(queryResult, stateId, districtId, projectTable, solutionTable)
     val updatedJson = updateCollectionIdAndDatabaseId(ReplacedDistrictNameJson, collectionId, databaseId)
     val questionId = getTheQuestionId(updatedJson)
+    println(s"---------------- completed processing updateAndAddFilter Function -------------------")
     questionId
   }
 }
