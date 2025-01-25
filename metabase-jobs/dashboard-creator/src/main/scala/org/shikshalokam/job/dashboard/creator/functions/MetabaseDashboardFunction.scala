@@ -1,5 +1,6 @@
 package org.shikshalokam.job.dashboard.creator.functions
 
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
@@ -7,6 +8,7 @@ import org.shikshalokam.job.dashboard.creator.domain.Event
 import org.shikshalokam.job.dashboard.creator.task.MetabaseDashboardConfig
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import org.shikshalokam.job.{BaseProcessFunction, Metrics}
+import scala.collection.mutable
 import org.slf4j.LoggerFactory
 
 import scala.collection.immutable._
@@ -128,6 +130,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val groupName: String = s"${stateName}_State_Manager"
               val metabaseDatabase: String = config.metabaseDatabase
               val parametersQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Parameter' AND question_type = 'state-parameter'"
+              println(s"parametersQuery = $parametersQuery")
               val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedStateId';"
               val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, s"State Report [$stateName]", metabaseUtil, postgresUtil, createDashboardQuery)
               val dashboardId: Int = CreateDashboard.checkAndCreateDashboard(collectionId, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
@@ -142,8 +145,18 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val questionCardIdList = UpdateStateJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, projects, solutions, metabaseUtil, postgresUtil, targetedStateId)
               val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
               val filterQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Filters' AND question_type = 'state-filter'"
-              val stateIdFilter: Int = UpdateAndAddStateFilter.updateAndAddFilter(metabaseUtil, postgresUtil, filterQuery, s"$targetedStateId", null, null, collectionId, databaseId, projects)
-              UpdateParameters.updateStateParameterFunction(metabaseUtil, postgresUtil, parametersQuery, dashboardId, stateIdFilter)
+              val filterResults: List[Map[String, Any]] = postgresUtil.fetchData(filterQuery)
+              val objectMapper = new ObjectMapper()
+              val slugNameToStateIdFilterMap = mutable.Map[String, Int]()
+              for (result <- filterResults) {
+                val configString = result.get("config").map(_.toString).getOrElse("")
+                val configJson = objectMapper.readTree(configString)
+                val slugName = configJson.findValue("name").asText()
+                val stateIdFilter: Int = UpdateAndAddStateFilter.updateAndAddFilter(metabaseUtil, configJson: JsonNode, s"$targetedStateId", collectionId, databaseId, projects, solutions)
+                slugNameToStateIdFilterMap(slugName) = stateIdFilter
+              }
+              val immutableSlugNameToStateIdFilterMap: Map[String, Int] = slugNameToStateIdFilterMap.toMap
+              UpdateParameters.updateParameterFunction(metabaseUtil, postgresUtil, parametersQuery, immutableSlugNameToStateIdFilterMap, dashboardId)
               val updateTableQuery = s"UPDATE $metaDataTable SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Success',error_message = '' WHERE entity_id = '$targetedStateId';"
               postgresUtil.insertData(updateTableQuery)
               CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
@@ -196,8 +209,18 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val questionCardIdList = UpdateProgramJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, projects, solutions, tasks, metabaseUtil, postgresUtil, targetedProgramId)
               val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
               val filterQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Filters' AND question_type = 'program-filter'"
-              val programIdFilter: Int = UpdateAndAddProgramFilter.updateAndAddFilter(metabaseUtil, postgresUtil, filterQuery, targetedProgramId, collectionId, databaseId, projects, solutions)
-              UpdateParameters.UpdateProgramParameterFunction(metabaseUtil, postgresUtil, parametersQuery, dashboardId, programIdFilter)
+              val filterResults: List[Map[String, Any]] = postgresUtil.fetchData(filterQuery)
+              val objectMapper = new ObjectMapper()
+              val slugNameToProgramIdFilterMap = mutable.Map[String, Int]()
+              for (result <- filterResults) {
+                val configString = result.get("config").map(_.toString).getOrElse("")
+                val configJson = objectMapper.readTree(configString)
+                val slugName = configJson.findValue("name").asText()
+                val programIdFilter: Int = UpdateAndAddProgramFilter.updateAndAddFilter(metabaseUtil, configJson, targetedProgramId, collectionId, databaseId, projects, solutions)
+                slugNameToProgramIdFilterMap(slugName) = programIdFilter
+              }
+              val immutableSlugNameToProgramIdFilterMap: Map[String, Int] = slugNameToProgramIdFilterMap.toMap
+              UpdateParameters.updateParameterFunction(metabaseUtil, postgresUtil, parametersQuery, immutableSlugNameToProgramIdFilterMap, dashboardId)
               val updateTableQuery = s"UPDATE $metaDataTable SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Success',error_message = '' WHERE entity_id = '$targetedProgramId';"
               postgresUtil.insertData(updateTableQuery)
               CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
@@ -256,8 +279,18 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val questionCardIdList = UpdateDistrictJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, metabaseUtil, postgresUtil, projects, solutions, targetedStateId, targetedDistrictId)
               val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
               val filterQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Filters' AND question_type = 'district-filter'"
-              val districtIdFilter: Int = UpdateAndAddDistrictFilter.updateAndAddFilter(metabaseUtil, postgresUtil, filterQuery, targetedStateId, targetedDistrictId, collectionId, databaseId, projects, solutions)
-              UpdateParameters.UpdateDistrictParameterFunction(metabaseUtil, postgresUtil, parametersQuery, dashboardId, districtIdFilter)
+              val filterResults: List[Map[String, Any]] = postgresUtil.fetchData(filterQuery)
+              val objectMapper = new ObjectMapper()
+              val slugNameToDistrictIdFilterMap = mutable.Map[String, Int]()
+              for (result <- filterResults) {
+                val configString = result.get("config").map(_.toString).getOrElse("")
+                val configJson = objectMapper.readTree(configString)
+                val slugName = configJson.findValue("name").asText()
+                val districtIdFilter: Int = UpdateAndAddDistrictFilter.updateAndAddFilter(metabaseUtil, configJson, targetedStateId, targetedDistrictId, collectionId, databaseId, projects, solutions)
+                slugNameToDistrictIdFilterMap(slugName) = districtIdFilter
+              }
+              val immutableSlugNameToDistrictIdFilterMap: Map[String, Int] = slugNameToDistrictIdFilterMap.toMap
+              UpdateParameters.updateParameterFunction(metabaseUtil, postgresUtil, parametersQuery, immutableSlugNameToDistrictIdFilterMap, dashboardId)
               val updateTableQuery = s"UPDATE $metaDataTable SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Success',error_message = '' WHERE entity_id = '$targetedDistrictId';"
               postgresUtil.insertData(updateTableQuery)
               CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)

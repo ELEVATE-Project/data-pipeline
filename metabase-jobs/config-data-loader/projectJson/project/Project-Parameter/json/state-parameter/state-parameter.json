@@ -1,14 +1,13 @@
 [
   {
-    "name": "Select District ",
+    "name": "Select District",
     "slug": "select_district",
     "id": "74a10335",
     "type": "string/=",
     "sectionId": "location",
     "values_source_type": "card",
-    "isMultiSelect": false,
     "values_source_config": {
-      "card_id": 2578,
+      "card_id": 301,
       "value_field": [
         "field",
         "district_name",
@@ -16,7 +15,8 @@
           "base-type": "type/Text"
         }
       ]
-    }
+    },
+    "isMultiSelect": false
   },
   {
     "name": "Select Block",
@@ -24,14 +24,18 @@
     "id": "6e5c08dc",
     "type": "string/=",
     "sectionId": "string",
-    "isMultiSelect": false,
-    "filteringParameters": [
-      "c32c8fc5",
-      "74a10335",
-      "efa886d3",
-      "8c7d86ea",
-      "5088d3e5"
-    ]
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 300,
+      "value_field": [
+        "field",
+        "block_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    },
+    "isMultiSelect": false
   },
   {
     "name": "Select Cluster",
@@ -39,29 +43,37 @@
     "id": "efa886d3",
     "type": "string/=",
     "sectionId": "string",
-    "isMultiSelect": false,
-    "filteringParameters": [
-      "c32c8fc5",
-      "74a10335",
-      "6e5c08dc",
-      "8c7d86ea",
-      "5088d3e5"
-    ]
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 299,
+      "value_field": [
+        "field",
+        "cluster_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    },
+    "isMultiSelect": false
   },
   {
-    "slug": "select_program",
-    "filteringParameters": [
-      "c32c8fc5",
-      "74a10335",
-      "6e5c08dc",
-      "efa886d3",
-      "5088d3e5"
-    ],
     "name": "Select Program",
-    "isMultiSelect": false,
+    "slug": "select_program",
+    "id": "8c7d86ea",
     "type": "string/=",
     "sectionId": "string",
-    "id": "8c7d86ea"
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 303,
+      "value_field": [
+        "field",
+        "program_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    },
+    "isMultiSelect": false
   },
   {
     "name": "Select Organisation",
@@ -69,13 +81,17 @@
     "id": "5088d3e5",
     "type": "string/=",
     "sectionId": "string",
-    "isMultiSelect": false,
-    "filteringParameters": [
-      "c32c8fc5",
-      "74a10335",
-      "6e5c08dc",
-      "efa886d3",
-      "8c7d86ea"
-    ]
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 302,
+      "value_field": [
+        "field",
+        "org_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    },
+    "isMultiSelect": false
   }
 ]

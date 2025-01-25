@@ -9,35 +9,8 @@ import scala.util.Try
 object UpdateAndAddProgramFilter {
   val objectMapper = new ObjectMapper()
 
-  def updateAndAddFilter(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, filterQuery: String, targetedProgramId: String, collectionId: Int, databaseId: Int, projectTable: String, solutionTable: String): Int = {
+  def updateAndAddFilter(metabaseUtil: MetabaseUtil, queryResult: JsonNode, programId: String, collectionId: Int, databaseId: Int, projectTable: String, solutionTable: String): Int = {
     println(s"---------------- started processing updateAndAddFilter Function -------------------")
-
-    def readJsonFromQuery(filterQuery: String): Option[JsonNode] = {
-      try {
-        // Fetching data from the database or any external source
-        val queryResult = postgresUtil.fetchData(filterQuery).flatMap(_.get("config")) // Assuming this fetches JSON data
-
-        // Convert the fetched result to a String (parameterString)
-        val filterString: String = queryResult.headOption match {
-          case Some(value: String) => value
-          case Some(value) => value.toString
-          case None => throw new Exception("No parameter data found")
-        }
-
-        // Convert parameterString to JsonNode using Jackson's ObjectMapper
-        Try(objectMapper.readTree(filterString)).toOption match {
-          case Some(jsonNode) => Some(jsonNode) // Successfully parsed JSON
-          case None =>
-            println(s"Error: Invalid JSON format in parameterString: $filterString")
-            None
-        }
-
-      } catch {
-        case ex: Exception =>
-          println(s"Error reading or parsing the query result: ${ex.getMessage}")
-          None
-      }
-    }
 
     def replaceProgramName(json: JsonNode, targatedProgramId: String, projectTable: String, solutionTable: String): JsonNode = {
       def processNode(node: JsonNode): JsonNode = {
@@ -118,15 +91,9 @@ object UpdateAndAddProgramFilter {
       }
     }
 
-    readJsonFromQuery(filterQuery) match {
-      case Some(json) =>
-        val ReplacedProgramNameJson = replaceProgramName(json, targetedProgramId, projectTable, solutionTable)
-        val updatedJson = updateCollectionIdAndDatabaseId(ReplacedProgramNameJson, collectionId, databaseId)
-        val questionId = getTheQuestionId(updatedJson)
-        questionId
-      case None =>
-        println("Failed to process JSON file.")
-        -1
-    }
+    val ReplacedProgramNameJson = replaceProgramName(queryResult, programId, projectTable, solutionTable)
+    val updatedJson = updateCollectionIdAndDatabaseId(ReplacedProgramNameJson, collectionId, databaseId)
+    val questionId = getTheQuestionId(updatedJson)
+    questionId
   }
 }

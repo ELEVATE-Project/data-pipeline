@@ -1,7 +1,7 @@
 [
   {
-    "slug": "select_state",
     "name": "Select State",
+    "slug": "select_state",
     "filteringParameters": [
       "c32c8fc5",
       "6e5c08dc",
@@ -26,6 +26,7 @@
     }
   },
   {
+    "name": "Select District",
     "slug": "select_district",
     "filteringParameters": [
       "c32c8fc5",
@@ -34,11 +35,21 @@
       "8c7d86ea",
       "5088d3e5"
     ],
-    "name": "Select District",
     "isMultiSelect": false,
     "type": "string/=",
     "sectionId": "location",
-    "id": "74a10335"
+    "id": "74a10335",
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 301,
+      "value_field": [
+        "field",
+        "district_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    }
   },
   {
     "name": "Select Block",
@@ -53,7 +64,18 @@
       "efa886d3",
       "8c7d86ea",
       "5088d3e5"
-    ]
+    ],
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 300,
+      "value_field": [
+        "field",
+        "block_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    }
   },
   {
     "name": "Select Cluster",
@@ -68,7 +90,18 @@
       "6e5c08dc",
       "8c7d86ea",
       "5088d3e5"
-    ]
+    ],
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 299,
+      "value_field": [
+        "field",
+        "cluster_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    }
   },
   {
     "name": "Select Organisation",
@@ -83,6 +116,17 @@
       "6e5c08dc",
       "efa886d3",
       "8c7d86ea"
-    ]
+    ],
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 302,
+      "value_field": [
+        "field",
+        "org_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    }
   }
 ]

@@ -1,0 +1,19 @@
+{
+  "questionCard": {
+    "name": "select_cluster",
+    "collection_id": 538,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "query": "SELECT distinct(${config.projects}.cluster_name) \nFROM ${config.projects} \nWHERE ${config.projects}.state_id = 'STATEID' AND ${config.projects}.district_id = 'DISTRICTID'",
+        "template-tags": {}
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {
+      "table.pivot_column": "cluster_name"
+    },
+    "parameters": []
+  }
+}

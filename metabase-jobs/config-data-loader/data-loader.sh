@@ -6,7 +6,7 @@ DB_USER="postgres"
 DB_PASSWORD="postgres"
 DB_HOST="localhost"
 DB_PORT="5432"
-TABLE_NAME="dev_report_config"
+TABLE_NAME="local_report_config"
 
 # Export PostgreSQL password for psql
 export PGPASSWORD=$DB_PASSWORD

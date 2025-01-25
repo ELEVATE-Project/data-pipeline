@@ -1,14 +1,7 @@
 [
   {
-    "slug": "select_program_name",
-    "filteringParameters": [
-      "c32c8fc5",
-      "74a10335",
-      "efa886d3",
-      "8c7d86ea",
-      "5088d3e5"
-    ],
-    "name": "Select Program Name",
+    "slug": "select_program",
+    "name": "Select Program",
     "isMultiSelect": false,
     "type": "string/=",
     "sectionId": "string",
@@ -32,13 +25,17 @@
     "type": "string/=",
     "sectionId": "string",
     "isMultiSelect": false,
-    "filteringParameters": [
-      "c32c8fc5",
-      "74a10335",
-      "efa886d3",
-      "8c7d86ea",
-      "5088d3e5"
-    ]
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 300,
+      "value_field": [
+        "field",
+        "block_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    }
   },
   {
     "name": "Select Cluster",
@@ -47,13 +44,17 @@
     "type": "string/=",
     "sectionId": "string",
     "isMultiSelect": false,
-    "filteringParameters": [
-      "c32c8fc5",
-      "74a10335",
-      "6e5c08dc",
-      "8c7d86ea",
-      "5088d3e5"
-    ]
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 299,
+      "value_field": [
+        "field",
+        "cluster_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    }
   },
   {
     "name": "Select Organisation",
@@ -62,12 +63,16 @@
     "type": "string/=",
     "sectionId": "string",
     "isMultiSelect": false,
-    "filteringParameters": [
-      "c32c8fc5",
-      "74a10335",
-      "6e5c08dc",
-      "efa886d3",
-      "8c7d86ea"
-    ]
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 302,
+      "value_field": [
+        "field",
+        "org_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    }
   }
 ]

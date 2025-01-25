@@ -9,35 +9,12 @@ import scala.util.Try
 object UpdateAndAddStateFilter {
   val objectMapper = new ObjectMapper()
 
-  def updateAndAddFilter(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, filterQuery: String, stateid: String, districtname: String, programname: String, collectionId: Int, databaseId: Int, projectTable: String): Int = {
+  def updateAndAddFilter(metabaseUtil: MetabaseUtil, queryResult: JsonNode, stateid: String, collectionId: Int, databaseId: Int, projectTable: String, solutionTable: String): Int = {
     println(s"---------------- started processing updateAndAddFilter Function -------------------")
 
     val objectMapper = new ObjectMapper()
 
-    def readJsonFromQuery(filterQuery: String): Option[JsonNode] = {
-      try {
-        val queryResult = postgresUtil.fetchData(filterQuery).flatMap(_.get("config"))
-        val filterString: String = queryResult.headOption match {
-          case Some(value: String) => value
-          case Some(value) => value.toString
-          case None => throw new Exception("No parameter data found")
-        }
-
-        Try(objectMapper.readTree(filterString)).toOption match {
-          case Some(jsonNode) => Some(jsonNode)
-          case None =>
-            println(s"Error: Invalid JSON format in parameterString: $filterString")
-            None
-        }
-
-      } catch {
-        case ex: Exception =>
-          println(s"Error reading or parsing the query result: ${ex.getMessage}")
-          None
-      }
-    }
-
-    def replaceStateName(json: JsonNode, stateid: String, projectTable: String): JsonNode = {
+    def replaceStateName(json: JsonNode, stateid: String, projectTable: String, solutionTable: String): JsonNode = {
       def processNode(node: JsonNode): JsonNode = {
         node match {
           case obj: ObjectNode =>
@@ -52,7 +29,9 @@ object UpdateAndAddStateFilter {
                 if (updatedText.contains("${config.projects}")) {
                   updatedText = updatedText.replace("${config.projects}", projectTable)
                 }
-
+                if (updatedText.contains("${config.solutions}")) {
+                  updatedText = updatedText.replace("${config.solutions}", solutionTable)
+                }
                 obj.put(fieldName, updatedText)
               } else {
                 obj.set(fieldName, processNode(childNode))
@@ -111,15 +90,11 @@ object UpdateAndAddStateFilter {
       }
     }
 
-    readJsonFromQuery(filterQuery) match {
-      case Some(json) =>
-        val ReplacedStateNameJson = replaceStateName(json, stateid, projectTable)
-        val updatedJson = updateCollectionIdAndDatabaseId(ReplacedStateNameJson, collectionId, databaseId)
-        val questionId = getTheQuestionId(updatedJson)
-        questionId
-      case None =>
-        println("Failed to process JSON file.")
-        -1
-    }
+
+    val ReplacedStateNameJson = replaceStateName(queryResult, stateid, projectTable, solutionTable)
+    val updatedJson = updateCollectionIdAndDatabaseId(ReplacedStateNameJson, collectionId, databaseId)
+    val questionId = getTheQuestionId(updatedJson)
+    println(s"questionId: $questionId")
+    questionId
   }
 }
