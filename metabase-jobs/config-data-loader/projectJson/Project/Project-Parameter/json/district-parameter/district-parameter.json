@@ -1,0 +1,78 @@
+[
+  {
+    "slug": "select_program",
+    "name": "Select Program",
+    "isMultiSelect": false,
+    "type": "string/=",
+    "sectionId": "string",
+    "id": "8c7d86ea",
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 2578,
+      "value_field": [
+        "field",
+        "program_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    }
+  },
+  {
+    "name": "Select Block",
+    "slug": "select_block",
+    "id": "6e5c08dc",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 300,
+      "value_field": [
+        "field",
+        "block_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    }
+  },
+  {
+    "name": "Select Cluster",
+    "slug": "select_cluster",
+    "id": "efa886d3",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 299,
+      "value_field": [
+        "field",
+        "cluster_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    }
+  },
+  {
+    "name": "Select Organisation",
+    "slug": "select_organisation",
+    "id": "5088d3e5",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 302,
+      "value_field": [
+        "field",
+        "org_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    }
+  }
+]

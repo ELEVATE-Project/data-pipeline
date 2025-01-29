@@ -9,33 +9,10 @@ import scala.util.Try
 object UpdateAndAddDistrictFilter {
   val objectMapper = new ObjectMapper()
 
-  def updateAndAddFilter(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, filterQuery: String, targetedStateId: String, targetedDistrictId: String, collectionId: Int, databaseId: Int, projectTable: String, solutionTable: String): Int = {
+  def updateAndAddFilter(metabaseUtil: MetabaseUtil, queryResult: JsonNode, stateId: String, districtId: String, collectionId: Int, databaseId: Int, projectTable: String, solutionTable: String): Int = {
     println(s"---------------- started processing updateAndAddFilter Function -------------------")
 
     val objectMapper = new ObjectMapper()
-
-    def readJsonFromQuery(filterQuery: String): Option[JsonNode] = {
-      try {
-        val queryResult = postgresUtil.fetchData(filterQuery).flatMap(_.get("config"))
-        val filterString: String = queryResult.headOption match {
-          case Some(value: String) => value
-          case Some(value) => value.toString
-          case None => throw new Exception("No parameter data found")
-        }
-
-        Try(objectMapper.readTree(filterString)).toOption match {
-          case Some(jsonNode) => Some(jsonNode)
-          case None =>
-            println(s"Error: Invalid JSON format in parameterString: $filterString")
-            None
-        }
-
-      } catch {
-        case ex: Exception =>
-          println(s"Error reading or parsing the query result: ${ex.getMessage}")
-          None
-      }
-    }
 
     def replaceDistrictName(json: JsonNode, targetedStateId: String, targetedDistrictId: String, projectTable: String, solutionTable: String): JsonNode = {
       def processNode(node: JsonNode): JsonNode = {
@@ -116,15 +93,10 @@ object UpdateAndAddDistrictFilter {
       }
     }
 
-    readJsonFromQuery(filterQuery) match {
-      case Some(json) =>
-        val ReplacedDistrictNameJson = replaceDistrictName(json, targetedStateId, targetedDistrictId, projectTable, solutionTable)
-        val updatedJson = updateCollectionIdAndDatabaseId(ReplacedDistrictNameJson, collectionId, databaseId)
-        val questionId = getTheQuestionId(updatedJson)
-        questionId
-      case None =>
-        println("Failed to process JSON file.")
-        -1
-    }
+    val ReplacedDistrictNameJson = replaceDistrictName(queryResult, stateId, districtId, projectTable, solutionTable)
+    val updatedJson = updateCollectionIdAndDatabaseId(ReplacedDistrictNameJson, collectionId, databaseId)
+    val questionId = getTheQuestionId(updatedJson)
+    println(s"---------------- completed processing updateAndAddFilter Function -------------------")
+    questionId
   }
 }
