@@ -81,10 +81,10 @@ object UpdateStateJsonFiles {
 
         val stateIdRegex = """(?s)\[\[\s*AND\s+\$\{config\.projects\}\.state_id\s+=\s+\(.*?WHERE\s+\{\{state_param\}\}.*?\)\s*\]\]""".r
         val updateTableFilter = queryNode.asText().replaceAll(stateIdRegex.regex, s"AND $projectsTable.state_id = '$targetedStateId'")
-
         val updatedTableName = updateTableFilter
           .replace("${config.projects}", projectsTable)
           .replace("${config.solutions}", solutionsTable)
+          .replace("${state_id}",s"'$targetedStateId'")
 
         val datasetQuery = json.get("dataset_query").deepCopy().asInstanceOf[ObjectNode]
         val nativeNode = datasetQuery.get("native").deepCopy().asInstanceOf[ObjectNode]
