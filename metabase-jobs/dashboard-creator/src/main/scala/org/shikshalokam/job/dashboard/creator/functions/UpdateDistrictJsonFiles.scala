@@ -89,6 +89,8 @@ object UpdateDistrictJsonFiles {
         val updatedTableName = updateTableFilter
           .replace("${config.projects}", projectsTable)
           .replace("${config.solutions}", solutionsTable)
+          .replace("${state_id}",s"'$targetedStateId'")
+          .replace("${district_id}",s"'$targetedDistrictId'")
         val datasetQuery = json.get("dataset_query").deepCopy().asInstanceOf[ObjectNode]
         val nativeNode = datasetQuery.get("native").deepCopy().asInstanceOf[ObjectNode]
         nativeNode.set("query", TextNode.valueOf(updatedTableName))
