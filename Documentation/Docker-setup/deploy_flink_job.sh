@@ -2,7 +2,7 @@
 
 # Load environment variables from .env file
 set -a
-source .env
+source ./config.env
 set +a
 
 # Set environment variables

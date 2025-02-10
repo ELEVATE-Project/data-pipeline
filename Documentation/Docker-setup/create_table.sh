@@ -2,7 +2,7 @@
 
 # Load environment variables from .env file
 set -a
-source .env
+source ./config.env
 set +a
 
 # Set dynamic table names
@@ -12,7 +12,7 @@ PROJECTS_TABLE="${PG_ENV}_projects"
 TASKS_TABLE="${PG_ENV}_tasks"
 
 # Check if required variables are set
-if [[ -z "$PG_HOST" || -z "$POSTGRES_PORT" || -z "$PG_DBNAME" || -z "$POSTGRES_USER" || -z "$POSTGRES_PASSWORD" ]]; then
+if [[ -z "$PG_HOST" || -z "$PG_PORT" || -z "$PG_DBNAME" || -z "$POSTGRES_USER" || -z "$POSTGRES_PASSWORD" ]]; then
     echo "Error: One or more required PostgreSQL environment variables are missing."
     exit 1
 fi
@@ -104,7 +104,7 @@ EOF
 )
 
 # Execute SQL commands
-PGPASSWORD="$PG_PASSWORD" psql -h "$PG_HOST" -p "$PG_PORT" -d "$PG_DBNAME" -U "$PG_USER" -c "$SQL_COMMANDS"
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$PG_HOST" -p "$PG_PORT" -d "$PG_DBNAME" -U "$POSTGRES_USER" -c "$SQL_COMMANDS"
 
 if [ $? -eq 0 ]; then
     echo "Tables created successfully."

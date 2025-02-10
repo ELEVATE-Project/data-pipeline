@@ -11,6 +11,8 @@ RUN apt update && apt install -y \
     tar \
     git \
     curl \
+    maven \
+    postgresql postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Java environment variables

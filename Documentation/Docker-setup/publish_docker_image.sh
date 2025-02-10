@@ -1,13 +1,13 @@
 #!/bin/bash
 
 set -a
-source .env
+source ./config.env
 set +a
 
 # Define variables
-DOCKERHUB_USERNAME="prashantghub"
-IMAGE_NAME="test4shikshalokam"
-VERSION="v3.0"
+DOCKERHUB_USERNAME="${DOCKERHUB_USERNAME}"
+IMAGE_NAME="${IMAGE_NAME}"
+VERSION="${VERSION}"
 
 # Full image tag
 IMAGE_TAG="$DOCKERHUB_USERNAME/$IMAGE_NAME:$VERSION"
