@@ -102,7 +102,8 @@ CREATE TABLE IF NOT EXISTS public."$TASKS_TABLE"
 );
 EOF
 )
-
+# we should calll dataloader .sh by passing env variables
+# /app/metabase-jobs/config-data-loader/data-loader.sh {{env}}
 # Execute SQL commands
 PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$PG_HOST" -p "$PG_PORT" -d "$PG_DBNAME" -U "$POSTGRES_USER" -c "$SQL_COMMANDS"
 

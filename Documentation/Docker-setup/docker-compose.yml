@@ -116,7 +116,7 @@ services:
 
   # Elevate Data Service
   elevate-data:
-    image: prashantghub/test4shikshalokam:v3.0
+    image: prashantghub/test4shikshalokam:v0.3
     container_name: elevate-data
     ports:
       - "5000:5000"
@@ -133,6 +133,7 @@ services:
       - ./config_files/metabase-dashboard.conf:/app/metabase-jobs/dashboard-creator/src/main/resources/metabase-dashboard.conf
       - ./config_files/project-stream.conf:/app/project-jobs/project-stream-processor/src/main/resources/project-stream.conf
       - ./config_files/data-loader.sh:/app/metabase-jobs/config-data-loader/data-loader.sh
+      -
     entrypoint: ["/bin/bash", "-c", "sleep infinity"]
 
 # Networks

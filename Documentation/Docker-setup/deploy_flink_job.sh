@@ -15,8 +15,8 @@ TOPIC2="${METABASE_TOPIC}"
 
 # Load report_config data in postgres
 echo "Loading report_config data in Postgres..."
-sudo docker exec -it elevate-data chmod +x /app/metabase-jobs/config-data-loader/data-loader.sh
-sudo docker exec -it elevate-data /app/metabase-jobs/config-data-loader/data-loader.sh
+ docker exec -it elevate-data chmod +x /app/metabase-jobs/config-data-loader/data-loader.sh
+ docker exec -it elevate-data /app/metabase-jobs/config-data-loader/data-loader.sh $PG_DBNAME $POSTGRES_USER $POSTGRES_PASSWORD $POSTGRES_HOST $POSTGRES_PORT $PG_ENV
 echo "report_config data loaded successfully."
 
 # 1. Create Kafka topics in the Docker container
