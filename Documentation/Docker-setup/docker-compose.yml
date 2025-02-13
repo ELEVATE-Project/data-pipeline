@@ -98,7 +98,7 @@ services:
 
   # Metabase
   metabase:
-    image: metabase/metabase:0.50.25
+    image: metabase/metabase:v0.50.25
     container_name: metabase
     environment:
       MB_DB_TYPE: ${MB_DB_TYPE}
