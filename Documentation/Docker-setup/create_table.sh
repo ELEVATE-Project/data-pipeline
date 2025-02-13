@@ -102,8 +102,13 @@ CREATE TABLE IF NOT EXISTS public."$TASKS_TABLE"
 );
 EOF
 )
-# we should calll dataloader .sh by passing env variables
-# /app/metabase-jobs/config-data-loader/data-loader.sh {{env}}
+
+# Load report_config data in postgres
+echo "Loading report_config data in Postgres..."
+  sudo docker exec -it elevate-data chmod +x /app/Documentation/Docker-setup/data-loader.sh
+  sudo docker exec -it elevate-data /app/Documentation/Docker-setup/data-loader.sh $PG_DBNAME $POSTGRES_USER $POSTGRES_PASSWORD $POSTGRES_HOST $POSTGRES_PORT $PG_ENV
+echo "report_config data loaded successfully."
+
 # Execute SQL commands
 PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$PG_HOST" -p "$PG_PORT" -d "$PG_DBNAME" -U "$POSTGRES_USER" -c "$SQL_COMMANDS"
 

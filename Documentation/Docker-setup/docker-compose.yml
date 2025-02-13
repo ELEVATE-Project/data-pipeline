@@ -98,7 +98,7 @@ services:
 
   # Metabase
   metabase:
-    image: metabase/metabase:latest
+    image: metabase/metabase:0.50.25
     container_name: metabase
     environment:
       MB_DB_TYPE: ${MB_DB_TYPE}
@@ -116,7 +116,7 @@ services:
 
   # Elevate Data Service
   elevate-data:
-    image: prashantghub/test4shikshalokam:v0.3
+    image: prashantghub/test4shikshalokam:v0.1
     container_name: elevate-data
     ports:
       - "5000:5000"
@@ -132,8 +132,8 @@ services:
       - ./config_files/base-config.conf:/app/jobs-core/src/main/resources/base-config.conf
       - ./config_files/metabase-dashboard.conf:/app/metabase-jobs/dashboard-creator/src/main/resources/metabase-dashboard.conf
       - ./config_files/project-stream.conf:/app/project-jobs/project-stream-processor/src/main/resources/project-stream.conf
-      - ./config_files/data-loader.sh:/app/metabase-jobs/config-data-loader/data-loader.sh
-      -
+      - ./data-loader.sh:/app/metabase-jobs/config-data-loader/data-loader.sh
+      - ./submit-jobs.sh:/app/metabase-jobs/submit-jobs.sh
     entrypoint: ["/bin/bash", "-c", "sleep infinity"]
 
 # Networks
