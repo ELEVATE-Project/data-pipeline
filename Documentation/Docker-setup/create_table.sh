@@ -17,6 +17,24 @@ if [[ -z "$PG_HOST" || -z "$PG_PORT" || -z "$PG_DBNAME" || -z "$POSTGRES_USER" |
     exit 1
 fi
 
+# Create database if it doesn't exist
+echo "Checking if database $PG_DBNAME exists..."
+DB_EXISTS=$(PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$PG_HOST" -p "$PG_PORT" -U "$POSTGRES_USER" -tc "SELECT 1 FROM pg_database WHERE datname = '$PG_DBNAME';" | tr -d '[:space:]')
+
+if [[ "$DB_EXISTS" != "1" ]]; then
+    echo "Database $PG_DBNAME does not exist. Creating..."
+    PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$PG_HOST" -p "$PG_PORT" -U "$POSTGRES_USER" -c "CREATE DATABASE \"$PG_DBNAME\";"
+    if [ $? -eq 0 ]; then
+        echo "Database $PG_DBNAME created successfully."
+    else
+        echo "Error: Failed to create database."
+        exit 1
+    fi
+else
+    echo "Database $PG_DBNAME already exists."
+fi
+
+
 # SQL script for table creation
 SQL_COMMANDS=$(cat <<EOF
 CREATE TABLE IF NOT EXISTS public."$METADATA_TABLE"
