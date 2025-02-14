@@ -48,7 +48,7 @@ read -p "can we move ahead for further processing? (yes/no): " user_input
 
 if [ "$user_input" == "yes" ]; then
     log "Running docker-compose-up.sh script..."
-    sudo docker compose --env-file ./config.env up -d
+    sudo docker-compose --env-file ./config.env up -d
     log "docker-compose-up.sh script executed."
 else
     echo "Please verify the services and run the script again."
