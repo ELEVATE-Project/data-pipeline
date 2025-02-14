@@ -98,7 +98,7 @@ services:
 
   # Metabase
   metabase:
-    image: metabase/metabase:v0.50.25
+    image: metabase/metabase:latest
     container_name: metabase
     environment:
       MB_DB_TYPE: ${MB_DB_TYPE}
@@ -116,7 +116,7 @@ services:
 
   # Elevate Data Service
   elevate-data:
-    image: prashantghub/test4shikshalokam:v0.1
+    image: prashantghub/test4shikshalokam:v0.2
     container_name: elevate-data
     ports:
       - "5000:5000"

@@ -43,10 +43,17 @@ chmod +x ./deploy-flink-job.sh
 chmod +x ./submit-jobs.sh
 log "Made shell scripts executable."
 
-# Step 5: Run docker-compose up command
-log "Running docker-compose-up.sh script..."
-sudo docker compose --env-file ./config.env up -d
-log "docker-compose-up.sh script executed."
+echo "If you need to make any changes in the config.env file or any other files, please do so now."
+read -p "can we move ahead for further processing? (yes/no): " user_input
+
+if [ "$user_input" == "no" ]; then
+    log "Running docker-compose-up.sh script..."
+    sudo docker compose --env-file ./config.env up -d
+    log "docker-compose-up.sh script executed."
+else
+    echo "Please verify the services and run the script again."
+    exit 1
+fi
 
 # Step 6: Prompt user to verify services
 echo "Please verify the following services are running:"
