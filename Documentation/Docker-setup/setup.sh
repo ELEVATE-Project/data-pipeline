@@ -39,7 +39,7 @@ log "Conf files moved successfully."
 log "Making shell scripts executable..."
 chmod +x ./create_table.sh
 chmod +x ./data-loader.sh
-chmod +x ./deploy_flink_job.sh
+chmod +x ./deploy-flink-job.sh
 chmod +x ./submit-jobs.sh
 log "Made shell scripts executable."
 
