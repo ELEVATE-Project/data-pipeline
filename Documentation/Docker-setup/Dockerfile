@@ -48,7 +48,7 @@ RUN git clone https://github.com/prashanthShiksha/data-pipeline.git . && \
     git checkout dev-deploy
 
 # Run Maven build command (skipping tests)
-RUN mvn clean install -DskipTests
+#RUN mvn clean install -DskipTests
 
 # Set default command
 CMD ["tail", "-f", "/dev/null"]
