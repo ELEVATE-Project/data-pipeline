@@ -37,7 +37,7 @@ log "Conf files moved successfully."
 
 # Step 4: Make the scripts executable
 log "Making shell scripts executable..."
-chmod +x ./create_table.sh
+chmod +x ./create-table.sh
 chmod +x ./data-loader.sh
 chmod +x ./deploy-flink-job.sh
 chmod +x ./submit-jobs.sh
@@ -64,7 +64,7 @@ read -p "Have you verified the services? (yes/no): " user_input
 
 if [ "$user_input" == "yes" ]; then
     log "Creating table in the database..."
-    sudo docker exec -it elevate-data app/Documentation/Docker-setup/create_table.sh "$PG_DBNAME" "$POSTGRES_USER" "$POSTGRES_PASSWORD" "$POSTGRES_HOST" "$POSTGRES_PORT" "$PG_ENV"
+    sudo docker exec -it elevate-data app/Documentation/Docker-setup/create-table.sh "$PG_DBNAME" "$POSTGRES_USER" "$POSTGRES_PASSWORD" "$POSTGRES_HOST" "$POSTGRES_PORT" "$PG_ENV"
     log "Table created successfully."
 else
     echo "Please verify the services and run the script again."
