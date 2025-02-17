@@ -125,8 +125,8 @@ EOF
 
 # Load report_config data in postgres
 echo "Loading report_config data in Postgres..."
-  sudo docker exec -it elevate-data chmod +x /app/Documentation/Docker-setup/data-loader.sh
-  sudo docker exec -it elevate-data /app/Documentation/Docker-setup/data-loader.sh $DB_NAME $DB_USER $DB_PASSWORD $POSTGRES_HOST $POSTGRES_PORT $ENV
+     chmod +x ./Documentation/Docker-setup/data-loader.sh
+     ./Documentation/Docker-setup/data-loader.sh $DB_NAME $DB_USER $DB_PASSWORD $DB_HOST $DB_PORT $ENV
 echo "report_config data loaded successfully."
 
 # Execute SQL commands
