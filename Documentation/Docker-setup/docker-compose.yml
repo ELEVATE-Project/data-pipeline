@@ -113,6 +113,8 @@ services:
       - postgres
     networks:
       - elevate_net
+    volumes:
+      - metabase_data:/metabase-data
 
   # Elevate Data Service
   elevate-data:
@@ -133,6 +135,7 @@ services:
       - ./config_files/metabase-dashboard.conf:/app/metabase-jobs/dashboard-creator/src/main/resources/metabase-dashboard.conf
       - ./config_files/project-stream.conf:/app/project-jobs/project-stream-processor/src/main/resources/project-stream.conf
       - ./data-loader.sh:/app/metabase-jobs/config-data-loader/data-loader.sh
+      - ./create-tables.sh:/app/Documentations/Docker-setup/create-tables.sh
       - ./submit-jobs.sh:/app/metabase-jobs/submit-jobs.sh
     entrypoint: ["/bin/bash", "-c", "sleep infinity"]
 
@@ -149,4 +152,6 @@ volumes:
   pgadmin_data:
     driver: local
   flink_shared:
+    driver: local
+  metabase_data:
     driver: local

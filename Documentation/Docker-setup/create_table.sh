@@ -1,37 +1,39 @@
 #!/bin/bash
 
-# Load environment variables from .env file
-set -a
-source ./config.env
-set +a
+DB_NAME="$1"
+DB_USER="$2"
+DB_PASSWORD="$3"
+DB_HOST="$4"
+DB_PORT="$5"
+ENV="$6"
 
 # Set dynamic table names
-METADATA_TABLE="${PG_ENV}_dashboard_metadata"
-SOLUTIONS_TABLE="${PG_ENV}_solutions"
-PROJECTS_TABLE="${PG_ENV}_projects"
-TASKS_TABLE="${PG_ENV}_tasks"
+METADATA_TABLE="${ENV}_dashboard_metadata"
+SOLUTIONS_TABLE="${ENV}_solutions"
+PROJECTS_TABLE="${ENV}_projects"
+TASKS_TABLE="${ENV}_tasks"
 
 # Check if required variables are set
-if [[ -z "$PG_HOST" || -z "$PG_PORT" || -z "$PG_DBNAME" || -z "$POSTGRES_USER" || -z "$POSTGRES_PASSWORD" ]]; then
+if [[ -z "$DB_HOST" || -z "$DB_PORT" || -z "$DB_NAME" || -z "$DB_USER" || -z "$DB_PASSWORD" ]]; then
     echo "Error: One or more required PostgreSQL environment variables are missing."
     exit 1
 fi
 
 # Create database if it doesn't exist
-echo "Checking if database $PG_DBNAME exists..."
-DB_EXISTS=$(PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$PG_HOST" -p "$PG_PORT" -U "$POSTGRES_USER" -tc "SELECT 1 FROM pg_database WHERE datname = '$PG_DBNAME';" | tr -d '[:space:]')
+echo "Checking if database $DB_NAME exists..."
+DB_EXISTS=$(PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -tc "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME';" | tr -d '[:space:]')
 
 if [[ "$DB_EXISTS" != "1" ]]; then
-    echo "Database $PG_DBNAME does not exist. Creating..."
-    PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$PG_HOST" -p "$PG_PORT" -U "$POSTGRES_USER" -c "CREATE DATABASE \"$PG_DBNAME\";"
+    echo "Database $DB_NAME does not exist. Creating..."
+    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -c "CREATE DATABASE \"$DB_NAME\";"
     if [ $? -eq 0 ]; then
-        echo "Database $PG_DBNAME created successfully."
+        echo "Database $DB_NAME created successfully."
     else
         echo "Error: Failed to create database."
         exit 1
     fi
 else
-    echo "Database $PG_DBNAME already exists."
+    echo "Database $DB_NAME already exists."
 fi
 
 
@@ -124,11 +126,11 @@ EOF
 # Load report_config data in postgres
 echo "Loading report_config data in Postgres..."
   sudo docker exec -it elevate-data chmod +x /app/Documentation/Docker-setup/data-loader.sh
-  sudo docker exec -it elevate-data /app/Documentation/Docker-setup/data-loader.sh $PG_DBNAME $POSTGRES_USER $POSTGRES_PASSWORD $POSTGRES_HOST $POSTGRES_PORT $PG_ENV
+  sudo docker exec -it elevate-data /app/Documentation/Docker-setup/data-loader.sh $DB_NAME $DB_USER $DB_PASSWORD $POSTGRES_HOST $POSTGRES_PORT $ENV
 echo "report_config data loaded successfully."
 
 # Execute SQL commands
-PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$PG_HOST" -p "$PG_PORT" -d "$PG_DBNAME" -U "$POSTGRES_USER" -c "$SQL_COMMANDS"
+PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -U "$DB_USER" -c "$SQL_COMMANDS"
 
 if [ $? -eq 0 ]; then
     echo "Tables created successfully."

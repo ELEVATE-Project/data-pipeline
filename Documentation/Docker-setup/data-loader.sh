@@ -57,7 +57,6 @@ process_folders() {
                                     # Debugging logs
                                     echo "Inserting into table: $TABLE_NAME"
                                     echo "Dashboard Name: $dashboard_name, Report Name: $report_name, Query Type: $query_type"
-                                    echo "Config: $config"
 
                                     # Insert into PostgreSQL using variables safely
                                     psql -d "$DB_NAME" -U "$DB_USER" -h "$DB_HOST" -p "$DB_PORT" -v table_name="$TABLE_NAME" -v dashboard="$dashboard_name" -v report="$report_name" -v querytype="$query_type" -v jsonconfig="$config" -c "

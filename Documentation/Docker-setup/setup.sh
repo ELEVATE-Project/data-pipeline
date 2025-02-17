@@ -64,7 +64,7 @@ read -p "Have you verified the services? (yes/no): " user_input
 
 if [ "$user_input" == "yes" ]; then
     log "Creating table in the database..."
-    ./create_table.sh
+    ./create_table.sh "$PG_DBNAME" "$POSTGRES_USER" "$POSTGRES_PASSWORD" "$POSTGRES_HOST" "$POSTGRES_PORT" "$PG_ENV"
     log "Table created successfully."
 else
     echo "Please verify the services and run the script again."
@@ -81,7 +81,7 @@ while true; do
 
     if [ "$user_input" == "yes" ]; then
         log "Creating Kafka topics and submitting Flink job..."
-        ./deploy_flink_job.sh
+        ./deploy-flink-job.sh
         log "Kafka topics created and Flink job submitted successfully."
         break
     elif [ "$user_input" == "no" ]; then
