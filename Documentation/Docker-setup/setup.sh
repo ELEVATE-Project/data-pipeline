@@ -19,7 +19,7 @@ curl -L \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/config_files/base-config.conf \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/config_files/metabase-dashboard.conf \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/config_files/project-stream.conf \
-    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/create_table.sh \
+    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/create-table.sh \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/data-loader.sh \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/deploy-flink-job.sh \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/dummy-data.json \
