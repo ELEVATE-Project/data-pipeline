@@ -64,7 +64,7 @@ read -p "Have you verified the services? (yes/no): " user_input
 
 if [ "$user_input" == "yes" ]; then
     log "Creating table in the database..."
-    ./create_table.sh "$PG_DBNAME" "$POSTGRES_USER" "$POSTGRES_PASSWORD" "$POSTGRES_HOST" "$POSTGRES_PORT" "$PG_ENV"
+    sudo docker exec -it elevate-data app/Documentation/Docker-setup/create_table.sh "$PG_DBNAME" "$POSTGRES_USER" "$POSTGRES_PASSWORD" "$POSTGRES_HOST" "$POSTGRES_PORT" "$PG_ENV"
     log "Table created successfully."
 else
     echo "Please verify the services and run the script again."
