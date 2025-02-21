@@ -17,7 +17,7 @@ upload_and_run_jar() {
     echo "JAR uploaded successfully: $jar_name"
 
     # Extract the correct JAR ID using its name
-    JAR_ID=$(curl -s "$FLINK_HOST/jars" | jq -r --arg jar_name "$jar_name" '.files[] | select(.name == $jar_name) | .id')
+    JAR_ID=$(curl -s "$FLINK_HOST/jars" | jq -r '.files | sort_by(.uploaded) | last | .id')
 
     if [ -z "$JAR_ID" ]; then
         echo "Failed to get JAR ID for $jar_name. Exiting..."
