@@ -32,6 +32,9 @@ services:
       - elevate_net
     logging:
         driver: none
+    volumes:
+      - kafka_data:/var/lib/kafka/
+
 
   # Flink Job Manager
   jobmanager:
@@ -114,7 +117,7 @@ services:
     networks:
       - elevate_net
     volumes:
-      - metabase_data:/metabase-data
+      - metabase_data:/dev/random:ro
 
   # Elevate Data Service
   elevate-data:
@@ -134,9 +137,11 @@ services:
       - ./config_files/base-config.conf:/app/jobs-core/src/main/resources/base-config.conf
       - ./config_files/metabase-dashboard.conf:/app/metabase-jobs/dashboard-creator/src/main/resources/metabase-dashboard.conf
       - ./config_files/project-stream.conf:/app/project-jobs/project-stream-processor/src/main/resources/project-stream.conf
+      - ./config_files/application.conf:/app/metabase-jobs/users-via-csv/src/main/resources/application.conf
       - ./data-loader.sh:/app/metabase-jobs/config-data-loader/data-loader.sh
       - ./create-table.sh:/app/Documentation/Docker-setup/create-table.sh
       - ./submit-jobs.sh:/app/metabase-jobs/submit-jobs.sh
+      -  elevate_data:/app/
     entrypoint: ["/bin/bash", "-c", "sleep infinity"]
 
 # Networks
@@ -154,4 +159,8 @@ volumes:
   flink_shared:
     driver: local
   metabase_data:
+    driver: local
+  elevate_data:
+    driver: local
+  kafka_data:
     driver: local

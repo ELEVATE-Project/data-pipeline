@@ -1,6 +1,30 @@
+<div align="center">
+
+# Report Service
+
+<a href="https://shikshalokam.org/elevate/">
+<img
+    src="https://shikshalokam.org/wp-content/uploads/2021/06/elevate-logo.png"
+    height="140"
+    width="300"
+  />
+</a>
+
+![GitHub package.json version (subfolder of monorepo)](https://img.shields.io/github/package-json/v/ELEVATE-Project/mentoring?filename=src%2Fpackage.json)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
+</details>
+</details>
+
+</br>
+The Reports building block facilitates the creation and engagement with Dshboards.
+
+</div>
+</br>
+
 # Setup Options
 
-**Elevate Data services can be set up using two methods:**
+**Elevate Report services can be set up using two methods:**
 > **Note:** This guide outlines two setup methods, detailed below. For a quick, beginner-friendly setup and walkthrough of services, it is recommended to use the **Dockerized Services & Dependencies** setup with the Docker-Compose file.
 
 <details><summary>Dockerized Services & Dependencies Using Docker-Compose File</summary>
@@ -24,7 +48,7 @@ To set up the data service application, ensure you have Docker and Docker Compos
 > **Caution:** Before proceeding, please ensure that the ports given here are available and open. It is essential to verify their availability prior to moving forward. You can run the below command in your terminal to check this:
 
 ```
-   for port in 3000 2181 9092 8081 5433 5050 9092 5000; do
+   for port in 3000 2181 9092 8081 5432 5050 9092 5000; do
        if sudo lsof -iTCP:$port -sTCP:LISTEN &>/dev/null || sudo netstat -tulnp | grep -w ":$port" &>/dev/null; then
            echo "Port $port is in use"
        else
@@ -41,7 +65,7 @@ To set up the data service application, ensure you have Docker and Docker Compos
     ```
 
    > **Note:** The script will download all the essential files and launch the services in Docker. Once all services are successfully up and running, Follow the steps and give required inputs to the script.To setup PgAdmin and metabase steps are provide in the documents.
-
+   
 2. **General Instructions:**
     - All containers which are part of the docker-compose can be gracefully stopped by pressing `Ctrl + C` in the same terminal where the services are running.
     - To start all services and dependencies:

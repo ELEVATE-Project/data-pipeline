@@ -19,6 +19,7 @@ curl -L \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/config_files/base-config.conf \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/config_files/metabase-dashboard.conf \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/config_files/project-stream.conf \
+    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/config_files/application.conf \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/create-table.sh \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/data-loader.sh \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/deploy-flink-job.sh \
@@ -33,6 +34,7 @@ mkdir -p config_files
 mv base-config.conf config_files/
 mv metabase-dashboard.conf config_files/
 mv project-stream.conf config_files/
+mv application.conf config_files/
 log "Conf files moved successfully."
 
 # Step 4: Make the scripts executable
