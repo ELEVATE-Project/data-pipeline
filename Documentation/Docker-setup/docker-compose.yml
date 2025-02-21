@@ -121,7 +121,7 @@ services:
 
   # Elevate Data Service
   elevate-data:
-    image: prashantghub/test4shikshalokam:v0.2
+    image: shikshalokamqa/elevate-data:v0.1
     container_name: elevate-data
     ports:
       - "5000:5000"
