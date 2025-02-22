@@ -44,11 +44,7 @@ ENV PATH=$MAVEN_HOME/bin:$PATH
 WORKDIR /app
 
 # Clone the Git repository (Replace with your repo URL)
-RUN git clone https://github.com/prashanthShiksha/data-pipeline.git . && \
-    git checkout dev-deploy
-
-# Run Maven build command (skipping tests)
-#RUN mvn clean install -DskipTests
+COPY . /app
 
 # Set default command
 CMD ["tail", "-f", "/dev/null"]
