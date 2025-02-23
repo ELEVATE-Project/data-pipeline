@@ -17,25 +17,79 @@
 </details>
 
 </br>
-The Reports building block facilitates the creation and engagement with Dshboards.
+The Reports building block facilitates the creation and engagement with Dashboards.
 
 </div>
 </br>
 
+# Supported Operating Systems
+-   **Ubuntu (Recommended: Version 22.04)**
+
 # Setup Options
 
-**Elevate Report services can be set up using two methods:**
-> **Note:** This guide outlines two setup methods, detailed below. For a quick, beginner-friendly setup and walkthrough of services, it is recommended to use the **Dockerized Services & Dependencies** setup with the Docker-Compose file.
+> **Note:** This guide focuses on setting up services using Docker. For a streamlined and efficient setup, it is recommended to use Dockerized Services & Dependencies with the provided Docker-Compose file.
 
 <details><summary>Dockerized Services & Dependencies Using Docker-Compose File</summary>
 
 ## Dockerized Services & Dependencies
 
-### Expectation
+## Expectation
 By diligently following the outlined steps, you will successfully establish a fully operational data service application setup.
 
 ## Prerequisites
-To set up the data service application, ensure you have Docker and Docker Compose installed on your system. For Ubuntu users, detailed installation instructions for both can be found in the documentation here: [How To Install and Use Docker Compose on Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-compose-on-ubuntu-20-04).
+To set up the data service application, ensure you have Docker and Docker Compose installed on your system. For Ubuntu users, detailed installation instructions for Docker found here : [Install Docker engine on Ubuntu](https://docs.docker.com/engine/install/ubuntu/) and for docker-compose follow this documentation: [How To Install and Use Docker Compose on Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-compose-on-ubuntu-20-04).
+
+### **Setting Up `curl`, `git`, and `netstat` on Ubuntu**
+
+### 1. Install `curl`
+`curl` is used for making HTTP requests from the command line.
+
+🔹 **Check if `curl` is installed:**
+```bash
+  curl --version
+```  
+🔹 **If not installed, install it using:**
+```bash
+  sudo apt update && sudo apt install -y curl
+```  
+
+---
+
+### 2. Install `git`
+`git` is required for cloning repositories and managing version control.
+
+🔹 **Check if `git` is installed:**
+```bash
+  git --version
+```  
+🔹 **If not installed, install it using:**
+```bash
+  sudo apt update && sudo apt install -y git
+```  
+
+---
+
+### 3. Install `netstat` (via `net-tools`)
+`netstat` is used to check network connections and ports.
+
+🔹 **Check if `netstat` is installed:**
+```bash
+  netstat -tulnp
+```  
+🔹 **If not installed, install it using:**
+```bash
+  sudo apt update && sudo apt install -y net-tools
+```  
+
+---
+
+### 4. Verification
+After installation, confirm all tools are working:
+```bash
+  curl --version && git --version && netstat -tulnp
+```  
+
+Now you're ready to proceed with setting up Elevate reports services. 
 ## Installation
 
 **Create report Directory:** Establish a directory titled **reports**.
@@ -43,11 +97,10 @@ To set up the data service application, ensure you have Docker and Docker Compos
 > Example Command: `mkdir reports && cd reports/`
 
 > Note: All commands are run from the reports directory.
-### Operating Systems: Linux
 
 > **Caution:** Before proceeding, please ensure that the ports given here are available and open. It is essential to verify their availability prior to moving forward. You can run the below command in your terminal to check this:
 
-```
+```bash
    for port in 3000 2181 9092 8081 5432 5050 9092 5000; do
        if sudo lsof -iTCP:$port -sTCP:LISTEN &>/dev/null || sudo netstat -tulnp | grep -w ":$port" &>/dev/null; then
            echo "Port $port is in use"
@@ -60,24 +113,22 @@ To set up the data service application, ensure you have Docker and Docker Compos
 ### Steps to Set Up Dockerized Services
 
 1. **Download and execute the main setup script:** Execute the following command in your terminal from the reports directory.
-    ```
-      curl -OJL https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/setup.sh && chmod +x setup.sh && sudo ./setup.sh
-    ```
+ ```bash
+   curl -OJL https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/setup.sh && chmod +x setup.sh && sudo ./setup.sh
+ ```
 
-   > **Note:** The script will download all the essential files and launch the services in Docker. Once all services are successfully up and running, Follow the steps and give required inputs to the script.To setup PgAdmin and metabase steps are provide in the documents.
+   > **Note:** The script will download the necessary files and launch the services in Docker. Once all services are up and running, follow the provided steps and enter the required inputs when prompted by the script. For instructions on setting up PgAdmin and Metabase, please refer to the documentation.
    
 2. **General Instructions:**
     - All containers which are part of the docker-compose can be gracefully stopped by pressing `Ctrl + C` in the same terminal where the services are running.
     - To start all services and dependencies:
-        ```
+        ```bash
         sudo docker compose --env-file ./config.env up -d
         ```
     - To stop all containers and remove volumes:
-       ```
+       ```bash
        sudo ./docker-compose down -v
        ```
-
-**Keep the current terminal session active, and kindly open a new terminal window within the project directory.**
 
 ## Setting Up pgAdmin [optional]
 
@@ -100,41 +151,35 @@ To set up the data service application, ensure you have Docker and Docker Compos
 
 ### Step 1: Configure Metabase
 1. Open Metabase by navigating to `http://localhost:3000` in your browser.
-2. Follow the setup wizard:
-    - Setup the Super Admin account.
-        - **Choose language:** `English` -> **Next**
-        - **Set First Name** `elevate`
-        - **Set Last Name** `user`
-        - **set Company or team name** `shikshalokam`
-        - **Set Email** `user@shikshalokam.org`
-        - **Set Password** `elevate@123` -> **Next**
+   ![Here is the opening page of Metabase Dashboard](/Documentation/Docker-setup/screenshots/01.png)
+2. Select the Preferred Language:
+   **Choose language:** `English` -> **Next**
+   ![Select the Preferred Language](/Documentation/Docker-setup/screenshots/02.png)
+3. setup super admin login credentials
+   - **Set First Name** `elevate`
+   - **Set Last Name** `user`
+   - **set Company or team name** `shikshalokam`
+   - **Set Email** `user@shikshalokam.org`
+   - **Set Password** `elevate@123` -> **Next**
+![setup super admin login credentials](/Documentation/Docker-setup/screenshots/03.png)
     - Setup the database connection.
-        - **Set up your first database** → Select **PostgreSQL**
-        - then click on **show more options**
-        - Enter the database credentials:
-            - **Database connection name:** `elevateData`
-            - **Host:** `postgres`
-            - **Port:** `5432`
-            - **Database name:** `project-analytics`
-            - **Username:** `postgres`
-            - **Password:** `password`
+     - **Set up your first database** → Select **PostgreSQL**
+     ![Select the postgres database to connect)](/Documentation/Docker-setup/screenshots/04.png)
+     - then click on **show more options**
+     - Enter the database credentials:
+         - **Database connection name:** `elevateData`
+         - **Host:** `postgres`
+         - **Port:** `5432`
+         - **Database name:** `project-analytics`
+         - **Username:** `postgres`
+         - **Password:** `password`
+     ![Add the configuration as per mentioned in the config.env](/Documentation/Docker-setup/screenshots/05.png)
+        
 3. Click **Next** to complete the setup and start using Metabase.
+   ![Then you all set to go](/Documentation/Docker-setup/screenshots/07.png)
 4. setting up the `state_name` and `district_name` data type in the metabase.
     - Go to setting → Admin setting → Table Metadata → select the projects table
     - Set the data type 'state' for state_name and 'city' for district_name.
     - This settings will save automatically.
-   1. Here is the opening page of Metabase Dashboard
-   ![Here is the opening page of Metabase Dashboard](/Documentation/Docker-setup/screenshots/01.png)
-   2. Select the Preferred Language
-   ![Select the Preferred Language](/Documentation/Docker-setup/screenshots/02.png)
-   3. setup super admin login credentials
-   ![setup super admin login credentials](/Documentation/Docker-setup/screenshots/03.png)
-   4. Select the postgres database to connect
-   ![Select the postgres database to connect)](/Documentation/Docker-setup/screenshots/04.png)
-   5. Add the configuration as per mentioned in the config.env
-   ![Add the configuration as per mentioned in the config.env](/Documentation/Docker-setup/screenshots/05.png)
-   6. Click on the next button
-   ![Then you all set to go](/Documentation/Docker-setup/screenshots/07.png)
-
 </details>
 

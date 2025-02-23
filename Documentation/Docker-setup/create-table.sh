@@ -7,11 +7,12 @@ DB_HOST="$4"
 DB_PORT="$5"
 ENV="$6"
 
-# Set dynamic table names
 METADATA_TABLE="${ENV}_dashboard_metadata"
 SOLUTIONS_TABLE="${ENV}_solutions"
 PROJECTS_TABLE="${ENV}_projects"
 TASKS_TABLE="${ENV}_tasks"
+REPORT_CONFIG_TABLE="${ENV}_report_config"
+MAIN_FOLDER="/home/user2/Documents/elevate/data-pipeline/metabase-jobs/config-data-loader/projectJson"
 
 # Check if required variables are set
 if [[ -z "$DB_HOST" || -z "$DB_PORT" || -z "$DB_NAME" || -z "$DB_USER" || -z "$DB_PASSWORD" ]]; then
@@ -26,21 +27,11 @@ DB_EXISTS=$(PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_U
 if [[ "$DB_EXISTS" != "1" ]]; then
     echo "Database $DB_NAME does not exist. Creating..."
     PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -c "CREATE DATABASE \"$DB_NAME\";"
-    if [ $? -eq 0 ]; then
-        echo "Database $DB_NAME created successfully."
-    else
-        echo "Error: Failed to create database."
-        exit 1
-    fi
-else
-    echo "Database $DB_NAME already exists."
 fi
 
-
-# SQL script for table creation
-SQL_COMMANDS=$(cat <<EOF
-CREATE TABLE IF NOT EXISTS public."$METADATA_TABLE"
-(
+echo "Creating tables..."
+PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -U "$DB_USER" -c "
+CREATE TABLE IF NOT EXISTS public.\"$METADATA_TABLE\" (
     id SERIAL PRIMARY KEY,
     entity_type TEXT NOT NULL,
     entity_name TEXT NOT NULL,
@@ -52,8 +43,7 @@ CREATE TABLE IF NOT EXISTS public."$METADATA_TABLE"
     error_message TEXT
 );
 
-CREATE TABLE IF NOT EXISTS public."$SOLUTIONS_TABLE"
-(
+CREATE TABLE IF NOT EXISTS public.\"$SOLUTIONS_TABLE\" (
     solution_id TEXT PRIMARY KEY,
     external_id TEXT,
     name TEXT,
@@ -67,10 +57,9 @@ CREATE TABLE IF NOT EXISTS public."$SOLUTIONS_TABLE"
     private_program BOOLEAN
 );
 
-CREATE TABLE IF NOT EXISTS public."$PROJECTS_TABLE"
-(
+CREATE TABLE IF NOT EXISTS public.\"$PROJECTS_TABLE\" (
     project_id TEXT PRIMARY KEY,
-    solution_id TEXT REFERENCES public."$SOLUTIONS_TABLE"(solution_id),
+    solution_id TEXT REFERENCES public.\"$SOLUTIONS_TABLE\"(solution_id),
     created_by TEXT,
     created_date TEXT,
     completed_date TEXT,
@@ -104,10 +93,9 @@ CREATE TABLE IF NOT EXISTS public."$PROJECTS_TABLE"
     certificate_pdf_path TEXT
 );
 
-CREATE TABLE IF NOT EXISTS public."$TASKS_TABLE"
-(
+CREATE TABLE IF NOT EXISTS public.\"$TASKS_TABLE\" (
     task_id TEXT PRIMARY KEY,
-    project_id TEXT REFERENCES public."$PROJECTS_TABLE"(project_id),
+    project_id TEXT REFERENCES public.\"$PROJECTS_TABLE\"(project_id),
     name TEXT,
     assigned_to TEXT,
     start_date TEXT,
@@ -120,20 +108,49 @@ CREATE TABLE IF NOT EXISTS public."$TASKS_TABLE"
     evidence TEXT,
     evidence_count TEXT
 );
-EOF
-)
 
-# Load report_config data in postgres
-echo "Loading report_config data in Postgres..."
-     chmod +x ./Documentation/Docker-setup/data-loader.sh
-     ./Documentation/Docker-setup/data-loader.sh $DB_NAME $DB_USER $DB_PASSWORD $DB_HOST $DB_PORT $ENV
-echo "report_config data loaded successfully."
+CREATE TABLE IF NOT EXISTS public.\"$REPORT_CONFIG_TABLE\" (
+    id SERIAL PRIMARY KEY,
+    dashboard_name TEXT NOT NULL,
+    report_name TEXT NOT NULL,
+    question_type TEXT NOT NULL,
+    config JSON NOT NULL
+);
+"
 
-# Execute SQL commands
-PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -U "$DB_USER" -c "$SQL_COMMANDS"
+# Process folders and load data
+export PGPASSWORD="$DB_PASSWORD"
+for main_folder_name in "$MAIN_FOLDER"/*; do
+    if [[ -d "$main_folder_name" ]]; then
+        dashboard_name=$(basename "$main_folder_name")
 
-if [ $? -eq 0 ]; then
-    echo "Tables created successfully."
-else
-    echo "Error: Failed to create tables."
-fi
+        for folder_name in "$main_folder_name"/*; do
+            if [[ -d "$folder_name" ]]; then
+                report_name=$(basename "$folder_name")
+                json_folder_path="$folder_name/json"
+                if [[ ! -d "$json_folder_path" ]]; then
+                    echo "No 'json' folder found in $folder_name"
+                    continue
+                fi
+                for query_type_path in "$json_folder_path"/*; do
+                    if [[ -d "$query_type_path" ]]; then
+                        query_type=$(basename "$query_type_path")
+                        for json_file in "$query_type_path"/*.json; do
+                            if [[ -f "$json_file" && "$json_file" == *.json ]]; then
+                                config=$(cat "$json_file" | jq -c .)
+                                echo "Inserting into table: $REPORT_CONFIG_TABLE"
+                                psql -d "$DB_NAME" -U "$DB_USER" -h "$DB_HOST" -p "$DB_PORT" -c "
+                                    INSERT INTO \"$REPORT_CONFIG_TABLE\" (dashboard_name, report_name, question_type, config)
+                                    VALUES ('$dashboard_name', '$report_name', '$query_type', \$\$${config}\$\$);
+                                "
+                            fi
+                        done
+                    fi
+                done
+            fi
+        done
+    fi
+
+done
+unset PGPASSWORD
+echo "Tables created and report config data loaded successfully."
