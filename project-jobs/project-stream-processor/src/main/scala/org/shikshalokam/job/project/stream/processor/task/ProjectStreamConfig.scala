@@ -71,7 +71,7 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |    project_id TEXT PRIMARY KEY,
       |    solution_id TEXT REFERENCES $solutions(solution_id),
       |    created_by TEXT,
-      |    created_date TEXT,
+      |    created_date TIMESTAMP WITHOUT TIME ZONE,
       |    completed_date TEXT,
       |    last_sync TEXT,
       |    updated_date TEXT,
