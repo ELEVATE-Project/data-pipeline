@@ -9,23 +9,22 @@ log() {
 
 # Step 1: Download Docker Compose file
 log "Downloading Docker Compose file..."
-curl -OJL https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/docker-compose.yml
+curl -OJL https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/docker-compose.yml
 log "Docker Compose file downloaded."
 
 # Step 2: Download environment files
 log "Downloading required files..."
 curl -L \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/config.env \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/config_files/base-config.conf \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/config_files/metabase-dashboard.conf \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/config_files/project-stream.conf \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/config_files/application.conf \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/create-table.sh \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/data-loader.sh \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/deploy-flink-job.sh \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/dummy-data.json \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/submit-jobs.sh \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/docker-compose.yml
+    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/config.env \
+    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/config_files/base-config.conf \
+    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/config_files/metabase-dashboard.conf \
+    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/config_files/project-stream.conf \
+    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/config_files/application.conf \
+    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/create-table.sh \
+    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/deploy-flink-job.sh \
+    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/dummy-data.json \
+    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/submit-jobs.sh \
+    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/docker-compose.yml
 log "All files downloaded."
 
 # Step 3: Move conf files into the config_files folder
@@ -40,7 +39,6 @@ log "Conf files moved successfully."
 # Step 4: Make the scripts executable
 log "Making shell scripts executable..."
 chmod +x ./create-table.sh
-chmod +x ./data-loader.sh
 chmod +x ./deploy-flink-job.sh
 chmod +x ./submit-jobs.sh
 log "Made shell scripts executable."
@@ -57,7 +55,7 @@ else
     exit 1
 fi
 
-# Step 6: Prompt user to verify services
+# Step 5: Prompt user to verify services
 echo "Please verify the following services are running:"
 echo "1. Metabase UI (http://localhost:3000)"
 echo "2. Flink UI (http://localhost:8081)"
@@ -73,7 +71,7 @@ else
     exit 1
 fi
 
-# Step 7: Prompt user to set up Metabase and PG Admin
+# Step 6: Prompt user to set up Metabase and PG Admin
 while true; do
     echo "Please go to the Metabase UI and set up the super admin account and database connection."
     echo "Also, set up the server for PG Admin."
@@ -94,3 +92,33 @@ while true; do
     fi
 done
 
+# step 7 : submit the dummy-event-data
+while true; do
+    read -p "Do you want to submit the dummy-data? (yes/no): " user_input
+
+    if [ "$user_input" == "yes" ]; then
+      docker exec -i kafka /usr/bin/kafka-console-producer --broker-list kafka:9092 --topic sl-improvement-project-submission-dev < /app/Documentation/Docker-setup/dummy-event-data.json
+      break
+    elif [ "$user_input" == "no" ]; then
+        echo "Please complete the setup and run the script again."
+        exit 1
+    else
+        echo "Please enter a valid command: yes or no."
+    fi
+done
+
+# Step 7 : create user via csv
+while true; do
+    read -p "Do you want to create user-via-csv? (yes/no): " user_input
+
+    if [ "$user_input" == "yes" ]; then
+      docker exec -it elevate-data nohup java -jar /app/metabase-jobs/users-via-csv/target/users-via-csv-1.0.0.jar >> /app/logs/MetabaseUserUploadLogs.logs 2>&1 &
+      docker exec -it elevate-data bash -c "ps -ef | grep users-via-csv"
+      break
+    elif [ "$user_input" == "no" ]; then
+        echo "Please complete the setup and run the script again."
+        exit 1
+    else
+        echo "Please enter a valid command: yes or no."
+    fi
+done

@@ -12,7 +12,8 @@ SOLUTIONS_TABLE="${ENV}_solutions"
 PROJECTS_TABLE="${ENV}_projects"
 TASKS_TABLE="${ENV}_tasks"
 REPORT_CONFIG_TABLE="${ENV}_report_config"
-MAIN_FOLDER="/home/user2/Documents/elevate/data-pipeline/metabase-jobs/config-data-loader/projectJson"
+DATABASE_NAME="${ENV}-${DB_NAME}"
+MAIN_FOLDER="/app/metabase-jobs/config-data-loader/projectJson"
 
 # Check if required variables are set
 if [[ -z "$DB_HOST" || -z "$DB_PORT" || -z "$DB_NAME" || -z "$DB_USER" || -z "$DB_PASSWORD" ]]; then
@@ -21,16 +22,16 @@ if [[ -z "$DB_HOST" || -z "$DB_PORT" || -z "$DB_NAME" || -z "$DB_USER" || -z "$D
 fi
 
 # Create database if it doesn't exist
-echo "Checking if database $DB_NAME exists..."
-DB_EXISTS=$(PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -tc "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME';" | tr -d '[:space:]')
+echo "Checking if database $DATABASE_NAME exists..."
+DB_EXISTS=$(PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -tc "SELECT 1 FROM pg_database WHERE datname = '$DATABASE_NAME';" | tr -d '[:space:]')
 
 if [[ "$DB_EXISTS" != "1" ]]; then
-    echo "Database $DB_NAME does not exist. Creating..."
-    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -c "CREATE DATABASE \"$DB_NAME\";"
+    echo "Database $DATABASE_NAME does not exist. Creating..."
+    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -c "CREATE DATABASE \"$DATABASE_NAME\";"
 fi
 
 echo "Creating tables..."
-PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -U "$DB_USER" -c "
+PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -d "$DATABASE_NAME" -U "$DB_USER" -c "
 CREATE TABLE IF NOT EXISTS public.\"$METADATA_TABLE\" (
     id SERIAL PRIMARY KEY,
     entity_type TEXT NOT NULL,
@@ -139,7 +140,7 @@ for main_folder_name in "$MAIN_FOLDER"/*; do
                             if [[ -f "$json_file" && "$json_file" == *.json ]]; then
                                 config=$(cat "$json_file" | jq -c .)
                                 echo "Inserting into table: $REPORT_CONFIG_TABLE"
-                                psql -d "$DB_NAME" -U "$DB_USER" -h "$DB_HOST" -p "$DB_PORT" -c "
+                                psql -d "$DATABASE_NAME" -U "$DB_USER" -h "$DB_HOST" -p "$DB_PORT" -c "
                                     INSERT INTO \"$REPORT_CONFIG_TABLE\" (dashboard_name, report_name, question_type, config)
                                     VALUES ('$dashboard_name', '$report_name', '$query_type', \$\$${config}\$\$);
                                 "

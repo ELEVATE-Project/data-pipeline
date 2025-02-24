@@ -138,10 +138,10 @@ services:
       - ./config_files/metabase-dashboard.conf:/app/metabase-jobs/dashboard-creator/src/main/resources/metabase-dashboard.conf
       - ./config_files/project-stream.conf:/app/project-jobs/project-stream-processor/src/main/resources/project-stream.conf
       - ./config_files/application.conf:/app/metabase-jobs/users-via-csv/src/main/resources/application.conf
-      - ./data-loader.sh:/app/metabase-jobs/config-data-loader/data-loader.sh
       - ./create-table.sh:/app/Documentation/Docker-setup/create-table.sh
       - ./submit-jobs.sh:/app/metabase-jobs/submit-jobs.sh
       -  elevate_data:/app/
+      -
     entrypoint: ["/bin/bash", "-c", "sleep infinity"]
 
 # Networks
