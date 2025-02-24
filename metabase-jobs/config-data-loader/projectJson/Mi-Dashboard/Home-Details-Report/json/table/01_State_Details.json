@@ -1,0 +1,34 @@
+{
+  "questionCard": {
+    "name": "State Details",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {},
+        "query": "SELECT \n    lp.state_name AS \"State Name\",\n    COUNT(DISTINCT lp.created_by) AS \"Total Projects Count\",\n    COUNT(CASE WHEN lp.status = 'started' THEN 1 END) AS \"Total Projects Initiated\",\n    COUNT(CASE WHEN lp.status = 'inProgress' THEN 1 END) AS \"Total Projects In-Progress\",\n    COUNT(CASE WHEN lp.status = 'submitted' THEN 1 END) AS \"Total Projects Submitted\",\n    ldu.dashboard_url As \"Dashboard URL\"\nFROM \n    ${config.projects} lp\nJOIN \n    ${config.dashboard_url} ldu\n    ON lp.state_id = ldu.entity_id\nWHERE \n    lp.state_id IS NOT NULL\n    AND lp.created_by IS NOT NULL\nGROUP BY \n    lp.state_name, ldu.dashboard_url\nORDER BY \n    \"Total Projects Count\" DESC;"
+      }
+    },
+    "parameter_mappings": [],
+    "display": "map",
+    "entity_id": "pznG8cwDd-SthcvfoTv6m",
+    "collection_preview": true,
+    "visualization_settings": {
+      "table.pivot_column": "Total Projects Submitted",
+      "table.cell_column": "Total Projects Count"
+    },
+    "parameters": []
+  },
+  "dashCards": {
+    "card_id": 6937,
+    "dashboard_tab_id": null,
+    "id": 22,
+    "parameter_mappings": [],
+    "col": 0,
+    "row": 23,
+    "size_x": 24,
+    "size_y": 5,
+    "visualization_settings": {}
+  }
+}

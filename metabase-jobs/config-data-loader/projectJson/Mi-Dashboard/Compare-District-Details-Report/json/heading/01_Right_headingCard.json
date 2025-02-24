@@ -1,0 +1,31 @@
+{
+  "questionCard" : {
+    "name" : "Heading: Demographic",
+    "collection_id" : 644,
+    "dataset_query" : null,
+    "display" : "text",
+    "parameters" : [ ]
+  },
+  "dashCards" : {
+    "card_id" : null,
+    "dashboard_tab_id" : null,
+    "id" : 34,
+    "parameter_mappings" : [ ],
+    "col" : 13,
+    "row" : 2,
+    "size_x" : 10,
+    "size_y" : 1,
+    "entity_id": "QKgV9fQKoiT7xTypDSnrT",
+    "visualization_settings" : {
+      "dashcard.background": false,
+      "virtual_card": {
+        "name": null,
+        "dataset_query": {},
+        "display": "heading",
+        "visualization_settings": {},
+        "archived": false
+      },
+      "text": "Demographic"
+    }
+  }
+}

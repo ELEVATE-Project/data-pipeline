@@ -1,0 +1,85 @@
+{
+  "questionCard": {
+    "name": "# Micro Improvements Triggered",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "state_name": {
+            "type": "dimension",
+            "name": "state_name",
+            "id": "be602463-8f32-479f-8e90-7ad7c26e9b54",
+            "display-name": "State Name",
+            "default": null,
+            "dimension": [
+              "field",
+              293,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "district_name": {
+            "type": "dimension",
+            "name": "district_name",
+            "id": "391bfc1c-b500-4765-a028-3864ee6de07c",
+            "display-name": "District Name",
+            "default": null,
+            "dimension": [
+              "field",
+              304,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          }
+        },
+        "query": "SELECT\n  COUNT(*) AS total_projects\nFROM\n  ${config.projects}\nWHERE\n  1 = 1 [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE district_name = {{district_name}}\n        LIMIT 1)\n  ]]"
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {},
+    "parameters": [
+      {
+        "id": "391bfc1c-b500-4765-a028-3864ee6de07c",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "district_name"
+          ]
+        ],
+        "name": "District Name",
+        "slug": "district_name",
+        "values_query_type": "list"
+      }
+    ]
+  },
+  "dashCards": {
+    "id": 24,
+    "entity_id": "TuUrxiO4NVJST_wjuZZVT",
+    "card_id": 6943,
+    "col": 13,
+    "row": 0,
+    "size_x": 6,
+    "size_y": 2,
+    "dashboard_tab_id": null,
+    "parameter_mappings": [
+      {
+        "parameter_id": "be9fffbb",
+        "card_id": 1986,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "district_name"
+          ]
+        ]
+      }
+    ],
+    "visualization_settings": {}
+  }
+}
