@@ -1,0 +1,5 @@
+firstName,lastName,email,password,roles,stateId,districtId,programName
+ReportAdmin,shikshalokam,reportadmin@shikshalokam.com,Welcome@1234,report_admin,,,
+StateManager,shikshalokam,statemanager@shikshalokam.com,Welcome@1234,state_manager,66bf7ei950de1616f42cb083,,
+DistrictManager,shikshalokam,districtmanager@shikshalokam.com,Welcome@1234,district_manager,66bf7ei950de1616f42cb083,o7ydbf7f3560de1616f42pd7,
+ProgramManager,shikshalokam,programmanager@shikshalokam.com,Welcome@1234,program_manager,,,Test elevate_shiksha

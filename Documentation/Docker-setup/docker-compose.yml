@@ -139,9 +139,10 @@ services:
       - ./config_files/project-stream.conf:/app/project-jobs/project-stream-processor/src/main/resources/project-stream.conf
       - ./config_files/application.conf:/app/metabase-jobs/users-via-csv/src/main/resources/application.conf
       - ./create-table.sh:/app/Documentation/Docker-setup/create-table.sh
-      - ./submit-jobs.sh:/app/metabase-jobs/submit-jobs.sh
+      - ./submit-jobs.sh:/app/Documentation/Docker-setup/submit-jobs.sh
       -  elevate_data:/app/
-      -
+      - ./user_data.csv:/app/Documentation/Docker-setup/user_data.csv
+      - ./logs:/app/logs
     entrypoint: ["/bin/bash", "-c", "sleep infinity"]
 
 # Networks

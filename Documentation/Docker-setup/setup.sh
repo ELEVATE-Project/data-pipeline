@@ -2,6 +2,17 @@
 
 user_input=$1
 
+CONFIG_FILE="./config.env"
+
+if [ -f "$CONFIG_FILE" ]; then
+    echo "Loading environment variables from $CONFIG_FILE..."
+    set -o allexport  # Enable automatic export of variables
+    source "$CONFIG_FILE"
+    set +o allexport  # Disable automatic export
+else
+    echo "Warning: $CONFIG_FILE not found. Proceeding with script arguments."
+fi
+
 # Logging function
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> setup_log.txt
@@ -97,7 +108,7 @@ while true; do
     read -p "Do you want to submit the dummy-data? (yes/no): " user_input
 
     if [ "$user_input" == "yes" ]; then
-      docker exec -i kafka /usr/bin/kafka-console-producer --broker-list kafka:9092 --topic sl-improvement-project-submission-dev < /app/Documentation/Docker-setup/dummy-event-data.json
+      docker exec -i kafka /usr/bin/kafka-console-producer --broker-list kafka:9092 --topic sl-improvement-project-submission-dev < ./dummy-event-data.json
       break
     elif [ "$user_input" == "no" ]; then
         echo "Please complete the setup and run the script again."
@@ -112,8 +123,13 @@ while true; do
     read -p "Do you want to create user-via-csv? (yes/no): " user_input
 
     if [ "$user_input" == "yes" ]; then
+      docker exec -it elevate-data mkdir -p /app/logs
+      docker exec -it elevate-data mkdir -p /app/csv
       docker exec -it elevate-data nohup java -jar /app/metabase-jobs/users-via-csv/target/users-via-csv-1.0.0.jar >> /app/logs/MetabaseUserUploadLogs.logs 2>&1 &
       docker exec -it elevate-data bash -c "ps -ef | grep users-via-csv"
+      docker exec -it elevate-data bash -c "curl --location 'http://jobmanager:8080/api/csv/upload' \
+                                            --header 'Authorization: 8f934c7a-71b1-4ec9-98c2-d472cd9e5f1a' \
+                                            --form 'file=@"/app/Documentation/Docker-setup/user_data.csv"'"
       break
     elif [ "$user_input" == "no" ]; then
         echo "Please complete the setup and run the script again."

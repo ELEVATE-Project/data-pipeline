@@ -40,10 +40,9 @@ RUN wget https://downloads.apache.org/maven/maven-3/3.8.8/binaries/apache-maven-
 ENV MAVEN_HOME=/usr/local/maven
 ENV PATH=$MAVEN_HOME/bin:$PATH
 
-# Set working directory
+
 WORKDIR /app
 
-# Clone the Git repository (Replace with your repo URL)
 COPY . /app
 
 # Set default command
