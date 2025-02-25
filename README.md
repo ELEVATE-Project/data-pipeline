@@ -189,20 +189,18 @@ To set up the data service application, ensure you have Docker and Docker Compos
 
 Here is the csv for checking the other reports.  
 [user_data.csv](Documentation/Docker-setup/user_data.csv) .
-Also you can interact with the api to get the user data.
+Also you can interact with the api to onboard new users.
+```bash
+   curl --location 'http://localhost:8080/api/csv/upload' \
+   --header 'Authorization: 4a2d9f8e-3b56-47c1-a9d3-e571b8f0c2d9' \
+   --form 'file=@"/app/Documentation/Docker-setup/user_data.csv"' 
+```
+To list out the users
 ```bash
    curl --location 'http://localhost:8080/api/csv/list' \
-   --header 'Authorization: 4a2d9f8e-3b56-47c1-a9d3-e571b8f0c2d9'
+   --header 'Authorization: 4a2d9f8e-3b56-47c1-a9d3-e571b8f0c2d9' 
 ```
-   
 </details>
-
-
-# Team
-
-<a href="https://github.com/ELEVATE-Project/data-pipeline/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=ELEVATE-Project/data-pipeline" />
-</a>
 
 # Open Source Dependencies
 
