@@ -37,8 +37,7 @@ curl -L \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/create-table.sh \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/deploy-flink-job.sh \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/dummy-event-data.json \
-    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/submit-jobs.sh \
-    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/docker-compose.yml
+    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/submit-jobs.sh
 echo "All files downloaded."
 log "All files downloaded."
 
@@ -63,7 +62,7 @@ read -p "can we move ahead for further processing? (yes/no): " user_input
 
 if [ "$user_input" == "yes" ]; then
     log "Running docker-compose-up.sh script..."
-    sudo docker-compose --env-file ./config.env up -d
+    docker-compose --env-file ./config.env up -d
     log "docker-compose-up.sh script executed."
 else
     echo "Please verify the services and run the script again."
@@ -80,7 +79,7 @@ read -p "Have you verified the services? (yes/no): " user_input
 if [ "$user_input" == "yes" ]; then
     log "Creating table in the database..."
     echo "Creating table in the database..."
-    sudo docker exec -it elevate-data /app/Documentation/Docker-setup/create-table.sh "$PROJECT_DB" "$POSTGRES_USER" "$POSTGRES_PASSWORD" "$POSTGRES_HOST" "$POSTGRES_PORT" "$PROJECT_ENV"
+    docker exec -it elevate-data /app/Documentation/Docker-setup/create-table.sh "$PROJECT_DB" "$POSTGRES_USER" "$POSTGRES_PASSWORD" "$POSTGRES_HOST" "$POSTGRES_PORT" "$PROJECT_ENV"
     echo "Table created successfully."
     log "Table created successfully."
 else
@@ -136,13 +135,11 @@ while true; do
       echo "Creating user-via-csv..."
       docker exec -it elevate-data mkdir -p /app/logs
       docker exec -it elevate-data mkdir -p /app/csv
-      sudo docker exec -it elevate-data /bin/bash -c "nohup java -jar /app/metabase-jobs/users-via-csv/target/users-via-csv-1.0.0.jar >> /app/logs/MetabaseUserUploadLogs.logs 2>&1 &"
+      docker exec -it elevate-data bash -c "nohup java -jar /app/metabase-jobs/users-via-csv/target/users-via-csv-1.0.0.jar >> /app/logs/MetabaseUserUploadLogs.logs 2>&1 & sleep 10"
       echo "Waiting for 10 seconds to allow the service to start..."
       sleep 10
       docker exec -it elevate-data bash -c "ps -ef | grep users-via-csv"
-      docker exec -it elevate-data bash -c "curl --location 'http://localhost:8080/api/csv/upload' \
-                                            --header 'Authorization: 8f934c7a-71b1-4ec9-98c2-d472cd9e5f1a' \
-                                            --form 'file=@"/app/Documentation/Docker-setup/user_data.csv"'"
+      docker exec -it elevate-data bash -c "curl --location 'http://localhost:8080/api/csv/upload' --header 'Authorization: 4a2d9f8e-3b56-47c1-a9d3-e571b8f0c2d9' --form 'file=@\"/app/Documentation/Docker-setup/user_data.csv\"'"
       echo "User-via-csv created successfully."
       break
     elif [ "$user_input" == "no" ]; then
