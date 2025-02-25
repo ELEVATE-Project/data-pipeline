@@ -138,7 +138,7 @@ for main_folder_name in "$MAIN_FOLDER"/*; do
                         query_type=$(basename "$query_type_path")
                         for json_file in "$query_type_path"/*.json; do
                             if [[ -f "$json_file" && "$json_file" == *.json ]]; then
-                                config=$(cat "$json_file" | jq -c .)
+                                config=$(cat "$json_file")
                                 echo "Inserting into table: $REPORT_CONFIG_TABLE"
                                 psql -d "$DATABASE_NAME" -U "$DB_USER" -h "$DB_HOST" -p "$DB_PORT" -c "
                                     INSERT INTO \"$REPORT_CONFIG_TABLE\" (dashboard_name, report_name, question_type, config)

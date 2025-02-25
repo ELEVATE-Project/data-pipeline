@@ -122,8 +122,8 @@ To set up the data service application, ensure you have Docker and Docker Compos
        ```
 
 ## Setting Up pgAdmin [optional]
+<details><summary>Set Up pgAdmin </summary>
 
-### Step 1: Set Up pgAdmin
 1. Open pgAdmin by navigating to `http://localhost:5050` in your browser.
 2. Log in with the default credentials:
     - **Username:** `admin@example.com`
@@ -137,10 +137,11 @@ To set up the data service application, ensure you have Docker and Docker Compos
     - **Username:** `postgres`
     - **Password:** `password`
 6. Click **Save** to connect to the PostgreSQL database.
+</details>
 
 ## Setting Up Metabase
+<details><summary>Configure Metabase </summary>
 
-### Step 1: Configure Metabase
 1. Open Metabase by navigating to `http://localhost:3000` in your browser.
    ![Here is the opening page of Metabase Dashboard](/Documentation/Docker-setup/screenshots/01.png)
 2. Select the Preferred Language:
@@ -183,3 +184,15 @@ To set up the data service application, ensure you have Docker and Docker Compos
    ![change the type of district_name](/Documentation/Docker-setup/screenshots/09.png)
 </details>
 
+## Onboarding user managemennt
+<details><summary>Onboarding user management </summary>
+
+Here is the csv for checking the other reports.  
+[user_data.csv](Documentation/Docker-setup/user_data.csv) .
+Also you can interact with the api to get the user data.
+```bash
+   curl --location 'http://localhost:8080/api/csv/list' \
+   --header 'Authorization: 4a2d9f8e-3b56-47c1-a9d3-e571b8f0c2d9'
+```
+   
+</details>

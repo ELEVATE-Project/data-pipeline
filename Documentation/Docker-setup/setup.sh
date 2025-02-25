@@ -33,7 +33,7 @@ curl -L \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/config_files/application.conf \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/create-table.sh \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/deploy-flink-job.sh \
-    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/dummy-data.json \
+    -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/dummy-event-data.json \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/submit-jobs.sh \
     -O https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/docker-compose.yml
 log "All files downloaded."
@@ -125,9 +125,11 @@ while true; do
     if [ "$user_input" == "yes" ]; then
       docker exec -it elevate-data mkdir -p /app/logs
       docker exec -it elevate-data mkdir -p /app/csv
-      docker exec -it elevate-data nohup java -jar /app/metabase-jobs/users-via-csv/target/users-via-csv-1.0.0.jar >> /app/logs/MetabaseUserUploadLogs.logs 2>&1 &
+      sudo docker exec -it elevate-data /bin/bash -c "nohup java -jar /app/metabase-jobs/users-via-csv/target/users-via-csv-1.0.0.jar >> /app/logs/MetabaseUserUploadLogs.logs 2>&1 &"
+      echo "Waiting for 10 seconds to allow the service to start..."
+      sleep 10
       docker exec -it elevate-data bash -c "ps -ef | grep users-via-csv"
-      docker exec -it elevate-data bash -c "curl --location 'http://jobmanager:8080/api/csv/upload' \
+      docker exec -it elevate-data bash -c "curl --location 'http://localhost:8080/api/csv/upload' \
                                             --header 'Authorization: 8f934c7a-71b1-4ec9-98c2-d472cd9e5f1a' \
                                             --form 'file=@"/app/Documentation/Docker-setup/user_data.csv"'"
       break
