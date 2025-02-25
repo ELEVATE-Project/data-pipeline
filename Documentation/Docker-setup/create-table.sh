@@ -118,8 +118,8 @@ CREATE TABLE IF NOT EXISTS public.\"$REPORT_CONFIG_TABLE\" (
     config JSON NOT NULL
 );
 "
+echo "Loading report config data..."
 
-# Process folders and load data
 export PGPASSWORD="$DB_PASSWORD"
 for main_folder_name in "$MAIN_FOLDER"/*; do
     if [[ -d "$main_folder_name" ]]; then
@@ -139,11 +139,10 @@ for main_folder_name in "$MAIN_FOLDER"/*; do
                         for json_file in "$query_type_path"/*.json; do
                             if [[ -f "$json_file" && "$json_file" == *.json ]]; then
                                 config=$(cat "$json_file")
-                                echo "Inserting into table: $REPORT_CONFIG_TABLE"
-                                psql -d "$DATABASE_NAME" -U "$DB_USER" -h "$DB_HOST" -p "$DB_PORT" -c "
+                                psql -q -d "$DATABASE_NAME" -U "$DB_USER" -h "$DB_HOST" -p "$DB_PORT" -c "
                                     INSERT INTO \"$REPORT_CONFIG_TABLE\" (dashboard_name, report_name, question_type, config)
                                     VALUES ('$dashboard_name', '$report_name', '$query_type', \$\$${config}\$\$);
-                                "
+                                " > /dev/null
                             fi
                         done
                     fi

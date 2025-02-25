@@ -161,7 +161,7 @@ To set up the data service application, ensure you have Docker and Docker Compos
    ![Select the postgres database to connect)](/Documentation/Docker-setup/screenshots/04.png)
      - then click on **show more options**
 5. Enter the database credentials
-     - **Database connection name:** `elevateData`
+     - **Display name:** `elevateData`
      - **Host:** `postgres`
      - **Port:** `5432`
      - **Database name:** `dev-project-analytics`
@@ -170,7 +170,7 @@ To set up the data service application, ensure you have Docker and Docker Compos
 
      ![Add the configuration as per mentioned in the config.env](/Documentation/Docker-setup/screenshots/05.png)
         
-3. Click **Next** to complete the setup and start using Metabase.
+3. Click **Take me to Metabase** to complete the setup and start using Metabase.
    ![Then you all set to go](/Documentation/Docker-setup/screenshots/07.png)
 4. Setting up the `state_name` and `district_name` data type in the metabase.
     - Go to setting → Admin setting → Table Metadata → select the projects table
