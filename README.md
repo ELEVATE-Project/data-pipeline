@@ -92,7 +92,7 @@ To set up the data service application, ensure you have Docker and Docker Compos
 > **Caution:** Before proceeding, please ensure that the ports given here are available and open. It is essential to verify their availability prior to moving forward. You can run the below command in your terminal to check this:
 
 ```bash
-   for port in 3000 2181 9092 8081 5432 5050 9092 5000; do
+   for port in 3000 2181 9092 8081 5432 5050 9092 8080; do
        if sudo lsof -iTCP:$port -sTCP:LISTEN &>/dev/null || sudo netstat -tulnp | grep -w ":$port" &>/dev/null; then
            echo "Port $port is in use"
        else
@@ -196,3 +196,24 @@ Also you can interact with the api to get the user data.
 ```
    
 </details>
+
+
+# Team
+
+<a href="https://github.com/ELEVATE-Project/data-pipeline/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=ELEVATE-Project/data-pipeline" />
+</a>
+
+# Open Source Dependencies
+
+Several open source dependencies that have aided data-pipeline and dashboards development:
+
+<p>
+  <img src="https://img.shields.io/badge/Apache%20Kafka-000?style=for-the-badge&logo=apachekafka" />
+  <img src="https://img.shields.io/badge/Apache%20Flink-E6526F?style=for-the-badge&logo=apacheflink&logoColor=white" />
+  <img src="https://img.shields.io/badge/Scala-DC322F?style=for-the-badge&logo=scala&logoColor=white" />
+  <img src="https://img.shields.io/badge/Akka-0052CC?style=for-the-badge&logo=akka&logoColor=white" />
+  <img src="https://img.shields.io/badge/Metabase-509EE3?style=for-the-badge&logo=metabase&logoColor=white" />
+  <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/git-%23F05033.svg?style=for-the-badge&logo=git&logoColor=white" />
+</p>
