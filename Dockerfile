@@ -45,5 +45,7 @@ WORKDIR /app
 
 COPY . /app
 
+RUN mvn clean install -DskipTests
+
 # Set default command
 CMD ["tail", "-f", "/dev/null"]
