@@ -52,7 +52,7 @@ By diligently following the outlined steps, you will successfully establish a fu
   sudo apt update && sudo apt install -y curl
 ```  
 </details>
----
+
 <details><summary> 2. Install git </summary>
 `git` is required for cloning repositories and managing version control.
 
@@ -65,7 +65,6 @@ By diligently following the outlined steps, you will successfully establish a fu
   sudo apt update && sudo apt install -y git
 ```  
 </details>
----
 
 <details><summary> 3. Install netstat (via `net-tools`) </summary>
 `netstat` is used to check network connections and ports.
@@ -79,7 +78,7 @@ By diligently following the outlined steps, you will successfully establish a fu
   sudo apt update && sudo apt install -y net-tools
 ```  
 </details>
----
+
 To set up the data service application, ensure you have Docker and Docker Compose installed on your system. For Ubuntu users, detailed installation instructions for Docker found here : [Install Docker engine on Ubuntu](https://docs.docker.com/engine/install/ubuntu/) and for docker-compose follow this documentation: [How To Install and Use Docker Compose on Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-compose-on-ubuntu-20-04).
 ## Installation
 
@@ -105,7 +104,7 @@ To set up the data service application, ensure you have Docker and Docker Compos
 
 1. **Download and execute the main setup script:** Execute the following command in your terminal from the reports directory.
  ```bash
-   curl -OJL https://raw.githubusercontent.com/prashanthShiksha/data-pipeline/dev-deploy/Documentation/Docker-setup/setup.sh && chmod +x setup.sh && sudo ./setup.sh
+   curl -OJL https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/setup.sh && chmod +x setup.sh && sudo ./setup.sh
  ```
 
    > **Note:** The script will download the necessary files and launch the services in Docker. Once all services are up and running, follow the provided steps and enter the required inputs when prompted by the script. For instructions on setting up PgAdmin and Metabase, please refer to the documentation.
