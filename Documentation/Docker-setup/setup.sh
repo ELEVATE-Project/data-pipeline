@@ -137,7 +137,7 @@ while true; do
       docker exec -it elevate-data mkdir -p /app/csv
       docker exec -it elevate-data bash -c "nohup java -jar /app/metabase-jobs/users-via-csv/target/users-via-csv-1.0.0.jar >> /app/logs/MetabaseUserUploadLogs.logs 2>&1 & sleep 10"
       echo "Waiting for 10 seconds to allow the service to start..."
-      sleep 10
+      sleep 30
       docker exec -it elevate-data bash -c "ps -ef | grep users-via-csv"
       docker exec -it elevate-data bash -c "curl --location 'http://localhost:8080/api/csv/upload' --header 'Authorization: 4a2d9f8e-3b56-47c1-a9d3-e571b8f0c2d9' --form 'file=@\"/app/Documentation/Docker-setup/user_data.csv\"'"
       echo "User-via-csv created successfully."
