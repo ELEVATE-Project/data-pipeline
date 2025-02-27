@@ -57,6 +57,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
     val metaDataTable = config.dashboard_metadata
     val report_config: String = config.report_config
     val metabaseDatabase: String = config.metabaseDatabase
+    val domainName: String = config.metabaseDomainName
 
     // Printing the targetedState ID
     println(s"Targeted State ID: $targetedStateId")
@@ -102,7 +103,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val homeDashboardName = "Mi Dashboard"
               val homeDashboardId: Int = Utils.checkAndCreateDashboard(mainCollectionId, homeDashboardName, metabaseUtil, postgresUtil)
               val homeReportConfigQuery: String = s"SELECT question_type, config FROM $report_config WHERE dashboard_name = 'Mi-Dashboard' AND report_name = 'Home-Details-Report';"
-              val homeQuestionCardIdList = HomePage.ProcessAndUpdateJsonFiles(homeReportConfigQuery, mainCollectionId, databaseId, homeDashboardId, projects, solutions, report_config, metabaseUtil, postgresUtil)
+              val homeQuestionCardIdList = HomePage.ProcessAndUpdateJsonFiles(homeReportConfigQuery, mainCollectionId, databaseId, homeDashboardId, projects, solutions, report_config, metaDataTable, metabaseUtil, postgresUtil)
               val filterQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Mi-Dashboard-Filters' AND question_type = 'home-dashboard-filter'"
               val filterResults: List[Map[String, Any]] = postgresUtil.fetchData(filterQuery)
               val objectMapper = new ObjectMapper()
@@ -247,7 +248,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val immutableSlugNameToDistrictIdFilterMap: Map[String, Int] = slugNameToDistrictIdFilterMap.toMap
               StatePage.updateParameterFunction(metabaseUtil, postgresUtil, compareReportParameterQuery, immutableSlugNameToDistrictIdFilterMap, compareDistrictDashboardId)
               val allQuestionIdsString = List(questionCardIdList, stateQuestionCardIdList, compareDistrictReportQuestionCardIdList).map("[" + _.mkString(",") + "]").mkString(", ")
-              val updateTableQuery = s"UPDATE $metaDataTable SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$allQuestionIdsString', status = 'Success', error_message = '' WHERE entity_id = '$admin';"
+              val updateTableQuery = s"UPDATE $metaDataTable SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$allQuestionIdsString', status = 'Success', error_message = '', dashboard_url = '$domainName$stateDashboardId' WHERE entity_id = '$targetedStateId';"
               postgresUtil.insertData(updateTableQuery)
               CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
             } catch {
@@ -264,7 +265,6 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
         } else {
           println("targetedState is not present or is empty")
         }
-
 
         if (targetedProgramId.nonEmpty) {
           println(s"********** Started Processing Metabase Program Dashboard ***********")

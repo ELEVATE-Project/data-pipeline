@@ -11,7 +11,7 @@ import scala.util.{Failure, Success, Try}
 
 object HomePage {
 
-  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, projects: String, solutions: String, reportConfig: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, projects: String, solutions: String, reportConfig: String, metaDataTable: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): ListBuffer[Int] = {
     println(s"---------------Started processing Mi dashboard Home page function for Admin----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
@@ -30,7 +30,7 @@ object HomePage {
                 val chartName = Option(questionCardNode.path("name").asText()).getOrElse("Unknown Chart")
                 println(s" >>>>>>>>>> Processing The Chart: $chartName")
                 val updatedJson = updateJsonFiles(rootNode, collectionId, databaseId, reportConfig)
-                val updatedJsonWithQuery = updateQuery(updatedJson.path("questionCard"), projects, solutions)
+                val updatedJsonWithQuery = updateQuery(updatedJson.path("questionCard"), projects, solutions, metaDataTable)
                 val requestBody = updatedJsonWithQuery.asInstanceOf[ObjectNode]
                 val response = metabaseUtil.createQuestionCard(requestBody.toString)
                 val cardIdOpt = extractCardId(response)
@@ -72,7 +72,7 @@ object HomePage {
       if (jsonNode == null || jsonNode.isMissingNode) None else Some(jsonNode)
     }
 
-    def updateQuery(json: JsonNode, projectsTable: String, solutionsTable: String): JsonNode = {
+    def updateQuery(json: JsonNode, projectsTable: String, solutionsTable: String, metaDataTable: String): JsonNode = {
       Try {
 
         val queryPath = "/dataset_query/native/query"
@@ -85,6 +85,7 @@ object HomePage {
         val updatedTableName = updateTableFilter
           .replace("${config.projects}", projectsTable)
           .replace("${config.solutions}", solutionsTable)
+          .replace("${config.dashboard_metadata}", metaDataTable)
 
         val datasetQuery = json.get("dataset_query").deepCopy().asInstanceOf[ObjectNode]
         val nativeNode = datasetQuery.get("native").deepCopy().asInstanceOf[ObjectNode]
