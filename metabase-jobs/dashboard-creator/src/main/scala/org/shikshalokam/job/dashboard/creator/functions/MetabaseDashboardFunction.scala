@@ -9,7 +9,9 @@ import org.shikshalokam.job.dashboard.creator.miDashboard.{ComparePage, HomePage
 import org.shikshalokam.job.dashboard.creator.task.MetabaseDashboardConfig
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import org.shikshalokam.job.{BaseProcessFunction, Metrics}
+import org.shikshalokam.job.util.JSONUtil.mapper
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 import org.slf4j.LoggerFactory
 
@@ -173,7 +175,6 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               val groupName: String = s"${stateName}_State_Manager"
               val metabaseDatabase: String = config.metabaseDatabase
               val parametersQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Parameter' AND question_type = 'state-parameter'"
-              println(s"parametersQuery = $parametersQuery")
               val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedStateId';"
               val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, s"State Report [$stateName]", metabaseUtil, postgresUtil, createDashboardQuery)
               val dashboardId: Int = CreateDashboard.checkAndCreateDashboard(collectionId, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
@@ -203,8 +204,15 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               /**
                * Mi dashboard State Details page logic for State Manager
                */
-              val (stateCollectionName, stateCollectionDescription) = (s"$stateName - Mi collection", s"This collection contains questions and dashboards for state $stateName")
-              val stateCollectionId = Utils.checkAndCreateCollection(stateCollectionName, stateCollectionDescription, metabaseUtil, Some(collectionId))
+              val collectionListJson = mapper.readTree(metabaseUtil.listCollections())
+              val adminCollectionId = collectionListJson.elements().asScala.find(_.path("name").asText() == "Admin Collection").map(_.path("id").asInt()).getOrElse(0)
+              val (miStateCollectionName, miStateCollectionDescription) = (s"State Collection", s"This collection contains questions and dashboards for all state")
+              val miStateCollectionId = collectionListJson.elements().asScala
+                .find(_.path("name").asText() == "State Collection")
+                .map(_.path("id").asInt())
+                .getOrElse(Utils.checkAndCreateCollection(miStateCollectionName, miStateCollectionDescription, metabaseUtil, Some(adminCollectionId)))
+              val (stateCollectionName, stateCollectionDescription) = (s"$stateName", s"This collection contains questions and dashboards for state $stateName")
+              val stateCollectionId = Utils.checkAndCreateCollection(stateCollectionName, stateCollectionDescription, metabaseUtil, Some(miStateCollectionId))
               val stateDashboardName = s"$stateName - State Details"
               val stateDashboardId: Int = Utils.checkAndCreateDashboard(stateCollectionId, stateDashboardName, metabaseUtil, postgresUtil)
               val stateReportConfigQuery: String = s"SELECT question_type, config FROM $report_config WHERE dashboard_name = 'Mi-Dashboard' AND report_name = 'State-Details-Report';"
