@@ -19,7 +19,7 @@ object Utils {
         throw new IllegalStateException(s"$errorMessage. Process stopped.")
 
       case None =>
-        val parentIdField = parentId.map(pid => s""""parent_id": "$pid",""").getOrElse("")
+        val parentIdField = parentId.map(pid => s""""parent_id": $pid,""").getOrElse("")
         val collectionRequestBody =
           s"""{
              |  $parentIdField
