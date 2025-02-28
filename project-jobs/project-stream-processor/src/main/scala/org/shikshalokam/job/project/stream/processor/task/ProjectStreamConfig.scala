@@ -130,7 +130,8 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |    dashboard_id TEXT,
       |    question_ids TEXT,
       |    status TEXT,
-      |    error_message TEXT
+      |    error_message TEXT,
+      |    dashboard_url TEXT
       |);
       |""".stripMargin
 
