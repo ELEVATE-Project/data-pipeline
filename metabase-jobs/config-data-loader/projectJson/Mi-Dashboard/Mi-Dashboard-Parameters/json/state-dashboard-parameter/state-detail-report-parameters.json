@@ -1,0 +1,41 @@
+[
+  {
+    "name": "Select Year",
+    "slug": "select_year",
+    "id": "a7fbc61e",
+    "type": "string/=",
+    "sectionId": "string",
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 880,
+      "value_field": [
+        "field",
+        "year",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    },
+    "values_query_type": "list"
+  },
+  {
+    "name": "Categories",
+    "slug": "select_category",
+    "values_query_type": "list",
+    "isMultiSelect": false,
+    "type": "string/=",
+    "sectionId": "string",
+    "values_source_type": "card",
+    "id": "63a90514",
+    "values_source_config": {
+      "card_id": 1430,
+      "value_field": [
+        "field",
+        "category",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    }
+  }
+]

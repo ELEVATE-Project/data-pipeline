@@ -1,0 +1,61 @@
+{
+  "questionCard": {
+    "name": "# Micro Improvements Triggered",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "year_filter": {
+            "type": "text",
+            "name": "year_filter",
+            "id": "d1a13bbb-1f5d-49a2-80e8-ce5c389dae4e",
+            "display-name": "Year Filter"
+          }
+        },
+        "query": "SELECT\n  COUNT(*) AS total_projects\nFROM\n  ${config.projects}\nWHERE\n  state_id = '66bf7eb960de1616f42cb984'\n  [[AND EXTRACT(YEAR FROM created_date) = {{year_filter}}::INTEGER]]"
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {},
+    "parameters": [
+      {
+        "id": "d1a13bbb-1f5d-49a2-80e8-ce5c389dae4e",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "year_filter"
+          ]
+        ],
+        "name": "Year Filter",
+        "slug": "year_filter"
+      }
+    ]
+  },
+  "dashCards": {
+    "id": 1,
+    "card_id": 6943,
+    "col": 0,
+    "row": 0,
+    "size_x": 6,
+    "size_y": 3,
+    "dashboard_tab_id": null,
+    "parameter_mappings": [
+      {
+        "parameter_id": "a7fbc61e",
+        "card_id": 505,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "year_filter"
+          ]
+        ]
+      }
+    ],
+    "visualization_settings": {}
+  }
+}
