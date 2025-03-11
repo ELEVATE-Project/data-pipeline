@@ -1,0 +1,61 @@
+{
+  "questionCard": {
+    "name": "# School Leaders On Improvement Journey",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "year_filter": {
+            "type": "text",
+            "name": "year_filter",
+            "id": "8cace0da-40c6-4e42-a54d-db51c28e09f4",
+            "display-name": "Year Filter"
+          }
+        },
+        "query": "SELECT\n  COUNT(DISTINCT created_by) AS unique_scl_leaders\nFROM\n  ${config.projects}\nWHERE\n  (user_roles LIKE '%district_resource_person%'\n  OR user_roles LIKE '%block_academic_coordinator%'\n  OR user_roles LIKE '%principle%'\n  OR user_roles LIKE '%district_education_officer%')\n  [[AND (EXTRACT(YEAR FROM created_date) = {{year_filter}}::INTEGER OR {{year_filter}} IS NULL)]];"
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {},
+    "parameters": [
+      {
+        "id": "8cace0da-40c6-4e42-a54d-db51c28e09f4",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "year_filter"
+          ]
+        ],
+        "name": "Year Filter",
+        "slug": "year_filter"
+      }
+    ]
+  },
+  "dashCards": {
+    "id": 13,
+    "card_id": 6943,
+    "col": 10,
+    "row": 0,
+    "size_x": 4,
+    "size_y": 3,
+    "dashboard_tab_id": null,
+    "parameter_mappings": [
+      {
+        "parameter_id": "e8a56bdf",
+        "card_id": 875,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "year_filter"
+          ]
+        ]
+      }
+    ],
+    "visualization_settings": {}
+  }
+}

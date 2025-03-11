@@ -1,0 +1,61 @@
+{
+  "questionCard": {
+    "name": "# Schools On Improvement Journey",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "year_filter": {
+            "type": "text",
+            "name": "year_filter",
+            "id": "b0826db1-8f03-470a-bfa5-adfb246fe4a4",
+            "display-name": "Year Filter"
+          }
+        },
+        "query": "SELECT\n  COUNT(DISTINCT school_id) AS no_of_scl_improving\nFROM\n  ${config.projects}\nWHERE\n  1 = 1 [[AND EXTRACT(YEAR FROM created_date) = {{year_filter}}::INTEGER]]"
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {},
+    "parameters": [
+      {
+        "id": "b0826db1-8f03-470a-bfa5-adfb246fe4a4",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "year_filter"
+          ]
+        ],
+        "name": "Year Filter",
+        "slug": "year_filter"
+      }
+    ]
+  },
+  "dashCards": {
+    "id": 12,
+    "card_id": 6943,
+    "col": 5,
+    "row": 0,
+    "size_x": 5,
+    "size_y": 3,
+    "dashboard_tab_id": null,
+    "parameter_mappings": [
+      {
+        "parameter_id": "e8a56bdf",
+        "card_id": 507,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "year_filter"
+          ]
+        ]
+      }
+    ],
+    "visualization_settings": {}
+  }
+}

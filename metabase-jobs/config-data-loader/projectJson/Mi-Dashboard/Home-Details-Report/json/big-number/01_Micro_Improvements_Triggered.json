@@ -1,0 +1,61 @@
+{
+  "questionCard": {
+    "name": "# Micro Improvements Triggered",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "year_filter": {
+            "type": "text",
+            "name": "year_filter",
+            "id": "c02d0da5-bc45-4809-93fe-f9f03de744b4",
+            "display-name": "Year Filter"
+          }
+        },
+        "query": "SELECT\n  COUNT(DISTINCT created_by) AS no_of_imp\nFROM\n  ${config.projects}\nWHERE\n  1 = 1 [[AND EXTRACT(YEAR FROM created_date) = {{year_filter}}::INTEGER]]"
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {},
+    "parameters": [
+      {
+        "id": "c02d0da5-bc45-4809-93fe-f9f03de744b4",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "year_filter"
+          ]
+        ],
+        "name": "Year Filter",
+        "slug": "year_filter"
+      }
+    ]
+  },
+  "dashCards": {
+    "id": 11,
+    "card_id": 6943,
+    "col": 0,
+    "row": 0,
+    "size_x": 5,
+    "size_y": 3,
+    "dashboard_tab_id": null,
+    "parameter_mappings": [
+      {
+        "parameter_id": "e8a56bdf",
+        "card_id": 459,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "year_filter"
+          ]
+        ]
+      }
+    ],
+    "visualization_settings": {}
+  }
+}
