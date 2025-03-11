@@ -1,0 +1,97 @@
+[
+  {
+    "name": "Select District",
+    "slug": "select_district",
+    "id": "74a10335",
+    "type": "string/=",
+    "sectionId": "location",
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 301,
+      "value_field": [
+        "field",
+        "district_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    },
+    "isMultiSelect": false
+  },
+  {
+    "name": "Select Block",
+    "slug": "select_block",
+    "id": "6e5c08dc",
+    "type": "string/=",
+    "sectionId": "string",
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 300,
+      "value_field": [
+        "field",
+        "block_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    },
+    "isMultiSelect": false
+  },
+  {
+    "name": "Select Cluster",
+    "slug": "select_cluster",
+    "id": "efa886d3",
+    "type": "string/=",
+    "sectionId": "string",
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 299,
+      "value_field": [
+        "field",
+        "cluster_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    },
+    "isMultiSelect": false
+  },
+  {
+    "name": "Select Program",
+    "slug": "select_program",
+    "id": "8c7d86ea",
+    "type": "string/=",
+    "sectionId": "string",
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 303,
+      "value_field": [
+        "field",
+        "program_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    },
+    "isMultiSelect": false
+  },
+  {
+    "name": "Select Organisation",
+    "slug": "select_organisation",
+    "id": "5088d3e5",
+    "type": "string/=",
+    "sectionId": "string",
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 302,
+      "value_field": [
+        "field",
+        "org_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    },
+    "isMultiSelect": false
+  }
+]

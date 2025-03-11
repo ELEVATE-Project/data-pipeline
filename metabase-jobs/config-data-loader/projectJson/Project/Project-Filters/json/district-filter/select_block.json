@@ -1,0 +1,19 @@
+{
+  "questionCard": {
+    "name": "select_block",
+    "collection_id": 538,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "query": "SELECT distinct(${config.projects}.block_name) \nFROM ${config.projects} \nWHERE ${config.projects}.state_id = 'STATEID' AND ${config.projects}.district_id = 'DISTRICTID'",
+        "template-tags": {}
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {
+      "table.pivot_column": "block_name"
+    },
+    "parameters": []
+  }
+}
