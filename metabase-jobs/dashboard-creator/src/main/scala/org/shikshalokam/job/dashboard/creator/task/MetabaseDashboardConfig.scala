@@ -46,5 +46,6 @@ class MetabaseDashboardConfig(override val config: Config) extends BaseJobConfig
   val metabaseUsername: String = config.getString("metabase.username")
   val metabasePassword: String = config.getString("metabase.password")
   val metabaseDatabase: String = config.getString("metabase.database")
+  val metabaseDomainName: String = config.getString("metabase.domainName")
 
 }

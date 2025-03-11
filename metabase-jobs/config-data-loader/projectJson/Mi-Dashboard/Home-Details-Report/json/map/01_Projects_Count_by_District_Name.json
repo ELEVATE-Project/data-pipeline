@@ -1,0 +1,67 @@
+{
+  "questionCard": {
+    "name": "Projects Count by State",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "year_filter": {
+            "type": "text",
+            "name": "year_filter",
+            "id": "714acc21-9782-46c2-a956-71d247996209",
+            "display-name": "Year Filter"
+          }
+        },
+        "query": "SELECT\n  state_name AS \"State Name\",\n  COUNT(*) AS \"Project Count\"\nFROM\n  ${config.projects}\nWHERE\n  1 = 1 \n  [[AND EXTRACT(YEAR FROM created_date) = {{year_filter}}::INTEGER]]\nGROUP BY\n  state_name\nORDER BY\n  state_name ASC\n"
+
+      }
+    },
+    "parameter_mappings": [],
+    "display": "map",
+    "entity_id": "3iLsdP34RQIkbGyCBJP2L",
+    "collection_preview": true,
+    "visualization_settings": {
+      "map.region": "3bff4362-c7fb-4602-fac7-c0ebdf7a00bd"
+    },
+    "parameters": [
+      {
+        "id": "714acc21-9782-46c2-a956-71d247996209",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "year_filter"
+          ]
+        ],
+        "name": "Year Filter",
+        "slug": "year_filter"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 6937,
+    "dashboard_tab_id": null,
+    "id": 21,
+    "parameter_mappings": [
+      {
+        "parameter_id": "e8a56bdf",
+        "card_id": 1074,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "year_filter"
+          ]
+        ]
+      }
+    ],
+    "col": 9,
+    "row": 3,
+    "size_x": 15,
+    "size_y": 10,
+    "visualization_settings": {}
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "questionCard": {
+    "name": "select_category",
+    "collection_id": 538,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "query": "WITH\n  split_categories AS (\n    SELECT\n      solution_id,\n      UNNEST(STRING_TO_ARRAY(categories, ',')) AS category\n    FROM\n      ${config.solutions}\n  ),\n  cleaned_categories AS (\n    SELECT DISTINCT\n      INITCAP(TRIM(category)) AS category\n    FROM\n      split_categories s\n      JOIN ${config.projects} p ON s.solution_id = p.solution_id\n  )\nSELECT\n  category\nFROM\n  cleaned_categories\nORDER BY\n  category;",
+        "template-tags": {}
+      }
+    },
+    "display": "table",
+    "visualization_settings": {
+      "table.pivot_column": "category"
+    },
+    "parameters": []
+  }
+}

@@ -1,0 +1,40 @@
+[
+  {
+    "name": "Select District A",
+    "slug": "select_district",
+    "id": "47ae9a0e",
+    "type": "string/=",
+    "sectionId": "string",
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 2007,
+      "value_field": [
+        "field",
+        "district_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    },
+    "values_query_type": "list"
+  },
+  {
+    "name": "Select District B",
+    "slug": "select_district",
+    "id": "be9fffbb",
+    "type": "string/=",
+    "sectionId": "string",
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 2007,
+      "value_field": [
+        "field",
+        "district_name",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    },
+    "values_query_type": "list"
+  }
+]
