@@ -201,6 +201,14 @@ To list out the users
 ```
 </details>
 
+</details>
+
+# Team
+
+<a href="https://github.com/ELEVATE-Project/data-pipeline/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=ELEVATE-Project/data-pipeline" />
+</a>
+
 # Open Source Dependencies
 
 Several open source dependencies that have aided data-pipeline and dashboards development:
