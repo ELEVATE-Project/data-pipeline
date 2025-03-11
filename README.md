@@ -201,6 +201,8 @@ To list out the users
 ```
 </details>
 
+</details>
+
 # Team
 
 <a href="https://github.com/ELEVATE-Project/data-pipeline/graphs/contributors">
