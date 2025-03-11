@@ -49,8 +49,7 @@ object CreateDashboard {
         val dashboardRequestBody =
           s"""{
              |  "name": "$dashboardName",
-             |  "collection_id": "$collectionId",
-             |  "collection_position": "1"
+             |  "collection_id": "$collectionId"
              |}""".stripMargin
         val dashboardId = mapper.readTree(metabaseUtil.createDashboard(dashboardRequestBody)).path("id").asInt()
         println(s"New Dashboard ID = $dashboardId")
