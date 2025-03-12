@@ -37,7 +37,8 @@ curl -L \
     -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/create-table.sh \
     -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/deploy-flink-job.sh \
     -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/dummy-event-data.json \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/submit-jobs.sh
+    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/submit-jobs.sh \
+    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/user_data.csv
 echo "All files downloaded."
 log "All files downloaded."
 
