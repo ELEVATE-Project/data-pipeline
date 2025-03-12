@@ -121,7 +121,7 @@ services:
 
   # Elevate Data Service
   elevate-data:
-    image: shikshalokamqa/elevate-data:v0.1
+    image: shikshalokamqa/elevate-data:v1.0
     container_name: elevate-data
     ports:
       - "8080:8080"
