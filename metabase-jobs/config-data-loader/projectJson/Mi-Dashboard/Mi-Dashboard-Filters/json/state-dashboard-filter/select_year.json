@@ -1,0 +1,28 @@
+{
+  "questionCard": {
+    "name": "select_year",
+    "collection_id": 538,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "query": "SELECT DISTINCT EXTRACT(YEAR FROM created_date)::TEXT AS year\nFROM ${config.projects}\nWHERE \n state_id = '${state.id}'\nORDER BY year;",
+        "template-tags": {}
+      }
+    },
+    "display": "table",
+    "visualization_settings": {
+      "table.column_formatting": [],
+      "table.pivot_column": "year",
+      "column_settings": {
+        "[\"name\",\"year\"]": {
+          "view_as": "auto",
+          "show_mini_bar": false,
+          "number_style": "decimal",
+          "number_separators": "."
+        }
+      }
+    },
+    "parameters": []
+  }
+}

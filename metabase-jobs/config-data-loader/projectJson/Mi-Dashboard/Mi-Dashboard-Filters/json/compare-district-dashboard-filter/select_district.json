@@ -1,0 +1,19 @@
+{
+  "questionCard": {
+    "name": "select_district",
+    "collection_id": 538,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "query": "SELECT DISTINCT\n  district_name\nFROM\n  ${config.projects}\nWHERE\n  state_id = '${state.id}'",
+        "template-tags": {}
+      }
+    },
+    "display": "table",
+    "visualization_settings": {
+      "table.pivot_column": "district_name"
+    },
+    "parameters": []
+  }
+}

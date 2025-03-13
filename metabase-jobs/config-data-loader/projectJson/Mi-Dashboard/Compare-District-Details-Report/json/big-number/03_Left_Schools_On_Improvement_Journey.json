@@ -1,0 +1,66 @@
+{
+  "questionCard": {
+    "name": "# Schools On Improvement Journey",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "district_name": {
+            "type": "text",
+            "name": "district_name",
+            "id": "501e9fdc-70e3-48e1-a557-902fc26644d3",
+            "display-name": "District Name",
+            "default": null,
+            "widget-type": null,
+            "options": null
+          }
+        },
+        "query": "SELECT\n  COUNT(DISTINCT school_id) AS no_of_scl_improving\nFROM\n  ${config.projects}\nWHERE\n  1 = 1 \n  [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE district_name = {{district_name}}\n        LIMIT 1)\n  ]]"
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {},
+    "parameters": [
+      {
+        "id": "501e9fdc-70e3-48e1-a557-902fc26644d3",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "district_name"
+          ]
+        ],
+        "name": "District Name",
+        "slug": "district_name",
+        "values_query_type": "list"
+      }
+    ]
+  },
+  "dashCards": {
+    "id": 27,
+    "entity_id": "lbOORAYk7laHkwyZyWptG",
+    "card_id": 6943,
+    "col": 6,
+    "row": 3,
+    "size_x": 5,
+    "size_y": 3,
+    "dashboard_tab_id": null,
+    "parameter_mappings": [
+      {
+        "parameter_id": "47ae9a0e",
+        "card_id": 1989,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "district_name"
+          ]
+        ]
+      }
+    ],
+    "visualization_settings": {}
+  }
+}

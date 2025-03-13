@@ -71,7 +71,7 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |    project_id TEXT PRIMARY KEY,
       |    solution_id TEXT REFERENCES $solutions(solution_id),
       |    created_by TEXT,
-      |    created_date TEXT,
+      |    created_date TIMESTAMP WITHOUT TIME ZONE,
       |    completed_date TEXT,
       |    last_sync TEXT,
       |    updated_date TEXT,
@@ -126,11 +126,16 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |    entity_type TEXT NOT NULL,
       |    entity_name TEXT NOT NULL,
       |    entity_id TEXT UNIQUE NOT NULL,
-      |    collection_id TEXT,
-      |    dashboard_id TEXT,
-      |    question_ids TEXT,
+      |    main_metadata JSON,
+      |    mi_metadata JSON,
+      |    comparison_metadata JSON,
       |    status TEXT,
-      |    error_message TEXT
+      |    error_message TEXT,
+      |    state_details_url_state TEXT,
+      |    state_details_url_admin TEXT,
+      |    district_details_url_district TEXT,
+      |    district_details_url_state TEXT,
+      |    district_details_url_admin TEXT
       |);
       |""".stripMargin
 

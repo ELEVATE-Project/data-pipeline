@@ -1,0 +1,91 @@
+{
+  "questionCard": {
+    "name": "Improvements so far",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "year_filter": {
+            "type": "text",
+            "name": "year_filter",
+            "id": "d2a12fc1-4a60-4a96-b45e-38ec40f3aebb",
+            "display-name": "Year Filter"
+          }
+        },
+        "query": "WITH months AS (\n    SELECT generate_series(1, 12) AS month_number\n), project_data AS (\n    SELECT \n        EXTRACT(MONTH FROM created_date::timestamp) AS month_number,\n        COUNT(*)::INTEGER AS project_count  \n    FROM \n        ${config.projects}\n    WHERE \n        created_date IS NOT NULL\n        [[AND EXTRACT(YEAR FROM created_date) = {{year_filter}}::INTEGER]]\n    GROUP BY \n        EXTRACT(MONTH FROM created_date::timestamp)\n)\nSELECT \n    TO_CHAR(TO_DATE(m.month_number::text, 'MM'), 'Mon') AS month,  \n    COALESCE(p.project_count, 0)::INTEGER AS \"Improvement Projects\"  \nFROM \n    months m\nLEFT JOIN \n    project_data p ON m.month_number = p.month_number\nORDER BY \n    m.month_number;"
+      }
+    },
+    "parameter_mappings": [],
+    "display": "line",
+    "entity_id": "LZc88rzNgLCACEfqOFCiQ",
+    "collection_preview": true,
+    "visualization_settings": {
+      "graph.label_value_formatting": "auto",
+      "graph.y_axis.auto_range": true,
+      "series_settings": {
+        "Improvement Projects": {
+          "axis": null,
+          "line.missing": "interpolate",
+          "line.size": "S",
+          "line.interpolate": "cardinal",
+          "display": "area",
+          "color": "#87BCEC"
+        }
+      },
+      "graph.dimensions": [
+        "month"
+      ],
+      "graph.x_axis.labels_enabled": false,
+      "graph.y_axis.labels_enabled": false,
+      "column_settings": {
+        "[\"name\",\"Improvement Projects\"]": {
+          "number_separators": ".",
+          "number_style": "decimal"
+        }
+      },
+      "graph.metrics": [
+        "Improvement Projects"
+      ]
+    },
+    "parameters": [
+      {
+        "id": "d2a12fc1-4a60-4a96-b45e-38ec40f3aebb",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "year_filter"
+          ]
+        ],
+        "name": "Year Filter",
+        "slug": "year_filter"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 6937,
+    "dashboard_tab_id": null,
+    "id": 16,
+    "parameter_mappings": [
+      {
+        "parameter_id": "e8a56bdf",
+        "card_id": 877,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "year_filter"
+          ]
+        ]
+      }
+    ],
+    "col": 0,
+    "row": 3,
+    "size_x": 9,
+    "size_y": 5,
+    "visualization_settings": {}
+  }
+}
