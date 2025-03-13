@@ -1,6 +1,6 @@
 {
   "questionCard": {
-    "name": "Leading Districts",
+    "name": "Leading Blocks",
     "collection_id": 644,
     "dataset_query": {
       "database": 2,
@@ -14,7 +14,7 @@
             "display-name": "Year Filter"
           }
         },
-        "query": "SELECT \n    district_name AS \"District Name\",\n    COUNT(DISTINCT created_by) AS \"Unique Improvement Project Count\" \nFROM \n     ${config.projects}\nWHERE \n    state_id IS NOT NULL\n    AND district_name IS NOT NULL\n    AND created_by IS NOT NULL\n    AND state_id = '66bf7eb960de1616f42cb984'\n    [[AND EXTRACT(YEAR FROM created_date) = {{year_filter}}::INTEGER]]\nGROUP BY \n    \"District Name\" \nORDER BY \n    \"Unique Improvement Project Count\" DESC\nLIMIT 5;"
+        "query": "SELECT \n    block_name AS \"Block Name\",\n   COUNT(DISTINCT created_by) AS \"Unique Improvement Project Count\"  \nFROM \n     ${config.projects}\nWHERE \n    district_id IS NOT NULL\n    AND block_name IS NOT NULL\n    AND created_by IS NOT NULL\n    AND district_id = '66bf7eb960de1616f42cb984'\n    [[AND EXTRACT(YEAR FROM created_date) = {{year_filter}}::INTEGER]]\nGROUP BY \n    \"Block Name\" \nORDER BY \n   \"Unique Improvement Project Count\" DESC\nLIMIT 5;"
       }
     },
     "parameter_mappings": [],
@@ -66,10 +66,10 @@
         ]
       }
     ],
-    "col": 0,
-    "row": 8,
-    "size_x": 9,
-    "size_y": 5,
+    "col": 12,
+    "row": 3,
+    "size_x": 12,
+    "size_y": 6,
     "visualization_settings": {}
   }
 }
