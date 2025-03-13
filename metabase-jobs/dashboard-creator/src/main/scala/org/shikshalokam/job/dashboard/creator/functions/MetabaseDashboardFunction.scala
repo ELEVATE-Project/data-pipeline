@@ -341,13 +341,15 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
                 case List(map: Map[_, _]) => map.get("entity_name").map(_.toString).getOrElse("")
                 case _ => ""
               }
-              val stateNameQuery = s"SELECT distinct(state_name) AS name from $projects where district_id = '$targetedDistrictId'"
-              val stateName = postgresUtil.fetchData(stateNameQuery) match {
-                case List(map: Map[_, _]) => map.get("name").map(_.toString).getOrElse("")
-                case _ => ""
+              val stateQuery = s"SELECT DISTINCT state_id AS id, state_name AS name FROM $projects WHERE district_id = '$targetedDistrictId'"
+              val (stateId, stateName) = postgresUtil.fetchData(stateQuery) match {
+                case List(map: Map[_, _]) =>
+                  (map.get("id").map(_.toString).getOrElse(""), map.get("name").map(_.toString).getOrElse(""))
+                case _ => ("", "")
               }
-              println(s"districtName = $districtName")
+              println(s"stateId = $stateId")
               println(s"stateName = $stateName")
+              println(s"districtName = $districtName")
               val collectionName = s"District collection [$districtName - $stateName]"
               val dashboardName = s"Project District Report [$districtName - $stateName]"
               val groupName: String = s"${districtName}_District_Manager[$stateName]"
@@ -381,22 +383,35 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
               UpdateParameters.updateParameterFunction(metabaseUtil, postgresUtil, parametersQuery, immutableSlugNameToDistrictIdFilterMap, dashboardId)
 
               val districtMetadataJson = new ObjectMapper().createObjectNode().put("collectionId", collectionId).put("collectionName", collectionName).put("dashboardId", dashboardId).put("dashboardName", dashboardName).put("questionIds", questionIdsString)
-              postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = '$districtMetadataJson' WHERE entity_id = '$targetedDistrictId';")
+              postgresUtil.insertData(s"UPDATE $metaDataTable SET main_metadata = '$districtMetadataJson' WHERE entity_id = '$targetedDistrictId';")
 
               /**
                * Logic to duplicate district details page in Admin collection
                */
               val adminDistrictCollectionName = s"[$districtName - $stateName]"
               val adminDistrictDashboardName = s"[$districtName - $stateName] - District Details"
-              val collectionListJson = mapper.readTree(metabaseUtil.listCollections())
-              val adminCollectionId = collectionListJson.elements().asScala.find(_.path("name").asText() == "Admin Collection").map(_.path("id").asInt()).getOrElse(0)
-              val (miDistrictCollectionName, miDistrictCollectionDescription) = (s"District Collection", s"This collection contains questions and dashboards for all districts")
-              val miDistrictCollectionId = collectionListJson.elements().asScala
+              val adminCollectionListJson = mapper.readTree(metabaseUtil.listCollections())
+              val adminCollectionId = adminCollectionListJson.elements().asScala.find(_.path("name").asText() == "Admin Collection").map(_.path("id").asInt()).getOrElse(0)
+              val (miAdminDistrictCollectionName, miAdminDistrictCollectionDescription) = (s"District Collection", s"This collection contains questions and dashboards for all districts")
+              val miAdminDistrictCollectionId = adminCollectionListJson.elements().asScala
                 .find(_.path("name").asText() == "District Collection")
                 .map(_.path("id").asInt())
-                .getOrElse(Utils.checkAndCreateCollection(miDistrictCollectionName, miDistrictCollectionDescription, metabaseUtil, Some(adminCollectionId)))
-              processMiDistrictDetailsPage(miDistrictCollectionId, adminDistrictCollectionName, adminDistrictDashboardName, databaseId, metabaseUtil, postgresUtil, "admin", stateName, districtName)
+                .getOrElse(Utils.checkAndCreateCollection(miAdminDistrictCollectionName, miAdminDistrictCollectionDescription, metabaseUtil, Some(adminCollectionId)))
+              processMiDistrictDetailsPage(miAdminDistrictCollectionId, adminDistrictCollectionName, adminDistrictDashboardName, databaseId, metabaseUtil, postgresUtil, "admin", stateName, districtName)
 
+              /**
+               * Logic to duplicate district details page in Admin collection
+               */
+              val stateDistrictCollectionName = s"$stateName [$districtName]"
+              val stateDistrictDashboardName = s"$stateName [$districtName] - District Details"
+              val stateCollectionListJson = mapper.readTree(metabaseUtil.listCollections())
+              val stateCollectionId = stateCollectionListJson.elements().asScala.find(_.path("name").asText() == s"State Collection [$stateName]").map(_.path("id").asInt()).getOrElse(0)
+              val (miStateDistrictCollectionName, miStateDistrictCollectionDescription) = (s"District Collection [$stateName]", s"This collection contains questions and dashboards for all districts")
+              val miStateDistrictCollectionId = stateCollectionListJson.elements().asScala
+                .find(_.path("name").asText() == s"District Collection [$stateName]")
+                .map(_.path("id").asInt())
+                .getOrElse(Utils.checkAndCreateCollection(miStateDistrictCollectionName, miStateDistrictCollectionDescription, metabaseUtil, Some(stateCollectionId)))
+              processMiDistrictDetailsPage(miStateDistrictCollectionId, stateDistrictCollectionName, stateDistrictDashboardName, databaseId, metabaseUtil, postgresUtil, "state", stateName, districtName, Some(stateId))
 
               /**
                * Logic to duplicate district details page in District collection
@@ -459,10 +474,10 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
           .getOrElse(objectMapper.createArrayNode())
         val newMetadataJson = existingDataArray.add(objectMapper.createObjectNode().put("collectionId", stateCollectionId).put("collectionName", stateCollectionName).put("dashboardId", stateDashboardId).put("dashboardName", stateDashboardName).put("questionIds", stateQuestionIdsString))
         postgresUtil.insertData(s"UPDATE $metaDataTable SET mi_metadata = '$newMetadataJson' WHERE entity_id = '$admin';")
-        postgresUtil.insertData(s"UPDATE $metaDataTable SET state_dashboard_url = '$domainName$stateDashboardId' WHERE entity_id = '$targetedStateId';")
+        postgresUtil.insertData(s"UPDATE $metaDataTable SET state_details_url_admin = '$domainName$stateDashboardId' WHERE entity_id = '$targetedStateId';")
       } else {
-        val stateMetadataJson = objectMapper.createObjectNode().put("collectionId", stateCollectionId).put("collectionName", stateCollectionName).put("dashboardId", stateDashboardId).put("dashboardName", stateDashboardName).put("questionIds", stateQuestionIdsString)
-        postgresUtil.insertData(s"UPDATE $metaDataTable SET mi_metadata = '$stateMetadataJson' WHERE entity_id = '$targetedStateId';")
+        val stateMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", stateCollectionId).put("collectionName", stateCollectionName).put("dashboardId", stateDashboardId).put("dashboardName", stateDashboardName).put("questionIds", stateQuestionIdsString))
+        postgresUtil.insertData(s"UPDATE $metaDataTable SET mi_metadata = '$stateMetadataJson', state_details_url_state = '$domainName$stateDashboardId' WHERE entity_id = '$targetedStateId';")
       }
 
       /**
@@ -505,7 +520,7 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
       }
     }
 
-    def processMiDistrictDetailsPage(parentCollectionId: Int, districtCollectionName: String, districtDashboardName: String, databaseId: Int, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, processType: String, stateName: String, districtName: String): Unit = {
+    def processMiDistrictDetailsPage(parentCollectionId: Int, districtCollectionName: String, districtDashboardName: String, databaseId: Int, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, processType: String, stateName: String, districtName: String, stateId: Option[String] = None): Unit = {
       /**
        * Mi dashboard District Details page logic for State Manager
        */
@@ -539,11 +554,21 @@ class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val ma
           .getOrElse(objectMapper.createArrayNode())
         val newMetadataJson = existingDataArray.add(objectMapper.createObjectNode().put("collectionId", districtCollectionId).put("collectionName", districtCollectionName).put("dashboardId", districtDashboardId).put("dashboardName", districtDashboardName).put("questionIds", districtQuestionIdsString))
         postgresUtil.insertData(s"UPDATE $metaDataTable SET mi_metadata = '$newMetadataJson' WHERE entity_id = '$admin';")
-        postgresUtil.insertData(s"UPDATE $metaDataTable SET district_dashboard_url = '$domainName$districtDashboardId' WHERE entity_id = '$targetedDistrictId';")
+        postgresUtil.insertData(s"UPDATE $metaDataTable SET district_details_url_admin = '$domainName$districtDashboardId' WHERE entity_id = '$targetedDistrictId';")
+      } else if (processType == "state") {
+        val query = s"SELECT mi_metadata FROM $metaDataTable WHERE entity_id = '${stateId.getOrElse("")}' "
+        val existingDataArray = postgresUtil.fetchData(query)
+          .headOption.flatMap(_.get("mi_metadata"))
+          .map(_.toString).map(objectMapper.readTree)
+          .collect { case arr: ArrayNode => arr; case obj: ObjectNode => objectMapper.createArrayNode().add(obj) }
+          .getOrElse(objectMapper.createArrayNode())
+        val newMetadataJson = existingDataArray.add(objectMapper.createObjectNode().put("collectionId", districtCollectionId).put("collectionName", districtCollectionName).put("dashboardId", districtDashboardId).put("dashboardName", districtDashboardName).put("questionIds", districtQuestionIdsString))
+        postgresUtil.insertData(s"UPDATE $metaDataTable SET mi_metadata = '$newMetadataJson' WHERE entity_id = '${stateId.getOrElse("")}';")
+        postgresUtil.insertData(s"UPDATE $metaDataTable SET district_details_url_state = '$domainName$districtDashboardId' WHERE entity_id = '$targetedDistrictId';")
       }
       else {
         val districtMetadataJson = objectMapper.createObjectNode().put("collectionId", districtCollectionId).put("collectionName", districtCollectionName).put("dashboardId", districtDashboardId).put("dashboardName", districtDashboardName).put("questionIds", districtQuestionIdsString)
-        postgresUtil.insertData(s"UPDATE $metaDataTable SET mi_metadata = '$districtMetadataJson' WHERE entity_id = '$targetedDistrictId';")
+        postgresUtil.insertData(s"UPDATE $metaDataTable SET mi_metadata = '$districtMetadataJson', district_details_url_district = '$domainName$districtDashboardId' WHERE entity_id = '$targetedDistrictId';")
       }
     }
 

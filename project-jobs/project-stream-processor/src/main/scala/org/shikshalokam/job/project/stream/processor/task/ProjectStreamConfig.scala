@@ -131,8 +131,11 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
       |    comparison_metadata JSON,
       |    status TEXT,
       |    error_message TEXT,
-      |    state_dashboard_url TEXT,
-      |    district_dashboard_url TEXT
+      |    state_details_url_state TEXT,
+      |    state_details_url_admin TEXT,
+      |    district_details_url_district TEXT,
+      |    district_details_url_state TEXT,
+      |    district_details_url_admin TEXT
       |);
       |""".stripMargin
 
