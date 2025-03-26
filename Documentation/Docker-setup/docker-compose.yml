@@ -101,7 +101,7 @@ services:
 
   # Metabase
   metabase:
-    image: metabase/metabase:latest
+    image: metabase/metabase:v0.53.3
     container_name: metabase
     environment:
       MB_DB_TYPE: ${MB_DB_TYPE}
@@ -143,7 +143,7 @@ services:
       -  elevate_data:/app/
       - ./user_data.csv:/app/Documentation/Docker-setup/user_data.csv
       - ./logs:/app/logs
-    entrypoint: ["/bin/bash", "-c", "sleep infinity"]
+    entrypoint: ["/bin/bash", "-c", "/app/Documentation/Docker-setup/submit-jobs.sh jobmanager && sleep infinity"]
 
 # Networks
 networks:

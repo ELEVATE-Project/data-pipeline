@@ -38,5 +38,12 @@ upload_and_run_jar() {
     echo "Flink job started successfully for $jar_name."
 }
 
+sleep 10
 upload_and_run_jar "/app/project-jobs/project-stream-processor/target/project-stream-processor-1.0.0.jar"
 upload_and_run_jar "/app/metabase-jobs/dashboard-creator/target/dashboard-creator-1.0.0.jar"
+
+# submitting the jar file for AKKA service
+mkdir -p /app/logs
+mkdir -p /app/csv
+nohup java -jar /app/metabase-jobs/users-via-csv/target/users-via-csv-1.0.0.jar >> /app/logs/MetabaseUserUploadLogs.logs 2>&1 & sleep 10
+ps -ef | grep users-via-csv
