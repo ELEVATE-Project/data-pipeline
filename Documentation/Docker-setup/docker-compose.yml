@@ -128,7 +128,7 @@ services:
 
   # Elevate Data Service
   elevate-data:
-    image: shikshalokamqa/elevate-data:v1.0
+    image: shikshalokamqa/elevate-data:latest
     restart: always
     container_name: elevate-data
     ports:
