@@ -1,6 +1,5 @@
 package org.shikshalokam.job.dashboard.creator.miDashboard
 
-
 import com.fasterxml.jackson.databind.node.{ArrayNode, JsonNodeFactory, ObjectNode, TextNode}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import org.postgresql.util.PGobject
@@ -10,9 +9,9 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
-object StatePage {
+object DistrictPage {
 
-  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, projects: String, solutions: String, metaDataTable: String, reportConfig: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, targetedStateId: String, targetedStateName: String): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, projects: String, solutions: String, reportConfig: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, targetedDistrictId: String, targetedDistrictName: String): ListBuffer[Int] = {
     println(s"---------------Started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
@@ -30,8 +29,8 @@ object StatePage {
                 val questionCardNode = rootNode.path("questionCard")
                 val chartName = Option(questionCardNode.path("name").asText()).getOrElse("Unknown Chart")
                 println(s" >>>>>>>>>> Processing The Chart: $chartName")
-                val updatedJson = updateJsonFiles(rootNode, collectionId, databaseId, reportConfig, targetedStateName)
-                val updatedJsonWithQuery = updateQuery(updatedJson.path("questionCard"), projects, solutions, metaDataTable, targetedStateId)
+                val updatedJson = updateJsonFiles(rootNode, collectionId, databaseId, reportConfig, targetedDistrictName)
+                val updatedJsonWithQuery = updateQuery(updatedJson.path("questionCard"), projects, solutions, targetedDistrictId)
                 val requestBody = updatedJsonWithQuery.asInstanceOf[ObjectNode]
                 val response = metabaseUtil.createQuestionCard(requestBody.toString)
                 val cardIdOpt = extractCardId(response)
@@ -73,7 +72,7 @@ object StatePage {
       if (jsonNode == null || jsonNode.isMissingNode) None else Some(jsonNode)
     }
 
-    def updateQuery(json: JsonNode, projectsTable: String, solutionsTable: String, metaDataTable: String, targetedStateId: String): JsonNode = {
+    def updateQuery(json: JsonNode, projectsTable: String, solutionsTable: String, targetedDistrictId: String): JsonNode = {
       Try {
 
         val queryPath = "/dataset_query/native/query"
@@ -82,14 +81,13 @@ object StatePage {
           throw new IllegalArgumentException(s"Query node at path $queryPath is missing or not textual.")
         }
 
-        val stateIdRegex = """(?s)state_id\s*=\s*'[^']*'""".r
+        val stateIdRegex = """(?s)district_id\s*=\s*'[^']*'""".r
         val updateTableFilter = queryNode.asText()
-          .replaceAll(stateIdRegex.regex, s"state_id = '$targetedStateId'") // Replace state_id
+          .replaceAll(stateIdRegex.regex, s"district_id = '$targetedDistrictId'") // Replace state_id
 
         val updatedTableName = updateTableFilter
           .replace("${config.projects}", projectsTable)
           .replace("${config.solutions}", solutionsTable)
-          .replace("${config.dashboard_metadata}", metaDataTable)
 
         val datasetQuery = json.get("dataset_query").deepCopy().asInstanceOf[ObjectNode]
         val nativeNode = datasetQuery.get("native").deepCopy().asInstanceOf[ObjectNode]
@@ -139,7 +137,7 @@ object StatePage {
       }.toOption
     }
 
-    def updateJsonFiles(jsonNode: JsonNode, collectionId: Int, databaseId: Int, reportConfig: String, targetedStateName: String): JsonNode = {
+    def updateJsonFiles(jsonNode: JsonNode, collectionId: Int, databaseId: Int, reportConfig: String, targetedDistrictName: String): JsonNode = {
       try {
         val rootNode = jsonNode.deepCopy().asInstanceOf[ObjectNode]
 
@@ -155,7 +153,7 @@ object StatePage {
           if (questionCard.has("display") && questionCard.get("display").asText() == "map") {
             if (questionCard.has("visualization_settings")) {
               val visualizationSettings = questionCard.get("visualization_settings").asInstanceOf[ObjectNode]
-              val map_unique_id_query = s"SELECT config_item->>'id' AS state_map_id\nFROM $reportConfig,\n     LATERAL json_array_elements(config) AS config_item\nWHERE config_item->>'state_name' = '$targetedStateName'\n  AND report_name = 'Mi-Dashboard-Location-Mapping'\n  AND question_type = 'state';"
+              val map_unique_id_query = s"SELECT config_item->>'id' AS state_map_id\nFROM $reportConfig,\n     LATERAL json_array_elements(config) AS config_item\nWHERE config_item->>'state_name' = '$targetedDistrictName'\n  AND report_name = 'Mi-Dashboard-Location-Mapping'\n  AND question_type = 'state';"
               val queryResult = postgresUtil.fetchData(map_unique_id_query)
               val stateMapId = queryResult.headOption.flatMap(_.get("state_map_id")).getOrElse("NotFound").toString
               visualizationSettings.put("map.region", stateMapId)
@@ -216,10 +214,10 @@ object StatePage {
   }
 
 
-  def updateAndAddFilter(metabaseUtil: MetabaseUtil, queryResult: JsonNode, stateId: String, collectionId: Int, databaseId: Int, projectTable: String, solutionTable: String): Int = {
+  def updateAndAddFilter(metabaseUtil: MetabaseUtil, queryResult: JsonNode, districtId: String, collectionId: Int, databaseId: Int, projectTable: String, solutionTable: String): Int = {
     val objectMapper = new ObjectMapper()
 
-    def replaceStateName(json: JsonNode, stateId: String, projectTable: String, solutionTable: String): JsonNode = {
+    def replaceStateName(json: JsonNode, districtId: String, projectTable: String, solutionTable: String): JsonNode = {
       def processNode(node: JsonNode): JsonNode = {
         node match {
           case obj: ObjectNode =>
@@ -228,8 +226,8 @@ object StatePage {
               if (childNode.isTextual) {
                 var updatedText = childNode.asText()
 
-                if (updatedText.contains("${state.id}")) {
-                  updatedText = updatedText.replace("${state.id}", stateId)
+                if (updatedText.contains("${district.id}")) {
+                  updatedText = updatedText.replace("${district.id}", districtId)
                 }
 
                 if (updatedText.contains("${config.projects}")) {
@@ -296,7 +294,7 @@ object StatePage {
       }
     }
 
-    val ReplacedStateNameJson = replaceStateName(queryResult, stateId, projectTable, solutionTable)
+    val ReplacedStateNameJson = replaceStateName(queryResult, districtId, projectTable, solutionTable)
     val updatedJson = updateCollectionIdAndDatabaseId(ReplacedStateNameJson, collectionId, databaseId)
     val questionId = getTheQuestionId(updatedJson)
     questionId

@@ -1,6 +1,6 @@
 {
   "questionCard": {
-    "name": "Leading states",
+    "name": "Leading States",
     "collection_id": 644,
     "dataset_query": {
       "database": 2,
@@ -14,7 +14,7 @@
             "display-name": "Year Filter"
           }
         },
-        "query": "SELECT \n    state_name,\n    COUNT(DISTINCT created_by) AS improvement_count_by_state\nFROM \n    ${config.projects}\nWHERE \n    state_id IS NOT NULL\n    AND created_by IS NOT NULL\n    [[AND EXTRACT(YEAR FROM created_date) = {{year_filter}}::INTEGER]]\nGROUP BY \n    state_name\nORDER BY \n    improvement_count_by_state DESC\nLIMIT 5;\n"
+        "query": "SELECT \n    state_name AS \"State Name\" ,\n    COUNT(DISTINCT created_by) AS \"Unique Improvement Project Count\" \nFROM \n    ${config.projects}\nWHERE \n    state_id IS NOT NULL\n    AND created_by IS NOT NULL\n    [[AND EXTRACT(YEAR FROM created_date) = {{year_filter}}::INTEGER]]\nGROUP BY \n    \"State Name\"  \nORDER BY \n  \"Unique Improvement Project Count\" DESC\nLIMIT 5;\n"
       }
     },
     "parameter_mappings": [],

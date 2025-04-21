@@ -50,7 +50,7 @@ object Utils {
              |  "collection_position": "1"
              |}""".stripMargin
         val dashboardId = mapper.readTree(metabaseUtil.createDashboard(dashboardRequestBody)).path("id").asInt()
-        println(s"$dashboardName : dashboard created with ID = $collectionId")
+        println(s"$dashboardName : dashboard created with ID = $dashboardId")
         dashboardId
     }
   }
