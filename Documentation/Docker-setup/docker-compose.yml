@@ -3,6 +3,7 @@ version: '2.2'
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0
+    restart: always
     container_name: zookeeper
     ports:
       - '2181:2181'
@@ -16,6 +17,7 @@ services:
       driver: none
   kafka:
     image: confluentinc/cp-kafka:7.3.0
+    restart: always
     container_name: kafka
     ports:
       - '9092:9092'
@@ -39,6 +41,7 @@ services:
   # Flink Job Manager
   jobmanager:
     image: flink:1.13.2-scala_2.12-java11
+    restart: always
     container_name: jobmanager
     ports:
       - "8081:8081"
@@ -53,6 +56,7 @@ services:
   # Flink Task Manager
   taskmanager:
     image: flink:1.13.2-scala_2.12-java11
+    restart: always
     container_name: taskmanager
     depends_on:
       - jobmanager
@@ -71,6 +75,7 @@ services:
   # PostgreSQL
   postgres:
     image: postgres:latest
+    restart: always
     container_name: postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -86,6 +91,7 @@ services:
   # pgAdmin
   pgadmin:
     image: dpage/pgadmin4
+    restart: always
     container_name: pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
@@ -101,7 +107,8 @@ services:
 
   # Metabase
   metabase:
-    image: metabase/metabase:latest
+    image: metabase/metabase:v0.50.25
+    restart: always
     container_name: metabase
     environment:
       MB_DB_TYPE: ${MB_DB_TYPE}
@@ -121,7 +128,8 @@ services:
 
   # Elevate Data Service
   elevate-data:
-    image: shikshalokamqa/elevate-data:v0.1
+    image: shikshalokamqa/elevate-data:v1.0
+    restart: always
     container_name: elevate-data
     ports:
       - "8080:8080"
@@ -143,7 +151,7 @@ services:
       -  elevate_data:/app/
       - ./user_data.csv:/app/Documentation/Docker-setup/user_data.csv
       - ./logs:/app/logs
-    entrypoint: ["/bin/bash", "-c", "sleep infinity"]
+    entrypoint: ["/bin/bash", "-c", "/app/Documentation/Docker-setup/submit-jobs.sh jobmanager && sleep infinity"]
 
 # Networks
 networks:

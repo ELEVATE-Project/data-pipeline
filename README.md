@@ -104,7 +104,7 @@ To set up the data service application, ensure you have Docker and Docker Compos
 
 1. **Download and execute the main setup script:** Execute the following command in your terminal from the reports directory.
  ```bash
-   curl -OJL https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/dev-deploy/Documentation/Docker-setup/setup.sh && chmod +x setup.sh && sudo ./setup.sh
+   curl -OJL https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/main/Documentation/Docker-setup/setup.sh && chmod +x setup.sh && sudo ./setup.sh
  ```
 
    > **Note:** The script will download the necessary files and launch the services in Docker. Once all services are up and running, follow the provided steps and enter the required inputs when prompted by the script. For instructions on setting up PgAdmin and Metabase, please refer to the documentation.
