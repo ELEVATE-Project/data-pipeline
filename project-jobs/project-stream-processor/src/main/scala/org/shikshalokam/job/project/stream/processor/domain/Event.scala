@@ -2,10 +2,6 @@ package org.shikshalokam.job.project.stream.processor.domain
 
 import org.shikshalokam.job.domain.reader.JobRequest
 
-import java.text.SimpleDateFormat
-import java.time.Instant
-import java.sql.Timestamp
-
 class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) extends JobRequest(eventMap, partition, offset) {
 
   def _id: String = readOrDefault[String]("_id", "")
@@ -36,19 +32,7 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def createdBy: String = readOrDefault[String]("createdBy", "")
 
-  def createdAt: Timestamp = {
-    val dateString = readOrDefault[String]("createdAt", "")
-    if (dateString.isEmpty) new Timestamp(System.currentTimeMillis())
-    else {
-      try {
-        Timestamp.from(Instant.parse(dateString))
-      } catch {
-        case _: Exception =>
-          val formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-          new Timestamp(formatter.parse(dateString).getTime)
-      }
-    }
-  }
+  def createdAt: String = readOrDefault[String]("createdAt", "")
 
   def completedDate: String = if (readOrDefault[String]("status", "") == "submitted") readOrDefault[String]("updatedAt", "None") else "None"
 
