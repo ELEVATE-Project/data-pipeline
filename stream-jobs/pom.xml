@@ -11,9 +11,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>project-jobs</artifactId>
+    <artifactId>stream-jobs</artifactId>
     <packaging>pom</packaging>
-    <name>Projects-Job</name>
+    <name>Stream-Jobs</name>
 
     <modules>
         <module>project-stream-processor</module>

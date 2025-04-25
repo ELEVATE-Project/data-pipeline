@@ -10,12 +10,12 @@
         <version>1.0</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <artifactId>dashboard-creator</artifactId>
+    <artifactId>project-dashboard-creator</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
-    <name>DashboardCreator</name>
+    <name>ProjectDashboardCreator</name>
     <description>
-        Job for creating metabase dashboard
+        Job for creating project metabase dashboard
     </description>
 
     <properties>
