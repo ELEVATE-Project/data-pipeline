@@ -21,12 +21,12 @@ class SurveyStreamTask(config: SurveyStreamConfig, kafkaConnector: FlinkKafkaCon
     implicit val stringTypeInfo: TypeInformation[String] = TypeExtractor.getForClass(classOf[String])
     val source = kafkaConnector.kafkaJobRequestSource[Event](config.inputTopic)
 
-    val progressStream = env.addSource(source).name(config.projectsStreamConsumer)
-      .uid(config.projectsStreamConsumer).setParallelism(config.kafkaConsumerParallelism)
+    val progressStream = env.addSource(source).name(config.surveysStreamConsumer)
+      .uid(config.surveysStreamConsumer).setParallelism(config.kafkaConsumerParallelism)
       .rebalance
       .process(new SurveyStreamFunction(config))
-      .name(config.projectsStreamFunction).uid(config.projectsStreamFunction)
-      .setParallelism(config.projectsStreamParallelism)
+      .name(config.surveysStreamFunction).uid(config.surveysStreamFunction)
+      .setParallelism(config.surveysStreamParallelism)
 
     progressStream.getSideOutput(config.eventOutputTag)
       .addSink(kafkaConnector.kafkaStringSink(config.outputTopic))
@@ -38,16 +38,16 @@ class SurveyStreamTask(config: SurveyStreamConfig, kafkaConnector: FlinkKafkaCon
   }
 }
 
-object ProjectStreamTask {
+object SurvayStreamTask {
   def main(args: Array[String]): Unit = {
-    println("Starting up the Project Stream Job")
+    println("Starting up the Survey Stream Job")
     val configFilePath = Option(ParameterTool.fromArgs(args).get("config.file.path"))
     val config = configFilePath.map {
       path => ConfigFactory.parseFile(new File(path)).resolve()
     }.getOrElse(ConfigFactory.load("survey-stream.conf").withFallback(ConfigFactory.systemEnvironment()))
-    val projectStreamConfig = new SurveyStreamConfig(config)
-    val kafkaUtil = new FlinkKafkaConnector(projectStreamConfig)
-    val task = new SurveyStreamTask(projectStreamConfig, kafkaUtil)
+    val surveyStreamConfig = new SurveyStreamConfig(config)
+    val kafkaUtil = new FlinkKafkaConnector(surveyStreamConfig)
+    val task = new SurveyStreamTask(surveyStreamConfig, kafkaUtil)
     task.process()
   }
 }

@@ -17,25 +17,25 @@ class SurveyStreamConfig(override val config: Config) extends BaseJobConfig(conf
   val outputTopic: String = config.getString("kafka.output.topic")
 
   // Output Tags
-  val eventOutputTag: OutputTag[String] = OutputTag[String]("project-dashboard-output-event")
+  val eventOutputTag: OutputTag[String] = OutputTag[String]("survey-dashboard-output-event")
 
   // Parallelism
   override val kafkaConsumerParallelism: Int = config.getInt("task.consumer.parallelism")
-  val projectsStreamParallelism: Int = config.getInt("task.sl.projects.stream.parallelism")
+  val surveysStreamParallelism: Int = config.getInt("task.sl.surveys.stream.parallelism")
   val metabaseDashboardParallelism: Int = config.getInt("task.sl.metabase.dashboard.parallelism")
 
   // Consumers
-  val projectsStreamConsumer: String = "project-stream-consumer"
+  val surveysStreamConsumer: String = "survey-stream-consumer"
   val metabaseDashboardProducer = "metabase-dashboard-producer"
 
   // Functions
-  val projectsStreamFunction: String = "ProjectStreamFunction"
+  val surveysStreamFunction: String = "SurveyStreamFunction"
 
-  // Project submissions job metrics
-  val projectsCleanupHit = "project-cleanup-hit"
+  // Survey submissions job metrics
+  val surveysCleanupHit = "survey-cleanup-hit"
   val skipCount = "skipped-message-count"
   val successCount = "success-message-count"
-  val totalEventsCount = "total-project-events-count"
+  val totalEventsCount = "total-survey-events-count"
 
   //report-config
   val reportsEnabled: Set[String]= config.getStringList("reports.enabled").asScala.toSet
@@ -47,8 +47,6 @@ class SurveyStreamConfig(override val config: Config) extends BaseJobConfig(conf
   val pgPassword: String = config.getString("postgres.password")
   val pgDataBase: String = config.getString("postgres.database")
   val solutions: String = config.getString("postgres.tables.solutionsTable")
-  val projects: String = config.getString("postgres.tables.projectsTable")
-  val tasks: String = config.getString("postgres.tables.tasksTable")
   val dashboard_metadata: String = config.getString("postgres.tables.dashboardMetadataTable")
 
   val createSolutionsTable =
@@ -64,60 +62,6 @@ class SurveyStreamConfig(override val config: Config) extends BaseJobConfig(conf
       |    program_external_id TEXT,
       |    program_description TEXT,
       |    private_program BOOLEAN
-      |);""".stripMargin
-
-  val createProjectTable =
-    s"""CREATE TABLE IF NOT EXISTS $projects (
-      |    project_id TEXT PRIMARY KEY,
-      |    solution_id TEXT REFERENCES $solutions(solution_id),
-      |    created_by TEXT,
-      |    created_date TEXT,
-      |    completed_date TEXT,
-      |    last_sync TEXT,
-      |    updated_date TEXT,
-      |    status TEXT,
-      |    remarks TEXT,
-      |    evidence TEXT,
-      |    evidence_count TEXT,
-      |    program_id TEXT,
-      |    task_count TEXT,
-      |    user_role_ids TEXT,
-      |    user_roles TEXT,
-      |    org_id TEXT,
-      |    org_name TEXT,
-      |    org_code TEXT,
-      |    state_id TEXT,
-      |    state_name TEXT,
-      |    district_id TEXT,
-      |    district_name TEXT,
-      |    block_id TEXT,
-      |    block_name TEXT,
-      |    cluster_id TEXT,
-      |    cluster_name TEXT,
-      |    school_id TEXT,
-      |    school_name TEXT,
-      |    certificate_template_id TEXT,
-      |    certificate_template_url TEXT,
-      |    certificate_issued_on TEXT,
-      |    certificate_status TEXT,
-      |    certificate_pdf_path TEXT
-      |);""".stripMargin
-
-  val createTasksTable =
-    s"""CREATE TABLE IF NOT EXISTS $tasks (
-      |    task_id TEXT PRIMARY KEY,
-      |    project_id TEXT REFERENCES $projects(project_id),
-      |    name TEXT,
-      |    assigned_to TEXT,
-      |    start_date TEXT,
-      |    end_date TEXT,
-      |    synced_at TEXT,
-      |    is_deleted TEXT,
-      |    is_deletable TEXT,
-      |    remarks TEXT,
-      |    status TEXT,
-      |    evidence TEXT,
-      |    evidence_count TEXT
       |);""".stripMargin
 
   val createDashboardMetadataTable =

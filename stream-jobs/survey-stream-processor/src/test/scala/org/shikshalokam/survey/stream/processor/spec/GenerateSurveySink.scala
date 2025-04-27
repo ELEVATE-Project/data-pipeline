@@ -4,16 +4,16 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction
 
 import java.util
 
-class GenerateProjectSink extends SinkFunction[String] {
+class GenerateSurveySink extends SinkFunction[String] {
 
   override def invoke(value: String): Unit = {
     synchronized{
       println(value)
-      GenerateProjectSink.values.add(value)
+      GenerateSurveySink.values.add(value)
     }
   }
 }
 
-object GenerateProjectSink {
+object GenerateSurveySink {
   val values: util.List[String] = new util.ArrayList()
 }

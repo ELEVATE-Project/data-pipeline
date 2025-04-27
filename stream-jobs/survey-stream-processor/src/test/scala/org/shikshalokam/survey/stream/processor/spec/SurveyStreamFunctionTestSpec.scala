@@ -13,7 +13,7 @@ import org.shikshalokam.job.survey.stream.processor.domain.Event
 import org.shikshalokam.job.survey.stream.processor.task.{SurveyStreamConfig, SurveyStreamTask}
 
 
-class ProjectStreamFunctionTestSpec extends BaseTestSpec {
+class SurveyStreamFunctionTestSpec extends BaseTestSpec {
 
   implicit val mapTypeInfo: TypeInformation[java.util.Map[String, AnyRef]] = TypeExtractor.getForClass(classOf[java.util.Map[String, AnyRef]])
   implicit val eventTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
@@ -44,12 +44,12 @@ class ProjectStreamFunctionTestSpec extends BaseTestSpec {
 
   def initialize() {
     when(mockKafkaUtil.kafkaJobRequestSource[Event](jobConfig.inputTopic))
-      .thenReturn(new ProjectEventSource)
+      .thenReturn(new SurveyEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.outputTopic))
-      .thenReturn(new GenerateProjectSink)
+      .thenReturn(new GenerateSurveySink)
   }
 
-  "Project Stream Job " should "execute successfully " in {
+  "Survey Stream Job " should "execute successfully " in {
     initialize()
     new SurveyStreamTask(jobConfig, mockKafkaUtil).process()
   }
