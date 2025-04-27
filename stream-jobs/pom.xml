@@ -17,6 +17,7 @@
 
     <modules>
         <module>project-stream-processor</module>
+        <module>survey-stream-processor</module>
     </modules>
 
     <build>
