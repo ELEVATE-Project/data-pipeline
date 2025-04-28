@@ -39,6 +39,22 @@ class PostgresUtil(dbUrl: String, dbUser: String, dbPassword: String) {
     }
   }
 
+  def checkAndCreateTable(tableName: String, createTableQuery: String): Unit = {
+    val checkTableExistsQuery =
+      s"""SELECT EXISTS (
+         |  SELECT FROM information_schema.tables
+         |  WHERE table_name = '$tableName'
+         |);
+         |""".stripMargin
+    val tableExists = executeQuery(checkTableExistsQuery) { resultSet =>
+      if (resultSet.next()) resultSet.getBoolean(1) else false
+    }
+    if (!tableExists) {
+      createTable(createTableQuery, tableName)
+      println(s"${tableName} table created successfully.")
+    } else println(s"The table '$tableName' is already present in the database.")
+  }
+
   def executeUpdate(query: String, table: String, id: String): Unit = {
     val connection = getConnection
     try {
@@ -47,6 +63,20 @@ class PostgresUtil(dbUrl: String, dbUser: String, dbPassword: String) {
     } catch {
       case e: SQLException =>
         println("Error inserting data: " + e.getMessage)
+        throw e
+    } finally {
+      connection.close()
+    }
+  }
+
+  def executeQuery[T](query: String)(handler: java.sql.ResultSet => T): T = {
+    val connection = getConnection
+    try {
+      val resultSet = connection.createStatement().executeQuery(query)
+      handler(resultSet)
+    } catch {
+      case e: SQLException =>
+        println("Error executing query: " + e.getMessage)
         throw e
     } finally {
       connection.close()
