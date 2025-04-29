@@ -8,7 +8,7 @@
         <groupId>org.shikshalokam</groupId>
         <artifactId>data-pipeline</artifactId>
         <version>1.0</version>
-    </parent>f
+    </parent>
     <artifactId>jobs-core</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
