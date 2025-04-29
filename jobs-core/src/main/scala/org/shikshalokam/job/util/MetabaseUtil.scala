@@ -122,6 +122,90 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
   }
 
   /**
+   * Method to get table details by Id from Metabase
+   *
+   * @param database ID of the table to retrieve details for
+   * @return JSON string representing the dashboard details
+   */
+  def getTableDetailsByName(databaseId: Int, tableName: String): Int = {
+    val url = s"$metabaseUrl/database/$databaseId/idfields"
+    val response = requests.get(
+      url,
+      headers = Map(
+        "Content-Type" -> "application/json",
+        "X-Metabase-Session" -> getSessionToken
+      )
+    )
+
+    if (response.statusCode == 200) {
+      val jsonResponse = ujson.read(response.text).arr
+      jsonResponse
+        .find(obj => obj("table")("name").str == tableName)
+        .map(obj => obj("table")("id").num.toInt)
+        .getOrElse(throw new Exception(s"Table with name '$tableName' not found"))
+    } else {
+      throw new Exception(s"Failed to retrieve table details: ${response.text()}")
+    }
+  }
+
+  /**
+   * Method to get column details by TableId from Metabase
+   *
+   * @param table ID of the column to retrieve details for
+   * @return JSON string representing the dashboard details
+   */
+  def getColumnIdDetailsByName(tableId: Int, columnName: String): Int = {
+    val url = s"$metabaseUrl/table/$tableId/query_metadata?include_sensitive_fields=true"
+    val response = requests.get(
+      url,
+      headers = Map(
+        "Content-Type" -> "application/json",
+        "X-Metabase-Session" -> getSessionToken
+      )
+    )
+
+    if (response.statusCode == 200) {
+      val jsonResponse = ujson.read(response.text)
+      val fields = jsonResponse("fields").arr
+      fields
+        .find(field => field("name").str == columnName)
+        .map(field => field("id").num.toInt)
+        .getOrElse(throw new Exception(s"Field with name '$columnName' not found"))
+    } else {
+      throw new Exception(s"Failed to retrieve column details: ${response.text()}")
+    }
+  }
+
+  /**
+   * To update the column category in Metabase
+   * ex state_name -> state and column_name -> city
+   * first get the database id then table id(getTableDetailsByName) and then column id
+   * (getColumnIdDetailsByName) and then call this method
+   */
+
+  def updateColumnCategory(columnId: Int, category: String): Unit = {
+    val url = s"$metabaseUrl/field/$columnId"
+    val semanticType = s"type/$category"
+    val payload = ujson.Obj("semantic_type" -> semanticType)
+
+    val response = requests.put(
+      url,
+      headers = Map(
+        "Content-Type" -> "application/json",
+        "X-Metabase-Session" -> getSessionToken
+      ),
+      data = payload.render()
+    )
+
+    if (response.statusCode == 200) {
+      println(s"Successfully updated column category for field ID: $columnId to $category")
+    } else {
+      throw new Exception(s"Failed to update column category: ${response.text()}")
+    }
+  }
+
+
+  /**
    * Method to list database details from Metabase
    *
    * @return JSON string representing the database details
@@ -531,4 +615,32 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
     }
   }
 
+  /**
+   * Method to sync database schema and rescan field values in Metabase
+   *
+   * @param databaseId ID of the database to sync and rescan
+   */
+  def syncDatabaseAndRescanValues(databaseId: Int): Unit = {
+    val syncSchemaUrl = s"$metabaseUrl/database/$databaseId/sync_schema"
+    val rescanValuesUrl = s"$metabaseUrl/database/$databaseId/rescan_values"
+
+    val headers = Map(
+      "Content-Type" -> "application/json",
+      "X-Metabase-Session" -> getSessionToken
+    )
+
+    val syncSchemaResponse = requests.post(syncSchemaUrl, headers = headers, data = "{}")
+    if (syncSchemaResponse.statusCode == 200) {
+      println(s"Successfully synced schema for database ID: $databaseId")
+    } else {
+      throw new Exception(s"Failed to sync schema: ${syncSchemaResponse.text()}")
+    }
+
+    val rescanValuesResponse = requests.post(rescanValuesUrl, headers = headers, data = "{}")
+    if (rescanValuesResponse.statusCode == 200) {
+      println(s"Successfully rescanned field values for database ID: $databaseId")
+    } else {
+      throw new Exception(s"Failed to rescan field values: ${rescanValuesResponse.text()}")
+    }
+  }
 }

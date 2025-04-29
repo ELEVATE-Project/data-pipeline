@@ -21,7 +21,7 @@ class MetabaseDashboardConfig(override val config: Config) extends BaseJobConfig
   val metabaseDashboardProducer: String = "metabase-dashboard-consumer"
 
   // Functions
-  val metabaseDashboardFunction: String = "MetabaseDashboardFunction"
+  val metabaseDashboardFunction: String = "SurveyMetabaseDashboardFunction"
 
   // Metabase Dashboard submissions job metrics
   val metabaseDashboardCleanupHit = "metabase-dashboard-cleanup-hit"

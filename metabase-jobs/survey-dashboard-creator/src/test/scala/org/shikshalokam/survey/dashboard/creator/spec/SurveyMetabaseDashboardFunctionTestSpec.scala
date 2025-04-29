@@ -12,7 +12,7 @@ import org.shikshalokam.job.connector.FlinkKafkaConnector
 import org.shikshalokam.job.survey.dashboard.creator.domain.Event
 import org.shikshalokam.job.survey.dashboard.creator.task.{MetabaseDashboardConfig, MetabaseDashboardTask}
 
-class MetabaseDashboardFunctionTestSpec extends BaseTestSpec {
+class SurveyMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
   implicit val mapTypeInfo: TypeInformation[java.util.Map[String, AnyRef]] = TypeExtractor.getForClass(classOf[java.util.Map[String, AnyRef]])
   implicit val eventTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
   implicit val stringTypeInfo: TypeInformation[String] = TypeExtractor.getForClass(classOf[String])

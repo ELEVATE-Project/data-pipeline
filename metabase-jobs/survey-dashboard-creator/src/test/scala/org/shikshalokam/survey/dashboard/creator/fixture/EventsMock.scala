@@ -2,6 +2,6 @@ package org.shikshalokam.survey.dashboard.creator.fixture
 
 object EventsMock {
 
-  val METABASE_DASHBOARD_EVENT_1: String = """{"reportType":"Project","publishedAt":"2024-11-13 11:24:47","dashboardData":{"targetedProgram":"66386a1954afe7df153a54d3","targetedDistrict":"66bf7f3560de1616f42cb993","admin":"1","targetedState":"66bf7eb960de1616f42cb984"},"_id":"2998015b-3705-49fb-8a5f-9271b623da18"}"""
+  val METABASE_DASHBOARD_EVENT_1: String = """{"reportType":"Survey","publishedAt":"2025-04-28 20:34:27","dashboardData":{"targetedProgram":"67937ab6922600d2c0c8cb85","admin":"1"},"_id":"c02f8d8d-f0dd-4c3c-9588-e326726af3c7"}"""
 
 }

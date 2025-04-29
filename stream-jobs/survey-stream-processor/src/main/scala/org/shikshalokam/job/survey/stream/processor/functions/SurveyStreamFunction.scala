@@ -278,6 +278,13 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
                        user_id: String, value: String, state_name: String, district_name: String,
                        block_name: String, cluster_name: String, school_name: String, has_parent_question: Boolean,
                        parent_question_text: String, question_type: String): Unit = {
+
+      // Return early if "labels" key is missing TODO: Remove this
+      if (!payload.exists(_.contains("labels"))) {
+        println(s"Skipping question $question_id as 'labels' key is missing.")
+        return
+      }
+
       val question = extractField(payload, "question")
       val labels = extractField(payload, "labels")
 
