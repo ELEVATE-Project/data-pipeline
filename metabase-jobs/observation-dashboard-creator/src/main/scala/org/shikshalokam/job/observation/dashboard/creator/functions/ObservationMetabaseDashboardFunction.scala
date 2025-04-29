@@ -83,7 +83,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
                 val domainId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, domainTable, "domain", postgresUtil, createDashboardQuery)
                 val subDomainId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, domainTable, "subdomain", postgresUtil, createDashboardQuery)
                 val criteriaId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, domainTable, "criteria", postgresUtil, createDashboardQuery)
-                val reportConfigQuery: String = s"SELECT question_type, config FROM $report_config WHERE dashboard_name = 'Domain' AND report_name = 'Domain-Report' AND question_type != 'Domain-Parameter';"
+                val reportConfigQuery: String = s"SELECT question_type, config FROM $report_config WHERE dashboard_name = 'Domain' AND report_name = 'Domain-Report';"
                 val questionCardIdList = UpdateDomainJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolnameId, clusterId, domainId, subDomainId ,criteriaId, domainTable, metabaseUtil, postgresUtil, report_config)
                 val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
                 val parametersQuery: String = s"SELECT config FROM $report_config WHERE dashboard_name = 'Domain' AND question_type = 'Domain-Parameter'"
