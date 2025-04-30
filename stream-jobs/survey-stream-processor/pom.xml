@@ -13,7 +13,7 @@
     <artifactId>survey-stream-processor</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
-    <name>ProjectStreamProcessor</name>
+    <name>SurveyStreamProcessor</name>
     <description>
         Job for stream processing survey submission events
     </description>

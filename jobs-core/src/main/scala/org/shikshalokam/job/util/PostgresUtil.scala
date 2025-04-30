@@ -105,6 +105,22 @@ class PostgresUtil(dbUrl: String, dbUser: String, dbPassword: String) {
           case _ => throw new IllegalArgumentException(s"Unsupported parameter type at index ${index + 1}: ${param.getClass}")
         }
       }
+      for ((param, index) <- params.zipWithIndex) {
+        param match {
+          case v: String => preparedStatement.setString(index + 1, v)
+          case v: Int => preparedStatement.setInt(index + 1, v)
+          case v: Boolean => preparedStatement.setBoolean(index + 1, v)
+          case v: Long => preparedStatement.setLong(index + 1, v)
+          case v: Double => preparedStatement.setDouble(index + 1, v)
+          case v: Float => preparedStatement.setFloat(index + 1, v)
+          case v: BigDecimal => preparedStatement.setBigDecimal(index + 1, v.bigDecimal)
+          case v: Timestamp => preparedStatement.setTimestamp(index + 1, v)
+          case v: java.sql.Date => preparedStatement.setDate(index + 1, v)
+          case v: java.sql.Time => preparedStatement.setTime(index + 1, v)
+          case null => preparedStatement.setNull(index + 1, java.sql.Types.NULL)
+          case _ => throw new IllegalArgumentException(s"Unsupported parameter type at index ${index + 1}: ${param.getClass}")
+        }
+      }
       preparedStatement.executeUpdate()
       println(s"Data inserted into ${table} table successfully with id $id.")
     } catch {
