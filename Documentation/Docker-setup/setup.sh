@@ -21,7 +21,7 @@ log() {
 # Step 1: Download Docker Compose file
 log "Downloading Docker Compose file..."
 echo "Downloading Docker Compose file..."
-curl -OJL https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/main/Documentation/Docker-setup/docker-compose.yml
+curl -OJL https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/docker-compose.yml
 echo "Docker Compose file downloaded."
 log "Docker Compose file downloaded."
 
@@ -29,16 +29,16 @@ log "Docker Compose file downloaded."
 log "Downloading required files..."
 echo "Downloading required files..."
 curl -L \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/main/Documentation/Docker-setup/config.env \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/main/Documentation/Docker-setup/config_files/base-config.conf \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/main/Documentation/Docker-setup/config_files/metabase-dashboard.conf \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/main/Documentation/Docker-setup/config_files/project-stream.conf \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/main/Documentation/Docker-setup/config_files/application.conf \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/main/Documentation/Docker-setup/create-table.sh \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/main/Documentation/Docker-setup/deploy-flink-job.sh \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/main/Documentation/Docker-setup/dummy-event-data.json \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/main/Documentation/Docker-setup/submit-jobs.sh \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/main/Documentation/Docker-setup/user_data.csv
+    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/config.env \
+    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/config_files/base-config.conf \
+    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/config_files/metabase-dashboard.conf \
+    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/config_files/project-stream.conf \
+    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/config_files/application.conf \
+    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/create-table.sh \
+    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/deploy-flink-job.sh \
+    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/dummy-event-data.json \
+    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/submit-jobs.sh \
+    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/user_data.csv
 echo "All files downloaded."
 log "All files downloaded."
 
