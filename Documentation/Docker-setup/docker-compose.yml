@@ -1,41 +1,41 @@
 version: '2.2'
 
-services:
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.3.0
-    restart: always
-    container_name: zookeeper
-    ports:
-      - '2181:2181'
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-      - ZOOKEEPER_CLIENT_PORT=2181
-      - ZOOKEEPER_TICK_TIME=2000
-    networks:
-      - elevate_net
-    logging:
-      driver: none
-  kafka:
-    image: confluentinc/cp-kafka:7.3.0
-    restart: always
-    container_name: kafka
-    ports:
-      - '9092:9092'
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://kafka:9093
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    depends_on:
-      - zookeeper
-    networks:
-      - elevate_net
-    logging:
-        driver: none
-    volumes:
-      - kafka_data:/var/lib/kafka/
+# services:
+#   zookeeper:
+#     image: confluentinc/cp-zookeeper:7.3.0
+#     restart: always
+#     container_name: zookeeper
+#     ports:
+#       - '2181:2181'
+#     environment:
+#       - ALLOW_ANONYMOUS_LOGIN=yes
+#       - ZOOKEEPER_CLIENT_PORT=2181
+#       - ZOOKEEPER_TICK_TIME=2000
+#     networks:
+#       - elevate_net
+#     logging:
+#       driver: none
+#   kafka:
+#     image: confluentinc/cp-kafka:7.3.0
+#     restart: always
+#     container_name: kafka
+#     ports:
+#       - '9092:9092'
+#     environment:
+#       KAFKA_BROKER_ID: 1
+#       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+#       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://kafka:9093
+#       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+#       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+#       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+#     depends_on:
+#       - zookeeper
+#     networks:
+#       - elevate_net
+#     logging:
+#         driver: none
+#     volumes:
+#       - kafka_data:/var/lib/kafka/
 
 
   # Flink Job Manager
@@ -73,37 +73,37 @@ services:
       - flink_shared:/opt/flink/usrlib/
 
   # PostgreSQL
-  postgres:
-    image: postgres:latest
-    restart: always
-    container_name: postgres
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    networks:
-      - elevate_net
+  # postgres:
+  #   image: postgres:latest
+  #   restart: always
+  #   container_name: postgres
+  #   environment:
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+  #   networks:
+  #     - elevate_net
 
   # pgAdmin
-  pgadmin:
-    image: dpage/pgadmin4
-    restart: always
-    container_name: pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-    ports:
-      - "5050:80"
-    depends_on:
-      - postgres
-    networks:
-      - elevate_net
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   restart: always
+  #   container_name: pgadmin
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+  #     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+  #   ports:
+  #     - "5050:80"
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - elevate_net
+  #   volumes:
+  #     - pgadmin_data:/var/lib/pgadmin
 
   # Metabase
   metabase:
@@ -119,8 +119,8 @@ services:
       MB_DB_HOST: ${POSTGRES_HOST}
     ports:
       - "3000:3000"
-    depends_on:
-      - postgres
+    # depends_on:
+    #   - postgres
     networks:
       - elevate_net
     volumes:
@@ -134,8 +134,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - kafka
-      - postgres
+      # - kafka
+      # - postgres
       - jobmanager
       - taskmanager
       - metabase
@@ -161,15 +161,15 @@ networks:
 
 # Volumes for persistence
 volumes:
-  postgres_data:
-    driver: local
-  pgadmin_data:
-    driver: local
+  # postgres_data:
+  #   driver: local
+  # pgadmin_data:
+  #   driver: local
   flink_shared:
     driver: local
   metabase_data:
     driver: local
   elevate_data:
     driver: local
-  kafka_data:
-    driver: local
+  # kafka_data:
+  #   driver: local
