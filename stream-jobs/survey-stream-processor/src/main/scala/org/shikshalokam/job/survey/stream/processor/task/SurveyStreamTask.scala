@@ -38,7 +38,7 @@ class SurveyStreamTask(config: SurveyStreamConfig, kafkaConnector: FlinkKafkaCon
   }
 }
 
-object SurvayStreamTask {
+object SurveyStreamTask {
   def main(args: Array[String]): Unit = {
     println("Starting up the Survey Stream Job")
     val configFilePath = Option(ParameterTool.fromArgs(args).get("config.file.path"))
