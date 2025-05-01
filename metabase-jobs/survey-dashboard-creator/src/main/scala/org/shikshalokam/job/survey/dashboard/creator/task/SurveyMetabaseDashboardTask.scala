@@ -12,7 +12,7 @@ import org.shikshalokam.job.util.FlinkUtil
 
 import java.io.File
 
-class MetabaseDashboardTask(config: MetabaseDashboardConfig, kafkaConnector: FlinkKafkaConnector) {
+class MetabaseDashboardTask(config: SurveyMetabaseDashboardConfig, kafkaConnector: FlinkKafkaConnector) {
   println("inside MetabaseDashboardTask class")
 
   private val serialVersionUID = -7729362727131516112L
@@ -39,7 +39,7 @@ object MetabaseDashboardTask {
     val config = configFilePath.map {
       path => ConfigFactory.parseFile(new File(path)).resolve()
     }.getOrElse(ConfigFactory.load("metabase-dashboard.conf").withFallback(ConfigFactory.systemEnvironment()))
-    val metabaseDashboardConfig = new MetabaseDashboardConfig(config)
+    val metabaseDashboardConfig = new SurveyMetabaseDashboardConfig(config)
     val kafkaUtil = new FlinkKafkaConnector(metabaseDashboardConfig)
     val task = new MetabaseDashboardTask(metabaseDashboardConfig, kafkaUtil)
     task.process()

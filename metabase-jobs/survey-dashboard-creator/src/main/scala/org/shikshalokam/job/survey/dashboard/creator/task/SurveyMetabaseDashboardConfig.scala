@@ -7,7 +7,7 @@ import org.shikshalokam.job.BaseJobConfig
 import org.shikshalokam.job.survey.dashboard.creator.domain.Event
 
 
-class MetabaseDashboardConfig(override val config: Config) extends BaseJobConfig(config, "MetabaseDashboardJob") {
+class SurveyMetabaseDashboardConfig(override val config: Config) extends BaseJobConfig(config, "MetabaseDashboardJob") {
 
   implicit val mapTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
 
@@ -36,8 +36,6 @@ class MetabaseDashboardConfig(override val config: Config) extends BaseJobConfig
   val pgPassword: String = config.getString("postgres.password")
   val pgDataBase: String = config.getString("postgres.database")
   val solutions: String = config.getString("postgres.tables.solutionsTable")
-  val projects: String = config.getString("postgres.tables.projectsTable")
-  val tasks: String = config.getString("postgres.tables.tasksTable")
   val dashboard_metadata: String = config.getString("postgres.tables.dashboardMetadataTable")
   val report_config: String = config.getString("postgres.tables.reportConfigTable")
 
