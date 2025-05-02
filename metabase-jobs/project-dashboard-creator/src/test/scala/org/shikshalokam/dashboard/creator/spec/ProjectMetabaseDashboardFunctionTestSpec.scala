@@ -10,10 +10,10 @@ import org.mockito.Mockito.when
 import org.shikshalokam.BaseTestSpec
 import org.shikshalokam.job.connector.FlinkKafkaConnector
 import org.shikshalokam.job.dashboard.creator.domain.Event
-import org.shikshalokam.job.dashboard.creator.task.{MetabaseDashboardConfig, MetabaseDashboardTask}
+import org.shikshalokam.job.dashboard.creator.task.{ProjectMetabaseDashboardConfig, ProjectMetabaseDashboardTask}
 
 
-class MetabaseDashboardFunctionTestSpec extends BaseTestSpec {
+class ProjectMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
   implicit val mapTypeInfo: TypeInformation[java.util.Map[String, AnyRef]] = TypeExtractor.getForClass(classOf[java.util.Map[String, AnyRef]])
   implicit val eventTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
   implicit val stringTypeInfo: TypeInformation[String] = TypeExtractor.getForClass(classOf[String])
@@ -27,7 +27,7 @@ class MetabaseDashboardFunctionTestSpec extends BaseTestSpec {
   val mockKafkaUtil: FlinkKafkaConnector = mock[FlinkKafkaConnector](Mockito.withSettings().serializable())
 
   val config: Config = ConfigFactory.load("test.conf")
-  val jobConfig: MetabaseDashboardConfig = new MetabaseDashboardConfig(config)
+  val jobConfig: ProjectMetabaseDashboardConfig = new ProjectMetabaseDashboardConfig(config)
 
 
   override protected def beforeAll(): Unit = {
@@ -43,12 +43,12 @@ class MetabaseDashboardFunctionTestSpec extends BaseTestSpec {
 
   def initialize() {
     when(mockKafkaUtil.kafkaJobRequestSource[Event](jobConfig.inputTopic))
-      .thenReturn(new MetabaseEventSource)
+      .thenReturn(new ProjectMetabaseEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.inputTopic)).thenReturn(new GenerateMetabaseDashboardSink)
   }
 
   "Metabase Dashboard Creator Job " should "execute successfully " in {
     initialize()
-    new MetabaseDashboardTask(jobConfig, mockKafkaUtil).process()
+    new ProjectMetabaseDashboardTask(jobConfig, mockKafkaUtil).process()
   }
 }

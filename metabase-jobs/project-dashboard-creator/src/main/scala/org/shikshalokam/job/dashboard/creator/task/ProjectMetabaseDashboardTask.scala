@@ -41,7 +41,7 @@ object ProjectMetabaseDashboardTask {
     }.getOrElse(ConfigFactory.load("metabase-dashboard.conf").withFallback(ConfigFactory.systemEnvironment()))
     val metabaseDashboardConfig = new ProjectMetabaseDashboardConfig(config)
     val kafkaUtil = new FlinkKafkaConnector(metabaseDashboardConfig)
-    val task = new MetabaseDashboardTask(metabaseDashboardConfig, kafkaUtil)
+    val task = new ProjectMetabaseDashboardTask(metabaseDashboardConfig, kafkaUtil)
     task.process()
   }
 }
