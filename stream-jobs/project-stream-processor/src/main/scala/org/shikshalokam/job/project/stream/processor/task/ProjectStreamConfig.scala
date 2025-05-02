@@ -38,7 +38,7 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
   val totalEventsCount = "total-project-events-count"
 
   //report-config
-  val reportsEnabled: Set[String]= config.getStringList("reports.enabled").asScala.toSet
+  val reportsEnabled: Set[String] = config.getStringList("reports.enabled").asScala.toSet
 
   // PostgreSQL connection config
   val pgHost: String = config.getString("postgres.host")
@@ -53,85 +53,90 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
 
   val createSolutionsTable =
     s"""CREATE TABLE IF NOT EXISTS $solutions (
-      |    solution_id TEXT PRIMARY KEY,
-      |    external_id TEXT,
-      |    name TEXT,
-      |    description TEXT,
-      |    duration TEXT,
-      |    categories TEXT,
-      |    program_id TEXT,
-      |    program_name TEXT,
-      |    program_external_id TEXT,
-      |    program_description TEXT,
-      |    private_program BOOLEAN
-      |);""".stripMargin
+       |    solution_id TEXT PRIMARY KEY,
+       |    external_id TEXT,
+       |    name TEXT,
+       |    description TEXT,
+       |    duration TEXT,
+       |    categories TEXT,
+       |    program_id TEXT,
+       |    program_name TEXT,
+       |    program_external_id TEXT,
+       |    program_description TEXT,
+       |    private_program BOOLEAN
+       |);""".stripMargin
 
   val createProjectTable =
     s"""CREATE TABLE IF NOT EXISTS $projects (
-      |    project_id TEXT PRIMARY KEY,
-      |    solution_id TEXT REFERENCES $solutions(solution_id),
-      |    created_by TEXT,
-      |    created_date TEXT,
-      |    completed_date TEXT,
-      |    last_sync TEXT,
-      |    updated_date TEXT,
-      |    status TEXT,
-      |    remarks TEXT,
-      |    evidence TEXT,
-      |    evidence_count TEXT,
-      |    program_id TEXT,
-      |    task_count TEXT,
-      |    user_role_ids TEXT,
-      |    user_roles TEXT,
-      |    org_id TEXT,
-      |    org_name TEXT,
-      |    org_code TEXT,
-      |    state_id TEXT,
-      |    state_name TEXT,
-      |    district_id TEXT,
-      |    district_name TEXT,
-      |    block_id TEXT,
-      |    block_name TEXT,
-      |    cluster_id TEXT,
-      |    cluster_name TEXT,
-      |    school_id TEXT,
-      |    school_name TEXT,
-      |    certificate_template_id TEXT,
-      |    certificate_template_url TEXT,
-      |    certificate_issued_on TEXT,
-      |    certificate_status TEXT,
-      |    certificate_pdf_path TEXT
-      |);""".stripMargin
+       |    project_id TEXT PRIMARY KEY,
+       |    solution_id TEXT REFERENCES $solutions(solution_id),
+       |    created_by TEXT,
+       |    created_date TIMESTAMP WITHOUT TIME ZONE,
+       |    completed_date TEXT,
+       |    last_sync TEXT,
+       |    updated_date TEXT,
+       |    status TEXT,
+       |    remarks TEXT,
+       |    evidence TEXT,
+       |    evidence_count TEXT,
+       |    program_id TEXT,
+       |    task_count TEXT,
+       |    user_role_ids TEXT,
+       |    user_roles TEXT,
+       |    org_id TEXT,
+       |    org_name TEXT,
+       |    org_code TEXT,
+       |    state_id TEXT,
+       |    state_name TEXT,
+       |    district_id TEXT,
+       |    district_name TEXT,
+       |    block_id TEXT,
+       |    block_name TEXT,
+       |    cluster_id TEXT,
+       |    cluster_name TEXT,
+       |    school_id TEXT,
+       |    school_name TEXT,
+       |    certificate_template_id TEXT,
+       |    certificate_template_url TEXT,
+       |    certificate_issued_on TEXT,
+       |    certificate_status TEXT,
+       |    certificate_pdf_path TEXT
+       |);""".stripMargin
 
   val createTasksTable =
     s"""CREATE TABLE IF NOT EXISTS $tasks (
-      |    task_id TEXT PRIMARY KEY,
-      |    project_id TEXT REFERENCES $projects(project_id),
-      |    name TEXT,
-      |    assigned_to TEXT,
-      |    start_date TEXT,
-      |    end_date TEXT,
-      |    synced_at TEXT,
-      |    is_deleted TEXT,
-      |    is_deletable TEXT,
-      |    remarks TEXT,
-      |    status TEXT,
-      |    evidence TEXT,
-      |    evidence_count TEXT
-      |);""".stripMargin
+       |    task_id TEXT PRIMARY KEY,
+       |    project_id TEXT REFERENCES $projects(project_id),
+       |    name TEXT,
+       |    assigned_to TEXT,
+       |    start_date TEXT,
+       |    end_date TEXT,
+       |    synced_at TEXT,
+       |    is_deleted TEXT,
+       |    is_deletable TEXT,
+       |    remarks TEXT,
+       |    status TEXT,
+       |    evidence TEXT,
+       |    evidence_count TEXT
+       |);""".stripMargin
 
   val createDashboardMetadataTable =
     s"""CREATE TABLE IF NOT EXISTS $dashboard_metadata (
-      |    id SERIAL PRIMARY KEY,
-      |    entity_type TEXT NOT NULL,
-      |    entity_name TEXT NOT NULL,
-      |    entity_id TEXT UNIQUE NOT NULL,
-      |    collection_id TEXT,
-      |    dashboard_id TEXT,
-      |    question_ids TEXT,
-      |    status TEXT,
-      |    error_message TEXT
-      |);
-      |""".stripMargin
+       |    id SERIAL PRIMARY KEY,
+       |    entity_type TEXT NOT NULL,
+       |    entity_name TEXT NOT NULL,
+       |    entity_id TEXT UNIQUE NOT NULL,
+       |    main_metadata JSON,
+       |    mi_metadata JSON,
+       |    comparison_metadata JSON,
+       |    status TEXT,
+       |    error_message TEXT,
+       |    state_details_url_state TEXT,
+       |    state_details_url_admin TEXT,
+       |    district_details_url_district TEXT,
+       |    district_details_url_state TEXT,
+       |    district_details_url_admin TEXT
+       |);
+       |""".stripMargin
 
 }

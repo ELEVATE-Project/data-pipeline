@@ -374,13 +374,13 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
             result.foreach { id =>
               val entityName = id.get(s"${entityType}_name").map(_.toString).getOrElse("")
               val upsertMetaDataQuery =
-              s"""INSERT INTO ${config.dashboard_metadata} (
-                 |    entity_type, entity_name, entity_id
-                 |) VALUES (
-                 |    ?, ?, ?
-                 |) ON CONFLICT (entity_id) DO UPDATE SET
-                 |    entity_type = ?, entity_name = ?;
-                 |""".stripMargin
+                s"""INSERT INTO ${config.dashboard_metadata} (
+                   |    entity_type, entity_name, entity_id
+                   |) VALUES (
+                   |    ?, ?, ?
+                   |) ON CONFLICT (entity_id) DO UPDATE SET
+                   |    entity_type = ?, entity_name = ?;
+                   |""".stripMargin
 
               val dashboardParams = Seq(
                 entityType, entityName, targetedId, // Insert parameters
