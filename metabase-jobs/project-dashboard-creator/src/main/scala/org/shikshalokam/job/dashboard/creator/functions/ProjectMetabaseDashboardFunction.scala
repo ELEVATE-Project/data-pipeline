@@ -5,7 +5,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.shikshalokam.job.dashboard.creator.domain.Event
-import org.shikshalokam.job.dashboard.creator.task.MetabaseDashboardConfig
+import org.shikshalokam.job.dashboard.creator.task.ProjectMetabaseDashboardConfig
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import org.shikshalokam.job.{BaseProcessFunction, Metrics}
 import scala.collection.mutable
@@ -13,10 +13,10 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.immutable._
 
-class MetabaseDashboardFunction(config: MetabaseDashboardConfig)(implicit val mapTypeInfo: TypeInformation[Event], @transient var postgresUtil: PostgresUtil = null, @transient var metabaseUtil: MetabaseUtil = null)
+class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(implicit val mapTypeInfo: TypeInformation[Event], @transient var postgresUtil: PostgresUtil = null, @transient var metabaseUtil: MetabaseUtil = null)
   extends BaseProcessFunction[Event, Event](config) {
 
-  private[this] val logger = LoggerFactory.getLogger(classOf[MetabaseDashboardFunction])
+  private[this] val logger = LoggerFactory.getLogger(classOf[ProjectMetabaseDashboardFunction])
 
   override def metricsList(): List[String] = {
     List(config.metabaseDashboardCleanupHit, config.skipCount, config.successCount, config.totalEventsCount)

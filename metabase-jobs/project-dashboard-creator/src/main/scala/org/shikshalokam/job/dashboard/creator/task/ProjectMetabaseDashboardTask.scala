@@ -7,12 +7,12 @@ import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.shikshalokam.job.connector.FlinkKafkaConnector
 import org.shikshalokam.job.dashboard.creator.domain.Event
-import org.shikshalokam.job.dashboard.creator.functions.MetabaseDashboardFunction
+import org.shikshalokam.job.dashboard.creator.functions.ProjectMetabaseDashboardFunction
 import org.shikshalokam.job.util.FlinkUtil
 
 import java.io.File
 
-class MetabaseDashboardTask(config: MetabaseDashboardConfig, kafkaConnector: FlinkKafkaConnector) {
+class ProjectMetabaseDashboardTask(config: ProjectMetabaseDashboardConfig, kafkaConnector: FlinkKafkaConnector) {
   println("inside MetabaseDashboardTask class")
 
   private val serialVersionUID = -7729362727131516112L
@@ -24,7 +24,7 @@ class MetabaseDashboardTask(config: MetabaseDashboardConfig, kafkaConnector: Fli
 
     env.addSource(source).name(config.metabaseDashboardProducer)
       .uid(config.metabaseDashboardProducer).setParallelism(config.mlMetabaseParallelism).rebalance
-      .process(new MetabaseDashboardFunction(config))
+      .process(new ProjectMetabaseDashboardFunction(config))
       .name(config.metabaseDashboardFunction).uid(config.metabaseDashboardFunction)
       .setParallelism(config.mlMetabaseParallelism)
 
@@ -32,14 +32,14 @@ class MetabaseDashboardTask(config: MetabaseDashboardConfig, kafkaConnector: Fli
   }
 }
 
-object MetabaseDashboardTask {
+object ProjectMetabaseDashboardTask {
   def main(args: Array[String]): Unit = {
     println("Starting up the Metabase Dashboard creation Job")
     val configFilePath = Option(ParameterTool.fromArgs(args).get("config.file.path"))
     val config = configFilePath.map {
       path => ConfigFactory.parseFile(new File(path)).resolve()
     }.getOrElse(ConfigFactory.load("metabase-dashboard.conf").withFallback(ConfigFactory.systemEnvironment()))
-    val metabaseDashboardConfig = new MetabaseDashboardConfig(config)
+    val metabaseDashboardConfig = new ProjectMetabaseDashboardConfig(config)
     val kafkaUtil = new FlinkKafkaConnector(metabaseDashboardConfig)
     val task = new MetabaseDashboardTask(metabaseDashboardConfig, kafkaUtil)
     task.process()
