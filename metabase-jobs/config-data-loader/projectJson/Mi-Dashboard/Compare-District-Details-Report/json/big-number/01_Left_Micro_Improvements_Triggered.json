@@ -1,0 +1,66 @@
+{
+  "questionCard": {
+    "name": "# Micro Improvements Triggered",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "district_name": {
+            "type": "text",
+            "name": "district_name",
+            "id": "391bfc1c-b500-4765-a028-3864ee6de07c",
+            "display-name": "District Name",
+            "default": null,
+            "widget-type": null,
+            "options": null
+          }
+        },
+        "query": "SELECT\n  COUNT(*) AS total_projects\nFROM\n  ${config.projects}\nWHERE\n  1 = 1 [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE district_name = {{district_name}}\n        LIMIT 1)\n  ]]"
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {},
+    "parameters": [
+      {
+        "id": "391bfc1c-b500-4765-a028-3864ee6de07c",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "district_name"
+          ]
+        ],
+        "name": "District Name",
+        "slug": "district_name",
+        "values_query_type": "list"
+      }
+    ]
+  },
+  "dashCards": {
+    "id": 23,
+    "entity_id": "0-AdoVu6AjHQDzKKWNHmj",
+    "card_id": 6943,
+    "col": 1,
+    "row": 0,
+    "size_x": 6,
+    "size_y": 2,
+    "dashboard_tab_id": null,
+    "parameter_mappings": [
+      {
+        "parameter_id": "47ae9a0e",
+        "card_id": 1985,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "district_name"
+          ]
+        ]
+      }
+    ],
+    "visualization_settings": {}
+  }
+}

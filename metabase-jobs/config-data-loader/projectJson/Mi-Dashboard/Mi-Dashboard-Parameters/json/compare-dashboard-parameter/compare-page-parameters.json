@@ -1,0 +1,46 @@
+[
+  {
+    "name": "Select State A",
+    "slug": "select_state_a",
+    "id": "69b7c52a",
+    "type": "string/=",
+    "sectionId": "location",
+    "filteringParameters": [
+      "6717eba5"
+    ],
+    "isMultiSelect": false
+  },
+  {
+    "name": "Select District A",
+    "slug": "select_district_a",
+    "id": "6717eba5",
+    "type": "string/=",
+    "sectionId": "location",
+    "filteringParameters": [
+      "69b7c52a"
+    ],
+    "isMultiSelect": false
+  },
+  {
+    "name": "Select State B",
+    "slug": "select_state_b",
+    "id": "33fbccaa",
+    "type": "string/=",
+    "sectionId": "location",
+    "filteringParameters": [
+      "f27e4c54"
+    ],
+    "isMultiSelect": false
+  },
+  {
+    "name": "Select District B",
+    "slug": "select_district_b",
+    "id": "f27e4c54",
+    "type": "string/=",
+    "sectionId": "location",
+    "filteringParameters": [
+      "33fbccaa"
+    ],
+    "isMultiSelect": false
+  }
+]

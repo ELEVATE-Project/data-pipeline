@@ -1,0 +1,66 @@
+{
+  "questionCard": {
+    "name": "# School Leaders On Improvement Journey",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "district_name": {
+            "type": "text",
+            "name": "district_name",
+            "id": "ed5d675e-02ab-4f19-8a07-9f5b87b5f8b3",
+            "display-name": "District Name",
+            "default": null,
+            "widget-type": null,
+            "options": null
+          }
+        },
+        "query": "SELECT\n  COUNT(DISTINCT created_by) AS unique_scl_leaders\nFROM\n  ${config.projects}\nWHERE\n  (\n    user_roles LIKE '%district_resource_person%'\n    OR user_roles LIKE '%block_academic_coordinator%'\n    OR user_roles LIKE '%principle%'\n    OR user_roles LIKE '%district_education_officer%'\n  )\n [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE district_name = {{district_name}}\n        LIMIT 1)\n  ]]"
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {},
+    "parameters": [
+      {
+        "id": "ed5d675e-02ab-4f19-8a07-9f5b87b5f8b3",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "district_name"
+          ]
+        ],
+        "name": "District Name",
+        "slug": "district_name",
+        "values_query_type": "list"
+      }
+    ]
+  },
+  "dashCards": {
+    "id": 25,
+    "entity_id": "M0L6iBj1l1piKEct5kRAS",
+    "card_id": 6943,
+    "col": 1,
+    "row": 4,
+    "size_x": 5,
+    "size_y": 3,
+    "dashboard_tab_id": null,
+    "parameter_mappings": [
+      {
+        "parameter_id": "47ae9a0e",
+        "card_id": 1987,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "district_name"
+          ]
+        ]
+      }
+    ],
+    "visualization_settings": {}
+  }
+}

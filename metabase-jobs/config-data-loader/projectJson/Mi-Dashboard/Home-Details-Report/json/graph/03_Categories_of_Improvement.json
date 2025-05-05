@@ -1,0 +1,64 @@
+{
+  "questionCard": {
+    "name": "Categories of Improvement",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {},
+        "query": "WITH\n  split_categories AS (\n    SELECT\n      solution_id,\n      UNNEST(STRING_TO_ARRAY(categories, ',')) AS category\n    FROM\n      ${config.solutions}\n  ),\n  cleaned_categories AS (\n    SELECT\n      solution_id,\n      INITCAP(TRIM(category)) AS category\n    FROM\n      split_categories\n  )\nSELECT\n  cc.category,\n  COUNT(p.project_id) AS project_count\nFROM\n  cleaned_categories cc\n  LEFT JOIN ${config.projects} p ON cc.solution_id = p.solution_id\nGROUP BY\n  cc.category\nORDER BY\n  project_count DESC;"
+      }
+    },
+    "parameter_mappings": [],
+    "display": "pie",
+    "entity_id": "b33sqxWSbntsEUILWZXeV",
+    "collection_preview": true,
+    "visualization_settings": {
+      "table.pivot_column": "project_count",
+      "table.cell_column": "category",
+      "pie.dimension": "category",
+      "pie.show_legend": true,
+      "pie.show_total": true,
+      "pie.percent_visibility": "legend",
+      "version": 2,
+      "pie.colors": {
+        "Community Engagement": "#88BF4D",
+        "Curriculum & Pedagogy": "#A989C5",
+        "Inclusive Practices": "#EF8C8C",
+        "Leadership": "#509EE3",
+        "Infrastructure": "#F9D45C"
+      }
+    },
+    "parameters": []
+  },
+  "dashCards": {
+    "card_id": 6937,
+    "dashboard_tab_id": null,
+    "id": 18,
+    "parameter_mappings": [],
+    "col": 0,
+    "row": 13,
+    "size_x": 13,
+    "size_y": 10,
+    "visualization_settings": {
+      "click_behavior": {
+        "type": "crossfilter",
+        "parameterMapping": {
+          "da31dd9b": {
+            "source": {
+              "type": "column",
+              "id": "category",
+              "name": "category"
+            },
+            "target": {
+              "type": "parameter",
+              "id": "da31dd9b"
+            },
+            "id": "da31dd9b"
+          }
+        }
+      }
+    }
+  }
+}

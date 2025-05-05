@@ -1,0 +1,71 @@
+{
+  "questionCard": {
+    "name": "MIPs Status by Category",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "category_param": {
+            "type": "text",
+            "name": "category_param",
+            "id": "9d5dbcc9-326f-4922-8a38-665d42911b18",
+            "display-name": "Category Param"
+          }
+        },
+        "query": "WITH split_categories AS (\n    SELECT\n        solution_id,\n        UNNEST(STRING_TO_ARRAY(categories, ',')) AS category\n    FROM\n        ${config.solutions}\n),\ncleaned_categories AS (\n    SELECT\n        solution_id,\n        INITCAP(TRIM(category)) AS category\n    FROM\n        split_categories\n)\nSELECT \n    CASE \n        WHEN ${config.projects}.status = 'started' THEN 'Started'\n        WHEN ${config.projects}.status = 'inProgress' THEN 'In Progress'\n        WHEN ${config.projects}.status = 'submitted' THEN 'Submitted'\n        ELSE ${config.projects}.status\n    END AS \"Project Status\",\n    COUNT(DISTINCT ${config.projects}.project_id) AS \"Total Projects\"\nFROM ${config.projects} \nJOIN ${config.solutions} ON ${config.projects}.solution_id = ${config.solutions}.solution_id\nWHERE 1 = 1\n  AND ${config.solutions}.program_name IS NOT NULL\n  AND ${config.projects}.district_id = '66bf7eb960de1616f42cb984'\n  [[AND ${config.projects}.solution_id IN (\n        SELECT solution_id\n        FROM cleaned_categories\n        WHERE category = {{category_param}}\n   )]]\nGROUP BY ${config.projects}.status\nORDER BY \"Total Projects\" DESC;\n"
+      }
+    },
+    "parameter_mappings": [],
+    "display": "pie",
+    "entity_id": "--iolGBG5FF_8YorDlCjA",
+    "collection_preview": true,
+    "visualization_settings": {
+      "pie.dimension": "Project Status",
+      "pie.colors": {
+        "In Progress": "#98D9D9",
+        "Started": "#C7EAEA",
+        "Submitted": "#69C8C8"
+      }
+    },
+    "parameters": [
+      {
+        "id": "9d5dbcc9-326f-4922-8a38-665d42911b18",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "category_param"
+          ]
+        ],
+        "name": "Category Param",
+        "slug": "category_param"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 6937,
+    "dashboard_tab_id": null,
+    "id": 8,
+    "parameter_mappings": [
+      {
+        "parameter_id": "63a90514",
+        "card_id": 883,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "category_param"
+          ]
+        ]
+      }
+    ],
+    "col": 13,
+    "row": 9,
+    "size_x": 11,
+    "size_y": 5,
+    "visualization_settings": {}
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "questionCard": {
+    "name": "MIPs Triggered by Category",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "category_param": {
+            "type": "text",
+            "name": "category_param",
+            "id": "850262d0-89be-4ef0-a2ba-2b977b24b089",
+            "display-name": "Category Param"
+          }
+        },
+        "query": "WITH split_categories AS (\n    SELECT\n        solution_id,\n        UNNEST(STRING_TO_ARRAY(categories, ',')) AS category\n    FROM\n        ${config.solutions}\n),\ncleaned_categories AS (\n    SELECT\n        solution_id,\n        INITCAP(TRIM(category)) AS category\n    FROM\n        split_categories\n),\nyearly_projects AS (\n    SELECT \n        EXTRACT(YEAR FROM created_date::timestamp) AS project_year,\n        COUNT(*)::INTEGER AS project_count  \n    FROM \n        ${config.projects}\n    WHERE \n        created_date IS NOT NULL\n        [[AND solution_id IN (\n            SELECT solution_id\n            FROM cleaned_categories\n            WHERE category = {{category_param}}\n        )]]\n    GROUP BY \n        project_year\n)\nSELECT \n    project_year AS \"Year\",\n    project_count AS \"No of. IMPs Triggered\"\nFROM \n    yearly_projects\nORDER BY \n    project_count DESC\nLIMIT 5;"
+      }
+    },
+    "parameter_mappings": [],
+    "display": "bar",
+    "entity_id": "2vJhjpIDh1C3YM_AeaKP7",
+    "collection_preview": true,
+    "visualization_settings": {
+      "graph.show_goal": false,
+      "graph.show_values": false,
+      "graph.series_order_dimension": null,
+      "graph.goal_value": 0,
+      "graph.metrics": [
+        "No of. IMPs Triggered"
+      ],
+      "graph.label_value_formatting": "compact",
+      "graph.series_order": null,
+      "series_settings": {
+        "Improvement Projects": {
+          "color": "#69C8C8",
+          "title": "No of. MIPs Triggered"
+        }
+      },
+      "graph.dimensions": [
+        "Year"
+      ]
+    },
+    "parameters": [
+      {
+        "id": "850262d0-89be-4ef0-a2ba-2b977b24b089",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "category_param"
+          ]
+        ],
+        "name": "Category Param",
+        "slug": "category_param"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 6937,
+    "dashboard_tab_id": null,
+    "id": 20,
+    "parameter_mappings": [
+      {
+        "parameter_id": "da31dd9b",
+        "card_id": 1674,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "category_param"
+          ]
+        ]
+      }
+    ],
+    "col": 13,
+    "row": 18,
+    "size_x": 11,
+    "size_y": 5,
+    "visualization_settings": {}
+  }
+}
