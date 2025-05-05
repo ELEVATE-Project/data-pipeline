@@ -259,9 +259,10 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val dashboardData = new java.util.HashMap[String, String]()
     val dashboardConfig = Seq(
       ("admin", "1", "admin"),
-      ("program", event.programId, "targetedProgram"),
       ("state", event.stateId, "targetedState"),
-      ("district", event.districtId, "targetedDistrict")
+      ("district", event.districtId, "targetedDistrict"),
+      ("program", event.programId, "targetedProgram"),
+      ("solution", event.solutionId, "targetedSolution")
     )
 
     dashboardConfig
@@ -369,7 +370,21 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
             println(s"Inserted Admin details. Affected rows: $affectedRows")
             dashboardData.put(dashboardKey, "1")
           } else {
-            val getEntityNameQuery = s"SELECT DISTINCT ${entityType}_name AS ${entityType}_name FROM ${if (entityType == "program") config.solutions else config.projects} WHERE ${entityType}_id = '$targetedId'"
+            val getEntityNameQuery =
+              s"""
+                 |SELECT DISTINCT ${
+                if (entityType == "solution") "name"
+                else s"${entityType}_name"
+              } AS ${entityType}_name
+                 |FROM ${
+                entityType match {
+                  case "program" => config.solutions
+                  case "solution" => config.solutions
+                  case _ => config.projects
+                }
+              }
+                 |WHERE ${entityType}_id = '$targetedId'
+               """.stripMargin.replaceAll("\n", " ")
             val result = postgresUtil.fetchData(getEntityNameQuery)
             result.foreach { id =>
               val entityName = id.get(s"${entityType}_name").map(_.toString).getOrElse("")
