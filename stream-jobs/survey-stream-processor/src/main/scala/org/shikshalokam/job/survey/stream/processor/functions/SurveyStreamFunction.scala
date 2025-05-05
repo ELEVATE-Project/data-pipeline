@@ -175,8 +175,20 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       val block_name = event.blockName
       val cluster_name = event.clusterName
       val school_name = event.schoolName
-
       val answersKey = event.answers
+
+      val deleteQuestionQuery =
+        s"""DELETE FROM "$surveyQuestionTable"
+           |WHERE user_id = ?
+           |  AND state_name = ?
+           |  AND district_name = ?
+           |  AND block_name = ?
+           |  AND cluster_name = ?
+           |  AND school_name = ?;
+           |""".stripMargin
+      val deleteQuestionParams = Seq(user_id, state_name, district_name, block_name, cluster_name, school_name)
+      postgresUtil.executePreparedUpdate(deleteQuestionQuery, deleteQuestionParams, surveyQuestionTable, user_id)
+
       answersKey match {
         case answersMap: Map[_, _] =>
           answersMap.foreach { case (_, value) =>
