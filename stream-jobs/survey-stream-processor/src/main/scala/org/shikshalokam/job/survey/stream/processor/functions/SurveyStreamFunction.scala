@@ -279,7 +279,6 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
                        block_name: String, cluster_name: String, school_name: String, has_parent_question: Boolean,
                        parent_question_text: String, question_type: String): Unit = {
 
-      // Return early if "labels" key is missing TODO: Remove this
       if (!payload.exists(_.contains("labels"))) {
         println(s"Skipping question $question_id as 'labels' key is missing.")
         return
@@ -355,6 +354,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
     val dashboardConfig = Seq(
       ("admin", "1", "admin"),
       ("program", event.programId, "targetedProgram"),
+      ("solution", event.solutionId, "targetedSolution")
     )
 
     dashboardConfig
@@ -362,9 +362,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       .foreach { case (key, value, target) =>
         checkAndInsert(key, value, dashboardData, target)
       }
-    println("++++++++++")
 
-    println(dashboardData)
     if (!dashboardData.isEmpty) {
       pushSurveyDashboardEvents(dashboardData, context)
     }
@@ -396,7 +394,20 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
             println(s"Inserted Admin details. Affected rows: $affectedRows")
             dashboardData.put(dashboardKey, "1")
           } else {
-            val getEntityNameQuery = s"SELECT DISTINCT ${entityType}_name AS ${entityType}_name FROM ${if (entityType == "program") config.solutions} WHERE ${entityType}_id = '$targetedId'"
+            val getEntityNameQuery =
+              s"""
+                 |SELECT DISTINCT ${
+                if (entityType == "solution") "name"
+                else s"${entityType}_name"
+              } AS ${entityType}_name
+                 |FROM ${
+                entityType match {
+                  case "program" => config.solutions
+                  case "solution" => config.solutions
+                }
+              }
+                 |WHERE ${entityType}_id = '$targetedId'
+               """.stripMargin.replaceAll("\n", " ")
             val result = postgresUtil.fetchData(getEntityNameQuery)
             result.foreach { id =>
               val entityName = id.get(s"${entityType}_name").map(_.toString).getOrElse("")
