@@ -31,6 +31,20 @@ object Utils {
     }
   }
 
+  def createCollection(collectionName: String, description: String, metabaseUtil: MetabaseUtil, parentId: Option[Int] = None): Int = {
+    val parentIdField = parentId.map(pid => s""""parent_id": $pid,""").getOrElse("")
+    val collectionRequestBody =
+      s"""{
+         |  $parentIdField
+         |  "name": "$collectionName",
+         |  "description": "$description"
+         |}""".stripMargin
+    val collectionId = mapper.readTree(metabaseUtil.createCollection(collectionRequestBody)).path("id").asInt()
+    println(s"$collectionName : collection created with ID = $collectionId")
+    collectionId
+
+  }
+
   def checkAndCreateDashboard(collectionId: Int, dashboardName: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): Int = {
     val dashboardListJson = mapper.readTree(metabaseUtil.listDashboards())
     val existingDashboardId = dashboardListJson.elements().asScala

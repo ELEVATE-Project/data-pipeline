@@ -10,10 +10,12 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def admin: String = readOrDefault("dashboardData.admin", "")
 
-  def targetedProgram: String = readOrDefault("dashboardData.targetedProgram", "")
+  def targetedState: String = readOrDefault("dashboardData.targetedState", "")
 
   def targetedDistrict: String = readOrDefault("dashboardData.targetedDistrict", "")
 
-  def targetedState: String = readOrDefault("dashboardData.targetedState", "")
+  def targetedProgram: String = readOrDefault("dashboardData.targetedProgram", "")
+
+  def targetedSolution: String = readOrDefault("dashboardData.targetedSolution", "")
 
 }
