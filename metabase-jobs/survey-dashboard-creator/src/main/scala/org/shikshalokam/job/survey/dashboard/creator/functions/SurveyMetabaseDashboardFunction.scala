@@ -1,6 +1,6 @@
 package org.shikshalokam.job.survey.dashboard.creator.functions
 
-import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
@@ -8,7 +8,6 @@ import org.shikshalokam.job.survey.dashboard.creator.domain.Event
 import org.shikshalokam.job.survey.dashboard.creator.task.SurveyMetabaseDashboardConfig
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import org.shikshalokam.job.{BaseProcessFunction, Metrics}
-import scala.collection.mutable
 import org.slf4j.LoggerFactory
 
 import scala.collection.immutable._
@@ -45,319 +44,195 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
 
     println(s"***************** Start of Processing the Metabase Dashboard Event with Id = ${event._id}*****************")
 
-    val targetedProgramId = event.targetedProgram
     val admin = event.admin
+    val targetedProgramId = event.targetedProgram
+    val targetedSolutionId = event.targetedSolution
     val solutions: String = config.solutions
     val metaDataTable = config.dashboard_metadata
-    val report_config: String = config.report_config
+    val reportConfig: String = config.report_config
     val metabaseDatabase: String = config.metabaseDatabase
-    val surveyQuestionTable = s"${targetedProgramId}"
+    val surveyQuestionTable = s"${targetedSolutionId}"
+    val programNameQuery = s"SELECT entity_name from $metaDataTable where entity_id = '$targetedProgramId'"
+    val programName = postgresUtil.fetchData(programNameQuery) match {
+      case List(map: Map[_, _]) => map.get("entity_name").map(_.toString).getOrElse("")
+      case _ => ""
+    }
     println(s"surveyQuestionTable: $surveyQuestionTable")
     println(s"reportType: ${event.reportType}")
-    // Printing the targetedState ID
-    println(s"Targeted Program ID: $targetedProgramId")
     println(s"admin: $admin")
-    println(s"reportType: ${event.reportType}")
+    println(s"Targeted Program ID: $targetedProgramId")
+    println(s"Targeted Program Name: $programName")
+    println(s"Targeted Solution ID: $targetedSolutionId")
 
     event.reportType match {
-      //      case "Project" =>
-      //        println(s">>>>>>>>>>> Started Processing Metabase Project Dashboards >>>>>>>>>>>>")
-      //        if (admin.nonEmpty) {
-      //          println(s"********** Started Processing Metabase Admin Dashboard ***********")
-      //          val adminIdCheckQuery: String = s"SELECT CASE WHEN EXISTS (SELECT 1 FROM $metaDataTable WHERE id = '$admin') THEN CASE WHEN COALESCE((SELECT status FROM $metaDataTable WHERE id = '$admin'), '') = 'Success' THEN 'success' ELSE 'Failed' END ELSE 'Failed' END AS result;"
-      //          val adminIdStatus = postgresUtil.fetchData(adminIdCheckQuery) match {
-      //            case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
-      //            case _ => ""
-      //          }
-      //          if (adminIdStatus == "Failed") {
-      //            try {
-      //              val collectionName: String = s"Admin Collection"
-      //              val dashboardName: String = s"Project Admin Report"
-      //              val groupName: String = s"Report_Admin"
-      //              val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$admin';"
-      //              val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, s"Admin Report", metabaseUtil, postgresUtil, createDashboardQuery)
-      //              val dashboardId: Int = CreateDashboard.checkAndCreateDashboard(collectionId, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
-      //              val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
-      //              val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "state_name", postgresUtil, createDashboardQuery)
-      //              val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "district_name", postgresUtil, createDashboardQuery)
-      //              val programnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, solutions, "program_name", postgresUtil, createDashboardQuery)
-      //              val blocknameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "block_name", postgresUtil, createDashboardQuery)
-      //              val clusternameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "cluster_name", postgresUtil, createDashboardQuery)
-      //              val orgnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "org_name", postgresUtil, createDashboardQuery)
-      //              val reportConfigQuery: String = s"SELECT question_type, config FROM $report_config WHERE dashboard_name = 'Admin';"
-      //              val questionCardIdList = UpdateAdminJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, projects, solutions, metabaseUtil, postgresUtil)
-      //              val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
-      //              val parametersQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Parameter' AND question_type = 'admin-parameter'"
-      //              UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil)
-      //              val updateTableQuery = s"UPDATE $metaDataTable SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Success', error_message = '' WHERE entity_id = '$admin';"
-      //              postgresUtil.insertData(updateTableQuery)
-      //              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
-      //            } catch {
-      //              case e: Exception =>
-      //                val updateTableQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}'  WHERE entity_id = '$admin';"
-      //                postgresUtil.insertData(updateTableQuery)
-      //                println(s"An error occurred: ${e.getMessage}")
-      //                e.printStackTrace()
-      //            }
-      //            println(s"********** Completed Processing Metabase Admin Dashboard ***********")
-      //          } else {
-      //            println(s"Admin Dashboard has already created hence skipping the process !!!!!!!!!!!!")
-      //          }
-      //        } else {
-      //          println(s"admin key is not present or is empty")
-      //        }
-      //
-      //        if (targetedStateId.nonEmpty) {
-      //          println(s"********** Started Processing Metabase State Dashboard ***********")
-      //          val stateIdCheckQuery: String = s"SELECT CASE WHEN EXISTS (SELECT 1 FROM $metaDataTable WHERE entity_id = '$targetedStateId') THEN CASE WHEN COALESCE((SELECT status FROM $metaDataTable WHERE entity_id = '$targetedStateId'), '') = 'Success' THEN 'Success' ELSE 'Failed' END ELSE 'Failed' END AS result;"
-      //          val stateIdStatus = postgresUtil.fetchData(stateIdCheckQuery) match {
-      //            case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
-      //            case _ => ""
-      //          }
-      //          if (stateIdStatus == "Failed") {
-      //            try {
-      //              val stateNameQuery = s"SELECT entity_name from $metaDataTable where entity_id = '$targetedStateId'"
-      //              val stateName = postgresUtil.fetchData(stateNameQuery) match {
-      //                case List(map: Map[_, _]) => map.get("entity_name").map(_.toString).getOrElse("")
-      //                case _ => ""
-      //              }
-      //              println(s"stateName = $stateName")
-      //              val collectionName = s"State Collection [$stateName]"
-      //              val dashboardName = s"Project State Report [$stateName]"
-      //              val groupName: String = s"${stateName}_State_Manager"
-      //              val metabaseDatabase: String = config.metabaseDatabase
-      //              val parametersQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Parameter' AND question_type = 'state-parameter'"
-      //              println(s"parametersQuery = $parametersQuery")
-      //              val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedStateId';"
-      //              val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, s"State Report [$stateName]", metabaseUtil, postgresUtil, createDashboardQuery)
-      //              val dashboardId: Int = CreateDashboard.checkAndCreateDashboard(collectionId, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
-      //              val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
-      //              val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "state_name", postgresUtil, createDashboardQuery)
-      //              val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "district_name", postgresUtil, createDashboardQuery)
-      //              val programnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, solutions, "program_name", postgresUtil, createDashboardQuery)
-      //              val blocknameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "block_name", postgresUtil, createDashboardQuery)
-      //              val clusternameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "cluster_name", postgresUtil, createDashboardQuery)
-      //              val orgnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "org_name", postgresUtil, createDashboardQuery)
-      //              val reportConfigQuery: String = s"SELECT question_type , config FROM $report_config WHERE dashboard_name = 'State';"
-      //              val questionCardIdList = UpdateStateJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, projects, solutions, metabaseUtil, postgresUtil, targetedStateId)
-      //              val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
-      //              val filterQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Filters' AND question_type = 'state-filter'"
-      //              val filterResults: List[Map[String, Any]] = postgresUtil.fetchData(filterQuery)
-      //              val objectMapper = new ObjectMapper()
-      //              val slugNameToStateIdFilterMap = mutable.Map[String, Int]()
-      //              for (result <- filterResults) {
-      //                val configString = result.get("config").map(_.toString).getOrElse("")
-      //                val configJson = objectMapper.readTree(configString)
-      //                val slugName = configJson.findValue("name").asText()
-      //                val stateIdFilter: Int = UpdateAndAddStateFilter.updateAndAddFilter(metabaseUtil, configJson: JsonNode, s"$targetedStateId", collectionId, databaseId, projects, solutions)
-      //                slugNameToStateIdFilterMap(slugName) = stateIdFilter
-      //              }
-      //              val immutableSlugNameToStateIdFilterMap: Map[String, Int] = slugNameToStateIdFilterMap.toMap
-      //              UpdateParameters.updateParameterFunction(metabaseUtil, postgresUtil, parametersQuery, immutableSlugNameToStateIdFilterMap, dashboardId)
-      //              val updateTableQuery = s"UPDATE $metaDataTable SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Success',error_message = '' WHERE entity_id = '$targetedStateId';"
-      //              postgresUtil.insertData(updateTableQuery)
-      //              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
-      //            } catch {
-      //              case e: Exception =>
-      //                val updateTableQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}'  WHERE entity_id = '$targetedStateId';"
-      //                postgresUtil.insertData(updateTableQuery)
-      //                println(s"An error occurred: ${e.getMessage}")
-      //                e.printStackTrace()
-      //            }
-      //            println(s"********** Completed Processing Metabase State Dashboard ***********")
-      //          } else {
-      //            println(s"state report has already created hence skipping the process !!!!!!!!!!!!")
-      //          }
-      //        } else {
-      //          println("targetedState is not present or is empty")
-      //        }
-      //
-      //        if (targetedProgramId.nonEmpty) {
-      //          println(s"********** Started Processing Metabase Program Dashboard ***********")
-      //          val programIdCheckQuery: String = s"SELECT CASE WHEN EXISTS (SELECT 1 FROM $metaDataTable WHERE entity_id = '$targetedProgramId') THEN CASE WHEN COALESCE((SELECT status FROM $metaDataTable WHERE entity_id = '$targetedProgramId'), '') = 'Success' THEN 'Success' ELSE 'Failed' END ELSE 'Failed' END AS result;"
-      //          val programIdStatus = postgresUtil.fetchData(programIdCheckQuery) match {
-      //            case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
-      //            case _ => ""
-      //          }
-      //          if (programIdStatus == "Failed") {
-      //            try {
-      //              val programNameQuery = s"SELECT entity_name from $metaDataTable where entity_id = '$targetedProgramId'"
-      //              val programName = postgresUtil.fetchData(programNameQuery) match {
-      //                case List(map: Map[_, _]) => map.get("entity_name").map(_.toString).getOrElse("")
-      //                case _ => ""
-      //              }
-      //              println(s"programName = $programName")
-      //              val collectionName = s"Program Collection [$programName]"
-      //              val dashboardName = s"Project Program Report [$programName]"
-      //              val groupName: String = s"Program_Manager[$programName]"
-      //              val parametersQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Parameter' AND question_type = 'program-parameter'"
-      //              val metabaseDatabase: String = config.metabaseDatabase
-      //              val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
-      //              val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, s"Program Report [$programName]", metabaseUtil, postgresUtil, createDashboardQuery)
-      //              val dashboardId: Int = CreateDashboard.checkAndCreateDashboard(collectionId, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
-      //              val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
-      //              val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "state_name", postgresUtil, createDashboardQuery)
-      //              val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "district_name", postgresUtil, createDashboardQuery)
-      //              val programnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, solutions, "program_name", postgresUtil, createDashboardQuery)
-      //              val blocknameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "block_name", postgresUtil, createDashboardQuery)
-      //              val clusternameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "cluster_name", postgresUtil, createDashboardQuery)
-      //              val orgnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "org_name", postgresUtil, createDashboardQuery)
-      //              val reportConfigQuery: String = s"SELECT question_type , config FROM $report_config WHERE dashboard_name = 'Program';"
-      //              val questionCardIdList = UpdateProgramJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, projects, solutions, tasks, metabaseUtil, postgresUtil, targetedProgramId)
-      //              val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
-      //              val filterQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Filters' AND question_type = 'program-filter'"
-      //              val filterResults: List[Map[String, Any]] = postgresUtil.fetchData(filterQuery)
-      //              val objectMapper = new ObjectMapper()
-      //              val slugNameToProgramIdFilterMap = mutable.Map[String, Int]()
-      //              for (result <- filterResults) {
-      //                val configString = result.get("config").map(_.toString).getOrElse("")
-      //                val configJson = objectMapper.readTree(configString)
-      //                val slugName = configJson.findValue("name").asText()
-      //                val programIdFilter: Int = UpdateAndAddProgramFilter.updateAndAddFilter(metabaseUtil, configJson, targetedProgramId, collectionId, databaseId, projects, solutions)
-      //                slugNameToProgramIdFilterMap(slugName) = programIdFilter
-      //              }
-      //              val immutableSlugNameToProgramIdFilterMap: Map[String, Int] = slugNameToProgramIdFilterMap.toMap
-      //              UpdateParameters.updateParameterFunction(metabaseUtil, postgresUtil, parametersQuery, immutableSlugNameToProgramIdFilterMap, dashboardId)
-      //              val updateTableQuery = s"UPDATE $metaDataTable SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Success',error_message = '' WHERE entity_id = '$targetedProgramId';"
-      //              postgresUtil.insertData(updateTableQuery)
-      //              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
-      //            } catch {
-      //              case e: Exception =>
-      //                val updateTableQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}'  WHERE entity_id = '$targetedProgramId';"
-      //                postgresUtil.insertData(updateTableQuery)
-      //                println(s"An error occurred: ${e.getMessage}")
-      //                e.printStackTrace()
-      //            }
-      //            println(s"********** Completed Processing Metabase Program Dashboard ***********")
-      //          } else {
-      //            println("program report has already created hence skipping the process !!!!!!!!!!!!")
-      //          }
-      //        } else {
-      //          println("targetedProgram key is either not present or empty")
-      //        }
-      //
-      //        if (targetedDistrictId.nonEmpty) {
-      //          println(s"********** Started Processing Metabase District Dashboard ***********")
-      //          val districtIdCheckQuery: String = s"SELECT CASE WHEN EXISTS (SELECT 1 FROM $metaDataTable WHERE entity_id = '$targetedDistrictId') THEN CASE WHEN COALESCE((SELECT status FROM $metaDataTable WHERE entity_id = '$targetedDistrictId'), '') = 'Success' THEN 'Success' ELSE 'Failed' END ELSE 'Failed' END AS result;"
-      //          val districtIdStatus = postgresUtil.fetchData(districtIdCheckQuery) match {
-      //            case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
-      //            case _ => ""
-      //          }
-      //          if (districtIdStatus == "Failed") {
-      //            try {
-      //              val districtNameQuery = s"SELECT entity_name from $metaDataTable where entity_id = '$targetedDistrictId'"
-      //              val districtname = postgresUtil.fetchData(districtNameQuery) match {
-      //                case List(map: Map[_, _]) => map.get("entity_name").map(_.toString).getOrElse("")
-      //                case _ => ""
-      //              }
-      //              println(s"districtname = $districtname")
-      //              val statenamequery = s"SELECT distinct(state_name) AS name from $projects where district_id = '$targetedDistrictId'"
-      //              val statename = postgresUtil.fetchData(statenamequery) match {
-      //                case List(map: Map[_, _]) => map.get("name").map(_.toString).getOrElse("")
-      //                case _ => ""
-      //              }
-      //              println(s"statename = $statename")
-      //              val collectionName = s"District collection [$districtname - $statename]"
-      //              val dashboardName = s"Project District Report [$districtname - $statename]"
-      //              val groupName: String = s"${districtname}_District_Manager[$statename]"
-      //              val metabaseDatabase: String = config.metabaseDatabase
-      //              val parametersQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Parameter' AND question_type = 'district-parameter'"
-      //              val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedDistrictId';"
-      //              val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, s"District Report [$districtname - $statename]", metabaseUtil, postgresUtil, createDashboardQuery)
-      //              val dashboardId: Int = CreateDashboard.checkAndCreateDashboard(collectionId, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
-      //              val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
-      //              val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "state_name", postgresUtil, createDashboardQuery)
-      //              val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "district_name", postgresUtil, createDashboardQuery)
-      //              val programnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, solutions, "program_name", postgresUtil, createDashboardQuery)
-      //              val blocknameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "block_name", postgresUtil, createDashboardQuery)
-      //              val clusternameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "cluster_name", postgresUtil, createDashboardQuery)
-      //              val orgnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "org_name", postgresUtil, createDashboardQuery)
-      //              val reportConfigQuery: String = s"SELECT question_type , config FROM $report_config WHERE dashboard_name = 'District';"
-      //              val questionCardIdList = UpdateDistrictJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, metabaseUtil, postgresUtil, projects, solutions, targetedStateId, targetedDistrictId)
-      //              val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
-      //              val filterQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Filters' AND question_type = 'district-filter'"
-      //              val filterResults: List[Map[String, Any]] = postgresUtil.fetchData(filterQuery)
-      //              val objectMapper = new ObjectMapper()
-      //              val slugNameToDistrictIdFilterMap = mutable.Map[String, Int]()
-      //              for (result <- filterResults) {
-      //                val configString = result.get("config").map(_.toString).getOrElse("")
-      //                val configJson = objectMapper.readTree(configString)
-      //                val slugName = configJson.findValue("name").asText()
-      //                val districtIdFilter: Int = UpdateAndAddDistrictFilter.updateAndAddFilter(metabaseUtil, configJson, targetedStateId, targetedDistrictId, collectionId, databaseId, projects, solutions)
-      //                slugNameToDistrictIdFilterMap(slugName) = districtIdFilter
-      //              }
-      //              val immutableSlugNameToDistrictIdFilterMap: Map[String, Int] = slugNameToDistrictIdFilterMap.toMap
-      //              UpdateParameters.updateParameterFunction(metabaseUtil, postgresUtil, parametersQuery, immutableSlugNameToDistrictIdFilterMap, dashboardId)
-      //              val updateTableQuery = s"UPDATE $metaDataTable SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Success',error_message = '' WHERE entity_id = '$targetedDistrictId';"
-      //              postgresUtil.insertData(updateTableQuery)
-      //              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
-      //            } catch {
-      //              case e: Exception =>
-      //                val updateTableQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}'  WHERE entity_id = '$targetedDistrictId';"
-      //                postgresUtil.insertData(updateTableQuery)
-      //                println(s"An error occurred: ${e.getMessage}")
-      //                e.printStackTrace()
-      //            }
-      //            println(s"********** Completed Processing Metabase District Dashboard ***********")
-      //          } else {
-      //            println("district report has already created hence skipping the process !!!!!!!!!!!!")
-      //          }
-      //        } else {
-      //          println("targetedDistrict key is either not present or empty")
-      //        }
-      //        println(s"***************** End of Processing the Metabase Project Dashboard *****************\n")
       case "Survey" =>
         println(s">>>>>>>>>>> Started Processing Metabase Project Dashboards >>>>>>>>>>>>")
+
+        /**
+         * Logic to process and create Survey Admin Dashboard
+         */
         if (admin.nonEmpty) {
-          println(s"********** Started Processing Metabase Admin Dashboard ***********")
-          //TODO change the logic
-          val adminIdCheckQuery: String = s"SELECT CASE WHEN EXISTS (SELECT 1 FROM $metaDataTable WHERE id = '$admin') THEN CASE WHEN COALESCE((SELECT status FROM $metaDataTable WHERE id = '$admin'), '') = 'Success' THEN 'success' ELSE 'Failed' END ELSE 'Failed' END AS result;"
-          val adminIdStatus = postgresUtil.fetchData(adminIdCheckQuery) match {
+          println(s"********** Started Processing Metabase Admin Dashboard For Survey ***********")
+          val adminSurveyIdCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Admin Collection"}]'::jsonb AND main_metadata::jsonb @> '[{"collectionName":"Survey Collection"}]'::jsonb THEN 'Success' ELSE 'Failed' END AS result FROM $metaDataTable WHERE entity_id = '$admin';"""
+          val adminSurveyIdStatus = postgresUtil.fetchData(adminSurveyIdCheckQuery) match {
             case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
             case _ => ""
           }
-          if (adminIdStatus == "Failed") {
-            try {
-
-              val solutionNameQuery = s"SELECT name from $solutions where solution_id = '$targetedProgramId'"
-              val solutionName = postgresUtil.fetchData(solutionNameQuery) match {
-                case List(map: Map[_, _]) => map.get("name").map(_.toString).getOrElse("")
-                case _ => ""
-              }
-              println(solutionNameQuery)
-              println(solutionName)
-              //              val solutionName: String = programName
-              val collectionName: String = s"Survey Question Collection[$solutionName]"
-              val dashboardName: String = s"Survey Question Report[$solutionName]"
-              val groupName: String = s"${solutionName}_Question_Program_Manager"
-              val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
-              val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, s"${solutionName}_question Report", metabaseUtil, postgresUtil, createDashboardQuery)
-              val dashboardId: Int = CreateDashboard.checkAndCreateDashboard(collectionId, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
-              val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
-              metabaseUtil.syncDatabaseAndRescanValues(databaseId)
-              val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, surveyQuestionTable, "state_name", postgresUtil, createDashboardQuery)
-              val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, surveyQuestionTable, "district_name", postgresUtil, createDashboardQuery)
-              val clusterId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, surveyQuestionTable, "cluster_name", postgresUtil, createDashboardQuery)
-              metabaseUtil.updateColumnCategory(statenameId, "State")
-              metabaseUtil.updateColumnCategory(districtnameId, "City")
-              val schoolnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, surveyQuestionTable, "school_name", postgresUtil, createDashboardQuery)
-              val questionCardIdList = UpdateQuestionJsonFiles.ProcessAndUpdateJsonFiles(collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolnameId, clusterId, surveyQuestionTable, metabaseUtil, postgresUtil, report_config)
-              val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
-              val parametersQuery: String = s"SELECT config FROM $report_config WHERE dashboard_name = 'Survey' AND question_type = 'Question-Parameter'"
-              UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil)
-              val updateTableQuery = s"UPDATE $metaDataTable SET  collection_id = '$collectionId', dashboard_id = '$dashboardId', question_ids = '$questionIdsString', status = 'Success', error_message = '' WHERE entity_id = '$targetedProgramId';"
-              postgresUtil.insertData(updateTableQuery)
-              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
-            } catch {
-              case e: Exception =>
-                val updateTableQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}'  WHERE entity_id = '$targetedProgramId';"
-                postgresUtil.insertData(updateTableQuery)
-                println(s"An error occurred: ${e.getMessage}")
-                e.printStackTrace()
+          if (adminSurveyIdStatus == "Failed") {
+            val adminIdCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Admin Collection"}]'::jsonb THEN 'Success' ELSE 'Failed' END AS result FROM $metaDataTable WHERE entity_id = '$admin';"""
+            val adminIdStatus = postgresUtil.fetchData(adminIdCheckQuery) match {
+              case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
+              case _ => ""
             }
+            if (adminIdStatus == "Failed") {
+              try {
+                val (adminCollectionName, adminCollectionDescription) = ("Admin Collection", "Admin Report")
+                val groupName: String = s"Report_Admin"
+                val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$admin';"
+                val adminCollectionId: Int = CreateDashboard.checkAndCreateCollection(adminCollectionName, adminCollectionDescription, metabaseUtil, postgresUtil, createDashboardQuery)
+                val adminMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", adminCollectionId).put("collectionName", adminCollectionName))
+                postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$adminMetadataJson' ::jsonb WHERE entity_id = '$admin';")
+                val (surveyCollectionName, surveyCollectionDescription) = ("Survey Collection", "This collection contains sub-collection, questions and dashboards required for Survey")
+                val surveyCollectionId = Utils.createCollection(surveyCollectionName, surveyCollectionDescription, metabaseUtil, Some(adminCollectionId))
+                createSurveyDashboard(surveyCollectionId, solutions, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable)
+                CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, adminCollectionId)
+                val surveyMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", surveyCollectionId).put("collectionName", surveyCollectionName))
+                postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$surveyMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$admin';")
 
+              }
+              catch {
+                case e: Exception =>
+                  postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}' WHERE entity_id = '$admin';")
+                  println(s"An error occurred: ${e.getMessage}")
+                  e.printStackTrace()
+              }
+
+            } else {
+              try {
+                val adminCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Admin Collection' AND entity_name = 'Admin';"
+                val adminCollectionId = postgresUtil.executeQuery[Int](adminCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
+                val (surveyCollectionName, surveyCollectionDescription) = ("Survey Collection", "This collection contains sub-collection, questions and dashboards required for Survey")
+                val surveyCollectionId = Utils.createCollection(surveyCollectionName, surveyCollectionDescription, metabaseUtil, Some(adminCollectionId))
+                createSurveyDashboard(surveyCollectionId, solutions, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable)
+                val surveyMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", surveyCollectionId).put("collectionName", surveyCollectionName))
+                postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$surveyMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$admin';")
+
+              }
+              catch {
+                case e: Exception =>
+                  postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}' WHERE entity_id = '$admin';")
+                  println(s"An error occurred: ${e.getMessage}")
+                  e.printStackTrace()
+              }
+            }
+          } else {
+            println(s"Admin & Survey Collections has already been created hence skipping the process !!!!!!!!!!!!")
           }
+        } else {
+          println(s"admin key is not present or is empty")
+        }
+
+        /**
+         * Logic to process and create Program Dashboard
+         */
+        if (targetedProgramId.nonEmpty) {
+          println(s"********** Started Processing Metabase Program Dashboard For Survey ***********")
+          val programIdCheckQuery =
+            s"""SELECT CASE WHEN
+              EXISTS (SELECT 1 FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS e WHERE entity_id = '$targetedProgramId' AND e ->> 'collectionName' = ('Program Collection [' || entity_name || ']'))
+              AND
+              EXISTS (SELECT 1 FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS e WHERE entity_id = '$targetedProgramId' AND e ->> 'collectionName' = 'Survey Collection')
+              THEN 'Success' ELSE 'Failed' END AS result""".stripMargin.replaceAll("\n", " ")
+          val programSurveyIdStatus = postgresUtil.fetchData(programIdCheckQuery) match {
+            case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
+            case _ => ""
+          }
+          if (programSurveyIdStatus == "Failed") {
+            val programIdCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Program Collection [$programName]"}]'::jsonb THEN 'Success' ELSE 'Failed' END AS result FROM $metaDataTable WHERE entity_id = '$targetedProgramId';"""
+            val programIdStatus = postgresUtil.fetchData(programIdCheckQuery) match {
+              case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
+              case _ => ""
+            }
+            if (programIdStatus == "Failed") {
+              try {
+                val (programCollectionName, programCollectionDescription) = (s"Program Collection [$programName]", s"Program Report [$programName]")
+                val groupName: String = s"Program_Manager[$programName]"
+                val programCollectionId: Int = Utils.checkAndCreateCollection(programCollectionName, programCollectionDescription, metabaseUtil)
+                val programMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", programCollectionId).put("collectionName", programCollectionName))
+                postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$programMetadataJson' ::jsonb WHERE entity_id = '$targetedProgramId';")
+                val (surveyCollectionName, surveyCollectionDescription) = ("Survey Collection", "This collection contains sub-collection, questions and dashboards required for Survey")
+                val surveyCollectionId = Utils.createCollection(surveyCollectionName, surveyCollectionDescription, metabaseUtil, Some(programCollectionId))
+                createSurveyDashboard(surveyCollectionId, solutions, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable)
+                CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, programCollectionId)
+                val surveyMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", surveyCollectionId).put("collectionName", surveyCollectionName))
+                postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$surveyMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$targetedProgramId';")
+              }
+              catch {
+                case e: Exception =>
+                  postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}' WHERE entity_id = '$targetedProgramId';")
+                  println(s"An error occurred: ${e.getMessage}")
+                  e.printStackTrace()
+              }
+
+            } else {
+              try {
+                val programCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Program Collection [$programName]' AND entity_id = '$targetedProgramId';"
+                val programCollectionId = postgresUtil.executeQuery[Int](programCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
+                val (surveyCollectionName, surveyCollectionDescription) = ("Survey Collection", "This collection contains sub-collection, questions and dashboards required for Survey")
+                val surveyCollectionId = Utils.createCollection(surveyCollectionName, surveyCollectionDescription, metabaseUtil, Some(programCollectionId))
+                createSurveyDashboard(surveyCollectionId, solutions, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable)
+                val surveyMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", surveyCollectionId).put("collectionName", surveyCollectionName))
+                postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$surveyMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$targetedProgramId';")
+              }
+              catch {
+                case e: Exception =>
+                  postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}' WHERE entity_id = '$targetedProgramId';")
+                  println(s"An error occurred: ${e.getMessage}")
+                  e.printStackTrace()
+              }
+            }
+          } else {
+            println(s"Program & Survey Collections has already been created hence skipping the process !!!!!!!!!!!!")
+          }
+        } else {
+          println(s"program key is not present or is empty")
         }
     }
   }
+
+  def createSurveyDashboard(parentCollectionId: Int, solutions: String, metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, surveyQuestionTable: String): Unit = {
+    try {
+      val solutionNameQuery = s"""SELECT entity_name from $metaDataTable where entity_id = '$targetedSolutionId' """
+      val solutionName = postgresUtil.fetchData(solutionNameQuery) match {
+        case List(map: Map[_, _]) => map.get("entity_name").map(_.toString).getOrElse("")
+        case _ => ""
+      }
+      val collectionName: String = s"Survey [$solutionName]"
+      val dashboardName: String = s"Survey Question Report [$solutionName]"
+      val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
+      val collectionId: Int = Utils.createCollection(collectionName, s"${solutionName} - Question Report", metabaseUtil, Some(parentCollectionId))
+      val dashboardId: Int = Utils.createDashboard(collectionId, dashboardName, metabaseUtil, postgresUtil)
+      val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
+      metabaseUtil.syncDatabaseAndRescanValues(databaseId)
+      val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, surveyQuestionTable, "state_name", postgresUtil, createDashboardQuery)
+      val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, surveyQuestionTable, "district_name", postgresUtil, createDashboardQuery)
+      val clusterId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, surveyQuestionTable, "cluster_name", postgresUtil, createDashboardQuery)
+      metabaseUtil.updateColumnCategory(statenameId, "State")
+      metabaseUtil.updateColumnCategory(districtnameId, "City")
+      val schoolnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, surveyQuestionTable, "school_name", postgresUtil, createDashboardQuery)
+      val questionCardIdList = UpdateQuestionJsonFiles.ProcessAndUpdateJsonFiles(collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolnameId, clusterId, surveyQuestionTable, metabaseUtil, postgresUtil, reportConfig)
+      val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
+      val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Survey' AND question_type = 'Question-Parameter'"
+      UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil)
+      val surveyMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", collectionId).put("collectionName", collectionName).put("dashboardId", dashboardId).put("dashboardName", dashboardName).put("questionIds", questionIdsString))
+      postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$surveyMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$targetedSolutionId';")
+    }
+    catch {
+      case e: Exception =>
+        postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}' WHERE entity_id = '$targetedSolutionId';")
+        println(s"An error occurred: ${e.getMessage}")
+        e.printStackTrace()
+    }
+  }
+
 }
