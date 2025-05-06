@@ -73,17 +73,17 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
     event.reportType match {
       case "Project" =>
         println(s">>>>>>>>>>> Started Processing Metabase Project Dashboards >>>>>>>>>>>>")
+
+        /**
+         * Logic to process and create Admin Dashboard
+         */
         if (admin.nonEmpty) {
           println(s"********** Started Processing Metabase Admin Dashboard ***********")
-          val adminIdCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Admin Collection"}]'::jsonb AND main_metadata::jsonb @> '[{"collectionName":"Project Collection"}]'::jsonb THEN 'Success' ELSE 'Failed' END AS result FROM local_dashboard_metadata WHERE entity_id = '$admin';"""
+          val adminIdCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Admin Collection"}]'::jsonb AND main_metadata::jsonb @> '[{"collectionName":"Project Collection"}]'::jsonb THEN 'Success' ELSE 'Failed' END AS result FROM $metaDataTable WHERE entity_id = '$admin';"""
           val adminIdStatus = postgresUtil.fetchData(adminIdCheckQuery) match {
             case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
             case _ => ""
           }
-
-          /**
-           * Logic to process and create Admin Dashboard
-           */
           if (adminIdStatus == "Failed") {
             try {
               val (adminCollectionName, adminCollectionDescription) = ("Admin Collection", "Admin Report")
@@ -93,7 +93,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
               val adminMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", adminCollectionId).put("collectionName", adminCollectionName))
               postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$adminMetadataJson' ::jsonb WHERE entity_id = '$admin';")
               val (projectCollectionName, projectCollectionDescription) = ("Project Collection", "This collection contains sub-collection, questions and dashboards required for Projects")
-              val collectionId = Utils.checkAndCreateCollection(projectCollectionName, projectCollectionDescription, metabaseUtil, Some(adminCollectionId))
+              val collectionId = Utils.createCollection(projectCollectionName, projectCollectionDescription, metabaseUtil, Some(adminCollectionId))
               val dashboardName: String = s"Project Admin Report"
               val dashboardId: Int = CreateDashboard.checkAndCreateDashboard(collectionId, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
               val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
@@ -154,7 +154,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
               ComparePage.UpdateAdminParameterFunction(metabaseUtil, compareParametersQuery, compareDashboardId, postgresUtil)
               val compareMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", compareCollectionId).put("collectionName", compareCollectionName).put("dashboardId", compareDashboardId).put("dashboardName", compareDashboardName).put("questionIds", compareQuestionIdsString))
               postgresUtil.insertData(s"UPDATE $metaDataTable SET  comparison_metadata = '$compareMetadataJson' WHERE entity_id = '$admin';")
-              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
+              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, adminCollectionId)
               postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Success', error_message = '' WHERE entity_id = '$admin';")
 
             } catch {
@@ -225,7 +225,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
               /**
                * Logic to duplicate mi-state details page in Project collection
                */
-              val getProjectCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM local_dashboard_metadata, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Project Collection' AND entity_name = 'Admin';"
+              val getProjectCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Project Collection' AND entity_name = 'Admin';"
               val projectCollectionId = postgresUtil.executeQuery[Int](getProjectCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
               val adminStateCollectionName = stateName
               val adminStateDashboardName = s"$stateName - State Details"
@@ -326,7 +326,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
               /**
                * Logic to duplicate mi-district details page in Admin collection
                */
-              val getProjectCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM local_dashboard_metadata, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Project Collection' AND entity_name = 'Admin';"
+              val getProjectCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Project Collection' AND entity_name = 'Admin';"
               val projectCollectionId = postgresUtil.executeQuery[Int](getProjectCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
               val adminDistrictCollectionName = s"[$districtName - $stateName]"
               val adminDistrictDashboardName = s"[$districtName - $stateName] - District Details"
@@ -385,9 +385,9 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
           println(s"********** Started Processing Metabase Program Dashboard ***********")
           val programIdCheckQuery =
             s"""SELECT CASE WHEN
-              EXISTS (SELECT 1 FROM local_dashboard_metadata, LATERAL jsonb_array_elements(main_metadata::jsonb) AS e WHERE entity_id = '$targetedProgramId' AND e ->> 'collectionName' = ('Program Collection [' || entity_name || ']'))
+              EXISTS (SELECT 1 FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS e WHERE entity_id = '$targetedProgramId' AND e ->> 'collectionName' = ('Program Collection [' || entity_name || ']'))
               AND
-              EXISTS (SELECT 1 FROM local_dashboard_metadata, LATERAL jsonb_array_elements(main_metadata::jsonb) AS e WHERE entity_id = '$targetedProgramId' AND e ->> 'collectionName' = 'Project Collection')
+              EXISTS (SELECT 1 FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS e WHERE entity_id = '$targetedProgramId' AND e ->> 'collectionName' = 'Project Collection')
               THEN 'Success' ELSE 'Failed' END AS result""".stripMargin.replaceAll("\n", " ")
           val programIdStatus = postgresUtil.fetchData(programIdCheckQuery) match {
             case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
@@ -451,7 +451,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
               UpdateParameters.updateParameterFunction(metabaseUtil, postgresUtil, parametersQuery, immutableSlugNameToProgramIdFilterMap, dashboardId)
               val solutionMetadataJson = new ObjectMapper().createObjectNode().put("collectionId", collectionId).put("collectionName", solutionCollectionName).put("dashboardId", dashboardId).put("dashboardName", solutionDashboardName).put("questionIds", questionIdsString)
               postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = '$solutionMetadataJson', status = 'Success' WHERE entity_id = '$targetedSolutionId';")
-              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
+              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, programCollectionId)
               postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Success', error_message = '' WHERE entity_id = '$targetedProgramId';")
             } catch {
               case e: Exception =>
