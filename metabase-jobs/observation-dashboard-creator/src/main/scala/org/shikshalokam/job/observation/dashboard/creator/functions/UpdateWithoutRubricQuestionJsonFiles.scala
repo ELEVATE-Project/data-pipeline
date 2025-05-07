@@ -1,7 +1,7 @@
 package org.shikshalokam.job.observation.dashboard.creator.functions
 
-import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.fasterxml.jackson.databind.node.{ArrayNode, JsonNodeFactory, ObjectNode, TextNode}
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import org.postgresql.util.PGobject
 import org.shikshalokam.job.util.JSONUtil.mapper
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
@@ -9,15 +9,15 @@ import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
-object UpdateQuestionJsonFiles {
-  def ProcessAndUpdateJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, domainId: Int, criteriaId: Int, question: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, report_config: String): ListBuffer[Int] = {
+object UpdateWithoutRubricQuestionJsonFiles {
+  def ProcessAndUpdateJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, question: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, report_config: String): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
     val csvConfigQuery = s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question' AND question_type = 'table';"
 
-    def processCsvJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, domainId: Int, criteriaId: Int, questionTable: String, newRow : Int, newCol: Int): Unit = {
+    def processCsvJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, questionTable: String, newRow : Int, newCol: Int): Unit = {
       val queryResult = postgresUtil.fetchData(csvConfigQuery)
       queryResult.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -27,7 +27,7 @@ object UpdateQuestionJsonFiles {
               if (configJson != null) {
                 val originalQuestionCard = configJson.path("questionCard")
                 val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
-                val updatedQuestionCard = updateQuestionCardJsonValues(configJson, collectionId, statenameId, districtnameId, schoolId, clusterId, domainId, criteriaId, databaseId)
+                val updatedQuestionCard = updateQuestionCardJsonValues(configJson, collectionId, statenameId, districtnameId, schoolId, clusterId, databaseId)
                 val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, questionTable, null)
                 val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
@@ -54,7 +54,9 @@ object UpdateQuestionJsonFiles {
       }
     }
 
-    def processJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, domainId: Int, criteriaId: Int, question: String, report_config: String): Unit = {
+
+
+    def processJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, question: String, report_config: String): Unit = {
       val queries = Map(
         "nonMatrix" -> s"""SELECT distinct(question_id),question_text,question_type FROM "$question" WHERE has_parent_question = 'false'""",
         "matrix" -> s"""SELECT distinct(question_id),question_type,question_text, parent_question_text FROM "$question" WHERE has_parent_question = 'true'""",
@@ -109,7 +111,7 @@ object UpdateQuestionJsonFiles {
             case Some(queryValue: PGobject) =>
               val configJson = objectMapper.readTree(queryValue.getValue)
               Option(configJson).foreach { json =>
-                val updatedQuestionCard = updateQuestionCardJsonValues(json, collectionId, statenameId, districtnameId, schoolId, clusterId, domainId, criteriaId, databaseId)
+                val updatedQuestionCard = updateQuestionCardJsonValues(json, collectionId, statenameId, districtnameId, schoolId, clusterId, databaseId)
                 val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, question, questionId)
                 val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
@@ -153,8 +155,7 @@ object UpdateQuestionJsonFiles {
         processHeading(numberedQuestionText)
         processQuestionType(questionType, questionId, questionText)
       }
-
-      processCsvJsonFiles(collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolId, clusterId, domainId, criteriaId, question, newRow, newCol)
+      processCsvJsonFiles(collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolId, clusterId, question, newRow, newCol)
     }
 
 
@@ -188,7 +189,7 @@ object UpdateQuestionJsonFiles {
       }.toOption
     }
 
-    def updateQuestionCardJsonValues(configJson: JsonNode, collectionId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, domainId: Int, criteriaId: Int, databaseId: Int): JsonNode = {
+    def updateQuestionCardJsonValues(configJson: JsonNode, collectionId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, databaseId: Int): JsonNode = {
       try {
         val configObjectNode = configJson.deepCopy().asInstanceOf[ObjectNode]
         Option(configObjectNode.get("questionCard")).foreach { questionCard =>
@@ -203,9 +204,7 @@ object UpdateQuestionJsonFiles {
                   "state_param" -> statenameId,
                   "district_param" -> districtnameId,
                   "school_param" -> schoolId,
-                  "cluster_param" -> clusterId,
-                  "domain_param" -> domainId,
-                  "criteria_param" -> criteriaId
+                  "cluster_param" -> clusterId
                 )
                 params.foreach { case (paramName, paramId) =>
                   Option(templateTags.get(paramName)).foreach { paramNode =>
@@ -259,7 +258,7 @@ object UpdateQuestionJsonFiles {
       }
     }
 
-    processJsonFiles(collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolId, clusterId, domainId, criteriaId, question, report_config)
+    processJsonFiles(collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolId, clusterId, question, report_config)
     println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardId
   }

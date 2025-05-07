@@ -10,13 +10,13 @@ import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
 
-object UpdateDomainJsonFiles {
-  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, domainId: Int, criteriaId: Int, domain: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, report_config: String): ListBuffer[Int] = {
+object UpdateStatusJsonFiles {
+  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, blockId: Int, orgId: Int, status: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, report_config: String): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    def processJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, domainId: Int, criteriaId: Int, report_config: String): Unit = {
+    def processJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, blockId: Int, orgId: Int, report_config: String): Unit = {
       val queryResult = postgresUtil.fetchData(reportConfigQuery)
       queryResult.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -26,8 +26,8 @@ object UpdateDomainJsonFiles {
               if (configJson != null) {
                 val originalQuestionCard = configJson.path("questionCard")
                 val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
-                val updatedQuestionCard = updateQuestionCardJsonValues(configJson, collectionId, statenameId, districtnameId, schoolId, clusterId, domainId, criteriaId, databaseId)
-                val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, domain)
+                val updatedQuestionCard = updateQuestionCardJsonValues(configJson, collectionId, statenameId, districtnameId, schoolId, clusterId, blockId, orgId, databaseId)
+                val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, status)
                 val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
                 println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
@@ -98,8 +98,8 @@ object UpdateDomainJsonFiles {
                   "district_param" -> districtnameId,
                   "school_param" -> schoolId,
                   "cluster_param" -> clusterId,
-                  "domain_param" -> domainId,
-                  "criteria_param" -> criteriaId
+                  "block_param" -> blockId,
+                  "org_param" -> orgId
                 )
                 params.foreach { case (paramName, paramId) =>
                   Option(templateTags.get(paramName)).foreach { paramNode =>
@@ -139,7 +139,7 @@ object UpdateDomainJsonFiles {
         }
 
         val updatedQuery = queryNode.asText()
-          .replace("${domainTable}", s""""$domain"""")
+          .replace("${statusTable}", s""""$status"""")
 
         val updatedJson = json.deepCopy().asInstanceOf[ObjectNode]
         updatedJson.at("/dataset_query/native")
@@ -154,7 +154,7 @@ object UpdateDomainJsonFiles {
       }
     }
 
-    processJsonFiles(collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolId, clusterId, domainId, criteriaId, report_config)
+    processJsonFiles(collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolId, clusterId, blockId, orgId, report_config)
     println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardId
   }
