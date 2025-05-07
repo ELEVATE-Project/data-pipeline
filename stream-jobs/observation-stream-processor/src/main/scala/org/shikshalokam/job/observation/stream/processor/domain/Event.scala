@@ -10,6 +10,10 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def solutionName : String = readOrDefault[String]("solutionInfo.name", "")
 
+  def solutionExternalId: String = readOrDefault[String]("solutionExternalId", "")
+
+  def solutionDescription: String = readOrDefault[String]("solutionInfo.description", "")
+
   def createdBy: String = readOrDefault[String]("createdBy", "")
 
   def status: String = readOrDefault[String]("status", "")
@@ -19,6 +23,10 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
   def programName: String = readOrDefault[String]("programInfo.name", "")
 
   def programId: String = readOrDefault[String]("programInfo._id", "")
+
+  def programExternalId: String = readOrDefault[String]("programExternalId", "")
+
+  def programDescription: String = readOrDefault[String]("programInfo.description", "")
 
   def observationName : String = readOrDefault[String]("observationInformation.name", "")
 
