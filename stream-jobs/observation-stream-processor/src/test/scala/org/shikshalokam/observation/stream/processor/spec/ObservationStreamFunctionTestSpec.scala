@@ -50,7 +50,7 @@ class ObservationStreamFunctionTestSpec extends BaseTestSpec {
       .thenReturn(new GenerateObservationSink)
   }
 
-  "Project Stream Job " should "execute successfully " in {
+  "Observation Stream Job " should "execute successfully " in {
     initialize()
     new ObservationStreamTask(jobConfig, mockKafkaUtil).process()
   }
