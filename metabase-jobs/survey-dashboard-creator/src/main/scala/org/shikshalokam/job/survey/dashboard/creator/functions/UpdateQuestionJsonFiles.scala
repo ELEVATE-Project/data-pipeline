@@ -15,9 +15,9 @@ object UpdateQuestionJsonFiles {
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    val csvConfigQuery = s"SELECT * FROM $report_config WHERE dashboard_name = 'Survey' AND question_type = 'table';"
+    val csvConfigQuery = s"SELECT * FROM $report_config WHERE dashboard_name = 'Survey' AND report_name = 'Question-Report' AND question_type = 'table';"
 
-    def processCsvJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int,  questionTable: String, newRow: Int, newCol: Int): Unit = {
+    def processCsvJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, questionTable: String, newRow: Int, newCol: Int): Unit = {
       val queryResult = postgresUtil.fetchData(csvConfigQuery)
       queryResult.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -27,7 +27,7 @@ object UpdateQuestionJsonFiles {
               if (configJson != null) {
                 val originalQuestionCard = configJson.path("questionCard")
                 val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
-                val updatedQuestionCard = updateQuestionCardJsonValues(configJson, collectionId, statenameId, districtnameId, schoolId, clusterId,  databaseId)
+                val updatedQuestionCard = updateQuestionCardJsonValues(configJson, collectionId, statenameId, districtnameId, schoolId, clusterId, databaseId)
                 val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, questionTable, null)
                 val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
