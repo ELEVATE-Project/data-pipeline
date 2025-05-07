@@ -1,0 +1,221 @@
+{
+  "questionCard": {
+    "name": "No. of surveys in inProgress status currently",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "query": "SELECT\n  COUNT(DISTINCT survey_id) AS no_of_surveys_inprogress\nFROM\n${statusTable}\nWHERE\n  1 = 1\n  AND status = 'inProgress'\n  [[AND {{state_param}}]]\n  [[AND {{district_param}}]]\n  [[AND {{block_param}}]]\n  [[AND {{cluster_param}}]]\n  [[AND {{org_param}}]]",
+        "template-tags": {
+          "state_param": {
+            "type": "dimension",
+            "name": "state_param",
+            "id": "dd576aad-4346-411e-95cf-75d0fd8e98c5",
+            "display-name": "State Param",
+            "default": null,
+            "dimension": [
+              "field",
+              482,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "district_param": {
+            "type": "dimension",
+            "name": "district_param",
+            "id": "27f6c149-7ad5-4ab4-86f0-476bd6da44a1",
+            "display-name": "District Param",
+            "default": null,
+            "dimension": [
+              "field",
+              466,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "block_param": {
+            "type": "dimension",
+            "name": "block_param",
+            "id": "220643b0-183d-4d0a-97c6-ac4616e9d9b1",
+            "display-name": "Block Param",
+            "default": null,
+            "dimension": [
+              "field",
+              464,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "cluster_param": {
+            "type": "dimension",
+            "name": "cluster_param",
+            "id": "4cee9c72-cc82-40f6-b117-11db5aee6aea",
+            "display-name": "Cluster Param",
+            "default": null,
+            "dimension": [
+              "field",
+              469,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "org_param": {
+            "type": "dimension",
+            "name": "org_param",
+            "id": "c1a47218-3d90-40fb-8c10-ed0f291cb18b",
+            "display-name": "Org Param",
+            "default": null,
+            "dimension": [
+              "field",
+              474,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          }
+        }
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {},
+    "parameters": [
+      {
+        "id": "dd576aad-4346-411e-95cf-75d0fd8e98c5",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "state_param"
+          ]
+        ],
+        "name": "State Param",
+        "slug": "state_param"
+      },
+      {
+        "id": "27f6c149-7ad5-4ab4-86f0-476bd6da44a1",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "district_param"
+          ]
+        ],
+        "name": "District Param",
+        "slug": "district_param"
+      },
+      {
+        "id": "220643b0-183d-4d0a-97c6-ac4616e9d9b1",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "block_param"
+          ]
+        ],
+        "name": "Block Param",
+        "slug": "block_param"
+      },
+      {
+        "id": "4cee9c72-cc82-40f6-b117-11db5aee6aea",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "cluster_param"
+          ]
+        ],
+        "name": "Cluster Param",
+        "slug": "cluster_param"
+      },
+      {
+        "id": "c1a47218-3d90-40fb-8c10-ed0f291cb18b",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "org_param"
+          ]
+        ],
+        "name": "Org Param",
+        "slug": "org_param"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 6946,
+    "dashboard_tab_id": null,
+    "id": 22,
+    "parameter_mappings": [
+      {
+        "parameter_id": "2030c5fe",
+        "card_id": 2139,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "state_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "3fa46e53",
+        "card_id": 2139,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "district_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "ebefc30b",
+        "card_id": 2139,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "block_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "a6683b09",
+        "card_id": 2139,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "cluster_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "98262141",
+        "card_id": 2139,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "org_param"
+          ]
+        ]
+      }
+    ],
+    "col": 8,
+    "row": 0,
+    "size_x": 8,
+    "size_y": 3,
+    "visualization_settings": {}
+  }
+}

@@ -15,6 +15,45 @@ object UpdateQuestionJsonFiles {
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
+    val csvConfigQuery = s"SELECT * FROM $report_config WHERE dashboard_name = 'Survey' AND report_name = 'Question-Report' AND question_type = 'table';"
+
+    def processCsvJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, questionTable: String, newRow: Int, newCol: Int): Unit = {
+      val queryResult = postgresUtil.fetchData(csvConfigQuery)
+      queryResult.foreach { row =>
+        if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
+          row.get("config") match {
+            case Some(queryValue: PGobject) =>
+              val configJson = objectMapper.readTree(queryValue.getValue)
+              if (configJson != null) {
+                val originalQuestionCard = configJson.path("questionCard")
+                val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
+                val updatedQuestionCard = updateQuestionCardJsonValues(configJson, collectionId, statenameId, districtnameId, schoolId, clusterId, databaseId)
+                val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, questionTable, null)
+                val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
+                val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
+                println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
+                questionCardId.append(cardId)
+                val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(configJson, cardId, newRow, newCol)
+                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedQuestionIdInDashCard, dashboardId)
+              }
+            case None =>
+              println("Key 'config' not found in the result row.")
+          }
+        }
+        else {
+          row.get("config") match {
+            case Some(queryValue: PGobject) =>
+              val jsonString = queryValue.getValue
+              val rootNode = objectMapper.readTree(jsonString)
+              if (rootNode != null) {
+                val optJsonNode = toOption(rootNode)
+                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, optJsonNode, dashboardId)
+              }
+          }
+        }
+      }
+    }
+
     def processJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, question: String, report_config: String): Unit = {
       val queries = Map(
         "nonMatrix" -> s"""SELECT distinct(question_id),question_text,question_type FROM "$question" WHERE has_parent_question = 'false'""",
@@ -114,6 +153,7 @@ object UpdateQuestionJsonFiles {
         processHeading(numberedQuestionText)
         processQuestionType(questionType, questionId, questionText)
       }
+      processCsvJsonFiles(collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolId, clusterId, question, newRow, newCol)
     }
 
 
