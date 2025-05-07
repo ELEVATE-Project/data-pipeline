@@ -7,7 +7,7 @@ import org.shikshalokam.job.BaseJobConfig
 import org.shikshalokam.job.dashboard.creator.domain.Event
 
 
-class ProjectMetabaseDashboardConfig(override val config: Config) extends BaseJobConfig(config, "MetabaseDashboardJob") {
+class ProjectMetabaseDashboardConfig(override val config: Config) extends BaseJobConfig(config, "MetabaseProjectDashboardJob") {
 
   implicit val mapTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
 
