@@ -112,8 +112,8 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
     }
 
     if (status_of_submission == "completed") {
-      postgresUtil.createTable(config.createSolutionsTable, config.solutions)
-      postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboard_metadata)
+//      postgresUtil.createTable(config.createSolutionsTable, config.solutions)
+//      postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboard_metadata)
 
 
       val createDomainsTable =
@@ -189,43 +189,43 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       /**
        * Extracting Solutions data
        */
-      val solutionId = event.solutionId
-      val solutionExternalId = event.solutionExternalId
-      val solutionName = event.solutionName
-      val solutionDescription = event.solutionDescription
-      val programId = event.programId
-      val programName = event.programName
-      val programExternalId = event.programExternalId
-      val programDescription = event.programDescription
-      val privateProgram = null
-      val projectCategories = null
-      val projectDuration = null
-
-      val upsertSolutionQuery =
-        s"""INSERT INTO ${config.solutions} (solution_id, external_id, name, description, duration, categories, program_id, program_name, program_external_id, program_description, private_program)
-           |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-           |ON CONFLICT (solution_id) DO UPDATE SET
-           |    external_id = ?,
-           |    name = ?,
-           |    description = ?,
-           |    duration = ?,
-           |    categories = ?,
-           |    program_id = ?,
-           |    program_name = ?,
-           |    program_external_id = ?,
-           |    program_description = ?,
-           |    private_program = ?;
-           |""".stripMargin
-
-      val solutionParams = Seq(
-        // Insert parameters
-        solutionId, solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram,
-
-        // Update parameters (matching columns in the ON CONFLICT clause)
-        solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram
-      )
-
-      postgresUtil.executePreparedUpdate(upsertSolutionQuery, solutionParams, config.solutions, solutionId)
+//      val solutionId = event.solutionId
+//      val solutionExternalId = event.solutionExternalId
+//      val solutionName = event.solutionName
+//      val solutionDescription = event.solutionDescription
+//      val programId = event.programId
+//      val programName = event.programName
+//      val programExternalId = event.programExternalId
+//      val programDescription = event.programDescription
+//      val privateProgram = null
+//      val projectCategories = null
+//      val projectDuration = null
+//
+//      val upsertSolutionQuery =
+//        s"""INSERT INTO ${config.solutions} (solution_id, external_id, name, description, duration, categories, program_id, program_name, program_external_id, program_description, private_program)
+//           |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+//           |ON CONFLICT (solution_id) DO UPDATE SET
+//           |    external_id = ?,
+//           |    name = ?,
+//           |    description = ?,
+//           |    duration = ?,
+//           |    categories = ?,
+//           |    program_id = ?,
+//           |    program_name = ?,
+//           |    program_external_id = ?,
+//           |    program_description = ?,
+//           |    private_program = ?;
+//           |""".stripMargin
+//
+//      val solutionParams = Seq(
+//        // Insert parameters
+//        solutionId, solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram,
+//
+//        // Update parameters (matching columns in the ON CONFLICT clause)
+//        solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram
+//      )
+//
+//      postgresUtil.executePreparedUpdate(upsertSolutionQuery, solutionParams, config.solutions, solutionId)
 
 
       /**
