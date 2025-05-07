@@ -2,6 +2,10 @@ package org.shikshalokam.job.survey.stream.processor.domain
 
 import org.shikshalokam.job.domain.reader.JobRequest
 
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+import java.time.Instant
+
 class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) extends JobRequest(eventMap, partition, offset) {
 
   def _id: String = readOrDefault[String]("_id", "")
@@ -55,6 +59,20 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
   def schoolName: String = readOrDefault[String]("userProfile.school.label", "")
 
   def answers: Map[String, Any] = readOrDefault[Map[String, Any]]("answers", null)
+
+  def completedDate: Timestamp = {
+    val dateString = readOrDefault[String]("completedDate", "")
+    if (dateString.isEmpty) new Timestamp(System.currentTimeMillis())
+    else {
+      try {
+        Timestamp.from(Instant.parse(dateString))
+      } catch {
+        case _: Exception =>
+          val formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+          new Timestamp(formatter.parse(dateString).getTime)
+      }
+    }
+  }
 
 }
 
