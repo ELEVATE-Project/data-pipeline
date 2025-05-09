@@ -38,7 +38,7 @@ object ObservationMetabaseDashboardTask {
     val configFilePath = Option(ParameterTool.fromArgs(args).get("config.file.path"))
     val config = configFilePath.map {
       path => ConfigFactory.parseFile(new File(path)).resolve()
-    }.getOrElse(ConfigFactory.load("metabase-dashboard.conf").withFallback(ConfigFactory.systemEnvironment()))
+    }.getOrElse(ConfigFactory.load("metabase-observation-dashboard.conf").withFallback(ConfigFactory.systemEnvironment()))
     val metabaseDashboardConfig = new ObservationMetabaseDashboardConfig(config)
     val kafkaUtil = new FlinkKafkaConnector(metabaseDashboardConfig)
     val task = new ObservationMetabaseDashboardTask(metabaseDashboardConfig, kafkaUtil)
