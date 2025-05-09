@@ -72,9 +72,13 @@ fi
 # File paths to be replaced
 FILES_TO_REPLACE=(
   "$CODE_BASE_PATH/jobs-core/src/main/resources/base-config.conf"
-  "$CODE_BASE_PATH/metabase-jobs/dashboard-creator/src/main/resources/metabase-dashboard.conf"
   "$CODE_BASE_PATH/metabase-jobs/users-via-csv/src/main/resources/application.conf"
-  "$CODE_BASE_PATH/project-jobs/project-stream-processor/src/main/resources/project-stream.conf"
+  "$CODE_BASE_PATH/metabase-jobs/observation-dashboard-creator/src/main/resources/metabase-observation-dashboard.conf"
+  "$CODE_BASE_PATH/metabase-jobs/project-dashboard-creator/src/main/resources/metabase-project-dashboard.conf"
+  "$CODE_BASE_PATH/metabase-jobs/survey-dashboard-creator/src/main/resources/metabase-survey-dashboard.conf"
+  "$CODE_BASE_PATH/stream-jobs/observation-stream-processor/src/main/resources/observation-stream.conf"
+  "$CODE_BASE_PATH/stream-jobs/project-stream-processor/src/main/resources/project-stream.conf"
+  "$CODE_BASE_PATH/stream-jobs/survey-stream-processor/src/main/resources/survey-stream.conf"
 )
 
 # Set the correct source directory based on the environment
@@ -108,32 +112,25 @@ done
 
 # Scala file replacement logic
 SCALA_JOB_FILES=(
-  "$CODE_BASE_PATH/metabase-jobs/dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/task/MetabaseDashboardConfig.scala"
-  "$CODE_BASE_PATH/project-jobs/project-stream-processor/src/main/scala/org/shikshalokam/job/project/stream/processor/task/ProjectStreamConfig.scala"
+  "$CODE_BASE_PATH/metabase-jobs/observation-dashboard-creator/src/main/scala/org/shikshalokam/job/observation/dashboard/creator/task/ObservationMetabaseDashboardConfig.scala"
+  "$CODE_BASE_PATH/metabase-jobs/project-dashboard-creator/src/main/scala/org/shikshalokam/job/dashboard/creator/task/ProjectMetabaseDashboardConfig.scala"
+  "$CODE_BASE_PATH/metabase-jobs/survey-dashboard-creator/src/main/scala/org/shikshalokam/job/survey/dashboard/creator/task/SurveyMetabaseDashboardConfig.scala"
+  "$CODE_BASE_PATH/stream-jobs/observation-stream-processor/src/main/scala/org/shikshalokam/job/observation/stream/processor/task/ObservationStreamConfig.scala"
+  "$CODE_BASE_PATH/stream-jobs/project-stream-processor/src/main/scala/org/shikshalokam/job/project/stream/processor/task/ProjectStreamConfig.scala"
+  "$CODE_BASE_PATH/stream-jobs/survey-stream-processor/src/main/scala/org/shikshalokam/job/survey/stream/processor/task/SurveyStreamConfig.scala"
 )
 
-echo -e "\n${CYAN}Updating class names in Scala files...${NC}"
+echo -e "\n${CYAN}Updating job names in Scala files...${NC}"
 for SCALA_FILE in "${SCALA_JOB_FILES[@]}"; do
   if [[ -f "$SCALA_FILE" ]]; then
     echo -e "${YELLOW}Processing ${MAGENTA}$SCALA_FILE${NC}"
 
-    # Replace class names in Scala files based on environment
-    if [[ "$SCALA_FILE" == *MetabaseDashboardConfig.scala ]]; then
-      if ! grep -q "${ENVIRONMENT}_MetabaseDashboardJob" "$SCALA_FILE"; then
-        perl -pi -e "s/MetabaseDashboardJob/${ENVIRONMENT}_MetabaseDashboardJob/g" "$SCALA_FILE"
-        echo -e "${GREEN}Success:${NC} Replaced 'MetabaseDashboardJob' with '${ENVIRONMENT}_MetabaseDashboardJob' in $SCALA_FILE"
-      else
-        echo -e "${CYAN}Class name 'MetabaseDashboardJob' already replaced.${NC}"
-      fi
-    elif [[ "$SCALA_FILE" == *ProjectStreamConfig.scala ]]; then
-      if ! grep -q "${ENVIRONMENT}_ProjectsStreamJob" "$SCALA_FILE"; then
-        perl -pi -e "s/ProjectsStreamJob/${ENVIRONMENT}_ProjectsStreamJob/g" "$SCALA_FILE"
-        echo -e "${GREEN}Success:${NC} Replaced 'ProjectsStreamJob' with '${ENVIRONMENT}_ProjectsStreamJob' in $SCALA_FILE"
-      else
-        echo -e "${CYAN}Class name 'ProjectsStreamJob' already replaced.${NC}"
-      fi
+    # Replace BaseJobConfig line with ENVIRONMENT-prefixed job name
+    if grep -q 'BaseJobConfig(config, "' "$SCALA_FILE"; then
+      perl -pi -e "s/BaseJobConfig\(config, \"([^\"]+)\"/BaseJobConfig(config, \"${ENVIRONMENT}_\1\"/g" "$SCALA_FILE"
+      echo -e "${GREEN}Success:${NC} Replaced job name in $SCALA_FILE with ENVIRONMENT-prefixed value"
     else
-      echo -e "${YELLOW}Note:${NC} No replacement rule matches for ${MAGENTA}$SCALA_FILE${NC}"
+      echo -e "${YELLOW}Note:${NC} No matching BaseJobConfig line found in ${MAGENTA}$SCALA_FILE${NC}"
     fi
   else
     echo -e "${RED}Error:${NC} Scala file ${MAGENTA}$SCALA_FILE${RED} does not exist.${NC}"
@@ -154,32 +151,40 @@ else
   exit 1
 fi
 
-# Define job and log paths based on environment
-if [[ "$ENVIRONMENT" == "dev" ]]; then
-  PROJECT_JOB_PATH="$CODE_BASE_PATH/project-jobs/project-stream-processor/target/project-stream-processor-1.0.0.jar"
-  DASHBOARD_JOB_PATH="$CODE_BASE_PATH/metabase-jobs/dashboard-creator/target/dashboard-creator-1.0.0.jar"
-  LOG_DIR="/opt/work-shop/dev/logs"
-elif [[ "$ENVIRONMENT" == "qa" ]]; then
-  PROJECT_JOB_PATH="$CODE_BASE_PATH/project-jobs/project-stream-processor/target/project-stream-processor-1.0.0.jar"
-  DASHBOARD_JOB_PATH="$CODE_BASE_PATH/metabase-jobs/dashboard-creator/target/dashboard-creator-1.0.0.jar"
-  LOG_DIR="/opt/work-shop/qa/logs"
-fi
+# Define log directory
+LOG_DIR="/opt/work-shop/$ENVIRONMENT/logs"
+
+# Define job JARs to submit
+JAR_PATHS=(
+  "$CODE_BASE_PATH/metabase-jobs/observation-dashboard-creator/target/observation-dashboard-creator-1.0.0.jar"
+  "$CODE_BASE_PATH/metabase-jobs/project-dashboard-creator/target/project-dashboard-creator-1.0.0.jar"
+  "$CODE_BASE_PATH/metabase-jobs/survey-dashboard-creator/target/survey-dashboard-creator-1.0.0.jar"
+  "$CODE_BASE_PATH/stream-jobs/observation-stream-processor/target/observation-stream-processor-1.0.0.jar"
+  "$CODE_BASE_PATH/stream-jobs/project-stream-processor/target/project-stream-processor-1.0.0.jar"
+  "$CODE_BASE_PATH/stream-jobs/survey-stream-processor/target/survey-stream-processor-1.0.0.jar"
+)
+
 
 # Submit jobs to Flink
 echo -e "${CYAN}Submitting jobs to Flink for ${MAGENTA}$ENVIRONMENT${CYAN} environment...${NC}"
 FLINK_CMD="$FLINK_DIR/bin/flink run -m localhost:8081"
 
-for JOB_PATH in "$PROJECT_JOB_PATH" "$DASHBOARD_JOB_PATH"; do
-  JOB_NAME=$(basename "$JOB_PATH" .jar)
-  LOG_FILE="$LOG_DIR/$ENVIRONMENT-$JOB_NAME.log"
+for JOB_PATH in "${JAR_PATHS[@]}"; do
+  if [[ -f "$JOB_PATH" ]]; then
+    JOB_NAME=$(basename "$JOB_PATH" .jar)
+    LOG_FILE="$LOG_DIR/$ENVIRONMENT-$JOB_NAME.log"
 
-  echo -e "${YELLOW}Submitting ${MAGENTA}$JOB_NAME${CYAN} to Flink...${NC}"
-  echo -e "${CYAN}Command:${NC} nohup $FLINK_CMD $JOB_PATH > \"$LOG_FILE\" 2>&1 &"
-  nohup $FLINK_CMD $JOB_PATH > "$LOG_FILE" 2>&1 &
-  if [[ $? -eq 0 ]]; then
-    echo -e "${GREEN}Success:${NC} Job $JOB_NAME submitted successfully."
+    echo -e "${YELLOW}Submitting ${MAGENTA}$JOB_NAME${CYAN} to Flink...${NC}"
+    echo -e "${CYAN}Command:${NC} nohup $FLINK_CMD $JOB_PATH > \"$LOG_FILE\" 2>&1 &"
+    nohup $FLINK_CMD "$JOB_PATH" > "$LOG_FILE" 2>&1 &
+
+    if [[ $? -eq 0 ]]; then
+      echo -e "${GREEN}Success:${NC} Job ${MAGENTA}$JOB_NAME${NC} submitted successfully."
+    else
+      echo -e "${RED}Error:${NC} Job ${MAGENTA}$JOB_NAME${NC} submission failed. Check log at ${MAGENTA}$LOG_FILE${NC}"
+    fi
   else
-    echo -e "${RED}Error:${NC} Job $JOB_NAME submission failed. Check log at ${MAGENTA}$LOG_FILE${NC}"
+    echo -e "${RED}Error:${NC} JAR file ${MAGENTA}$JOB_PATH${NC} not found. Skipping."
   fi
 done
 
