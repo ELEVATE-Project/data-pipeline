@@ -56,6 +56,12 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
     val ObservationQuestionTable = s"${targetedSolutionId}_questions"
     val ObservationStatusTable = s"${targetedSolutionId}_status"
 
+    val solutionNameQuery = s"SELECT entity_name from $metaDataTable where entity_id = '$targetedSolutionId'"
+    val solutionName = postgresUtil.fetchData(solutionNameQuery) match {
+      case List(map: Map[_, _]) => map.get("entity_name").map(_.toString).getOrElse("")
+      case _ => ""
+    }
+
     val programNameQuery = s"SELECT entity_name from $metaDataTable where entity_id = '$targetedProgramId'"
     val programName = postgresUtil.fetchData(programNameQuery) match {
       case List(map: Map[_, _]) => map.get("entity_name").map(_.toString).getOrElse("")
@@ -75,53 +81,98 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
         println(s">>>>>>>>>>> Started Processing Metabase Project Dashboards >>>>>>>>>>>>")
         if (admin.nonEmpty) {
           println(s"********** Started Processing Metabase Admin Dashboard For Observation ***********")
-          val adminObservationIdCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Admin Collection"}]'::jsonb AND main_metadata::jsonb @> '[{"collectionName":"Observation Collection"}]'::jsonb THEN 'Success' ELSE 'Failed' END AS result FROM $metaDataTable WHERE entity_id = '$admin';"""
-          val adminObservationIdStatus = postgresUtil.fetchData(adminObservationIdCheckQuery) match {
+          val adminObservationSolutionIdCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Admin Collection"}]'::jsonb AND main_metadata::jsonb @> '[{"collectionName":"Observation Collection"}]'::jsonb AND main_metadata::jsonb @> '[{"collectionName":"Observation [$solutionName]"}]'::jsonb THEN 'Success' ELSE 'Failed' END AS result FROM $metaDataTable WHERE entity_id = '$admin';"""
+          val adminObservationSolutionIdStatus = postgresUtil.fetchData(adminObservationSolutionIdCheckQuery) match {
             case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
             case _ => ""
           }
-          if (adminObservationIdStatus == "Failed") {
-            val adminIdCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Admin Collection"}]'::jsonb THEN 'Success' ELSE 'Failed' END AS result FROM $metaDataTable WHERE entity_id = '$admin';"""
-            val adminIdStatus = postgresUtil.fetchData(adminIdCheckQuery) match {
+          if (adminObservationSolutionIdStatus == "Failed") {
+            val adminObservationIdCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Admin Collection"}]'::jsonb AND main_metadata::jsonb @> '[{"collectionName":"Observation Collection"}]'::jsonb THEN 'Success' ELSE 'Failed' END AS result FROM $metaDataTable WHERE entity_id = '$admin';"""
+            val adminObservationIdStatus = postgresUtil.fetchData(adminObservationIdCheckQuery) match {
               case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
               case _ => ""
             }
-            if (adminIdStatus == "Failed") {
-              try {
-                val (adminCollectionName, adminCollectionDescription) = ("Admin Collection", "Admin Report")
-                val groupName: String = s"Report_Admin"
-                val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$admin';"
-                val adminCollectionId: Int = CreateDashboard.checkAndCreateCollection(adminCollectionName, adminCollectionDescription, metabaseUtil, postgresUtil, createDashboardQuery)
-                val adminMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", adminCollectionId).put("collectionName", adminCollectionName))
-                postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$adminMetadataJson' ::jsonb WHERE entity_id = '$admin';")
-                val (observationCollectionName, observationCollectionDescription) = ("Observation Collection", "This collection contains sub-collection, questions and dashboards required for Observation")
-                val observationCollectionId = Utils.createCollection(observationCollectionName, observationCollectionDescription, metabaseUtil, Some(adminCollectionId))
-                val parentCollectionId: Int = if (isRubric == "true") {
-                  createObservationQuestionDashboard(observationCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
-                } else {
-                  createObservationWithoutRubricQuestionDashboard(observationCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
-                }
-                createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable)
-                if (isRubric == "true") {
-                  createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable)
-                }
-                val observationMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", observationCollectionId).put("collectionName", observationCollectionName))
-                postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$observationMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$admin';")
-                CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, adminCollectionId)
+            if (adminObservationIdStatus == "Failed") {
+              val adminIdCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Admin Collection"}]'::jsonb THEN 'Success' ELSE 'Failed' END AS result FROM $metaDataTable WHERE entity_id = '$admin';"""
+              val adminIdStatus = postgresUtil.fetchData(adminIdCheckQuery) match {
+                case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
+                case _ => ""
               }
-              catch {
-                case e: Exception =>
-                  postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}' WHERE entity_id = '$admin';")
-                  println(s"An error occurred: ${e.getMessage}")
-                  e.printStackTrace()
-              }
+              if (adminIdStatus == "Failed") {
+                println(s"********** Admin Collection is not present hence creating the collection and dashboard ***********")
+                try {
+                  val (adminCollectionName, adminCollectionDescription) = ("Admin Collection", "Admin Report")
+                  val groupName: String = s"Report_Admin"
+                  val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$admin';"
+                  val adminCollectionId: Int = CreateDashboard.checkAndCreateCollection(adminCollectionName, adminCollectionDescription, metabaseUtil, postgresUtil, createDashboardQuery)
+                  val adminMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", adminCollectionId).put("collectionName", adminCollectionName))
+                  postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$adminMetadataJson' ::jsonb WHERE entity_id = '$admin';")
+                  val (observationCollectionName, observationCollectionDescription) = ("Observation Collection", "This collection contains sub-collection, questions and dashboards required for Observation")
+                  val observationCollectionId = Utils.createCollection(observationCollectionName, observationCollectionDescription, metabaseUtil, Some(adminCollectionId))
+                  val parentCollectionId: Int = if (isRubric == "true") {
+                    createObservationQuestionDashboard(observationCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                  } else {
+                    createObservationWithoutRubricQuestionDashboard(observationCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                  }
+                  createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable)
+                  if (isRubric == "true") {
+                    createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable)
+                  }
+                  val observationMetadataJson = new ObjectMapper().createArrayNode()
+                    .add(new ObjectMapper().createObjectNode()
+                      .put("collectionId", adminCollectionId)
+                      .put("collectionName", adminCollectionName))
+                    .add(new ObjectMapper().createObjectNode()
+                      .put("collectionId", observationCollectionId)
+                      .put("collectionName", observationCollectionName))
+                    .add(new ObjectMapper().createObjectNode()
+                      .put("collectionId", parentCollectionId)
+                      .put("collectionName", s"Observation[$solutionName]"))
+                  postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$observationMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$admin';")
+                  CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, adminCollectionId)
+                }
+                catch {
+                  case e: Exception =>
+                    postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}' WHERE entity_id = '$admin';")
+                    println(s"An error occurred: ${e.getMessage}")
+                    e.printStackTrace()
+                }
+              } else {
+                try {
+                  val adminCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Admin Collection' AND entity_name = 'Admin';"
+                  val adminCollectionId = postgresUtil.executeQuery[Int](adminCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
+                  val (observationCollectionName, observationCollectionDescription) = ("Observation Collection", "This collection contains sub-collection, questions and dashboards required for Observation")
+                  val observationCollectionId = Utils.createCollection(observationCollectionName, observationCollectionDescription, metabaseUtil, Some(adminCollectionId))
+                  val parentCollectionId: Int = if (isRubric == "true") {
+                    createObservationQuestionDashboard(observationCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                  } else {
+                    createObservationWithoutRubricQuestionDashboard(observationCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                  }
+                  createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable)
+                  if (isRubric == "true") {
+                    createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable)
+                  }
+                  val observationMetadataJson = new ObjectMapper().createArrayNode()
+                    .add(new ObjectMapper().createObjectNode()
+                      .put("collectionId", observationCollectionId)
+                      .put("collectionName", observationCollectionName))
+                    .add(new ObjectMapper().createObjectNode()
+                      .put("collectionId", parentCollectionId)
+                      .put("collectionName", s"Observation[$solutionName]"))
+                  postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$observationMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$admin';")
 
+                }
+                catch {
+                  case e: Exception =>
+                    postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}' WHERE entity_id = '$admin';")
+                    println(s"An error occurred: ${e.getMessage}")
+                    e.printStackTrace()
+                }
+              }
             } else {
               try {
-                val adminCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Admin Collection' AND entity_name = 'Admin';"
-                val adminCollectionId = postgresUtil.executeQuery[Int](adminCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
-                val (observationCollectionName, observationCollectionDescription) = ("Observation Collection", "This collection contains sub-collection, questions and dashboards required for Observation")
-                val observationCollectionId = Utils.createCollection(observationCollectionName, observationCollectionDescription, metabaseUtil, Some(adminCollectionId))
+                val observationCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Observation Collection' AND entity_name = 'Admin';"
+                val observationCollectionId = postgresUtil.executeQuery[Int](observationCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
                 val parentCollectionId: Int = if (isRubric == "true") {
                   createObservationQuestionDashboard(observationCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
                 } else {
@@ -131,9 +182,11 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
                 if (isRubric == "true") {
                   createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable)
                 }
-                val observationMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", observationCollectionId).put("collectionName", observationCollectionName))
+                val observationMetadataJson = new ObjectMapper().createArrayNode()
+                  .add(new ObjectMapper().createObjectNode()
+                    .put("collectionId", parentCollectionId)
+                    .put("collectionName", s"Observation[$solutionName]"))
                 postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$observationMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$admin';")
-
               }
               catch {
                 case e: Exception =>
@@ -143,68 +196,114 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
               }
             }
           } else {
-            println(s"Admin & Observation Collections has already been created hence skipping the process !!!!!!!!!!!!")
+            println(s"Admin, Observation & Observation [$solutionName] Collections has already been created hence skipping the process !!!!!!!!!!!!")
           }
         } else {
-          println(s"admin key is not present or is empty")
+          println(s"Admin key is not present or is empty")
         }
+
 
         /**
          * Logic to process and create Program Dashboard
          */
         if (targetedProgramId.nonEmpty) {
           println(s"********** Started Processing Metabase Program Dashboard For Observation ***********")
-          val programIdCheckQuery =
+          val programObservationSolutionIdCheckQuery =
             s"""SELECT CASE WHEN
                     EXISTS (SELECT 1 FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS e WHERE entity_id = '$targetedProgramId' AND e ->> 'collectionName' = ('Program Collection [' || entity_name || ']'))
                     AND
                     EXISTS (SELECT 1 FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS e WHERE entity_id = '$targetedProgramId' AND e ->> 'collectionName' = 'Observation Collection')
+                    AND
+                    EXISTS (SELECT 1 FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS e WHERE entity_id = '$targetedProgramId' AND e ->> 'collectionName' = 'Observation [$solutionName]')
                     THEN 'Success' ELSE 'Failed' END AS result""".stripMargin.replaceAll("\n", " ")
-          val programObservationIdStatus = postgresUtil.fetchData(programIdCheckQuery) match {
+          val programObservationSolutionIdStatus = postgresUtil.fetchData(programObservationSolutionIdCheckQuery) match {
             case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
             case _ => ""
           }
-          if (programObservationIdStatus == "Failed") {
-            val programIdCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Program Collection [$programName]"}]'::jsonb THEN 'Success' ELSE 'Failed' END AS result FROM $metaDataTable WHERE entity_id = '$targetedProgramId';"""
-            val programIdStatus = postgresUtil.fetchData(programIdCheckQuery) match {
+          if (programObservationSolutionIdStatus == "Failed") {
+            val programObservationIdCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Program Collection [$programName]"}]'::jsonb AND main_metadata::jsonb @> '[{"collectionName":"Observation Collection"}]'::jsonb THEN 'Success' ELSE 'Failed' END AS result FROM $metaDataTable WHERE entity_id = '$targetedProgramId';"""
+            val programObservationIdStatus = postgresUtil.fetchData(programObservationIdCheckQuery) match {
               case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
               case _ => ""
             }
-            if (programIdStatus == "Failed") {
-              try {
-                val (programCollectionName, programCollectionDescription) = (s"Program Collection [$programName]", s"Program Report [$programName]")
-                val groupName: String = s"Program_Manager[$programName]"
-                val programCollectionId: Int = Utils.checkAndCreateCollection(programCollectionName, programCollectionDescription, metabaseUtil)
-                val programMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", programCollectionId).put("collectionName", programCollectionName))
-                postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$programMetadataJson' ::jsonb WHERE entity_id = '$targetedProgramId';")
-                val (observationCollectionName, observationCollectionDescription) = ("Observation Collection", "This collection contains sub-collection, questions and dashboards required for Observation")
-                val observationCollectionId = Utils.createCollection(observationCollectionName, observationCollectionDescription, metabaseUtil, Some(programCollectionId))
-                val parentCollectionId: Int = if (isRubric == "true") {
-                  createObservationQuestionDashboard(observationCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
-                } else {
-                  createObservationWithoutRubricQuestionDashboard(observationCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
-                }
-                createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable)
-                if (isRubric == "true") {
-                  createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable)
-                }
-                val observationMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", observationCollectionId).put("collectionName", observationCollectionName))
-                postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$observationMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$targetedProgramId';")
-                CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, programCollectionId)
+            if (programObservationIdStatus == "Failed") {
+              val programObservationIdCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Program Collection [$programName]"}]'::jsonb THEN 'Success' ELSE 'Failed' END AS result FROM $metaDataTable WHERE entity_id = '$targetedProgramId';"""
+              val programIdStatus = postgresUtil.fetchData(programObservationIdCheckQuery) match {
+                case List(map: Map[_, _]) => map.get("result").map(_.toString).getOrElse("")
+                case _ => ""
               }
-              catch {
-                case e: Exception =>
-                  postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}' WHERE entity_id = '$targetedProgramId';")
-                  println(s"An error occurred: ${e.getMessage}")
-                  e.printStackTrace()
+              if (programIdStatus == "Failed") {
+                try {
+                  val (programCollectionName, programCollectionDescription) = (s"Program Collection [$programName]", s"Program Report [$programName]")
+                  val groupName: String = s"Program_Manager[$programName]"
+                  val programCollectionId: Int = Utils.checkAndCreateCollection(programCollectionName, programCollectionDescription, metabaseUtil)
+                  val programMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", programCollectionId).put("collectionName", programCollectionName))
+                  postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$programMetadataJson' ::jsonb WHERE entity_id = '$targetedProgramId';")
+                  val (observationCollectionName, observationCollectionDescription) = ("Observation Collection", "This collection contains sub-collection, questions and dashboards required for Observation")
+                  val observationCollectionId = Utils.createCollection(observationCollectionName, observationCollectionDescription, metabaseUtil, Some(programCollectionId))
+                  val parentCollectionId: Int = if (isRubric == "true") {
+                    createObservationQuestionDashboard(observationCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                  } else {
+                    createObservationWithoutRubricQuestionDashboard(observationCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                  }
+                  createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable)
+                  if (isRubric == "true") {
+                    createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable)
+                  }
+                  val observationMetadataJson = new ObjectMapper().createArrayNode()
+                    .add(new ObjectMapper().createObjectNode()
+                      .put("collectionId", programCollectionId)
+                      .put("collectionName", programCollectionName))
+                    .add(new ObjectMapper().createObjectNode()
+                      .put("collectionId", observationCollectionId)
+                      .put("collectionName", observationCollectionName))
+                    .add(new ObjectMapper().createObjectNode()
+                      .put("collectionId", parentCollectionId)
+                      .put("collectionName", s"Observation[$solutionName]"))
+                  postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$observationMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$targetedProgramId';")
+                  CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, programCollectionId)
+                }
+                catch {
+                  case e: Exception =>
+                    postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}' WHERE entity_id = '$targetedProgramId';")
+                    println(s"An error occurred: ${e.getMessage}")
+                    e.printStackTrace()
+                }
+              } else {
+                try {
+                  val programCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Program Collection [$programName]' AND entity_id = '$targetedProgramId';"
+                  val programCollectionId = postgresUtil.executeQuery[Int](programCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
+                  val (observationCollectionName, observationCollectionDescription) = ("Observation Collection", "This collection contains sub-collection, questions and dashboards required for Observation")
+                  val observationCollectionId = Utils.createCollection(observationCollectionName, observationCollectionDescription, metabaseUtil, Some(programCollectionId))
+                  val parentCollectionId: Int = if (isRubric == "true") {
+                    createObservationQuestionDashboard(observationCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                  } else {
+                    createObservationWithoutRubricQuestionDashboard(observationCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                  }
+                  createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable)
+                  if (isRubric == "true") {
+                    createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable)
+                  }
+                  val observationMetadataJson = new ObjectMapper().createArrayNode()
+                    .add(new ObjectMapper().createObjectNode()
+                      .put("collectionId", observationCollectionId)
+                      .put("collectionName", observationCollectionName))
+                    .add(new ObjectMapper().createObjectNode()
+                      .put("collectionId", parentCollectionId)
+                      .put("collectionName", s"Observation[$solutionName]"))
+                  postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$observationMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$targetedProgramId';")
+                }
+                catch {
+                  case e: Exception =>
+                    postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}' WHERE entity_id = '$targetedProgramId';")
+                    println(s"An error occurred: ${e.getMessage}")
+                    e.printStackTrace()
+                }
               }
-
             } else {
               try {
-                val programCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Program Collection [$programName]' AND entity_id = '$targetedProgramId';"
-                val programCollectionId = postgresUtil.executeQuery[Int](programCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
-                val (observationCollectionName, observationCollectionDescription) = ("Observation Collection", "This collection contains sub-collection, questions and dashboards required for Observation")
-                val observationCollectionId = Utils.createCollection(observationCollectionName, observationCollectionDescription, metabaseUtil, Some(programCollectionId))
+                val observationCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Observation Collection' AND entity_id = '$targetedProgramId';"
+                val observationCollectionId = postgresUtil.executeQuery[Int](observationCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
                 val parentCollectionId: Int = if (isRubric == "true") {
                   createObservationQuestionDashboard(observationCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
                 } else {
@@ -214,8 +313,8 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
                 if (isRubric == "true") {
                   createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable)
                 }
-                val observationMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", observationCollectionId).put("collectionName", observationCollectionName))
-                postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$observationMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$targetedProgramId';")
+                val observationMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", parentCollectionId).put("collectionName", s"Observation [$solutionName]"))
+                postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$observationMetadataJson' ::jsonb WHERE entity_id = '$targetedProgramId';")
               }
               catch {
                 case e: Exception =>
