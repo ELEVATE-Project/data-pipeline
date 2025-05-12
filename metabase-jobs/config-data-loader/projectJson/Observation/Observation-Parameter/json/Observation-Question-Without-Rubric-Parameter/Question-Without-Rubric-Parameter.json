@@ -8,6 +8,7 @@
     "isMultiSelect": false,
     "filteringParameters": [
       "74a10335",
+      "cc7a4cd7",
       "6e5c08dc"
     ]
   },
@@ -15,6 +16,7 @@
     "slug": "select_district",
     "filteringParameters": [
       "c32c8fc5",
+      "cc7a4cd7",
       "6e5c08dc"
     ],
     "name": "Select District",
@@ -32,12 +34,7 @@
     "filteringParameters": [
       "c32c8fc5",
       "74a10335",
-      "6e5c08dc",
-      "fbca1e77",
-      "ffbf9c99",
-      "efa886d3",
-      "8c7d86ea",
-      "5088d3e5"
+      "6e5c08dc"
     ]
   },
   {
@@ -49,13 +46,8 @@
     "isMultiSelect": false,
     "filteringParameters": [
       "c32c8fc5",
-      "cc7a4cd7",
       "74a10335",
-      "fbca1e77",
-      "ffbf9c99",
-      "efa886d3",
-      "8c7d86ea",
-      "5088d3e5"
+      "cc7a4cd7"
     ]
   }
 ]

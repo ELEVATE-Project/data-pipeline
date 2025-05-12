@@ -8,14 +8,20 @@
     "isMultiSelect": false,
     "filteringParameters": [
       "74a10335",
-      "6e5c08dc"
+      "6e5c08dc",
+      "cc7a4cd7",
+      "fbca1e77",
+      "ffbf9c99"
     ]
   },
   {
     "slug": "select_district",
     "filteringParameters": [
       "c32c8fc5",
-      "6e5c08dc"
+      "6e5c08dc",
+      "cc7a4cd7",
+      "fbca1e77",
+      "ffbf9c99"
     ],
     "name": "Select District",
     "isMultiSelect": false,
@@ -34,10 +40,7 @@
       "74a10335",
       "6e5c08dc",
       "fbca1e77",
-      "ffbf9c99",
-      "efa886d3",
-      "8c7d86ea",
-      "5088d3e5"
+      "ffbf9c99"
     ]
   },
   {
@@ -49,7 +52,10 @@
     "isMultiSelect": false,
     "filteringParameters": [
       "c32c8fc5",
-      "74a10335"
+      "74a10335",
+      "cc7a4cd7",
+      "fbca1e77",
+      "ffbf9c99"
     ]
   },
   {
@@ -63,10 +69,7 @@
       "74a10335",
       "6e5c08dc",
       "cc7a4cd7",
-      "ffbf9c99",
-      "efa886d3",
-      "8c7d86ea",
-      "5088d3e5"
+      "ffbf9c99"
     ],
     "isMultiSelect": false
   },
@@ -81,10 +84,7 @@
       "74a10335",
       "6e5c08dc",
       "fbca1e77",
-      "cc7a4cd7",
-      "efa886d3",
-      "8c7d86ea",
-      "5088d3e5"
+      "cc7a4cd7"
     ],
     "isMultiSelect": false
   }

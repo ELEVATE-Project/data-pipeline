@@ -6,7 +6,7 @@
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT domain_level,domain,count(*) AS \"Percentage wise distribution of count of school\"\nFROM ${domainTable}\nWHERE 1 = 1\n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{domain_param}}]]\n[[AND {{subdomain_param}}]]\nGROUP BY domain_level,domain\norder by domain",
+        "query": "SELECT domain_level,domain,count(*) AS \"Percentage wise distribution of count of school\"\nFROM ${domainTable}\nWHERE 1 = 1\n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{domain_param}}]]\nGROUP BY domain_level,domain\norder by domain",
         "template-tags": {
           "state_param": {
             "type": "dimension",
@@ -59,20 +59,6 @@
             "dimension": [
               "field",
               1502,
-              null
-            ],
-            "widget-type": "string/=",
-            "options": null
-          },
-          "subdomain_param": {
-            "type": "dimension",
-            "name": "subdomain_param",
-            "id": "18664947-82b4-4bce-ba10-6a5f078d316f",
-            "display-name": "Subdomain Param",
-            "default": null,
-            "dimension": [
-              "field",
-              1504,
               null
             ],
             "widget-type": "string/=",
@@ -174,19 +160,6 @@
         "slug": "domain_param"
       },
       {
-        "id": "18664947-82b4-4bce-ba10-6a5f078d316f",
-        "type": "string/=",
-        "target": [
-          "dimension",
-          [
-            "template-tag",
-            "subdomain_param"
-          ]
-        ],
-        "name": "Subdomain Param",
-        "slug": "subdomain_param"
-      },
-      {
         "id": "ae72528d-cca1-4f18-8d62-bc10b0ae3430",
         "type": "string/=",
         "target": [
@@ -227,10 +200,7 @@
           [
             "template-tag",
             "state_param"
-          ],
-          {
-            "stage-number": 0
-          }
+          ]
         ]
       },
       {
@@ -241,10 +211,7 @@
           [
             "template-tag",
             "district_param"
-          ],
-          {
-            "stage-number": 0
-          }
+          ]
         ]
       },
       {
@@ -255,10 +222,7 @@
           [
             "template-tag",
             "school_param"
-          ],
-          {
-            "stage-number": 0
-          }
+          ]
         ]
       },
       {
@@ -269,10 +233,7 @@
           [
             "template-tag",
             "domain_param"
-          ],
-          {
-            "stage-number": 0
-          }
+          ]
         ]
       },
       {
@@ -283,10 +244,7 @@
           [
             "template-tag",
             "criteria_param"
-          ],
-          {
-            "stage-number": 0
-          }
+          ]
         ]
       },
       {
@@ -297,10 +255,7 @@
           [
             "template-tag",
             "cluster_param"
-          ],
-          {
-            "stage-number": 0
-          }
+          ]
         ]
       }
     ],

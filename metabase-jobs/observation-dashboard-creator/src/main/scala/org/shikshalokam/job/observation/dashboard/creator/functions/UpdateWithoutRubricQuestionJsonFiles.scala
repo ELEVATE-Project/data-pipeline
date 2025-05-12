@@ -1,7 +1,7 @@
 package org.shikshalokam.job.observation.dashboard.creator.functions
 
-import com.fasterxml.jackson.databind.node.{ArrayNode, JsonNodeFactory, ObjectNode, TextNode}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+import com.fasterxml.jackson.databind.node.{ArrayNode, JsonNodeFactory, ObjectNode, TextNode}
 import org.postgresql.util.PGobject
 import org.shikshalokam.job.util.JSONUtil.mapper
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
@@ -15,7 +15,7 @@ object UpdateWithoutRubricQuestionJsonFiles {
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    val csvConfigQuery = s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question' AND question_type = 'table';"
+    val csvConfigQuery = s"SELECT * FROM $report_config WHERE dashboard_name = 'OObservation-Question-Without-Rubric' AND question_type = 'table';"
 
     def processCsvJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, questionTable: String, newRow : Int, newCol: Int): Unit = {
       val queryResult = postgresUtil.fetchData(csvConfigQuery)
@@ -54,19 +54,17 @@ object UpdateWithoutRubricQuestionJsonFiles {
       }
     }
 
-
-
     def processJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, question: String, report_config: String): Unit = {
       val queries = Map(
         "nonMatrix" -> s"""SELECT distinct(question_id),question_text,question_type FROM "$question" WHERE has_parent_question = 'false'""",
         "matrix" -> s"""SELECT distinct(question_id),question_type,question_text, parent_question_text FROM "$question" WHERE has_parent_question = 'true'""",
-        "slider" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question' AND question_type = 'slider-chart';",
-        "radio" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question' AND question_type = 'radio-chart';",
-        "multiselect" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question' AND question_type = 'multiselect-chart';",
-        "numbers" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question' AND question_type = 'number-chart';",
-        "text" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question' AND question_type = 'text-chart';",
-        "heading" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question' AND question_type = 'heading';",
-        "date" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question' AND question_type = 'date-chart';"
+        "slider" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question-Without-Rubric' AND question_type = 'slider-chart';",
+        "radio" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'OObservation-Question-Without-Rubric' AND question_type = 'radio-chart';",
+        "multiselect" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question-Without-Rubric' AND question_type = 'multiselect-chart';",
+        "numbers" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question-Without-Rubric' AND question_type = 'number-chart';",
+        "text" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question-Without-Rubric' AND question_type = 'text-chart';",
+        "heading" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'OObservation-Question-Without-Rubric' AND question_type = 'heading';",
+        "date" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question-Without-Rubric' AND question_type = 'date-chart';"
       )
 
       val results = queries.map { case (key, query) => key -> postgresUtil.fetchData(query) }
@@ -155,6 +153,7 @@ object UpdateWithoutRubricQuestionJsonFiles {
         processHeading(numberedQuestionText)
         processQuestionType(questionType, questionId, questionText)
       }
+
       processCsvJsonFiles(collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolId, clusterId, question, newRow, newCol)
     }
 
