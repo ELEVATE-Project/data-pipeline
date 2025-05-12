@@ -11,7 +11,7 @@ class ObservationQuestionFunction(postgresUtil: PostgresUtil, config: Observatio
   private def extractField(payload: Option[Map[String, Any]], key: String): String = {
     payload.flatMap(_.get(key)) match {
       case Some(qList: List[_]) =>
-        qList.collect { case q if q != null => q.toString }.headOption.getOrElse("")
+        qList.collect { case q if q != null && q.toString.nonEmpty => q.toString }.mkString(" | ")
       case _ => ""
     }
   }
@@ -41,10 +41,6 @@ class ObservationQuestionFunction(postgresUtil: PostgresUtil, config: Observatio
       has_parent_question, parent_question_text, evidences, completed_date, remarks, question_type, labels
     )
 
-    // Check for null values in parameters
-    questionParam.zipWithIndex.foreach { case (param, index) =>
-      if (param == null) println(s"Debug: Null value found at index $index in questionParam")
-    }
 
     postgresUtil.executePreparedUpdate(insertQuestionQuery, questionParam, questionTable, solution_id)
   }

@@ -119,8 +119,8 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
     }
 
     if (status_of_submission == "completed") {
-//      postgresUtil.createTable(config.createSolutionsTable, config.solutions)
-//      postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboard_metadata)
+      postgresUtil.createTable(config.createSolutionsTable, config.solutions)
+      postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboard_metadata)
 
 
       val createDomainsTable =
@@ -196,43 +196,43 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       /**
        * Extracting Solutions data
        */
-//      val solutionId = event.solutionId
-//      val solutionExternalId = event.solutionExternalId
-//      val solutionName = event.solutionName
-//      val solutionDescription = event.solutionDescription
-//      val programId = event.programId
-//      val programName = event.programName
-//      val programExternalId = event.programExternalId
-//      val programDescription = event.programDescription
-//      val privateProgram = null
-//      val projectCategories = null
-//      val projectDuration = null
-//
-//      val upsertSolutionQuery =
-//        s"""INSERT INTO ${config.solutions} (solution_id, external_id, name, description, duration, categories, program_id, program_name, program_external_id, program_description, private_program)
-//           |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-//           |ON CONFLICT (solution_id) DO UPDATE SET
-//           |    external_id = ?,
-//           |    name = ?,
-//           |    description = ?,
-//           |    duration = ?,
-//           |    categories = ?,
-//           |    program_id = ?,
-//           |    program_name = ?,
-//           |    program_external_id = ?,
-//           |    program_description = ?,
-//           |    private_program = ?;
-//           |""".stripMargin
-//
-//      val solutionParams = Seq(
-//        // Insert parameters
-//        solutionId, solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram,
-//
-//        // Update parameters (matching columns in the ON CONFLICT clause)
-//        solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram
-//      )
-//
-//      postgresUtil.executePreparedUpdate(upsertSolutionQuery, solutionParams, config.solutions, solutionId)
+      val solutionId = event.solutionId
+      val solutionExternalId = event.solutionExternalId
+      val solutionName = event.solutionName
+      val solutionDescription = event.solutionDescription
+      val programId = event.programId
+      val programName = event.programName
+      val programExternalId = event.programExternalId
+      val programDescription = event.programDescription
+      val privateProgram = null
+      val projectCategories = null
+      val projectDuration = null
+
+      val upsertSolutionQuery =
+        s"""INSERT INTO ${config.solutions} (solution_id, external_id, name, description, duration, categories, program_id, program_name, program_external_id, program_description, private_program)
+           |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           |ON CONFLICT (solution_id) DO UPDATE SET
+           |    external_id = ?,
+           |    name = ?,
+           |    description = ?,
+           |    duration = ?,
+           |    categories = ?,
+           |    program_id = ?,
+           |    program_name = ?,
+           |    program_external_id = ?,
+           |    program_description = ?,
+           |    private_program = ?;
+           |""".stripMargin
+
+      val solutionParams = Seq(
+        // Insert parameters
+        solutionId, solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram,
+
+        // Update parameters (matching columns in the ON CONFLICT clause)
+        solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram
+      )
+
+      postgresUtil.executePreparedUpdate(upsertSolutionQuery, solutionParams, config.solutions, solutionId)
 
 
       /**
@@ -399,25 +399,20 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
             }
             var domain_name: String = ""
             var criteria_name: String = ""
-
-            val evidences = if (questionsMap.isEmpty) {
-              println("Debug: questionsMap is empty")
-              null
-            } else {
-              val extractedEvidences = questionsMap.values.collect {
-                case map: Map[String, Any] if map.contains("sourcePath") =>
-                  map("sourcePath").toString
-              }
-              if (extractedEvidences.isEmpty) {
-                println("Debug: No sourcePath found in questionsMap")
-                null
-              } else {
-                extractedEvidences.mkString(",")
-              }
+            var remarks: String = questionsMap.get("remarks") match {
+              case Some(v: String) => v
+              case _ => ""
             }
-
-            val remarks = questionsMap.get("remarks") match {
-              case Some(r: String) if r.nonEmpty => r
+            val evidences = questionsMap match {
+              case map: Map[String, Any] if map.nonEmpty =>
+                val extractedEvidences = map.get("fileName") match {
+                  case Some(fileList: List[Map[String, Any]]) =>
+                    fileList.collect {
+                      case file if file.contains("sourcePath") => file("sourcePath").toString
+                    }
+                  case _ => Seq.empty
+                }
+                if (extractedEvidences.isEmpty) null else extractedEvidences.mkString(",")
               case _ => null
             }
 
@@ -462,13 +457,77 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       /**
        * Logic to populate kafka messages for creating metabase dashboard
        */
-      val obsDashboardData = new java.util.HashMap[String, Any]()
-      obsDashboardData.put("chart_type", util.Arrays.asList("domain", "question"))
-      obsDashboardData.put("isRubric", event.isRubric.toString)
-      obsDashboardData.put("solutionName",event.solutionName)
-      obsDashboardData.put("solution_id", event.solutionId)
+      val dashboardData = new java.util.HashMap[String, String]()
+      val dashboardConfig = Seq(
+        ("admin", "1", "admin"),
+        ("program", event.programId, "targetedProgram"),
+        ("solution", event.solutionId, "targetedSolution")
+      )
 
-      pushProjectDashboardEvents(obsDashboardData, context)
+      dashboardConfig
+        .filter { case (key, _, _) => config.reportsEnabled.contains(key) }
+        .foreach { case (key, value, target) =>
+          checkAndInsert(key, value, dashboardData, target)
+        }
+      dashboardData.put("isRubric", event.isRubric.toString)
+
+      if (!dashboardData.isEmpty) {
+        pushObservationDashboardEvents(dashboardData, context)
+      }
+    }
+
+    def checkAndInsert(entityType: String, targetedId: String, dashboardData: java.util.HashMap[String, String], dashboardKey: String): Unit = {
+      val query = s"SELECT EXISTS (SELECT 1 FROM ${config.dashboard_metadata} WHERE entity_id = '$targetedId') AS is_${entityType}_present"
+      val result = postgresUtil.fetchData(query)
+
+      result.foreach { row =>
+        row.get(s"is_${entityType}_present") match {
+          case Some(isPresent: Boolean) if isPresent =>
+            println(s"$entityType details already exist.")
+          case _ =>
+            if (entityType == "admin") {
+              val insertQuery = s"INSERT INTO ${config.dashboard_metadata} (entity_type, entity_name, entity_id) VALUES ('$entityType', 'Admin', '$targetedId')"
+              val affectedRows = postgresUtil.insertData(insertQuery)
+              println(s"Inserted Admin details. Affected rows: $affectedRows")
+              dashboardData.put(dashboardKey, "1")
+            } else {
+              val getEntityNameQuery =
+                s"""
+                   |SELECT DISTINCT ${
+                  if (entityType == "solution") "name"
+                  else s"${entityType}_name"
+                } AS ${entityType}_name
+                   |FROM ${
+                  entityType match {
+                    case "program" => config.solutions
+                    case "solution" => config.solutions
+                  }
+                }
+                   |WHERE ${entityType}_id = '$targetedId'
+               """.stripMargin.replaceAll("\n", " ")
+              val result = postgresUtil.fetchData(getEntityNameQuery)
+              result.foreach { id =>
+                val entityName = id.get(s"${entityType}_name").map(_.toString).getOrElse("")
+                val upsertMetaDataQuery =
+                  s"""INSERT INTO ${config.dashboard_metadata} (
+                     |    entity_type, entity_name, entity_id
+                     |) VALUES (
+                     |    ?, ?, ?
+                     |) ON CONFLICT (entity_id) DO UPDATE SET
+                     |    entity_type = ?, entity_name = ?;
+                     |""".stripMargin
+
+                val dashboardParams = Seq(
+                  entityType, entityName, targetedId, // Insert parameters
+                  entityType, entityName // Update parameters (matching columns in the ON CONFLICT clause)
+                )
+                postgresUtil.executePreparedUpdate(upsertMetaDataQuery, dashboardParams, config.dashboard_metadata, targetedId)
+                println(s"Inserted [$entityName : $targetedId] details.")
+                dashboardData.put(dashboardKey, targetedId)
+              }
+            }
+        }
+      }
     }
 
     if (status_of_submission != null) {
@@ -505,11 +564,10 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
            |  AND district_name = ?
            |  AND block_name = ?
            |  AND cluster_name = ?
-           |  AND school_name = ?
-           |  AND status_of_submission = ?;
+           |  AND school_name = ?;
            |""".stripMargin
 
-      val deleteParams = Seq(user_id, state_name, district_name, block_name, cluster_name, school_name, status_of_submission)
+      val deleteParams = Seq(user_id, state_name, district_name, block_name, cluster_name, school_name)
 
       postgresUtil.executePreparedUpdate(deleteQuery, deleteParams, statusTable, user_id)
 
@@ -532,7 +590,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       postgresUtil.executePreparedUpdate(insertStatusQuery, statusParams, statusTable, solution_id)
     }
 
-    def pushProjectDashboardEvents(dashboardData: util.HashMap[String, Any], context: ProcessFunction[Event, Event]#Context): util.HashMap[String, AnyRef] = {
+    def pushObservationDashboardEvents(dashboardData: util.HashMap[String, String], context: ProcessFunction[Event, Event]#Context): util.HashMap[String, AnyRef] = {
       val objects = new util.HashMap[String, AnyRef]() {
         put("_id", java.util.UUID.randomUUID().toString)
         put("reportType", "Observation")
@@ -540,10 +598,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
           .ofPattern("yyyy-MM-dd HH:mm:ss")
           .withZone(ZoneId.systemDefault())
           .format(Instant.ofEpochMilli(System.currentTimeMillis())).asInstanceOf[AnyRef])
-        put("chart_type", dashboardData.get("chart_type").asInstanceOf[AnyRef])
-        put("solution_id", dashboardData.get("solution_id").asInstanceOf[AnyRef])
-        put("isRubric", dashboardData.get("isRubric").asInstanceOf[AnyRef])
-        put("solutionName", dashboardData.get("solutionName").asInstanceOf[AnyRef])
+        put("dashboardData", dashboardData)
       }
       val event = ScalaJsonUtil.serialize(objects)
       context.output(config.eventOutputTag, event)
