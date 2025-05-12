@@ -67,7 +67,7 @@
         }
       }
     },
-    "display": "row",
+    "display": "pie",
     "visualization_settings": {},
     "parameters": [
       {
