@@ -19,17 +19,17 @@ log() {
 }
 
 # Step 1: Download Docker Compose file
-log "Downloading Docker Compose file..."
-echo "Downloading Docker Compose file..."
-curl -OJL https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/docker-compose.yml
-echo "Docker Compose file downloaded."
-log "Docker Compose file downloaded."
+#log "Downloading Docker Compose file..."
+#echo "Downloading Docker Compose file..."
+#curl -OJL https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/docker-compose.yml
+#echo "Docker Compose file downloaded."
+#log "Docker Compose file downloaded."
 
 # Step 2: Download environment files
 log "Downloading required files..."
 echo "Downloading required files..."
 curl -L \
-    -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/config.env \
+    # -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/config.env \
     -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/config_files/base-config.conf \
     -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/config_files/metabase-dashboard.conf \
     -O https://raw.githubusercontent.com/ELEVATE-Project/data-pipeline/saas-dev/Documentation/Docker-setup/config_files/project-stream.conf \
