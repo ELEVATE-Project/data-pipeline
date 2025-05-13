@@ -484,6 +484,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
         row.get(s"is_${entityType}_present") match {
           case Some(isPresent: Boolean) if isPresent =>
             println(s"$entityType details already exist.")
+            dashboardData.put(dashboardKey, targetedId)
           case _ =>
             if (entityType == "admin") {
               val insertQuery = s"INSERT INTO ${config.dashboard_metadata} (entity_type, entity_name, entity_id) VALUES ('$entityType', 'Admin', '$targetedId')"
