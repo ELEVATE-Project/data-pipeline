@@ -197,7 +197,7 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
       val collectionId: Int = Utils.checkAndCreateCollection(collectionName, s"Solution Collection which contains all the dashboards and questions", metabaseUtil, Some(parentCollectionId))
       val dashboardId: Int = Utils.createDashboard(collectionId, dashboardName, metabaseUtil, postgresUtil)
-      val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
+      val databaseId: Int = Utils.getDatabaseId(metabaseDatabase, metabaseUtil)
       metabaseUtil.syncDatabaseAndRescanValues(databaseId)
       val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, surveyQuestionTable, "state_name", postgresUtil, createDashboardQuery)
       val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, surveyQuestionTable, "district_name", postgresUtil, createDashboardQuery)
@@ -227,7 +227,7 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
       val dashboardName: String = s"Survey Status Report"
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
       val dashboardId: Int = Utils.createDashboard(parentCollectionId, dashboardName, metabaseUtil, postgresUtil)
-      val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
+      val databaseId: Int = Utils.getDatabaseId(metabaseDatabase, metabaseUtil)
       metabaseUtil.syncDatabaseAndRescanValues(databaseId)
       val statenNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, surveyStatusTable, "state_name", postgresUtil, createDashboardQuery)
       val districtNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, surveyStatusTable, "district_name", postgresUtil, createDashboardQuery)

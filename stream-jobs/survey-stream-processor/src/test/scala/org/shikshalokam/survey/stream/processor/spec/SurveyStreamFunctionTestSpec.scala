@@ -12,7 +12,6 @@ import org.shikshalokam.job.connector.FlinkKafkaConnector
 import org.shikshalokam.job.survey.stream.processor.domain.Event
 import org.shikshalokam.job.survey.stream.processor.task.{SurveyStreamConfig, SurveyStreamTask}
 
-
 class SurveyStreamFunctionTestSpec extends BaseTestSpec {
 
   implicit val mapTypeInfo: TypeInformation[java.util.Map[String, AnyRef]] = TypeExtractor.getForClass(classOf[java.util.Map[String, AnyRef]])
