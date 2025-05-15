@@ -74,8 +74,12 @@ upload_and_run_jar() {
 }
 
 sleep 10
-upload_and_run_jar "/app/project-jobs/project-stream-processor/target/project-stream-processor-1.0.0.jar"
-upload_and_run_jar "/app/metabase-jobs/dashboard-creator/target/dashboard-creator-1.0.0.jar"
+upload_and_run_jar "/app/stream-jobs/project-stream-processor/target/project-stream-processor-1.0.0.jar"
+upload_and_run_jar "/app/stream-jobs/observation-stream-processor/target/observation-stream-processor-1.0.0.jar"
+upload_and_run_jar "/app/stream-jobs/survey-stream-processor/target/survey-stream-processor-1.0.0.jar"
+upload_and_run_jar "/app/metabase-jobs/project-dashboard-creator/target/project-dashboard-creator-1.0.0.jar"
+upload_and_run_jar "/app/metabase-jobs/observation-dashboard-creator/target/observation-dashboard-creator-1.0.0.jar"
+upload_and_run_jar "/app/metabase-jobs/survey-dashboard-creator/target/survey-dashboard-creator-1.0.0.jar"
 
 # submitting the jar file to AKKA service
 mkdir -p /app/logs
