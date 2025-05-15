@@ -133,7 +133,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <!-- change the main class -->
-                                    <mainClass>org.shikshalokam.job.dashboard.creator.task.MetabaseDashboardTask</mainClass>
+                                    <mainClass>org.shikshalokam.job.dashboard.creator.task.ProjectMetabaseDashboardTask</mainClass>
                                 </transformer>
                                 <!-- append default configs -->
                                 <transformer

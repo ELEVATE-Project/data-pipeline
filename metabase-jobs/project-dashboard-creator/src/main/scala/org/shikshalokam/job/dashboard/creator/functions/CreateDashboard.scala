@@ -5,7 +5,7 @@ import org.shikshalokam.job.util.JSONUtil.mapper
 import scala.collection.JavaConverters._
 
 object CreateDashboard {
-  def checkAndCreateCollection(collectionName: String, reportName: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, metaTableQuery: String): Int = {
+  def checkAndCreateCollection(collectionName: String, description: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, metaTableQuery: String): Int = {
     val collectionListJson = mapper.readTree(metabaseUtil.listCollections())
     val existingCollectionId = collectionListJson.elements().asScala
       .find(_.path("name").asText() == collectionName)
@@ -23,7 +23,7 @@ object CreateDashboard {
         val collectionRequestBody =
           s"""{
              |  "name": "$collectionName",
-             |  "description": "Collection for $reportName"
+             |  "description": "Collection for $description"
              |}""".stripMargin
         val collectionId = mapper.readTree(metabaseUtil.createCollection(collectionRequestBody)).path("id").asInt()
         println(s"New Collection ID = $collectionId")
@@ -49,7 +49,8 @@ object CreateDashboard {
         val dashboardRequestBody =
           s"""{
              |  "name": "$dashboardName",
-             |  "collection_id": "$collectionId"
+             |  "collection_id": "$collectionId",
+             |  "collection_position": "1"
              |}""".stripMargin
         val dashboardId = mapper.readTree(metabaseUtil.createDashboard(dashboardRequestBody)).path("id").asInt()
         println(s"New Dashboard ID = $dashboardId")
