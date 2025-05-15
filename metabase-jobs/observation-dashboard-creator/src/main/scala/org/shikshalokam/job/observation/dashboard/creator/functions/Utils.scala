@@ -80,4 +80,13 @@ object Utils {
     dashboardId
   }
 
+  def getDatabaseId(metabaseDatabase: String, metabaseUtil: MetabaseUtil): Int = {
+    val databaseListJson = mapper.readTree(metabaseUtil.listDatabaseDetails())
+    val databaseId = databaseListJson.path("data").elements().asScala
+      .find(_.path("name").asText() == metabaseDatabase)
+      .map(_.path("id").asInt())
+      .getOrElse(throw new IllegalStateException(s"Database '$metabaseDatabase' not found. Process stopped."))
+    println(s"Database ID = $databaseId")
+    databaseId
+  }
 }

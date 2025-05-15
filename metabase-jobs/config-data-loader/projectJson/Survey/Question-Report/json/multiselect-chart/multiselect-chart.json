@@ -53,7 +53,7 @@
         }
       }
     },
-    "display": "pie",
+    "display": "bar",
     "visualization_settings": {},
     "parameters": [
       {
