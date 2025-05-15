@@ -56,10 +56,6 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def schoolId : String = readOrDefault[String]("entityId", "")
 
-  def pointsBasedMaxScore: Integer = readOrDefault[Integer]("pointsBasedMaxScore", 0)
-
-  def pointsBasedScoreAchieved: Integer = readOrDefault[Integer]("pointsBasedScoreAchieved", 0)
-
   def themes: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("themes", null)
 
   def criteria: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("criteria", null)
