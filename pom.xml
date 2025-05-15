@@ -21,7 +21,7 @@
 
     <modules>
         <module>jobs-core</module>
-        <module>project-jobs</module>
+        <module>stream-jobs</module>
         <module>metabase-jobs</module>
     </modules>
 

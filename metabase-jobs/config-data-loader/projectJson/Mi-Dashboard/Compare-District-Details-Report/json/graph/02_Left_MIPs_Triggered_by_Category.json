@@ -1,0 +1,88 @@
+{
+  "questionCard": {
+    "name": "MIPs Triggered Over Past 5 Years",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "district_name": {
+            "type": "text",
+            "name": "district_name",
+            "id": "11160285-e344-4acf-98aa-c5b30125ea4a",
+            "display-name": "District Name",
+            "default": null,
+            "widget-type": null,
+            "options": null
+          }
+        },
+        "query": "WITH\n  split_categories AS (\n    SELECT\n      solution_id,\n      UNNEST(STRING_TO_ARRAY(categories, ',')) AS category\n    FROM\n       ${config.solutions}\n  ),\n  cleaned_categories AS (\n    SELECT\n      solution_id,\n      INITCAP(TRIM(category)) AS category\n    FROM\n      split_categories\n  ),\n  yearly_projects AS (\n    SELECT\n      EXTRACT(\n        YEAR\n        FROM\n          created_date::timestamp\n      ) AS project_year,\n      COUNT(*)::INTEGER AS project_count\n    FROM\n      ${config.projects}\n    WHERE\n      1 = 1 [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE district_name = {{district_name}}\n        LIMIT 1)\n  ]]\n    GROUP BY\n      project_year\n  )\nSELECT\n  project_year AS \"Year\",\n  project_count AS \"No of. IMPs Triggered\"\nFROM\n  yearly_projects\nORDER BY\n  project_count DESC\nLIMIT\n  5;"
+      }
+    },
+    "parameter_mappings": [],
+    "display": "bar",
+    "entity_id": "C7DvLR-3JaqTZRrGA9hNh",
+    "collection_preview": true,
+    "visualization_settings": {
+      "graph.show_goal": false,
+      "graph.show_values": false,
+      "graph.series_order_dimension": null,
+      "graph.goal_value": 0,
+      "graph.metrics": [
+        "No of. IMPs Triggered"
+      ],
+      "graph.label_value_formatting": "compact",
+      "graph.series_order": null,
+      "series_settings": {
+        "Improvement Projects": {
+          "color": "#69C8C8",
+          "title": "No of. MIPs Triggered"
+        }
+      },
+      "graph.dimensions": [
+        "Year"
+      ]
+    },
+    "parameters": [
+      {
+        "id": "11160285-e344-4acf-98aa-c5b30125ea4a",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "district_name"
+          ]
+        ],
+        "name": "District Name",
+        "slug": "district_name",
+        "values_query_type": "list"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 6937,
+    "entity_id": "6oiK54muJA7whD5AdsNB1",
+    "dashboard_tab_id": null,
+    "id": 31,
+    "parameter_mappings": [
+      {
+        "parameter_id": "47ae9a0e",
+        "card_id": 1993,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "district_name"
+          ]
+        ]
+      }
+    ],
+    "col": 1,
+    "row": 13,
+    "size_x": 10,
+    "size_y": 5,
+    "visualization_settings": {}
+  }
+}

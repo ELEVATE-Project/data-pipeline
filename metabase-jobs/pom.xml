@@ -16,7 +16,9 @@
     <name>Metabase-Job</name>
 
     <modules>
-        <module>dashboard-creator</module>
+        <module>project-dashboard-creator</module>
+        <module>survey-dashboard-creator</module>
+        <module>observation-dashboard-creator</module>
         <module>users-via-csv</module>
     </modules>
 

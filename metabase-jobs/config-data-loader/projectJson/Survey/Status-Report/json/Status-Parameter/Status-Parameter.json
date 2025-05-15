@@ -1,0 +1,67 @@
+[
+  {
+    "name": "Select State",
+    "slug": "select_state",
+    "id": "2030c5fe",
+    "type": "string/=",
+    "sectionId": "location",
+    "filteringParameters": [
+      "3fa46e53",
+      "ebefc30b",
+      "a6683b09",
+      "98262141"
+    ]
+  },
+  {
+    "name": "Select District",
+    "slug": "select_district",
+    "id": "3fa46e53",
+    "type": "string/=",
+    "sectionId": "location",
+    "filteringParameters": [
+      "2030c5fe",
+      "ebefc30b",
+      "a6683b09",
+      "98262141"
+    ]
+  },
+  {
+    "name": "Select Block",
+    "slug": "select_block",
+    "id": "ebefc30b",
+    "type": "string/=",
+    "sectionId": "string",
+    "filteringParameters": [
+      "2030c5fe",
+      "3fa46e53",
+      "a6683b09",
+      "98262141"
+    ]
+  },
+  {
+    "name": "Select Cluster",
+    "slug": "select_cluster",
+    "id": "a6683b09",
+    "type": "string/=",
+    "sectionId": "string",
+    "filteringParameters": [
+      "2030c5fe",
+      "3fa46e53",
+      "ebefc30b",
+      "98262141"
+    ]
+  },
+  {
+    "name": "Select Organisation ",
+    "slug": "select_organisation_",
+    "id": "98262141",
+    "type": "string/=",
+    "sectionId": "string",
+    "filteringParameters": [
+      "2030c5fe",
+      "3fa46e53",
+      "ebefc30b",
+      "a6683b09"
+    ]
+  }
+]
