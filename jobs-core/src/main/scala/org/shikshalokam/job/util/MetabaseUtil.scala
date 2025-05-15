@@ -122,61 +122,6 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
   }
 
   /**
-   * Method to get table details by Id from Metabase
-   *
-   * @param database ID of the table to retrieve details for
-   * @return JSON string representing the dashboard details
-   */
-  def getTableDetailsByName(databaseId: Int, tableName: String): Int = {
-    val url = s"$metabaseUrl/database/$databaseId/idfields"
-    val response = requests.get(
-      url,
-      headers = Map(
-        "Content-Type" -> "application/json",
-        "X-Metabase-Session" -> getSessionToken
-      )
-    )
-
-    if (response.statusCode == 200) {
-      val jsonResponse = ujson.read(response.text).arr
-      jsonResponse
-        .find(obj => obj("table")("name").str == tableName)
-        .map(obj => obj("table")("id").num.toInt)
-        .getOrElse(throw new Exception(s"Table with name '$tableName' not found"))
-    } else {
-      throw new Exception(s"Failed to retrieve table details: ${response.text()}")
-    }
-  }
-
-  /**
-   * Method to get column details by TableId from Metabase
-   *
-   * @param table ID of the column to retrieve details for
-   * @return JSON string representing the dashboard details
-   */
-  def getColumnIdDetailsByName(tableId: Int, columnName: String): Int = {
-    val url = s"$metabaseUrl/table/$tableId/query_metadata?include_sensitive_fields=true"
-    val response = requests.get(
-      url,
-      headers = Map(
-        "Content-Type" -> "application/json",
-        "X-Metabase-Session" -> getSessionToken
-      )
-    )
-
-    if (response.statusCode == 200) {
-      val jsonResponse = ujson.read(response.text)
-      val fields = jsonResponse("fields").arr
-      fields
-        .find(field => field("name").str == columnName)
-        .map(field => field("id").num.toInt)
-        .getOrElse(throw new Exception(s"Field with name '$columnName' not found"))
-    } else {
-      throw new Exception(s"Failed to retrieve column details: ${response.text()}")
-    }
-  }
-
-  /**
    * To update the column category in Metabase
    * ex state_name -> state and column_name -> city
    * first get the database id then table id(getTableDetailsByName) and then column id
