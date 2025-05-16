@@ -77,7 +77,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
 
     event.reportType match {
       case "Observation" =>
-        if (solutionName != null) {
+        if (solutionName != null && solutionName.nonEmpty) {
           println(s"===========================================================================================================================================")
           println(s"****************************************** Started Processing Metabase Admin Dashboard For Observation ************************************")
           println(s"===========================================================================================================================================")
@@ -176,7 +176,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
         /**
          * Logic to process and create Program Dashboard
          */
-        if (programName != null && solutionName != null) {
+        if (programName != null && programName.nonEmpty && solutionName != null && solutionName.nonEmpty) {
           println(s"===========================================================================================================================================")
           println("********************************************** Start Observation Program Dashboard Processing **********************************************")
           println(s"===========================================================================================================================================")
