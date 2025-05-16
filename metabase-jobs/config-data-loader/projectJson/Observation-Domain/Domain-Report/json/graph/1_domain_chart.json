@@ -6,7 +6,7 @@
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT domain_level,domain,count(*) AS \"Percentage wise distribution of count of school\"\nFROM ${domainTable}\nWHERE 1 = 1\n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{domain_param}}]]\nGROUP BY domain_level,domain\norder by domain",
+        "query": "SELECT domain_level,domain,count(*) AS \"Percentage wise distribution of count of school\"\nFROM ${domainTable}\nWHERE 1 = 1\n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{domain_param}}]]\n[[AND {{criteria_param}}]]\nGROUP BY domain_level,domain\norder by domain",
         "template-tags": {
           "state_param": {
             "type": "dimension",
