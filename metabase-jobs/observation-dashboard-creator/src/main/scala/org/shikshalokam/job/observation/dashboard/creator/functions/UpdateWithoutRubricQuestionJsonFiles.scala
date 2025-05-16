@@ -15,7 +15,7 @@ object UpdateWithoutRubricQuestionJsonFiles {
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    val csvConfigQuery = s"SELECT * FROM $report_config WHERE dashboard_name = 'OObservation-Question-Without-Rubric' AND question_type = 'table';"
+    val csvConfigQuery = s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question-Without-Rubric' AND question_type = 'table';"
 
     def processCsvJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, questionTable: String, newRow : Int, newCol: Int): Unit = {
       val queryResult = postgresUtil.fetchData(csvConfigQuery)
@@ -59,11 +59,11 @@ object UpdateWithoutRubricQuestionJsonFiles {
         "nonMatrix" -> s"""SELECT distinct(question_id),question_text,question_type FROM "$question" WHERE has_parent_question = 'false'""",
         "matrix" -> s"""SELECT distinct(question_id),question_type,question_text, parent_question_text FROM "$question" WHERE has_parent_question = 'true'""",
         "slider" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question-Without-Rubric' AND question_type = 'slider-chart';",
-        "radio" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'OObservation-Question-Without-Rubric' AND question_type = 'radio-chart';",
+        "radio" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question-Without-Rubric' AND question_type = 'radio-chart';",
         "multiselect" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question-Without-Rubric' AND question_type = 'multiselect-chart';",
         "numbers" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question-Without-Rubric' AND question_type = 'number-chart';",
         "text" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question-Without-Rubric' AND question_type = 'text-chart';",
-        "heading" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'OObservation-Question-Without-Rubric' AND question_type = 'heading';",
+        "heading" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question-Without-Rubric' AND question_type = 'heading';",
         "date" -> s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question-Without-Rubric' AND question_type = 'date-chart';"
       )
 
