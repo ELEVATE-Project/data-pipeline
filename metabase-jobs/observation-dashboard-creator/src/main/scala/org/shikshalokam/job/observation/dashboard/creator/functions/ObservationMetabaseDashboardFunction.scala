@@ -95,7 +95,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
               println("=====> Admin and Observation collection present creating Solution collection & dashboard")
               val solutionCollectionName: String = s"$solutionName [Admin]"
               val parentCollectionId: Int = if (isRubric == "true") {
-                createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable)
               } else {
                 createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
               }
@@ -108,7 +108,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
               val observationCollectionId = createObservationCollectionInsideAdmin(adminCollectionId)
               val solutionCollectionName: String = s"$solutionName [Admin]"
               val parentCollectionId: Int = if (isRubric == "true") {
-                createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable)
               } else {
                 createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
               }
@@ -123,7 +123,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
             val observationCollectionId = createObservationCollectionInsideAdmin(adminCollectionId)
             val solutionCollectionName: String = s"$solutionName [Admin]"
             val parentCollectionId: Int = if (isRubric == "true") {
-              createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+              createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable)
             } else {
               createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
             }
@@ -193,7 +193,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
               println("=====> Program and Observation collection present creating Solution collection & dashboard")
               val solutionCollectionName: String = s"$solutionName [Program]"
               val parentCollectionId: Int = if (isRubric == "true") {
-                createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable)
               } else {
                 createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
               }
@@ -206,7 +206,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
               val observationCollectionId = createObservationCollectionInsideProgram(programCollectionId)
               val solutionCollectionName: String = s"$solutionName [Program]"
               val parentCollectionId: Int = if (isRubric == "true") {
-                createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable)
               } else {
                 createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
               }
@@ -221,7 +221,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
             val observationCollectionId = createObservationCollectionInsideAdmin(programCollectionId)
             val solutionCollectionName: String = s"$solutionName [Program]"
             val parentCollectionId: Int = if (isRubric == "true") {
-              createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+              createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable)
             } else {
               createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
             }
@@ -239,7 +239,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
     /**
      * Logic for Observation Question Dashboard
      */
-    def createObservationQuestionDashboard(parentCollectionId: Int, collectionName: String, metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, observationQuestionTable: String): Int = {
+    def createObservationQuestionDashboard(parentCollectionId: Int, collectionName: String, metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, observationQuestionTable: String, observationDomainTable: String): Int = {
       try {
         val dashboardName: String = s"Observation Question Report"
         val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
@@ -255,6 +255,8 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
         val criteriaId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "criteria_name", postgresUtil, createDashboardQuery)
         metabaseUtil.updateColumnCategory(statenameId, "State")
         metabaseUtil.updateColumnCategory(districtnameId, "City")
+        val domainReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Observation-Question-Domain';"
+        UpdateQuestionDomainJsonFiles.ProcessAndUpdateJsonFiles(domainReportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolnameId, clusterId, domainId, criteriaId, observationDomainTable, observationQuestionTable, metabaseUtil, postgresUtil)
         val questionCardIdList = UpdateQuestionJsonFiles.ProcessAndUpdateJsonFiles(collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolnameId, clusterId, domainId, criteriaId, observationQuestionTable, metabaseUtil, postgresUtil, reportConfig)
         val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
         val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Observation' AND question_type = 'Observation-Question-Parameter'"
