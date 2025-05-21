@@ -81,37 +81,41 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
         /**
          * Logic to process and create Survey Admin Dashboard
          */
-        println("~~~~~~~~ Start Survey Admin Dashboard Processing~~~~~~~~")
-        val adminCollectionCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Admin Collection"}]'::jsonb THEN 'Yes' ELSE 'No' END AS result FROM $metaDataTable WHERE entity_id = '1';"""
-        val adminCollectionPresent = postgresUtil.fetchData(adminCollectionCheckQuery).collectFirst { case map: Map[_, _] => map.get("result").map(_.toString).getOrElse("") }.getOrElse("")
-        val adminCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Admin Collection' AND entity_id = '1';"
-        val adminCollectionId = postgresUtil.executeQuery[Int](adminCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
-        if (adminCollectionPresent == "Yes") {
-          val surveyCollectionCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Survey Collection"}]'::jsonb THEN 'Yes' ELSE 'No' END AS result FROM $metaDataTable WHERE entity_id = '1';"""
-          val surveyCollectionPresent = postgresUtil.fetchData(surveyCollectionCheckQuery).collectFirst { case map: Map[_, _] => map.get("result").map(_.toString).getOrElse("") }.getOrElse("")
-          val surveyCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Survey Collection' AND entity_id = '1';"
-          val surveyCollectionId = postgresUtil.executeQuery[Int](surveyCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
-          if (surveyCollectionPresent == "Yes") {
-            println("=====> Admin and Survey collection present creating Solution collection & dashboard")
-            val solutionCollectionName: String = s"$solutionName [Admin]"
-            val parentCollectionId = createSurveyQuestionDashboard(surveyCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable)
-            createSurveyStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable)
+        if (solutionName != null && solutionName.nonEmpty) {
+          println("~~~~~~~~ Start Survey Admin Dashboard Processing~~~~~~~~")
+          val adminCollectionCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Admin Collection"}]'::jsonb THEN 'Yes' ELSE 'No' END AS result FROM $metaDataTable WHERE entity_id = '1';"""
+          val adminCollectionPresent = postgresUtil.fetchData(adminCollectionCheckQuery).collectFirst { case map: Map[_, _] => map.get("result").map(_.toString).getOrElse("") }.getOrElse("")
+          val adminCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Admin Collection' AND entity_id = '1';"
+          val adminCollectionId = postgresUtil.executeQuery[Int](adminCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
+          if (adminCollectionPresent == "Yes") {
+            val surveyCollectionCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Survey Collection"}]'::jsonb THEN 'Yes' ELSE 'No' END AS result FROM $metaDataTable WHERE entity_id = '1';"""
+            val surveyCollectionPresent = postgresUtil.fetchData(surveyCollectionCheckQuery).collectFirst { case map: Map[_, _] => map.get("result").map(_.toString).getOrElse("") }.getOrElse("")
+            val surveyCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Survey Collection' AND entity_id = '1';"
+            val surveyCollectionId = postgresUtil.executeQuery[Int](surveyCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
+            if (surveyCollectionPresent == "Yes") {
+              println("=====> Admin and Survey collection present creating Solution collection & dashboard")
+              val solutionCollectionName: String = s"$solutionName [Admin]"
+              val parentCollectionId = createSurveyQuestionDashboard(surveyCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable)
+              createSurveyStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable)
+            } else {
+              println("=====> Only Admin collection is present creating Survey Collection then Solution collection & dashboard")
+              val surveyCollectionId = createSurveyCollectionInsideAdmin(adminCollectionId)
+              val solutionCollectionName: String = s"$solutionName [Admin]"
+              val parentCollectionId = createSurveyQuestionDashboard(surveyCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable)
+              createSurveyStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable)
+            }
           } else {
-            println("=====> Only Admin collection is present creating Survey Collection then Solution collection & dashboard")
+            println("=====> Admin collection is not present creating Admin, Survey Collection then Solution collection & dashboard")
+            val adminCollectionId = createAdminCollection
             val surveyCollectionId = createSurveyCollectionInsideAdmin(adminCollectionId)
             val solutionCollectionName: String = s"$solutionName [Admin]"
             val parentCollectionId = createSurveyQuestionDashboard(surveyCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable)
             createSurveyStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable)
           }
+          println("~~~~~~~~ End Survey Admin Dashboard Processing~~~~~~~~")
         } else {
-          println("=====> Admin collection is not present creating Admin, Survey Collection then Solution collection & dashboard")
-          val adminCollectionId = createAdminCollection
-          val surveyCollectionId = createSurveyCollectionInsideAdmin(adminCollectionId)
-          val solutionCollectionName: String = s"$solutionName [Admin]"
-          val parentCollectionId = createSurveyQuestionDashboard(surveyCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable)
-          createSurveyStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable)
+          println("Solution name is null or empty, skipping the processing.")
         }
-        println("~~~~~~~~ End Survey Admin Dashboard Processing~~~~~~~~")
 
         def createAdminCollection: Int = {
           val (adminCollectionName, adminCollectionDescription) = ("Admin Collection", "Admin Collection which contains all the sub-collections and questions")
@@ -152,38 +156,41 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
         /**
          * Logic to process and create Program Dashboard for Survey
          */
-        println("~~~~~~~~ Start Survey Program Dashboard Processing~~~~~~~~")
-        val programCollectionCheckQuery = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Program Collection [$programName]"}]'::jsonb THEN 'Yes' ELSE 'No' END AS result FROM $metaDataTable WHERE entity_id = '$targetedProgramId'"""
-        val programCollectionPresent = postgresUtil.fetchData(programCollectionCheckQuery).collectFirst { case map: Map[_, _] => map.get("result").map(_.toString).getOrElse("") }.getOrElse("")
-        val programCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Program Collection [$programName]' AND entity_id = '$targetedProgramId';"
-        val programCollectionId = postgresUtil.executeQuery[Int](programCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
-        if (programCollectionPresent == "Yes") {
-          val surveyCollectionCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Survey Collection"}]'::jsonb THEN 'Yes' ELSE 'No' END AS result FROM $metaDataTable WHERE entity_id = '$targetedProgramId';"""
-          val surveyCollectionPresent = postgresUtil.fetchData(surveyCollectionCheckQuery).collectFirst { case map: Map[_, _] => map.get("result").map(_.toString).getOrElse("") }.getOrElse("")
-          val surveyCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Survey Collection' AND entity_id = '$targetedProgramId';"
-          val surveyCollectionId = postgresUtil.executeQuery[Int](surveyCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
-          if (surveyCollectionPresent == "Yes") {
-            println("=====> Program and Survey collection present creating Solution collection & dashboard")
-            val solutionCollectionName: String = s"$solutionName [Program]"
-            val parentCollectionId = createSurveyQuestionDashboard(surveyCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable)
-            createSurveyStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable)
+        if (programName != null && programName.nonEmpty && solutionName != null && solutionName.nonEmpty) {
+          println("~~~~~~~~ Start Survey Program Dashboard Processing~~~~~~~~")
+          val programCollectionCheckQuery = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Program Collection [$programName]"}]'::jsonb THEN 'Yes' ELSE 'No' END AS result FROM $metaDataTable WHERE entity_id = '$targetedProgramId'"""
+          val programCollectionPresent = postgresUtil.fetchData(programCollectionCheckQuery).collectFirst { case map: Map[_, _] => map.get("result").map(_.toString).getOrElse("") }.getOrElse("")
+          val programCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Program Collection [$programName]' AND entity_id = '$targetedProgramId';"
+          val programCollectionId = postgresUtil.executeQuery[Int](programCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
+          if (programCollectionPresent == "Yes") {
+            val surveyCollectionCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Survey Collection"}]'::jsonb THEN 'Yes' ELSE 'No' END AS result FROM $metaDataTable WHERE entity_id = '$targetedProgramId';"""
+            val surveyCollectionPresent = postgresUtil.fetchData(surveyCollectionCheckQuery).collectFirst { case map: Map[_, _] => map.get("result").map(_.toString).getOrElse("") }.getOrElse("")
+            val surveyCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Survey Collection' AND entity_id = '$targetedProgramId';"
+            val surveyCollectionId = postgresUtil.executeQuery[Int](surveyCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
+            if (surveyCollectionPresent == "Yes") {
+              println("=====> Program and Survey collection present creating Solution collection & dashboard")
+              val solutionCollectionName: String = s"$solutionName [Program]"
+              val parentCollectionId = createSurveyQuestionDashboard(surveyCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable)
+              createSurveyStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable)
+            } else {
+              println("=====> Only Program collection is present creating Survey Collection then Solution collection & dashboard")
+              val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId)
+              val solutionCollectionName: String = s"$solutionName [Program]"
+              val parentCollectionId = createSurveyQuestionDashboard(surveyCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable)
+              createSurveyStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable)
+            }
           } else {
-            println("=====> Only Program collection is present creating Survey Collection then Solution collection & dashboard")
-            val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId)
+            println("=====> Program collection is not present creating Program, Survey Collection then Solution collection & dashboard")
+            val programCollectionId = createProgramCollection(programName)
+            val surveyCollectionId = createSurveyCollectionInsideAdmin(programCollectionId)
             val solutionCollectionName: String = s"$solutionName [Program]"
             val parentCollectionId = createSurveyQuestionDashboard(surveyCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable)
             createSurveyStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable)
           }
+          println("~~~~~~~~ End Survey Program Dashboard Processing~~~~~~~~")
         } else {
-          println("=====> Program collection is not present creating Program, Survey Collection then Solution collection & dashboard")
-          val programCollectionId = createProgramCollection(programName)
-          val surveyCollectionId = createSurveyCollectionInsideAdmin(programCollectionId)
-          val solutionCollectionName: String = s"$solutionName [Program]"
-          val parentCollectionId = createSurveyQuestionDashboard(surveyCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable)
-          createSurveyStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable)
+          println("Program name or Solution name is null or empty, skipping the processing.")
         }
-        println("~~~~~~~~ End Survey Program Dashboard Processing~~~~~~~~")
-
         println(s"***************** Processing Completed for Survey Metabase Dashboard Event with Id = ${event._id}*****************\n\n")
     }
   }
