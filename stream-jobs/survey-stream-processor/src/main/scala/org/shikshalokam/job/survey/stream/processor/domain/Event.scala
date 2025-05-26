@@ -54,7 +54,7 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def clusterName: String = readOrDefault[String]("userProfile.cluster.label", "")
 
-  def schoolId: String = readOrDefault[String]("userProfile.school.value", "")
+  def schoolId: String = readOrDefault[String]("userProfile.school.externalId", "")
 
   def schoolName: String = readOrDefault[String]("userProfile.school.label", "")
 

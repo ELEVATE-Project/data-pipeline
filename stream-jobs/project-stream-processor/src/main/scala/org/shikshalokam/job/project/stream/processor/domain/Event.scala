@@ -82,7 +82,7 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def clusterName: String = readOrDefault[String]("userProfile.cluster.label", "")
 
-  def schoolId: String = readOrDefault[String]("userProfile.school.value", "")
+  def schoolId: String = readOrDefault[String]("userProfile.school.externalId", "")
 
   def schoolName: String = readOrDefault[String]("userProfile.school.label", "")
 
@@ -102,7 +102,12 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def certificateStatus: String = readOrDefault[String]("certificate.status", "")
 
+  def certificateEligibility: String = read[Boolean]("certificate.eligible").map(_.toString).getOrElse("")
+
+  def certificateTransactionId: String = readOrDefault[String]("certificate.transactionId", "")
+
   def certificatePdfPath: String = readOrDefault[String]("certificate.pdfPath", "")
+
 
 }
 
