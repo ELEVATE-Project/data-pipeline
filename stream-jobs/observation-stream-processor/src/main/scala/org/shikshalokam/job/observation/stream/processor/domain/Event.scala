@@ -52,9 +52,9 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def orgId: String = readOrDefault[Int]("userProfile.organization.id", 0).toString
 
-  def schoolName: String = readOrDefault[String]("entityInformation.name", "")
+  def schoolName: String = readOrDefault[String]("userProfile.school.label", "")
 
-  def schoolId : String = readOrDefault[String]("entityId", "")
+  def schoolId : String = readOrDefault[String]("userProfile.school.externalId", "")
 
   def themes: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("themes", null)
 
