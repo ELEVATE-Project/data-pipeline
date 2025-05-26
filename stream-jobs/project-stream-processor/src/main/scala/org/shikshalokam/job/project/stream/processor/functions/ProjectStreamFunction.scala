@@ -96,6 +96,8 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     println("certificateIssuedOn = " + event.certificateIssuedOn)
     println("certificateStatus = " + event.certificateStatus)
     println("certificatePdfPath = " + event.certificatePdfPath)
+    println("certificateEligibility = " + event.certificateEligibility)
+    println("certificateTransactionId = " + event.certificateTransactionId)
 
     println("\n==> Tasks data")
     println(tasksData)
@@ -176,8 +178,21 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val certificateTemplateId = event.certificateTemplateId
     val certificateTemplateUrl = event.certificateTemplateUrl
     val certificateIssuedOn = event.certificateIssuedOn
-    val certificateStatus = event.certificateStatus
+    var certificateStatus = event.certificateStatus
     val certificatePdfPath = event.certificatePdfPath
+
+    if (certificateStatus == "active") {
+      println("Certificate status is active")
+    } else if (event.certificateEligibility == "true") {
+      println("Certificate status is not active")
+      certificateStatus = "eligible"
+    } else if (event.certificateEligibility == "false") {
+      println("Certificate status is not active")
+      certificateStatus = "not eligible"
+    } else if (event.certificateTransactionId != null && event.certificateTransactionId.nonEmpty && (certificatePdfPath == null || certificatePdfPath.isEmpty)) {
+      println("Certificate generation is in-progress")
+      certificateStatus = "in-progress"
+    }
 
     val upsertProjectQuery =
       s"""INSERT INTO ${config.projects} (
@@ -428,3 +443,4 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
   }
 
 }
+
