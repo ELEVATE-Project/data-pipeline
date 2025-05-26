@@ -4,6 +4,20 @@ import org.shikshalokam.job.domain.reader.JobRequest
 
 class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) extends JobRequest(eventMap, partition, offset) {
 
-  def status: String = readOrDefault[String]("status", "")
+  def entity: String = readOrDefault[String]("entity", null)
+
+  def eventType: String = readOrDefault[String]("eventType", null)
+
+  def name: String = readOrDefault[String]("name", null)
+
+  def username: String = readOrDefault[String]("username", null)
+
+  def organizations: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("organizations", List.empty)
+
+  def metaInformation: Map[String, Any] = readOrDefault[Map[String, Any]]("meta", Map.empty)
+
+  def status: String = readOrDefault[String]("status", null)
+
+  def isUserDeleted: Boolean = readOrDefault[Boolean]("deleted", false)
 
 }

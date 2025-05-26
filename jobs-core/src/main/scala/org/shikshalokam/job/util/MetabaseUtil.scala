@@ -386,7 +386,7 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
    * @return JSON string representing the users
    */
   def listUsers(): String = {
-    val url = s"$metabaseUrl/user"
+    val url = s"$metabaseUrl/user/?status=all"
 
     val response = requests.get(
       url,
@@ -427,6 +427,32 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
       userResponseBody
     } else {
       throw new Exception(s"Failed to create user with status code: ${response.statusCode}, message: ${response.text}")
+    }
+  }
+
+  /**
+   * Method to delete a existing user in Metabase
+   *
+   * @param requestData JSON string representing the userId
+   * @return Boolean value
+   */
+  def deleteUser(userId: Int): Boolean = {
+    val url = s"$metabaseUrl/user/$userId"
+
+    val response = requests.delete(
+      url,
+      headers = Map(
+        "Content-Type" -> "application/json",
+        "X-Metabase-Session" -> getSessionToken
+      )
+    )
+
+    if (response.statusCode == 200) {
+      println(s"User with ID $userId deleted successfully.")
+      true
+    } else {
+      println(s"Failed to delete user $userId. Status code: ${response.statusCode}, message: ${response.text}")
+      false
     }
   }
 

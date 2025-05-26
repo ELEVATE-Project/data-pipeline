@@ -44,4 +44,8 @@ class UserServiceConfig(override val config: Config) extends BaseJobConfig(confi
   val metabasePassword: String = config.getString("metabase.password")
   val metabaseDatabase: String = config.getString("metabase.database")
 
+  // Domain static name & password
+  val domainName: String = config.getString("domain.name")
+  val domainPassword: String = config.getString("domain.password")
+
 }
