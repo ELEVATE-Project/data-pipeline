@@ -388,6 +388,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
         case answersMap: Map[_, _] =>
           answersMap.foreach { case (_, value) =>
             val questionsMap = value.asInstanceOf[Map[String, Any]]
+            val payloadOpt: Option[Map[String, Any]] = questionsMap.get("payload").collect { case m: Map[String@unchecked, Any@unchecked] => m }
             println(s"qid: ${questionsMap.get("qid")}")
             val question_id: String = questionsMap.get("qid") match {
               case Some(v: String) => v
@@ -427,7 +428,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
             result.foreach { case (themeName, criteriaName) =>
               domain_name = themeName
               criteria_name = criteriaName
-              println(s"Theme Name: $themeName, Criteria Name: $criteriaName")
+              println(s"Domain Name: $themeName, Criteria Name: $criteriaName")
             }
 
             val payload = questionsMap.get("payload") match {
@@ -436,18 +437,26 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
             }
             val responseType = questionsMap.get("responseType").map(_.toString).getOrElse("")
 
-            if (responseType == "matrix") {
-              val parent_question_text: String = questionsMap.get("question") match {
-                case Some(qList: List[_]) =>
-                  qList.collect { case q: String if q.nonEmpty => q }.headOption.getOrElse("")
-                case Some(q: String) => q
-                case _ => ""
-              }
-              val has_parent_question: Boolean = parent_question_text.nonEmpty
+            if (payloadOpt.isDefined) {
+              if (responseType == "matrix") {
+                val parent_question_text: String = questionsMap.get("payload") match {
+                  case Some(payloadMap: Map[_, _]) =>
+                    payloadMap.asInstanceOf[Map[String, Any]].get("question") match {
+                      case Some(qList: List[_]) =>
+                        qList.collect { case q: String if q.nonEmpty => q }.headOption.getOrElse("")
+                      case Some(q: String) => q
+                      case _ => ""
+                    }
+                  case _ => ""
+                }
+                val has_parent_question: Boolean = parent_question_text.nonEmpty
 
-              processQuestion(responseType, questionsMap, payload, question_id, domain_name, criteria_name, has_parent_question, parent_question_text, evidences, remarks)
+                processQuestion(responseType, questionsMap, payload, question_id, domain_name, criteria_name, has_parent_question, parent_question_text, evidences, remarks)
+              } else {
+                processQuestion(responseType, questionsMap, payload, question_id, domain_name, criteria_name, false, null, evidences, remarks)
+              }
             } else {
-              processQuestion(responseType, questionsMap, payload, question_id, domain_name, criteria_name, false, null, evidences, remarks)
+              println(s"Skipping question_id=$question_id as payload is missing.")
             }
           }
         case _ =>
