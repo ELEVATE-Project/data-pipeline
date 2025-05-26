@@ -87,9 +87,9 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
           if (adminIdStatus == "Failed") {
             try {
               val (adminCollectionName, adminCollectionDescription) = ("Admin Collection", "Admin Report")
-              val groupName: String = s"Report_Admin"
               val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$admin';"
               val adminCollectionId: Int = CreateDashboard.checkAndCreateCollection(adminCollectionName, adminCollectionDescription, metabaseUtil, postgresUtil, createDashboardQuery)
+              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, "Report_Admin", adminCollectionId)
               val adminMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", adminCollectionId).put("collectionName", adminCollectionName))
               postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$adminMetadataJson' ::jsonb WHERE entity_id = '$admin';")
               val (projectCollectionName, projectCollectionDescription) = ("Project Collection", "This collection contains sub-collection, questions and dashboards required for Projects")
@@ -154,7 +154,6 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
               ComparePage.UpdateAdminParameterFunction(metabaseUtil, compareParametersQuery, compareDashboardId, postgresUtil)
               val compareMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", compareCollectionId).put("collectionName", compareCollectionName).put("dashboardId", compareDashboardId).put("dashboardName", compareDashboardName).put("questionIds", compareQuestionIdsString))
               postgresUtil.insertData(s"UPDATE $metaDataTable SET  comparison_metadata = '$compareMetadataJson' WHERE entity_id = '$admin';")
-              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, adminCollectionId)
               postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Success', error_message = '' WHERE entity_id = '$admin';")
 
             } catch {
@@ -195,6 +194,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
               val parametersQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Parameter' AND question_type = 'state-parameter'"
               val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedStateId';"
               val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, s"State Report [$stateName]", metabaseUtil, postgresUtil, createDashboardQuery)
+              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
               val dashboardId: Int = CreateDashboard.checkAndCreateDashboard(collectionId, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
               val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
               val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "state_name", postgresUtil, createDashboardQuery)
@@ -247,7 +247,6 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
               val stateCompareDistrictCollectionName = s"Compare Districts [$stateName]"
               val stateCompareDistrictDashboardName = s"Compare [$stateName] Districts Dashboard"
               processMiStateDetailsPage(collectionId, stateStateCollectionName, stateStateDashboardName, stateCompareDistrictCollectionName, stateCompareDistrictDashboardName, stateName, databaseId, metabaseUtil, postgresUtil, "state")
-              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
               postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Success', error_message = '' WHERE entity_id = '$targetedStateId';")
             } catch {
               case e: Exception =>
@@ -295,6 +294,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
               val parametersQuery: String = s"SELECT config FROM $report_config WHERE report_name = 'Project-Parameter' AND question_type = 'district-parameter'"
               val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedDistrictId';"
               val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, s"District Report [$districtName - $stateName]", metabaseUtil, postgresUtil, createDashboardQuery)
+              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
               val dashboardId: Int = CreateDashboard.checkAndCreateDashboard(collectionId, dashboardName, metabaseUtil, postgresUtil, createDashboardQuery)
               val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
               val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "state_name", postgresUtil, createDashboardQuery)
@@ -359,9 +359,6 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
               val districtStateCollectionName = s"Mi Collection [$districtName - $stateName]"
               val districtStateDashboardName = s"Mi Dashboard [$districtName - $stateName]"
               processMiDistrictDetailsPage(collectionId, districtStateCollectionName, districtStateDashboardName, databaseId, metabaseUtil, postgresUtil, "district", stateName, districtName)
-
-
-              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
               postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Success', error_message = '' WHERE entity_id = '$targetedDistrictId';")
             } catch {
               case e: Exception =>
@@ -405,6 +402,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
               val groupName: String = s"Program_Manager[$programName]"
               val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
               val programCollectionId: Int = CreateDashboard.checkAndCreateCollection(programCollectionName, s"Program Report [$programName]", metabaseUtil, postgresUtil, createDashboardQuery)
+              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, programCollectionId)
               val programMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", programCollectionId).put("collectionName", programCollectionName))
               postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$programMetadataJson' ::jsonb WHERE entity_id = '$targetedProgramId';")
 
@@ -451,7 +449,6 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
               UpdateParameters.updateParameterFunction(metabaseUtil, postgresUtil, parametersQuery, immutableSlugNameToProgramIdFilterMap, dashboardId)
               val solutionMetadataJson = new ObjectMapper().createObjectNode().put("collectionId", collectionId).put("collectionName", solutionCollectionName).put("dashboardId", dashboardId).put("dashboardName", solutionDashboardName).put("questionIds", questionIdsString)
               postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = '$solutionMetadataJson', status = 'Success' WHERE entity_id = '$targetedSolutionId';")
-              CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, programCollectionId)
               postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Success', error_message = '' WHERE entity_id = '$targetedProgramId';")
             } catch {
               case e: Exception =>
