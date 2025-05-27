@@ -44,7 +44,6 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
 
     //TODO: TO be removed later
     val (projectEvidences, projectEvidencesCount) = extractEvidenceData(event.projectAttachments)
-    val (roleIds, roles) = extractUserRolesData(event.userRoles)
     val tasksData = extractTasksData(event.tasks)
     val projectCategories = Option(event.projectCategories).map(extractProjectCategories).getOrElse("")
 
@@ -76,11 +75,7 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     println("projectEvidencesCount = " + projectEvidencesCount)
     println("programId = " + event.programId)
     println("taskCount = " + event.taskCount)
-    println("userRoleIds = " + roleIds)
-    println("userRoles = " + roles)
-    println("organisationId = " + event.organisationId)
-    println("organisationName = " + event.organisationName)
-    println("organisationCode = " + event.organisationCode)
+    println("tenantId = " + event.tenantId)
     println("stateId = " + event.stateId)
     println("stateName = " + event.stateName)
     println("districtId = " + event.districtId)
@@ -98,6 +93,33 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     println("certificatePdfPath = " + event.certificatePdfPath)
     println("certificateEligibility = " + event.certificateEligibility)
     println("certificateTransactionId = " + event.certificateTransactionId)
+
+    var userRoleIds: String = ""
+    var userRoles: String = ""
+    var orgId: String = ""
+    var orgName: String = ""
+    var orgCode: String = ""
+
+    event.organisation.foreach { org =>
+      println(s"Inspecting organisation: ${org}")
+      if (org.get("code").contains(event.organisationId)) {
+        orgName = org.get("name").map(_.toString).getOrElse("")
+        orgId = org.get("id").map(_.toString).getOrElse("")
+        orgCode = org.get("code").map(_.toString).getOrElse("")
+        val roles = org.get("roles").map(_.asInstanceOf[List[Map[String, Any]]]).getOrElse(List.empty)
+        val (userRoleIdsExtracted, userRolesExtracted) = extractUserRolesData(roles)
+        userRoleIds = userRoleIdsExtracted
+        userRoles = userRolesExtracted
+      } else {
+        println(s"Organisation with ID ${event.organisationId} not found in the event data.")
+      }
+    }
+
+    println("userRoleIds = " + userRoleIds)
+    println("userRoles = " + userRoles)
+    println("organisationId = " + event.organisationId)
+    println("organisationName = " + orgName)
+    println("organisationCode = " + orgCode)
 
     println("\n==> Tasks data")
     println(tasksData)
@@ -161,10 +183,7 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val remarks = event.projectRemarks
     val (evidence, evidenceCount) = extractEvidenceData(event.projectAttachments)
     val taskCount = event.taskCount
-    val (userRoleIds, userRoles) = extractUserRolesData(event.userRoles)
-    val orgId = event.organisationId
-    val orgName = event.organisationName
-    val orgCode = event.organisationCode
+    val tenantId = event.tenantId
     val stateId = event.stateId
     val stateName = event.stateName
     val districtId = event.districtId
@@ -182,6 +201,7 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val certificatePdfPath = event.certificatePdfPath
 
     if (certificateStatus == "active") {
+      certificateStatus = "issued"
       println("Certificate status is active")
     } else if (event.certificateEligibility == "true") {
       println("Certificate status is not active")
@@ -197,15 +217,15 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val upsertProjectQuery =
       s"""INSERT INTO ${config.projects} (
          |    project_id, solution_id, created_by, created_date, completed_date, last_sync, updated_date, status, remarks,
-         |    evidence, evidence_count, program_id, task_count, user_role_ids, user_roles, org_id, org_name, org_code, state_id,
+         |    evidence, evidence_count, program_id, task_count, user_role_ids, user_roles, tenant_id, org_id, org_name, org_code, state_id,
          |    state_name, district_id, district_name, block_id, block_name, cluster_id, cluster_name, school_id, school_name,
          |    certificate_template_id, certificate_template_url, certificate_issued_on, certificate_status, certificate_pdf_path
          |) VALUES (
-         |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+         |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
          |) ON CONFLICT (project_id) DO UPDATE SET
          |    solution_id = ?, created_by = ?, created_date = ?, completed_date = ?, last_sync = ?, updated_date = ?,
          |    status = ?, remarks = ?, evidence = ?, evidence_count = ?, program_id = ?, task_count = ?, user_role_ids = ?,
-         |    user_roles = ?, org_id = ?, org_name = ?, org_code = ?, state_id = ?, state_name = ?, district_id = ?,
+         |    user_roles = ?, tenant_id = ?, org_id = ?, org_name = ?, org_code = ?, state_id = ?, state_name = ?, district_id = ?,
          |    district_name = ?, block_id = ?, block_name = ?, cluster_id = ?, cluster_name = ?, school_id = ?, school_name = ?,
          |    certificate_template_id = ?, certificate_template_url = ?, certificate_issued_on = ?, certificate_status = ?, certificate_pdf_path = ?;
          |""".stripMargin
@@ -213,13 +233,13 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
     val projectParams = Seq(
       // Insert parameters
       projectId, solutionId, createdBy, createdDate, completedDate, lastSync, updatedDate, status, remarks,
-      evidence, evidenceCount, programId, taskCount, userRoleIds, userRoles, orgId, orgName, orgCode, stateId,
+      evidence, evidenceCount, programId, taskCount, userRoleIds, userRoles, tenantId, orgId, orgName, orgCode, stateId,
       stateName, districtId, districtName, blockId, blockName, clusterId, clusterName, schoolId, schoolName,
       certificateTemplateId, certificateTemplateUrl, certificateIssuedOn, certificateStatus, certificatePdfPath,
 
       // Update parameters (matching columns in the ON CONFLICT clause)
       solutionId, createdBy, createdDate, completedDate, lastSync, updatedDate, status, remarks, evidence,
-      evidenceCount, programId, taskCount, userRoleIds, userRoles, orgId, orgName, orgCode, stateId, stateName,
+      evidenceCount, programId, taskCount, userRoleIds, userRoles, tenantId, orgId, orgName, orgCode, stateId, stateName,
       districtId, districtName, blockId, blockName, clusterId, clusterName, schoolId, schoolName,
       certificateTemplateId, certificateTemplateUrl, certificateIssuedOn, certificateStatus, certificatePdfPath
     )
