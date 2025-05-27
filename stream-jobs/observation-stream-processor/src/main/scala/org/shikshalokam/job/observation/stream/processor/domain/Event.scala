@@ -50,7 +50,11 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def orgName: String = readOrDefault[String]("userProfile.organization.name", "")
 
-  def orgId: String = readOrDefault[Int]("userProfile.organization.id", 0).toString
+  def organisationId: String = readOrDefault[Int]("orgId", 0).toString
+
+  def tenantId: String = readOrDefault[String]("tenantId", "")
+
+  def organisation: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("userProfile.organizations", List.empty)
 
   def schoolName: String = readOrDefault[String]("userProfile.school.label", "")
 

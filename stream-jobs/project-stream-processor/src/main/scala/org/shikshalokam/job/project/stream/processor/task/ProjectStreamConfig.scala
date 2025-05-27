@@ -83,6 +83,7 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
        |    task_count TEXT,
        |    user_role_ids TEXT,
        |    user_roles TEXT,
+       |    tenant_id TEXT,
        |    org_id TEXT,
        |    org_name TEXT,
        |    org_code TEXT,
