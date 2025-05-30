@@ -569,7 +569,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       }
     }
 
-    if (status_of_submission != "draft") {
+    if (status_of_submission != null) {
 
       val createStatusTable =
         s"""CREATE TABLE IF NOT EXISTS $statusTable (
