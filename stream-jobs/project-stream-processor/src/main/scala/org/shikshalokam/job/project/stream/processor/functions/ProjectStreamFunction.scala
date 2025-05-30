@@ -39,244 +39,246 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
   }
 
   override def processElement(event: Event, context: ProcessFunction[Event, Event]#Context, metrics: Metrics): Unit = {
+    if (event.projectStatus == "started" || event.projectStatus == "inprogress" || event.projectStatus == "submitted"  || event.projectStatus == "completed") {
+      println(s"***************** Start of Processing the Project Event with Id = ${event._id} *****************")
 
-    println(s"***************** Start of Processing the Project Event with Id = ${event._id} *****************")
+      //TODO: TO be removed later
+      val (projectEvidences, projectEvidencesCount) = extractEvidenceData(event.projectAttachments)
+      val (roleIds, roles) = extractUserRolesData(event.userRoles)
+      val tasksData = extractTasksData(event.tasks)
+      val projectCategories = Option(event.projectCategories).map(extractProjectCategories).getOrElse("")
 
-    //TODO: TO be removed later
-    val (projectEvidences, projectEvidencesCount) = extractEvidenceData(event.projectAttachments)
-    val (roleIds, roles) = extractUserRolesData(event.userRoles)
-    val tasksData = extractTasksData(event.tasks)
-    val projectCategories = Option(event.projectCategories).map(extractProjectCategories).getOrElse("")
+      //TODO: TO be removed later
+      println("\n==> Solutions data ")
+      println("solutionId = " + event.solutionId)
+      println("solutionExternalId = " + event.solutionExternalId)
+      println("solutionName = " + event.solutionName)
+      println("solutionDescription = " + event.solutionDescription)
+      println("duration = " + event.projectDuration)
+      println("categories = " + projectCategories)
+      println("privateProgram = " + event.privateProgram)
+      println("programId = " + event.programId)
+      println("programExternalId = " + event.programExternalId)
+      println("programName = " + event.programName)
+      println("programDescription = " + event.programDescription)
 
-    //TODO: TO be removed later
-    println("\n==> Solutions data ")
-    println("solutionId = " + event.solutionId)
-    println("solutionExternalId = " + event.solutionExternalId)
-    println("solutionName = " + event.solutionName)
-    println("solutionDescription = " + event.solutionDescription)
-    println("duration = " + event.projectDuration)
-    println("categories = " + projectCategories)
-    println("privateProgram = " + event.privateProgram)
-    println("programId = " + event.programId)
-    println("programExternalId = " + event.programExternalId)
-    println("programName = " + event.programName)
-    println("programDescription = " + event.programDescription)
+      println("\n==> Project data")
+      println("projectId = " + event.projectId)
+      println("solutionId = " + event.solutionId)
+      println("createdBy = " + event.createdBy)
+      println("completedDate = " + event.completedDate)
+      println("createdAt = " + event.createdAt)
+      println("projectLastSync = " + event.projectLastSync)
+      println("projectUpdatedDate = " + event.projectUpdatedDate)
+      println("projectStatus = " + event.projectStatus)
+      println("projectRemarks = " + event.projectRemarks)
+      println("projectEvidences = " + projectEvidences)
+      println("projectEvidencesCount = " + projectEvidencesCount)
+      println("programId = " + event.programId)
+      println("taskCount = " + event.taskCount)
+      println("userRoleIds = " + roleIds)
+      println("userRoles = " + roles)
+      println("organisationId = " + event.organisationId)
+      println("organisationName = " + event.organisationName)
+      println("organisationCode = " + event.organisationCode)
+      println("stateId = " + event.stateId)
+      println("stateName = " + event.stateName)
+      println("districtId = " + event.districtId)
+      println("districtName = " + event.districtName)
+      println("blockId = " + event.blockId)
+      println("blockName = " + event.blockName)
+      println("clusterId = " + event.clusterId)
+      println("clusterName = " + event.clusterName)
+      println("schoolId = " + event.schoolId)
+      println("schoolName = " + event.schoolName)
+      println("certificateTemplateId = " + event.certificateTemplateId)
+      println("certificateTemplateUrl = " + event.certificateTemplateUrl)
+      println("certificateIssuedOn = " + event.certificateIssuedOn)
+      println("certificateStatus = " + event.certificateStatus)
+      println("certificatePdfPath = " + event.certificatePdfPath)
 
-    println("\n==> Project data")
-    println("projectId = " + event.projectId)
-    println("solutionId = " + event.solutionId)
-    println("createdBy = " + event.createdBy)
-    println("completedDate = " + event.completedDate)
-    println("createdAt = " + event.createdAt)
-    println("projectLastSync = " + event.projectLastSync)
-    println("projectUpdatedDate = " + event.projectUpdatedDate)
-    println("projectStatus = " + event.projectStatus)
-    println("projectRemarks = " + event.projectRemarks)
-    println("projectEvidences = " + projectEvidences)
-    println("projectEvidencesCount = " + projectEvidencesCount)
-    println("programId = " + event.programId)
-    println("taskCount = " + event.taskCount)
-    println("userRoleIds = " + roleIds)
-    println("userRoles = " + roles)
-    println("organisationId = " + event.organisationId)
-    println("organisationName = " + event.organisationName)
-    println("organisationCode = " + event.organisationCode)
-    println("stateId = " + event.stateId)
-    println("stateName = " + event.stateName)
-    println("districtId = " + event.districtId)
-    println("districtName = " + event.districtName)
-    println("blockId = " + event.blockId)
-    println("blockName = " + event.blockName)
-    println("clusterId = " + event.clusterId)
-    println("clusterName = " + event.clusterName)
-    println("schoolId = " + event.schoolId)
-    println("schoolName = " + event.schoolName)
-    println("certificateTemplateId = " + event.certificateTemplateId)
-    println("certificateTemplateUrl = " + event.certificateTemplateUrl)
-    println("certificateIssuedOn = " + event.certificateIssuedOn)
-    println("certificateStatus = " + event.certificateStatus)
-    println("certificatePdfPath = " + event.certificatePdfPath)
+      println("\n==> Tasks data")
+      println(tasksData)
 
-    println("\n==> Tasks data")
-    println(tasksData)
+      // Uncomment the bellow lines to create table schema for the first time.
+      postgresUtil.createTable(config.createSolutionsTable, config.solutions)
+      postgresUtil.createTable(config.createProjectTable, config.projects)
+      postgresUtil.createTable(config.createTasksTable, config.tasks)
+      postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboard_metadata)
 
-    // Uncomment the bellow lines to create table schema for the first time.
-    postgresUtil.createTable(config.createSolutionsTable, config.solutions)
-    postgresUtil.createTable(config.createProjectTable, config.projects)
-    postgresUtil.createTable(config.createTasksTable, config.tasks)
-    postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboard_metadata)
+      /**
+       * Extracting Solutions data
+       */
+      val solutionId = event.solutionId
+      val solutionExternalId = event.solutionExternalId
+      val solutionName = event.solutionName
+      val solutionDescription = event.solutionDescription
+      val projectDuration = event.projectDuration
+      val programId = event.programId
+      val programName = event.programName
+      val programExternalId = event.programExternalId
+      val programDescription = event.programDescription
+      val privateProgram = event.privateProgram
 
-    /**
-     * Extracting Solutions data
-     */
-    val solutionId = event.solutionId
-    val solutionExternalId = event.solutionExternalId
-    val solutionName = event.solutionName
-    val solutionDescription = event.solutionDescription
-    val projectDuration = event.projectDuration
-    val programId = event.programId
-    val programName = event.programName
-    val programExternalId = event.programExternalId
-    val programDescription = event.programDescription
-    val privateProgram = event.privateProgram
-
-    val upsertSolutionQuery =
-      s"""INSERT INTO ${config.solutions} (solution_id, external_id, name, description, duration, categories, program_id, program_name, program_external_id, program_description, private_program)
-         |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-         |ON CONFLICT (solution_id) DO UPDATE SET
-         |    external_id = ?,
-         |    name = ?,
-         |    description = ?,
-         |    duration = ?,
-         |    categories = ?,
-         |    program_id = ?,
-         |    program_name = ?,
-         |    program_external_id = ?,
-         |    program_description = ?,
-         |    private_program = ?;
-         |""".stripMargin
-
-    val solutionParams = Seq(
-      // Insert parameters
-      solutionId, solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram,
-
-      // Update parameters (matching columns in the ON CONFLICT clause)
-      solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram
-    )
-
-    postgresUtil.executePreparedUpdate(upsertSolutionQuery, solutionParams, config.solutions, solutionId)
-
-    /**
-     * Extracting Project data
-     */
-    val projectId = event.projectId
-    val createdBy = event.createdBy
-    val createdDate = event.createdAt
-    val completedDate = event.completedDate
-    val lastSync = event.projectLastSync
-    val updatedDate = event.projectUpdatedDate
-    val status = event.projectStatus
-    val remarks = event.projectRemarks
-    val (evidence, evidenceCount) = extractEvidenceData(event.projectAttachments)
-    val taskCount = event.taskCount
-    val (userRoleIds, userRoles) = extractUserRolesData(event.userRoles)
-    val orgId = event.organisationId
-    val orgName = event.organisationName
-    val orgCode = event.organisationCode
-    val stateId = event.stateId
-    val stateName = event.stateName
-    val districtId = event.districtId
-    val districtName = event.districtName
-    val blockId = event.blockId
-    val blockName = event.blockName
-    val clusterId = event.clusterId
-    val clusterName = event.clusterName
-    val schoolId = event.schoolId
-    val schoolName = event.schoolName
-    val certificateTemplateId = event.certificateTemplateId
-    val certificateTemplateUrl = event.certificateTemplateUrl
-    val certificateIssuedOn = event.certificateIssuedOn
-    val certificateStatus = event.certificateStatus
-    val certificatePdfPath = event.certificatePdfPath
-
-    val upsertProjectQuery =
-      s"""INSERT INTO ${config.projects} (
-         |    project_id, solution_id, created_by, created_date, completed_date, last_sync, updated_date, status, remarks,
-         |    evidence, evidence_count, program_id, task_count, user_role_ids, user_roles, org_id, org_name, org_code, state_id,
-         |    state_name, district_id, district_name, block_id, block_name, cluster_id, cluster_name, school_id, school_name,
-         |    certificate_template_id, certificate_template_url, certificate_issued_on, certificate_status, certificate_pdf_path
-         |) VALUES (
-         |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-         |) ON CONFLICT (project_id) DO UPDATE SET
-         |    solution_id = ?, created_by = ?, created_date = ?, completed_date = ?, last_sync = ?, updated_date = ?,
-         |    status = ?, remarks = ?, evidence = ?, evidence_count = ?, program_id = ?, task_count = ?, user_role_ids = ?,
-         |    user_roles = ?, org_id = ?, org_name = ?, org_code = ?, state_id = ?, state_name = ?, district_id = ?,
-         |    district_name = ?, block_id = ?, block_name = ?, cluster_id = ?, cluster_name = ?, school_id = ?, school_name = ?,
-         |    certificate_template_id = ?, certificate_template_url = ?, certificate_issued_on = ?, certificate_status = ?, certificate_pdf_path = ?;
-         |""".stripMargin
-
-    val projectParams = Seq(
-      // Insert parameters
-      projectId, solutionId, createdBy, createdDate, completedDate, lastSync, updatedDate, status, remarks,
-      evidence, evidenceCount, programId, taskCount, userRoleIds, userRoles, orgId, orgName, orgCode, stateId,
-      stateName, districtId, districtName, blockId, blockName, clusterId, clusterName, schoolId, schoolName,
-      certificateTemplateId, certificateTemplateUrl, certificateIssuedOn, certificateStatus, certificatePdfPath,
-
-      // Update parameters (matching columns in the ON CONFLICT clause)
-      solutionId, createdBy, createdDate, completedDate, lastSync, updatedDate, status, remarks, evidence,
-      evidenceCount, programId, taskCount, userRoleIds, userRoles, orgId, orgName, orgCode, stateId, stateName,
-      districtId, districtName, blockId, blockName, clusterId, clusterName, schoolId, schoolName,
-      certificateTemplateId, certificateTemplateUrl, certificateIssuedOn, certificateStatus, certificatePdfPath
-    )
-
-    postgresUtil.executePreparedUpdate(upsertProjectQuery, projectParams, config.projects, projectId)
-
-    /**
-     * Extracting Tasks data
-     */
-    tasksData.foreach { task =>
-      val taskId = task("taskId").toString
-      val taskName = task("taskName")
-      val taskAssignedTo = task("taskAssignedTo")
-      val taskStartDate = task("taskStartDate")
-      val taskEndDate = task("taskEndDate")
-      val taskSyncedAt = task("taskSyncedAt")
-      val taskIsDeleted = task("taskIsDeleted")
-      val taskIsDeletable = task("taskIsDeletable")
-      val taskRemarks = task("taskRemarks")
-      val taskStatus = task("taskStatus")
-      val taskEvidence = task("taskEvidence")
-      val taskEvidenceCount = task("taskEvidenceCount")
-
-      val upsertTaskQuery =
-        s"""INSERT INTO ${config.tasks} (
-           |    task_id, project_id, name, assigned_to, start_date, end_date, synced_at, is_deleted, is_deletable,
-           |    remarks, status, evidence, evidence_count
-           |) VALUES (
-           |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-           |) ON CONFLICT (task_id) DO UPDATE SET
-           |    name = ?, project_id = ?, assigned_to = ?, start_date = ?, end_date = ?, synced_at = ?,
-           |    is_deleted = ?, is_deletable = ?, remarks = ?, status = ?, evidence = ?, evidence_count = ?;
+      val upsertSolutionQuery =
+        s"""INSERT INTO ${config.solutions} (solution_id, external_id, name, description, duration, categories, program_id, program_name, program_external_id, program_description, private_program)
+           |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           |ON CONFLICT (solution_id) DO UPDATE SET
+           |    external_id = ?,
+           |    name = ?,
+           |    description = ?,
+           |    duration = ?,
+           |    categories = ?,
+           |    program_id = ?,
+           |    program_name = ?,
+           |    program_external_id = ?,
+           |    program_description = ?,
+           |    private_program = ?;
            |""".stripMargin
 
-      val taskParams = Seq(
+      val solutionParams = Seq(
         // Insert parameters
-        taskId, projectId, taskName, taskAssignedTo, taskStartDate, taskEndDate, taskSyncedAt, taskIsDeleted,
-        taskIsDeletable, taskRemarks, taskStatus, taskEvidence, taskEvidenceCount,
+        solutionId, solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram,
 
         // Update parameters (matching columns in the ON CONFLICT clause)
-        taskName, projectId, taskAssignedTo, taskStartDate, taskEndDate, taskSyncedAt, taskIsDeleted,
-        taskIsDeletable, taskRemarks, taskStatus, taskEvidence, taskEvidenceCount
+        solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram
       )
 
-      postgresUtil.executePreparedUpdate(upsertTaskQuery, taskParams, config.tasks, taskId)
+      postgresUtil.executePreparedUpdate(upsertSolutionQuery, solutionParams, config.solutions, solutionId)
 
-    }
+      /**
+       * Extracting Project data
+       */
+      val projectId = event.projectId
+      val createdBy = event.createdBy
+      val createdDate = event.createdAt
+      val completedDate = event.completedDate
+      val lastSync = event.projectLastSync
+      val updatedDate = event.projectUpdatedDate
+      val status = event.projectStatus
+      val remarks = event.projectRemarks
+      val (evidence, evidenceCount) = extractEvidenceData(event.projectAttachments)
+      val taskCount = event.taskCount
+      val (userRoleIds, userRoles) = extractUserRolesData(event.userRoles)
+      val orgId = event.organisationId
+      val orgName = event.organisationName
+      val orgCode = event.organisationCode
+      val stateId = event.stateId
+      val stateName = event.stateName
+      val districtId = event.districtId
+      val districtName = event.districtName
+      val blockId = event.blockId
+      val blockName = event.blockName
+      val clusterId = event.clusterId
+      val clusterName = event.clusterName
+      val schoolId = event.schoolId
+      val schoolName = event.schoolName
+      val certificateTemplateId = event.certificateTemplateId
+      val certificateTemplateUrl = event.certificateTemplateUrl
+      val certificateIssuedOn = event.certificateIssuedOn
+      val certificateStatus = event.certificateStatus
+      val certificatePdfPath = event.certificatePdfPath
 
-    /**
-     * Logic to populate kafka messages for creating metabase dashboard
-     */
-    val dashboardData = new java.util.HashMap[String, String]()
-    val dashboardConfig = Seq(
-      ("admin", "1", "admin"),
-      ("state", event.stateId, "targetedState"),
-      ("district", event.districtId, "targetedDistrict"),
-      ("program", event.programId, "targetedProgram"),
-      ("solution", event.solutionId, "targetedSolution")
-    )
+      val upsertProjectQuery =
+        s"""INSERT INTO ${config.projects} (
+           |    project_id, solution_id, created_by, created_date, completed_date, last_sync, updated_date, status, remarks,
+           |    evidence, evidence_count, program_id, task_count, user_role_ids, user_roles, org_id, org_name, org_code, state_id,
+           |    state_name, district_id, district_name, block_id, block_name, cluster_id, cluster_name, school_id, school_name,
+           |    certificate_template_id, certificate_template_url, certificate_issued_on, certificate_status, certificate_pdf_path
+           |) VALUES (
+           |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+           |) ON CONFLICT (project_id) DO UPDATE SET
+           |    solution_id = ?, created_by = ?, created_date = ?, completed_date = ?, last_sync = ?, updated_date = ?,
+           |    status = ?, remarks = ?, evidence = ?, evidence_count = ?, program_id = ?, task_count = ?, user_role_ids = ?,
+           |    user_roles = ?, org_id = ?, org_name = ?, org_code = ?, state_id = ?, state_name = ?, district_id = ?,
+           |    district_name = ?, block_id = ?, block_name = ?, cluster_id = ?, cluster_name = ?, school_id = ?, school_name = ?,
+           |    certificate_template_id = ?, certificate_template_url = ?, certificate_issued_on = ?, certificate_status = ?, certificate_pdf_path = ?;
+           |""".stripMargin
 
-    dashboardConfig
-      .filter { case (key, _, _) => config.reportsEnabled.contains(key) }
-      .foreach { case (key, value, target) =>
-        checkAndInsert(key, value, dashboardData, target)
+      val projectParams = Seq(
+        // Insert parameters
+        projectId, solutionId, createdBy, createdDate, completedDate, lastSync, updatedDate, status, remarks,
+        evidence, evidenceCount, programId, taskCount, userRoleIds, userRoles, orgId, orgName, orgCode, stateId,
+        stateName, districtId, districtName, blockId, blockName, clusterId, clusterName, schoolId, schoolName,
+        certificateTemplateId, certificateTemplateUrl, certificateIssuedOn, certificateStatus, certificatePdfPath,
+
+        // Update parameters (matching columns in the ON CONFLICT clause)
+        solutionId, createdBy, createdDate, completedDate, lastSync, updatedDate, status, remarks, evidence,
+        evidenceCount, programId, taskCount, userRoleIds, userRoles, orgId, orgName, orgCode, stateId, stateName,
+        districtId, districtName, blockId, blockName, clusterId, clusterName, schoolId, schoolName,
+        certificateTemplateId, certificateTemplateUrl, certificateIssuedOn, certificateStatus, certificatePdfPath
+      )
+
+      postgresUtil.executePreparedUpdate(upsertProjectQuery, projectParams, config.projects, projectId)
+
+      /**
+       * Extracting Tasks data
+       */
+      tasksData.foreach { task =>
+        val taskId = task("taskId").toString
+        val taskName = task("taskName")
+        val taskAssignedTo = task("taskAssignedTo")
+        val taskStartDate = task("taskStartDate")
+        val taskEndDate = task("taskEndDate")
+        val taskSyncedAt = task("taskSyncedAt")
+        val taskIsDeleted = task("taskIsDeleted")
+        val taskIsDeletable = task("taskIsDeletable")
+        val taskRemarks = task("taskRemarks")
+        val taskStatus = task("taskStatus")
+        val taskEvidence = task("taskEvidence")
+        val taskEvidenceCount = task("taskEvidenceCount")
+
+        val upsertTaskQuery =
+          s"""INSERT INTO ${config.tasks} (
+             |    task_id, project_id, name, assigned_to, start_date, end_date, synced_at, is_deleted, is_deletable,
+             |    remarks, status, evidence, evidence_count
+             |) VALUES (
+             |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+             |) ON CONFLICT (task_id) DO UPDATE SET
+             |    name = ?, project_id = ?, assigned_to = ?, start_date = ?, end_date = ?, synced_at = ?,
+             |    is_deleted = ?, is_deletable = ?, remarks = ?, status = ?, evidence = ?, evidence_count = ?;
+             |""".stripMargin
+
+        val taskParams = Seq(
+          // Insert parameters
+          taskId, projectId, taskName, taskAssignedTo, taskStartDate, taskEndDate, taskSyncedAt, taskIsDeleted,
+          taskIsDeletable, taskRemarks, taskStatus, taskEvidence, taskEvidenceCount,
+
+          // Update parameters (matching columns in the ON CONFLICT clause)
+          taskName, projectId, taskAssignedTo, taskStartDate, taskEndDate, taskSyncedAt, taskIsDeleted,
+          taskIsDeletable, taskRemarks, taskStatus, taskEvidence, taskEvidenceCount
+        )
+
+        postgresUtil.executePreparedUpdate(upsertTaskQuery, taskParams, config.tasks, taskId)
+
       }
 
-    if (!dashboardData.isEmpty) {
-      pushProjectDashboardEvents(dashboardData, context)
+      /**
+       * Logic to populate kafka messages for creating metabase dashboard
+       */
+      val dashboardData = new java.util.HashMap[String, String]()
+      val dashboardConfig = Seq(
+        ("admin", "1", "admin"),
+        ("state", event.stateId, "targetedState"),
+        ("district", event.districtId, "targetedDistrict"),
+        ("program", event.programId, "targetedProgram"),
+        ("solution", event.solutionId, "targetedSolution")
+      )
+
+      dashboardConfig
+        .filter { case (key, _, _) => config.reportsEnabled.contains(key) }
+        .foreach { case (key, value, target) =>
+          checkAndInsert(key, value, dashboardData, target)
+        }
+
+      if (!dashboardData.isEmpty) {
+        pushProjectDashboardEvents(dashboardData, context)
+      }
+
+      println(s"\n***************** End of Processing the Project Event *****************")
+    } else {
+      println(s"Skipping the Project Event with Id = ${event._id} and status = ${event.projectStatus} as it is not in a valid status")
     }
-
-    println(s"\n***************** End of Processing the Project Event *****************")
-
   }
 
   def extractEvidenceData(attachments: List[Map[String, Any]]): (String, Int) = {
