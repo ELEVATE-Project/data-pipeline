@@ -20,13 +20,20 @@ class UserServiceTask(config: UserServiceConfig, kafkaConnector: FlinkKafkaConne
   def process(): Unit = {
     implicit val env: StreamExecutionEnvironment = FlinkUtil.getExecutionContext(config)
     implicit val eventTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
+    implicit val stringTypeInfo: TypeInformation[String] = TypeExtractor.getForClass(classOf[String])
     val source = kafkaConnector.kafkaJobRequestSource[Event](config.inputTopic)
 
-    env.addSource(source).name(config.userServiceProducer)
-      .uid(config.userServiceProducer).setParallelism(config.mlUserServiceParallelism).rebalance
+    val progressStream = env.addSource(source).name(config.userServiceConsumer)
+      .uid(config.userServiceConsumer).setParallelism(config.userServiceParallelism).rebalance
       .process(new UserServiceFunction(config))
       .name(config.userServiceFunction).uid(config.userServiceFunction)
-      .setParallelism(config.mlUserServiceParallelism)
+      .setParallelism(config.userServiceParallelism)
+
+    progressStream.getSideOutput(config.eventOutputTag)
+      .addSink(kafkaConnector.kafkaStringSink(config.outputTopic))
+      .name(config.notificationServiceProducer)
+      .uid(config.notificationServiceProducer)
+      .setParallelism(config.notificationServiceParallelism)
 
     env.execute(config.jobName)
   }

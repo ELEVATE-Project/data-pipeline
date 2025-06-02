@@ -587,6 +587,29 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
   }
 
   /**
+   * Method to remove a user from a group in Metabase
+   *
+   * @param membershipId JSON string representing the membershipId
+   * @return JSON string representing the updated group with the removed user
+   */
+  def removeFromGroup(membershipId: Int): Unit = {
+    val deleteUrl = s"$metabaseUrl/permissions/membership/$membershipId"
+
+    val response = requests.delete(
+      deleteUrl,
+      headers = Map(
+        "X-Metabase-Session" -> getSessionToken
+      )
+    )
+
+    if (response.statusCode == 204) {
+      println("User successfully removed from group")
+    } else {
+      throw new Exception(s"Failed to remove user from group. Status: ${response.statusCode}, Message: ${response.text}")
+    }
+  }
+
+  /**
    * Method to sync database schema and rescan field values in Metabase
    *
    * @param databaseId ID of the database to sync and rescan

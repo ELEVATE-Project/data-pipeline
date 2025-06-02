@@ -12,12 +12,22 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def username: String = readOrDefault[String]("username", null)
 
+  def email: String = readOrDefault[String]("email", null)
+
+  def phone: String = readOrDefault[String]("phone", null)
+
   def organizations: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("organizations", List.empty)
 
-  def metaInformation: Map[String, Any] = readOrDefault[Map[String, Any]]("meta", Map.empty)
+  def state: String = readOrDefault("state.label", null)
+
+  def district: String = readOrDefault("district.label", null)
 
   def status: String = readOrDefault[String]("status", null)
 
   def isUserDeleted: Boolean = readOrDefault[Boolean]("deleted", false)
+
+  def oldValues: Map[String, Any] = readOrDefault[Map[String, Any]]("oldValues", Map.empty)
+
+  def newValues: Map[String, Any] = readOrDefault[Map[String, Any]]("newValues", Map.empty)
 
 }

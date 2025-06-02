@@ -3,6 +3,7 @@ package org.shikshalokam.job.user.service.task
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.TypeExtractor
+import org.apache.flink.streaming.api.scala.OutputTag
 import org.shikshalokam.job.BaseJobConfig
 import org.shikshalokam.job.user.service.domain.Event
 
@@ -12,12 +13,18 @@ class UserServiceConfig(override val config: Config) extends BaseJobConfig(confi
 
   // Kafka Topics Configuration
   val inputTopic: String = config.getString("kafka.input.topic")
+  val outputTopic: String = config.getString("kafka.output.topic")
+
+  // Output Tags
+  val eventOutputTag: OutputTag[String] = OutputTag[String]("user-service-output-event")
 
   // Parallelism
-  val mlUserServiceParallelism: Int = config.getInt("task.sl.user.service.parallelism")
+  val userServiceParallelism: Int = config.getInt("task.sl.user.service.parallelism")
+  val notificationServiceParallelism: Int = config.getInt("task.sl.notification.parallelism")
 
   // Consumers
-  val userServiceProducer: String = "user-service-consumer"
+  val userServiceConsumer: String = "user-service-consumer"
+  val notificationServiceProducer: String = "notification-service-producer"
 
   // Functions
   val userServiceFunction: String = "UserServiceFunction"
@@ -34,18 +41,20 @@ class UserServiceConfig(override val config: Config) extends BaseJobConfig(confi
   val pgUsername: String = config.getString("postgres.username")
   val pgPassword: String = config.getString("postgres.password")
   val pgDataBase: String = config.getString("postgres.database")
-  val solutions: String = config.getString("postgres.tables.solutionsTable")
-  val dashboard_metadata: String = config.getString("postgres.tables.dashboardMetadataTable")
-  val report_config: String = config.getString("postgres.tables.reportConfigTable")
 
   // Metabase connection config
   val metabaseUrl: String = config.getString("metabase.url")
   val metabaseUsername: String = config.getString("metabase.username")
   val metabasePassword: String = config.getString("metabase.password")
-  val metabaseDatabase: String = config.getString("metabase.database")
+  val metabaseDomainName: String = config.getString("metabase.domainName")
 
-  // Domain static name & password
+  // Domain static name
   val domainName: String = config.getString("domain.name")
-  val domainPassword: String = config.getString("domain.password")
+
+  // Notification config
+  val notificationType = config.getString("notify.type")
+  val notificationApiUrl = config.getString("notify.api.url")
+  val notificationEmailTemplate = config.getString("notify.email.template")
+  val notificationSmsTemplate = config.getString("notify.sms.template")
 
 }
