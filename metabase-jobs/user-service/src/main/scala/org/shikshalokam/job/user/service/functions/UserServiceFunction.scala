@@ -430,6 +430,7 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
     val smsJson = replacePlaceholders(notificationSmsTemplate, replacementsForNotification)
 
     if (notificationType == "kafka") {
+      println(s"----> Pushing notification via kafka")
       val emailEvent = ScalaJsonUtil.serialize(emailJson)
       val smsEvent = ScalaJsonUtil.serialize(smsJson)
       context.output(config.eventOutputTag, emailEvent)
@@ -438,7 +439,9 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
       println(emailJson)
       println(smsJson)
     } else if (notificationType == "api") {
-
+      println(s"----> Pushing notification via api")
+      println(emailJson)
+      println(smsJson)
       val emailResponse = requests.post(
         notificationApiUrl,
         data = emailJson,
@@ -447,7 +450,7 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
 
       val smsResponse = requests.post(
         notificationApiUrl,
-        data = emailJson,
+        data = smsJson,
         headers = Map("Content-Type" -> "application/json")
       )
 
