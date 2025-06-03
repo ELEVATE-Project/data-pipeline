@@ -41,13 +41,10 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
   override def processElement(event: Event, context: ProcessFunction[Event, Event]#Context, metrics: Metrics): Unit = {
     if (event.status == "started" || event.status == "inprogress" || event.status == "submitted" || event.status == "completed") {
       println(s"***************** Start of Processing the Survey Event with Id = ${event._id} *****************")
-      val (roleIds, roles) = extractUserRolesData(event.userRoles)
       val surveyQuestionTable = event.solutionId
       val surveyStatusTable = s""""${event.solutionId}_survey_status""""
       val surveyId = event._id
       val userId = event.createdBy
-      val userRoleIds = roleIds
-      val userRoles = roles
       val stateId = event.stateId
       val stateName = event.stateName
       val districtId = event.districtId
@@ -58,15 +55,13 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       val clusterName = event.clusterName
       val schoolId = event.schoolId
       val schoolName = event.schoolName
-      val organisationId = event.organisationId
-      val organisationName = event.organisationName
-      val organisationCode = event.organisationCode
       val programName = event.programName
       val programId = event.programId
       val solutionName = event.solutionName
       val solutionId = event.solutionId
       val status = event.status
       val submissionDate = event.completedDate
+      val tenantId = event.tenantId
       val solutionExternalId = event.solutionExternalId
       val solutionDescription = event.solutionDescription
       val programExternalId = event.programExternalId
@@ -74,6 +69,27 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       val privateProgram = null
       val projectCategories = null
       val projectDuration = null
+
+      var userRoleIds: String = ""
+      var userRoles: String = ""
+      var organisationId: String = ""
+      var organisationName: String = ""
+      var organisationCode: String = ""
+
+      event.organisation.foreach { org =>
+        if (org.get("code").contains(event.organisationId)) {
+          organisationName = org.get("name").map(_.toString).getOrElse("")
+          organisationId = org.get("id").map(_.toString).getOrElse("")
+          organisationCode = org.get("code").map(_.toString).getOrElse("")
+          val roles = org.get("roles").map(_.asInstanceOf[List[Map[String, Any]]]).getOrElse(List.empty)
+          val (userRoleIdsExtracted, userRolesExtracted) = extractUserRolesData(roles)
+          userRoleIds = userRoleIdsExtracted
+          userRoles = userRolesExtracted
+        } else {
+          println(s"Organisation with ID ${event.organisationId} not found in the event data.")
+        }
+      }
+
 
       val createSurveyQuestionsTableQuery =
         s"""CREATE TABLE IF NOT EXISTS "$surveyQuestionTable" (
@@ -92,6 +108,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
            |    cluster_name TEXT,
            |    school_id TEXT,
            |    school_name TEXT,
+           |    tenant_id TEXT,
            |    organisation_id TEXT,
            |    organisation_name TEXT,
            |    organisation_code TEXT,
@@ -126,6 +143,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
            |    cluster_name TEXT,
            |    school_id TEXT,
            |    school_name TEXT,
+           |    tenant_id TEXT,
            |    organisation_id TEXT,
            |    organisation_name TEXT,
            |    organisation_code TEXT,
@@ -191,8 +209,8 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       println("\n==> Survey Data per user submission ")
       println("surveyId = " + event._id)
       println("userId = " + event.createdBy)
-      println("userRoleIds = " + roleIds)
-      println("userRoles = " + roles)
+      println("userRoleIds = " + userRoleIds)
+      println("userRoles = " + userRoles)
       println("stateId = " + event.stateId)
       println("stateName = " + event.stateName)
       println("districtId = " + event.districtId)
@@ -203,9 +221,10 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       println("clusterName = " + event.clusterName)
       println("schoolId = " + event.schoolId)
       println("schoolName = " + event.schoolName)
-      println("organisationId = " + event.organisationId)
-      println("organisationName = " + event.organisationName)
-      println("organisationCode = " + event.organisationCode)
+      println("tenantId = " + event.tenantId)
+      println("organisationId = " + organisationId)
+      println("organisationName = " + organisationName)
+      println("organisationCode = " + organisationCode)
       println("programName = " + event.programName)
       println("programId = " + event.programId)
       println("solutionName = " + event.solutionName)
@@ -218,14 +237,14 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       val upsertSurveyDataQuery =
         s"""INSERT INTO $surveyStatusTable (
            |    survey_id, user_id, user_role_ids, user_roles, state_id, state_name, district_id, district_name,
-           |    block_id, block_name, cluster_id, cluster_name, school_id, school_name, organisation_id,
+           |    block_id, block_name, cluster_id, cluster_name, school_id, school_name, tenant_id, organisation_id,
            |    organisation_name, organisation_code, program_name, program_id, solution_name, solution_id,
            |    status, submission_date
            |) VALUES (
-           |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+           |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
            |) ON CONFLICT (survey_id) DO UPDATE SET
            |    user_id = ?, user_role_ids = ?, user_roles = ?, state_id = ?, state_name = ?, district_id = ?, district_name = ?,
-           |    block_id = ?, block_name = ?, cluster_id = ?, cluster_name = ?, school_id = ?, school_name = ?, organisation_id = ?,
+           |    block_id = ?, block_name = ?, cluster_id = ?, cluster_name = ?, school_id = ?, school_name = ?, tenant_id = ?, organisation_id = ?,
            |    organisation_name = ?, organisation_code = ?, program_name = ?, program_id = ?, solution_name = ?, solution_id = ?,
            |    status = ?, submission_date = ?;
            |""".stripMargin
@@ -234,13 +253,13 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       val surveyParams = Seq(
         // Insert parameters
         surveyId, userId, userRoleIds, userRoles, stateId, stateName, districtId, districtName,
-        blockId, blockName, clusterId, clusterName, schoolId, schoolName, organisationId,
+        blockId, blockName, clusterId, clusterName, schoolId, schoolName, tenantId, organisationId,
         organisationName, organisationCode, programName, programId, solutionName, solutionId,
         status, submissionDate,
 
         // Update parameters
         userId, userRoleIds, userRoles, stateId, stateName, districtId, districtName,
-        blockId, blockName, clusterId, clusterName, schoolId, schoolName, organisationId,
+        blockId, blockName, clusterId, clusterName, schoolId, schoolName, tenantId, organisationId,
         organisationName, organisationCode, programName, programId, solutionName, solutionId,
         status, submissionDate
       )
@@ -280,7 +299,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
             answersMap.foreach { case (_, value) =>
               val questionsMap = value.asInstanceOf[Map[String, Any]]
               val question_id: String = questionsMap.get("qid").collect { case v: String => v }.getOrElse("")
-              val payloadOpt: Option[Map[String, Any]] = questionsMap.get("payload").collect { case m: Map[String@unchecked, Any@unchecked] => m }
+              val payloadOpt: Option[Map[String, Any]] = questionsMap.get("payload").collect { case m: Map[String @unchecked, Any @unchecked] => m }
               val responseType = questionsMap.get("responseType").map(_.toString).getOrElse("")
               val remarks: String = questionsMap.get("remarks").map(_.toString).getOrElse("")
               val attachments: List[Map[String, Any]] = questionsMap.get("fileName").collect { case list: List[Map[String, Any]] => list }.getOrElse(Nil)
@@ -394,22 +413,22 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
         val insertQuestionQuery =
           s"""INSERT INTO "$surveyQuestionTable" (
              |    survey_id, user_id, user_role_ids, user_roles, state_id, state_name, district_id, district_name,
-             |    block_id, block_name, cluster_id, cluster_name, school_id, school_name, organisation_id,
+             |    block_id, block_name, cluster_id, cluster_name, school_id, school_name, tenant_id, organisation_id,
              |    organisation_name, organisation_code, program_name, program_id, solution_name, solution_id,
              |    question_id, question_text, labels, value, has_parent_question, parent_question_text, evidence, question_type, remarks
              |) VALUES (
              |   ?, ?, ?, ?, ?, ?, ?, ?,
              |   ?, ?, ?, ?, ?, ?, ?,
              |   ?, ?, ?, ?, ?, ?,
-             |   ?, ?, ?, ?, ?, ?, ?, ?, ?
+             |   ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
              |);
              |""".stripMargin
 
         val questionParam = Seq(
           surveyId, userId, userRoleIds, userRoles, stateId, stateName, districtId, districtName,
-          blockId, blockName, clusterId, clusterName, schoolId, schoolName, organisationId,
+          blockId, blockName, clusterId, clusterName, schoolId, schoolName, tenantId, organisationId,
           organisationName, organisationCode, programName, programId, solutionName, solutionId,
-          question_id, question, labels, value, has_parent_question, parent_question_text, evidence, question_type,  remarks
+          question_id, question, labels, value, has_parent_question, parent_question_text, evidence, question_type, remarks
         )
         postgresUtil.executePreparedUpdate(insertQuestionQuery, questionParam, surveyQuestionTable, solution_id)
       }
