@@ -72,6 +72,7 @@ fi
 # File paths to be replaced
 FILES_TO_REPLACE=(
   "$CODE_BASE_PATH/jobs-core/src/main/resources/base-config.conf"
+  "$CODE_BASE_PATH/metabase-jobs/users-via-csv/src/main/resources/application.conf"
   "$CODE_BASE_PATH/metabase-jobs/observation-dashboard-creator/src/main/resources/metabase-observation-dashboard.conf"
   "$CODE_BASE_PATH/metabase-jobs/project-dashboard-creator/src/main/resources/metabase-project-dashboard.conf"
   "$CODE_BASE_PATH/metabase-jobs/survey-dashboard-creator/src/main/resources/metabase-survey-dashboard.conf"
