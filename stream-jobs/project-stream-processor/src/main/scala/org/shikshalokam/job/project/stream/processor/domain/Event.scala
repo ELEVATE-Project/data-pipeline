@@ -24,6 +24,8 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def projectCategories: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("categories", null)
 
+  def tenantId: String = readOrDefault[String]("tenantId", "")
+
   def programId: String = readOrDefault[String]("programInformation._id", "")
 
   def programExternalId: String = readOrDefault[String]("programInformation.externalId", "")
@@ -62,9 +64,7 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def organisationId: String = readOrDefault[Int]("userProfile.organization.id", 0).toString
 
-  def organisationName: String = readOrDefault[String]("userProfile.organization.name", "")
-
-  def organisationCode: String = readOrDefault[String]("userProfile.organization.code", "")
+  def organisation: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("userProfile.organizations", List.empty)
 
   def stateId: String = readOrDefault[String]("userProfile.state.value", "")
 
