@@ -128,6 +128,9 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
       postgresUtil.createTable(config.createTasksTable, config.tasks)
       postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboard_metadata)
 
+      // Alter the project table to add tenant_id column if it does not exist
+      postgresUtil.executeUpdate(config.AlterProjectTable, config.projects, "tenant_id")
+
       /**
        * Extracting Solutions data
        */

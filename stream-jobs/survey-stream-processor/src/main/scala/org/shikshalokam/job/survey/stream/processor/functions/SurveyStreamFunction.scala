@@ -127,6 +127,11 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
            |    remarks TEXT
            |);""".stripMargin
 
+      val AlterSurveyQuestionsTableQuery =
+        s"""ALTER TABLE IF EXISTS "$surveyQuestionTable"
+           |ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+           |""".stripMargin
+
       val createSurveyStatusTableQuery =
         s"""CREATE TABLE IF NOT EXISTS $surveyStatusTable (
            |    survey_id TEXT PRIMARY KEY,
@@ -154,6 +159,11 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
            |    status TEXT,
            |    submission_date TEXT
            |);""".stripMargin
+
+      val AlterSurveyStatusTableQuery =
+        s"""ALTER TABLE IF EXISTS $surveyStatusTable
+           |ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+           |""".stripMargin
 
       postgresUtil.createTable(config.createSolutionsTable, config.solutions)
       postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboard_metadata)
@@ -234,6 +244,8 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
 
       //CREATE TABLE IF NOT EXISTS
       postgresUtil.checkAndCreateTable(surveyStatusTable, createSurveyStatusTableQuery)
+      postgresUtil.executeUpdate(AlterSurveyStatusTableQuery,surveyStatusTable,solutionId)
+
       val upsertSurveyDataQuery =
         s"""INSERT INTO $surveyStatusTable (
            |    survey_id, user_id, user_role_ids, user_roles, state_id, state_name, district_id, district_name,
@@ -268,7 +280,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
 
       if (event.status == "completed") {
         postgresUtil.checkAndCreateTable(surveyQuestionTable, createSurveyQuestionsTableQuery)
-
+        postgresUtil.executeUpdate(AlterSurveyQuestionsTableQuery, surveyQuestionTable, solutionId)
         /**
          * Extracting Survey Questions Data
          */

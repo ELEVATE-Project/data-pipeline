@@ -48,7 +48,6 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       var orgCode: String = ""
 
       event.organisation.foreach { org =>
-        println(s"Inspecting organisation: ${org}")
         if (org.get("code").contains(event.organisationId)) {
           orgName = org.get("name").map(_.toString).getOrElse("")
           orgId = org.get("id").map(_.toString).getOrElse("")
@@ -83,7 +82,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       println("clusterName = " + event.clusterName)
       println("schoolName = " + event.schoolName)
       println("status = " + event.status)
-      println(s"tenantId = ${event.tenantId}")
+      println("tenantId = " + event.tenantId)
       println("solutionName = " + event.solutionName)
       println("userRoleIds = " + userRoleIds)
       println("userRoles = " + userRoles)
@@ -114,6 +113,13 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       val observation_id = event.observationId
       val school_id = event.schoolId
       val tenant_id = event.tenantId
+      val solution_external_id = event.solutionExternalId
+      val solution_description = event.solutionDescription
+      val program_external_id = event.programExternalId
+      val program_description = event.programDescription
+      val private_program = null
+      val project_categories = null
+      val project_duration = null
       val completed_date = event.completedDate
       val domainTable = s""""${solution_id}_domain""""
       val questionTable = s""""${solution_id}_questions""""
@@ -180,6 +186,12 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
              |    completed_date TEXT
              |);""".stripMargin
 
+        val AlterDomainTable =
+          s"""ALTER TABLE IF EXISTS $domainTable
+             |ADD COLUMN IF NOT EXISTS user_role_ids TEXT,
+             |ADD COLUMN IF NOT EXISTS tenant_id TEXT,
+             |ADD COLUMN IF NOT EXISTS org_code TEXT;
+             |""".stripMargin
 
         val createQuestionsTable =
           s"""CREATE TABLE IF NOT EXISTS $questionTable (
@@ -200,6 +212,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
              |    cluster_name TEXT,
              |    school_name TEXT,
              |    school_id TEXT,
+             |    tenant_id TEXT,
              |    org_name TEXT,
              |    org_id TEXT,
              |    org_code TEXT,
@@ -218,23 +231,18 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
              |    question_type TEXT
              |);""".stripMargin
 
-        checkAndCreateTable(domainTable, createDomainsTable)
-        checkAndCreateTable(questionTable, createQuestionsTable)
+        val AlterQuestionTable =
+          s"""ALTER TABLE IF EXISTS $questionTable
+             |ADD COLUMN IF NOT EXISTS user_role_ids TEXT,
+             |ADD COLUMN IF NOT EXISTS tenant_id TEXT,
+             |ADD COLUMN IF NOT EXISTS org_id TEXT,
+             |ADD COLUMN IF NOT EXISTS org_code TEXT;
+             |""".stripMargin
 
-        /**
-         * Extracting Solutions data
-         */
-        val solutionId = event.solutionId
-        val solutionExternalId = event.solutionExternalId
-        val solutionName = event.solutionName
-        val solutionDescription = event.solutionDescription
-        val programId = event.programId
-        val programName = event.programName
-        val programExternalId = event.programExternalId
-        val programDescription = event.programDescription
-        val privateProgram = null
-        val projectCategories = null
-        val projectDuration = null
+        checkAndCreateTable(domainTable, createDomainsTable)
+        postgresUtil.executeUpdate(AlterDomainTable, domainTable, solution_id)
+        checkAndCreateTable(questionTable, createQuestionsTable)
+        postgresUtil.executeUpdate(AlterQuestionTable, questionTable, solution_id)
 
         val upsertSolutionQuery =
           s"""INSERT INTO ${config.solutions} (solution_id, external_id, name, description, duration, categories, program_id, program_name, program_external_id, program_description, private_program)
@@ -254,13 +262,13 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
 
         val solutionParams = Seq(
           // Insert parameters
-          solutionId, solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram,
+          solution_id, solution_external_id, solution_name, solution_description, project_duration, project_categories, program_id, program_name, program_external_id, program_description, private_program,
 
           // Update parameters (matching columns in the ON CONFLICT clause)
-          solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram
+          solution_external_id, solution_name, solution_description, project_duration, project_categories, program_id, program_name, program_external_id, program_description, private_program
         )
 
-        postgresUtil.executePreparedUpdate(upsertSolutionQuery, solutionParams, config.solutions, solutionId)
+        postgresUtil.executePreparedUpdate(upsertSolutionQuery, solutionParams, config.solutions, solution_id)
 
 
         /**
@@ -497,8 +505,8 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
         val dashboardData = new java.util.HashMap[String, String]()
         val dashboardConfig = Seq(
           ("admin", "1", "admin"),
-          ("program", event.programId, "targetedProgram"),
-          ("solution", event.solutionId, "targetedSolution")
+          ("program", program_id, "targetedProgram"),
+          ("solution", solution_id, "targetedSolution")
         )
 
         dashboardConfig
@@ -595,7 +603,16 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
              |    submitted_at TEXT
              |);""".stripMargin
 
+        val AlterStatusTable =
+          s"""ALTER TABLE IF EXISTS $questionTable
+             |ADD COLUMN IF NOT EXISTS user_role_ids TEXT,
+             |ADD COLUMN IF NOT EXISTS tenant_id TEXT,
+             |ADD COLUMN IF NOT EXISTS org_id TEXT,
+             |ADD COLUMN IF NOT EXISTS org_code TEXT;
+             |""".stripMargin
+
         checkAndCreateTable(statusTable, createStatusTable)
+        postgresUtil.executeUpdate(AlterStatusTable, statusTable, solution_id)
 
         val deleteQuery =
           s"""DELETE FROM $statusTable
