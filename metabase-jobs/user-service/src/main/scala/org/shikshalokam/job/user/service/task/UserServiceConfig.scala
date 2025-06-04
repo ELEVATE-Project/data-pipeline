@@ -7,12 +7,13 @@ import org.apache.flink.streaming.api.scala.OutputTag
 import org.shikshalokam.job.BaseJobConfig
 import org.shikshalokam.job.user.service.domain.Event
 
-class UserServiceConfig(override val config: Config) extends BaseJobConfig(config, "UserManagement") {
+class UserServiceConfig(override val config: Config) extends BaseJobConfig(config, "UserAndProgramManagement") {
 
   implicit val mapTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
 
   // Kafka Topics Configuration
-  val inputTopic: String = config.getString("kafka.input.topic")
+  val inputTopicOne: String = config.getString("kafka.input.topic.one")
+  val inputTopicTwo: String = config.getString("kafka.input.topic.two")
   val outputTopic: String = config.getString("kafka.output.topic")
 
   // Output Tags
@@ -20,17 +21,21 @@ class UserServiceConfig(override val config: Config) extends BaseJobConfig(confi
 
   // Parallelism
   val userServiceParallelism: Int = config.getInt("task.sl.user.service.parallelism")
+  val programServiceParallelism: Int = config.getInt("task.sl.program.service.parallelism")
   val notificationServiceParallelism: Int = config.getInt("task.sl.notification.parallelism")
 
   // Consumers
   val userServiceConsumer: String = "user-service-consumer"
+  val programServiceConsumer: String = "program-service-consumer"
   val notificationServiceProducer: String = "notification-service-producer"
 
   // Functions
   val userServiceFunction: String = "UserServiceFunction"
+  val programServiceFunction: String = "ProgramServiceFunction"
 
   // Metabase Dashboard submissions job metrics
   val userServiceCleanupHit = "user-service-cleanup-hit"
+  val programServiceCleanupHit = "program-service-cleanup-hit"
   val skipCount = "skipped-message-count"
   val successCount = "success-message-count"
   val totalEventsCount = "total-metabase-dashboard-events-count"

@@ -30,4 +30,6 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def newValues: Map[String, Any] = readOrDefault[Map[String, Any]]("newValues", Map.empty)
 
+  def programName: String = readOrDefault("meta.programInformation.name", null)
+
 }

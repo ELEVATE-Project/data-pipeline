@@ -20,7 +20,7 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
   private[this] val logger = LoggerFactory.getLogger(classOf[UserServiceFunction])
 
   override def metricsList(): List[String] = {
-    List(config.userServiceCleanupHit, config.skipCount, config.successCount, config.totalEventsCount)
+    List(config.userServiceCleanupHit, config.programServiceCleanupHit, config.skipCount, config.successCount, config.totalEventsCount)
   }
 
   override def open(parameters: Configuration): Unit = {
@@ -254,9 +254,47 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
     }
 
     def handleProgramUser(entity: String, eventType: String, name: String, email: String, password: String): Unit = {
-      //TODO IMPLEMENT PROGRAM MANGER LOGIC
+      println("<<<======== Processing for the role program_manager ========>>>")
+      if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
+        val userId = checkUserId(email)
+        if (userId == -1) {
+          val newUserId = createUser(name, email, password)
+          pushNotification(name, email, password, phone, context)
+        } else {
+          println("Stopped processing")
+        }
+      }
+      else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
+        val oldRoles = extractRoles(event.oldValues)
+        val newRoles = extractRoles(event.newValues)
+        val hadReportAdmin = oldRoles.contains("program_manager")
+        val hasReportAdmin = newRoles.contains("program_manager")
+        (hadReportAdmin, hasReportAdmin) match {
+          case (false, true) =>
+            println("Trying to add user to program_manager role")
+            val userId = checkUserId(email)
+            if (userId == -1) {
+              val newUserId = createUser(name, email, password)
+              pushNotification(name, email, password, phone, context)
+            } else {
+              println("Stopped processing")
+            }
+          //          case (true, false) =>
+          //            println("Trying to remove user from district_manager role")
+          //            val userId = checkUserId(email)
+          //            if (userId != -1) removeUserFromGroup("district_manager", Some(stateName), Some(districtName), None, userId)
+          //          case (true, true) =>
+          //            //This is a edge case scenario
+          //            println("User already had and still has district_manager role")
+          //            val userId = checkUserId(email)
+          //            val groupId = checkGroupId(s"${districtName}_District_Manager[$stateName]")
+          //            validateUserInGroup(userId, groupId)
+          case _ => // No action needed
+        }
+      }
     }
 
+    println(s"***************** End of Processing the User Service Event *****************")
   }
 
   private def generatePassword(length: Int = 12): String = {
@@ -313,8 +351,8 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
     val existingUserGroups = metabaseUtil.listGroups()
     val groupName = userRole match {
       case "report_admin" => s"Report_Admin"
-      case "state_manager" => s"${stateName}_State_Manager"
-      case "district_manager" => s"${districtName}_District_Manager[$stateName]"
+      case "state_manager" => s"${stateName.getOrElse("")}_State_Manager"
+      case "district_manager" => s"${districtName.getOrElse("")}_District_Manager[${stateName.getOrElse("")}]"
       case "program_manager" => s"Program_Manager[${programName.getOrElse("")}]"
       case _ => throw new IllegalArgumentException("Invalid manager type")
     }
@@ -334,8 +372,8 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
     val existingUserGroups = metabaseUtil.listGroups()
     val groupName = userRole match {
       case "report_admin" => s"Report_Admin"
-      case "state_manager" => s"${stateName}_State_Manager"
-      case "district_manager" => s"${districtName}_District_Manager[$stateName]"
+      case "state_manager" => s"${stateName.getOrElse("")}_State_Manager"
+      case "district_manager" => s"${districtName.getOrElse("")}_District_Manager[${stateName.getOrElse("")}]"
       case "program_manager" => s"Program_Manager[${programName.getOrElse("")}]"
       case _ => throw new IllegalArgumentException("Invalid manager type")
     }

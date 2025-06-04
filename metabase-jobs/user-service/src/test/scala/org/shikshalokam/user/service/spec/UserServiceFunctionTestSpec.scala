@@ -40,10 +40,12 @@ class UserServiceFunctionTestSpec extends BaseTestSpec {
   }
 
   def initialize() {
-    when(mockKafkaUtil.kafkaJobRequestSource[Event](jobConfig.inputTopic))
+    when(mockKafkaUtil.kafkaJobRequestSource[Event](jobConfig.inputTopicOne))
       .thenReturn(new UserServiceEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.outputTopic))
       .thenReturn(new GenerateUserServiceSink)
+    when(mockKafkaUtil.kafkaJobRequestSource[Event](jobConfig.inputTopicTwo))
+      .thenReturn(new ProgramServiceEventSource)
   }
 
   "User Service Job " should "execute successfully " in {
