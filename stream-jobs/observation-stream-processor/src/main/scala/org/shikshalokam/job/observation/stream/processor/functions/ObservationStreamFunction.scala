@@ -377,27 +377,27 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
           responseType match {
             case "text" =>
               questionsFunction.textQuestionType(payload, question_id, solution_id, solution_name, submission_id, user_id, userRoleIds, userRoles, program_name, program_id,
-                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
+                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, tenant_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
                 has_parent_question, parent_question_text, evidences, remarks, completed_date)
             case "radio" =>
               questionsFunction.radioQuestionType(payload, question_id, solution_id, solution_name, submission_id, user_id, userRoleIds, userRoles, program_name, program_id,
-                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
+                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, tenant_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
                 has_parent_question, parent_question_text, evidences, remarks, completed_date)
             case "date" =>
               questionsFunction.dateQuestionType(payload, question_id, solution_id, solution_name, submission_id, user_id, userRoleIds, userRoles, program_name, program_id,
-                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
+                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, tenant_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
                 has_parent_question, parent_question_text, evidences, remarks, completed_date)
             case "multiselect" =>
               questionsFunction.multiselectQuestionType(payload, question_id, solution_id, solution_name, submission_id, user_id, userRoleIds, userRoles, program_name, program_id,
-                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
+                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, tenant_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
                 has_parent_question, parent_question_text, evidences, remarks, completed_date)
             case "number" =>
               questionsFunction.numberQuestionType(payload, question_id, solution_id, solution_name, submission_id, user_id, userRoleIds, userRoles, program_name, program_id,
-                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
+                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, tenant_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
                 has_parent_question, parent_question_text, evidences, remarks, completed_date)
             case "slider" =>
               questionsFunction.sliderQuestionType(payload, question_id, solution_id, solution_name, submission_id, user_id, userRoleIds, userRoles, program_name, program_id,
-                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
+                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, tenant_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
                 has_parent_question, parent_question_text, evidences, remarks, completed_date)
             case "matrix" =>
               questionsMap.get("value") match {
