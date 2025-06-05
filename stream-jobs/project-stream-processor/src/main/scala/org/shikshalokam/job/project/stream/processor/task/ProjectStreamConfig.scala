@@ -83,6 +83,7 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
        |    task_count TEXT,
        |    user_role_ids TEXT,
        |    user_roles TEXT,
+       |    tenant_id TEXT,
        |    org_id TEXT,
        |    org_name TEXT,
        |    org_code TEXT,
@@ -102,6 +103,10 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
        |    certificate_status TEXT,
        |    certificate_pdf_path TEXT
        |);""".stripMargin
+
+  val AlterProjectTable =
+    s"""ALTER TABLE IF EXISTS $projects
+       |ADD COLUMN IF NOT EXISTS tenant_id TEXT;""".stripMargin
 
   val createTasksTable =
     s"""CREATE TABLE IF NOT EXISTS $tasks (

@@ -68,7 +68,7 @@ object UpdateQuestionJsonFiles {
       )
 
       val results = queries.map { case (key, query) => key -> postgresUtil.fetchData(query) }
-      var newRow = 0
+      var newRow = 23
       var newCol = 0
 
       def processHeading(questionText: String): Unit = {

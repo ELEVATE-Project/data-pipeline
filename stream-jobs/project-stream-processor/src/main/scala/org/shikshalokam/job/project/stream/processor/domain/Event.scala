@@ -60,11 +60,11 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def projectStatus: String = readOrDefault[String]("status", "")
 
-  def organisationId: String = readOrDefault[Int]("userProfile.organization.id", 0).toString
+  def tenantId: String = readOrDefault[String]("tenantId", "")
 
-  def organisationName: String = readOrDefault[String]("userProfile.organization.name", "")
+  def organisation: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("userProfile.organizations", List.empty)
 
-  def organisationCode: String = readOrDefault[String]("userProfile.organization.code", "")
+  def organisationId: String = readOrDefault[Int]("orgId", 0).toString
 
   def stateId: String = readOrDefault[String]("userProfile.state.value", "")
 
@@ -82,7 +82,7 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def clusterName: String = readOrDefault[String]("userProfile.cluster.label", "")
 
-  def schoolId: String = readOrDefault[String]("userProfile.school.value", "")
+  def schoolId: String = readOrDefault[String]("userProfile.school.externalId", "")
 
   def schoolName: String = readOrDefault[String]("userProfile.school.label", "")
 
@@ -102,7 +102,12 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def certificateStatus: String = readOrDefault[String]("certificate.status", "")
 
+  def certificateEligibility: String = read[Boolean]("certificate.eligible").map(_.toString).getOrElse("")
+
+  def certificateTransactionId: String = readOrDefault[String]("certificate.transactionId", "")
+
   def certificatePdfPath: String = readOrDefault[String]("certificate.pdfPath", "")
+
 
 }
 
