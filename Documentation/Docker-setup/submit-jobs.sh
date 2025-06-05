@@ -80,6 +80,7 @@ upload_and_run_jar "/app/stream-jobs/survey-stream-processor/target/survey-strea
 upload_and_run_jar "/app/metabase-jobs/project-dashboard-creator/target/project-dashboard-creator-1.0.0.jar"
 upload_and_run_jar "/app/metabase-jobs/observation-dashboard-creator/target/observation-dashboard-creator-1.0.0.jar"
 upload_and_run_jar "/app/metabase-jobs/survey-dashboard-creator/target/survey-dashboard-creator-1.0.0.jar"
+upload_and_run_jar "/app/metabase-jobs/users-via-csv/target/users-via-csv-1.0.0.jar"
 
 # submitting the jar file to AKKA service
 mkdir -p /app/logs
