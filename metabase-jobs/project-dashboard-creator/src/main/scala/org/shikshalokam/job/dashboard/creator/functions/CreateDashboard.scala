@@ -16,7 +16,8 @@ object CreateDashboard {
         val errorMessage = s"$collectionName already exists with ID: $id."
         val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'${errorMessage.replace("'", "''")}'")
         postgresUtil.insertData(updateTableQuery)
-        throw new IllegalStateException(s"$errorMessage. Process stopped.")
+        println(errorMessage)
+        -1
 
       case None =>
         println(s"Collection '$collectionName' does not exist. Creating new collection.")
@@ -42,7 +43,8 @@ object CreateDashboard {
         val errorMessage = s"$dashboardName already exists with ID: $id."
         val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'${errorMessage.replace("'", "''")}'")
         postgresUtil.insertData(updateTableQuery)
-        throw new IllegalStateException(s"$errorMessage. Process stopped.")
+        println(errorMessage)
+        -1
 
       case None =>
         println(s"Collection '$dashboardName' does not exist. Creating new dashboard.")
@@ -63,7 +65,10 @@ object CreateDashboard {
     val databaseId = databaseListJson.path("data").elements().asScala
       .find(_.path("name").asText() == metabaseDatabase)
       .map(_.path("id").asInt())
-      .getOrElse(throw new IllegalStateException(s"Database '$metabaseDatabase' not found. Process stopped."))
+      .getOrElse {
+        println(s"Database '$metabaseDatabase' not found. Process stopped.")
+        -1
+      }
     println(s"Database ID = $databaseId")
     databaseId
   }
