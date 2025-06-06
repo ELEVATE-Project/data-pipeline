@@ -8,7 +8,7 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def solutionId: String = readOrDefault[String]("solutionId", "")
 
-  def solutionName : String = readOrDefault[String]("solutionInfo.name", "")
+  def solutionName: String = readOrDefault[String]("solutionInfo.name", "")
 
   def solutionExternalId: String = readOrDefault[String]("solutionExternalId", "")
 
@@ -28,9 +28,9 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def programDescription: String = readOrDefault[String]("programInfo.description", "")
 
-  def observationName : String = readOrDefault[String]("observationInformation.name", "")
+  def observationName: String = readOrDefault[String]("observationInformation.name", "")
 
-  def observationId : String = readOrDefault[String]("observationId", "")
+  def observationId: String = readOrDefault[String]("observationId", "")
 
   def stateName: String = readOrDefault[String]("userProfile.state.label", "")
 
@@ -50,11 +50,15 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def orgName: String = readOrDefault[String]("userProfile.organization.name", "")
 
-  def orgId: String = readOrDefault[Int]("userProfile.organization.id", 0).toString
+  def organisationId: String = readOrDefault[Int]("orgId", 0).toString
 
-  def schoolName: String = readOrDefault[String]("entityInformation.name", "")
+  def tenantId: String = readOrDefault[String]("tenantId", "")
 
-  def schoolId : String = readOrDefault[String]("entityId", "")
+  def organisation: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("userProfile.organizations", List.empty)
+
+  def schoolName: String = readOrDefault[String]("userProfile.school.label", "")
+
+  def schoolId: String = readOrDefault[String]("userProfile.school.externalId", "")
 
   def themes: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("themes", null)
 

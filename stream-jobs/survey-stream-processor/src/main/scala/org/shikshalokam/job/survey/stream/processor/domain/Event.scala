@@ -28,13 +28,11 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def createdBy: String = readOrDefault[String]("createdBy", "")
 
-  def organisationId: String = readOrDefault[Int]("userProfile.organization.id", 0).toString
+  def tenantId: String = readOrDefault[String]("tenantId", "")
 
-  def organisationName: String = readOrDefault[String]("userProfile.organization.name", "")
+  def organisation: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("userProfile.organizations", List.empty)
 
-  def organisationCode: String = readOrDefault[String]("userProfile.organization.code", "")
-
-  def userRoles: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("userProfile.user_roles", List.empty)
+  def organisationId: String = readOrDefault[Int]("orgId", 0).toString
 
   def status: String = readOrDefault[String]("status", "")
 
@@ -54,7 +52,7 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def clusterName: String = readOrDefault[String]("userProfile.cluster.label", "")
 
-  def schoolId: String = readOrDefault[String]("userProfile.school.value", "")
+  def schoolId: String = readOrDefault[String]("userProfile.school.externalId", "")
 
   def schoolName: String = readOrDefault[String]("userProfile.school.label", "")
 

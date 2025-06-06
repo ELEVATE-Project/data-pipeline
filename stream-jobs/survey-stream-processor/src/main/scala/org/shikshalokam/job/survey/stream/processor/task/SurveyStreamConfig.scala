@@ -38,7 +38,7 @@ class SurveyStreamConfig(override val config: Config) extends BaseJobConfig(conf
   val totalEventsCount = "total-survey-events-count"
 
   //report-config
-  val reportsEnabled: Set[String]= config.getStringList("reports.enabled").asScala.toSet
+  val reportsEnabled: Set[String] = config.getStringList("reports.enabled").asScala.toSet
 
   // PostgreSQL connection config
   val pgHost: String = config.getString("postgres.host")
@@ -51,31 +51,31 @@ class SurveyStreamConfig(override val config: Config) extends BaseJobConfig(conf
 
   val createSolutionsTable =
     s"""CREATE TABLE IF NOT EXISTS $solutions (
-      |    solution_id TEXT PRIMARY KEY,
-      |    external_id TEXT,
-      |    name TEXT,
-      |    description TEXT,
-      |    duration TEXT,
-      |    categories TEXT,
-      |    program_id TEXT,
-      |    program_name TEXT,
-      |    program_external_id TEXT,
-      |    program_description TEXT,
-      |    private_program BOOLEAN
-      |);""".stripMargin
+       |    solution_id TEXT PRIMARY KEY,
+       |    external_id TEXT,
+       |    name TEXT,
+       |    description TEXT,
+       |    duration TEXT,
+       |    categories TEXT,
+       |    program_id TEXT,
+       |    program_name TEXT,
+       |    program_external_id TEXT,
+       |    program_description TEXT,
+       |    private_program BOOLEAN
+       |);""".stripMargin
 
   val createDashboardMetadataTable =
     s"""CREATE TABLE IF NOT EXISTS $dashboard_metadata (
-      |    id SERIAL PRIMARY KEY,
-      |    entity_type TEXT NOT NULL,
-      |    entity_name TEXT NOT NULL,
-      |    entity_id TEXT UNIQUE NOT NULL,
-      |    collection_id TEXT,
-      |    dashboard_id TEXT,
-      |    question_ids TEXT,
-      |    status TEXT,
-      |    error_message TEXT
-      |);
-      |""".stripMargin
+       |    id SERIAL PRIMARY KEY,
+       |    entity_type TEXT NOT NULL,
+       |    entity_name TEXT NOT NULL,
+       |    entity_id TEXT UNIQUE NOT NULL,
+       |    collection_id TEXT,
+       |    dashboard_id TEXT,
+       |    question_ids TEXT,
+       |    status TEXT,
+       |    error_message TEXT
+       |);
+       |""".stripMargin
 
 }
