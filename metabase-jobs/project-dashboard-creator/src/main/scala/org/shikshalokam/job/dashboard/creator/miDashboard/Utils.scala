@@ -14,8 +14,8 @@ object Utils {
       .map(_.path("id").asInt())
     existingCollectionId match {
       case Some(id) =>
-        val errorMessage = s"$collectionName : already exists with ID: $id."
-        throw new IllegalStateException(s"$errorMessage. Process stopped.")
+        println(s"$collectionName : already exists with ID: $id.")
+        -1
 
       case None =>
         val parentIdField = parentId.map(pid => s""""parent_id": $pid,""").getOrElse("")
@@ -52,8 +52,8 @@ object Utils {
       .map(_.path("id").asInt())
     existingDashboardId match {
       case Some(id) =>
-        val errorMessage = s"$dashboardName : already exists with ID: $id."
-        throw new IllegalStateException(s"$errorMessage. Process stopped.")
+        println(s"$dashboardName : already exists with ID: $id.")
+        -1
 
       case None =>
         val dashboardRequestBody =
