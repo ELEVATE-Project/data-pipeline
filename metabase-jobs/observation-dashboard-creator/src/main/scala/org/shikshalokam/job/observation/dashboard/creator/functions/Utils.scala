@@ -14,8 +14,8 @@ object Utils {
       .map(_.path("id").asInt())
     existingCollectionId match {
       case Some(id) =>
-        val errorMessage = s"$collectionName : already exists with ID: $id."
-        throw new IllegalStateException(s"$errorMessage. Process stopped.")
+        println(s"$collectionName : already exists with ID: $id.")
+        -1
 
       case None =>
         val parentIdField = parentId.map(pid => s""""parent_id": $pid,""").getOrElse("")
@@ -45,29 +45,6 @@ object Utils {
 
   }
 
-  def checkAndCreateDashboard(collectionId: Int, dashboardName: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): Int = {
-    val dashboardListJson = mapper.readTree(metabaseUtil.listDashboards())
-    val existingDashboardId = dashboardListJson.elements().asScala
-      .find(_.path("name").asText() == dashboardName)
-      .map(_.path("id").asInt())
-    existingDashboardId match {
-      case Some(id) =>
-        val errorMessage = s"$dashboardName : already exists with ID: $id."
-        throw new IllegalStateException(s"$errorMessage. Process stopped.")
-
-      case None =>
-        val dashboardRequestBody =
-          s"""{
-             |  "name": "$dashboardName",
-             |  "collection_id": "$collectionId",
-             |  "collection_position": "1"
-             |}""".stripMargin
-        val dashboardId = mapper.readTree(metabaseUtil.createDashboard(dashboardRequestBody)).path("id").asInt()
-        println(s"$dashboardName : dashboard created with ID = $dashboardId")
-        dashboardId
-    }
-  }
-
   def createDashboard(collectionId: Int, dashboardName: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): Int = {
     val dashboardRequestBody =
       s"""{
@@ -85,7 +62,10 @@ object Utils {
     val databaseId = databaseListJson.path("data").elements().asScala
       .find(_.path("name").asText() == metabaseDatabase)
       .map(_.path("id").asInt())
-      .getOrElse(throw new IllegalStateException(s"Database '$metabaseDatabase' not found. Process stopped."))
+      .getOrElse {
+        println(s"Database '$metabaseDatabase' not found. Process stopped.")
+        -1
+      }
     println(s"Database ID = $databaseId")
     databaseId
   }
