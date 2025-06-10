@@ -446,6 +446,8 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
     val notificationApiUrl = config.notificationApiUrl
     val notificationEmailTemplate = config.notificationEmailTemplate
     val notificationSmsTemplate = config.notificationSmsTemplate
+    val hasEmail = email != null && email.nonEmpty
+    val hasPhone = phone != null && phone.nonEmpty
 
     val replacementsForNotification = Map(
       "name" -> name,
@@ -456,12 +458,16 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
     )
 
     def replacePlaceholders(template: String, values: Map[String, String]): String = {
+      //println(s"Replacement Values:\n$values")
       val replaced = values.foldLeft(template) {
-        case (temp, (key, value)) => temp.replaceAllLiterally(s"{$key}", value)
+        case (temp, (key, value)) =>
+          val replacement = if (value == null || value.trim.isEmpty) "null" else value
+          val updated = temp.replaceAllLiterally(s"{$key}", replacement)
+          //println(s"""Replacing {$key} with $replacement""")
+          updated
       }
-      // Deserialize to Map
-      // mapper.readValue(replaced, classOf[Map[String, Any]])
-      JSONUtil.mapper.readTree(replaced).toPrettyString
+      val json = JSONUtil.mapper.readTree(replaced).toPrettyString
+      json
     }
 
     val emailJson = replacePlaceholders(notificationEmailTemplate, replacementsForNotification)
@@ -471,35 +477,51 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
       println(s"----> Pushing notification via kafka")
       val emailEvent = ScalaJsonUtil.serialize(emailJson)
       val smsEvent = ScalaJsonUtil.serialize(smsJson)
-      context.output(config.eventOutputTag, emailEvent)
-      context.output(config.eventOutputTag, smsEvent)
+      if (hasEmail && hasPhone) {
+        context.output(config.eventOutputTag, emailEvent)
+        context.output(config.eventOutputTag, smsEvent)
+      } else if (hasEmail) {
+        context.output(config.eventOutputTag, emailEvent)
+      } else if (hasPhone) {
+        context.output(config.eventOutputTag, smsEvent)
+      }
       println(s"----> Pushed new Kafka message to ${config.outputTopic} topic")
-      println(emailJson)
-      println(smsJson)
     } else if (notificationType == "api") {
       println(s"----> Pushing notification via api")
-      println(emailJson)
-      println(smsJson)
-      val emailResponse = requests.post(
-        notificationApiUrl,
-        data = emailJson,
-        headers = Map("Content-Type" -> "application/json")
-      )
+      var emailResponse: Option[requests.Response] = None
+      var smsResponse: Option[requests.Response] = None
+      if (hasEmail) {
+        println(emailJson)
+        emailResponse = Some(
+          requests.post(
+            notificationApiUrl,
+            data = emailJson,
+            headers = Map("Content-Type" -> "application/json")
+          )
+        )
+      }
 
-      val smsResponse = requests.post(
-        notificationApiUrl,
-        data = smsJson,
-        headers = Map("Content-Type" -> "application/json")
-      )
+      if (hasPhone) {
+        println(smsJson)
+        smsResponse = Some(
+          requests.post(
+            notificationApiUrl,
+            data = smsJson,
+            headers = Map("Content-Type" -> "application/json")
+          )
+        )
+      }
 
-      if (emailResponse.statusCode == 200 || smsResponse.statusCode == 200) {
-        println("Sent notification via API")
+      val success = Seq(emailResponse, smsResponse).flatten.exists(_.statusCode == 200)
+
+      if (success) {
+        println("----> Pushed notification via API")
       } else {
         throw new Exception(
           s"""Failed to send notification:
-             |Email status: ${emailResponse.statusCode}, message: ${emailResponse.text}
-             |SMS status: ${smsResponse.statusCode}, message: ${smsResponse.text}
-           """.stripMargin
+             |Email status: ${emailResponse.map(_.statusCode).getOrElse("N/A")}, message: ${emailResponse.map(_.text).getOrElse("N/A")}
+             |SMS status: ${smsResponse.map(_.statusCode).getOrElse("N/A")}, message: ${smsResponse.map(_.text).getOrElse("N/A")}
+     """.stripMargin
         )
       }
     }
