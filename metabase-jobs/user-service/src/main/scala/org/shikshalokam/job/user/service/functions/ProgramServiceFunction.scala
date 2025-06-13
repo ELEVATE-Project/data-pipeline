@@ -59,20 +59,18 @@ class ProgramServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo
 
       // Fetching from oldValues or using fallback
       val uniqueUserName = getValue("username", event.username)
-      val email = Option(getValue("email", event.email)).filter(_.trim.nonEmpty).getOrElse(uniqueUserName + config.domainName)
       val programName = event.programName
 
       println(s"Entity = $entity")
       println(s"EntityType = $eventType")
       println(s"Unique User Name = $uniqueUserName")
-      println(s"Email = $email")
       println(s"Program Name = $programName")
 
       if (entity == "program" && eventType == "create") {
-        val userId = checkUserId(email)
+        val userId = getUserId(uniqueUserName)
         if (userId != -1) addUserToGroup("program_manager", None, None, Some(programName), userId) else println("User Not Found. Stopped processing")
-      } else if (entity == "program" && eventType == "delete"){
-        val userId = checkUserId(email)
+      } else if (entity == "program" && eventType == "delete") {
+        val userId = getUserId(uniqueUserName)
         if (userId != -1) removeUserFromGroup("program_manager", None, None, Some(programName), userId) else println("User Not Found. Stopped processing")
       }
 
@@ -81,20 +79,25 @@ class ProgramServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo
 
   }
 
-  private def checkUserId(email: String): Int = {
+  private def getUserId(uniqueUserName: String): Int = {
     val users = mapper.readTree(metabaseUtil.listUsers()).path("data").elements().asScala
 
-    users.find(_.get("email").asText().equalsIgnoreCase(email)) match {
+    users.find { user =>
+      val loginAttrs = user.path("login_attributes")
+      loginAttrs.has("userName") && loginAttrs.get("userName").asText().equalsIgnoreCase(uniqueUserName)
+    } match {
       case Some(user) =>
         val id = user.get("id").asInt()
+        val email = user.get("email")
         if (user.get("is_active").asBoolean()) {
-          println(s"User already exists and is active: $email with id: $id")
+          println(s"User already exists and is active: $uniqueUserName with id: $id and email: $email")
           id
         } else {
-          println(s"User with email: $email exists but has been deactivated (id: $id)")
+          println(s"User with userName: $uniqueUserName exists but has been deactivated (id: $id)")
           id
         }
       case None =>
+        println(s"No user found with userName: $uniqueUserName")
         -1
     }
   }
