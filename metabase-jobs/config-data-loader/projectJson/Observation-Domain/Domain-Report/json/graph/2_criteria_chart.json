@@ -121,7 +121,7 @@
         }
       }
     },
-    "display": "bar",
+    "display": "pie",
     "visualization_settings": {
       "stackable.stack_type": "normalized",
       "graph.show_values": true,
