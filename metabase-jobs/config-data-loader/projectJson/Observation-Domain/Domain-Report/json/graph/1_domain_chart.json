@@ -1,6 +1,6 @@
 {
   "questionCard": {
-    "name": "domain chart",
+    "name": "Domain Chart",
     "collection_id": 644,
     "dataset_query": {
       "database": 2,
@@ -95,7 +95,7 @@
         }
       }
     },
-    "display": "bar",
+    "display": "pie",
     "visualization_settings": {
       "stackable.stack_type": "normalized",
       "graph.show_values": true,
