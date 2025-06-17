@@ -59,7 +59,7 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
     def getLabelFromSourceOrDefault(sourceMap: Map[String, Any], key: String, defaultLabel: String): String = {
       sourceMap.get(key) match {
         case Some(map: Map[String, Any]@unchecked) =>
-          map.get("label").map(_.toString).getOrElse(defaultLabel)
+          map.get("name").map(_.toString).getOrElse(defaultLabel)
         case _ => defaultLabel
       }
     }
@@ -110,13 +110,13 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
     userRoles.foreach { roleMap =>
       roleMap.get("title") match {
         case Some("report_admin") =>
-          handleReportAdmin(entity, eventType, name, email, password)
+          handleReportAdmin(entity, eventType, name, email, password, uniqueUserName)
         case Some("state_manager") =>
-          handleStateAdmin(entity, eventType, name, email, password, stateName)
+          handleStateAdmin(entity, eventType, name, email, password, uniqueUserName, stateName)
         case Some("district_manager") =>
-          handleDistrictUser(entity, eventType, name, email, password, stateName, districtName)
+          handleDistrictUser(entity, eventType, name, email, password, uniqueUserName, stateName, districtName)
         case Some("program_manager") =>
-          handleProgramUser(entity, eventType, name, email, password)
+          handleProgramUser(entity, eventType, name, email, password, uniqueUserName)
         case Some(unknownRole) =>
           println(s"Unknown Metabase Platform Role: $unknownRole")
         case None =>
@@ -124,12 +124,12 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
       }
     }
 
-    def handleReportAdmin(entity: String, eventType: String, name: String, email: String, password: String): Unit = {
+    def handleReportAdmin(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String): Unit = {
       println("<<<======== Processing for the role report_admin ========>>>")
       if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
         val userId = checkUserId(email)
         if (userId == -1) {
-          val newUserId = createUser(name, email, password)
+          val newUserId = createUser(name, email, password, uniqueUserName)
           addUserToGroup("report_admin", None, None, None, newUserId)
           pushNotification(name, email, password, phone, context)
         } else {
@@ -146,7 +146,7 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
             println("Trying to add user to report_admin role")
             val userId = checkUserId(email)
             if (userId == -1) {
-              val newUserId = createUser(name, email, password)
+              val newUserId = createUser(name, email, password, uniqueUserName)
               addUserToGroup("report_admin", None, None, None, newUserId)
               pushNotification(name, email, password, phone, context)
             } else {
@@ -167,12 +167,12 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
       }
     }
 
-    def handleStateAdmin(entity: String, eventType: String, name: String, email: String, password: String, stateName: String): Unit = {
+    def handleStateAdmin(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, stateName: String): Unit = {
       println("<<<======== Processing for the role state_manager ========>>>")
       if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
         val userId = checkUserId(email)
         if (userId == -1) {
-          val newUserId = createUser(name, email, password)
+          val newUserId = createUser(name, email, password, uniqueUserName)
           addUserToGroup("state_manager", Some(stateName), None, None, newUserId)
           pushNotification(name, email, password, phone, context)
         } else {
@@ -189,7 +189,7 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
             println("Trying to add user to state_manager role")
             val userId = checkUserId(email)
             if (userId == -1) {
-              val newUserId = createUser(name, email, password)
+              val newUserId = createUser(name, email, password, uniqueUserName)
               addUserToGroup("state_manager", Some(stateName), None, None, newUserId)
               pushNotification(name, email, password, phone, context)
             } else {
@@ -210,12 +210,12 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
       }
     }
 
-    def handleDistrictUser(entity: String, eventType: String, name: String, email: String, password: String, stateName: String, districtName: String): Unit = {
+    def handleDistrictUser(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, stateName: String, districtName: String): Unit = {
       println("<<<======== Processing for the role district_manager ========>>>")
       if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
         val userId = checkUserId(email)
         if (userId == -1) {
-          val newUserId = createUser(name, email, password)
+          val newUserId = createUser(name, email, password, uniqueUserName)
           addUserToGroup("district_manager", Some(stateName), Some(districtName), None, newUserId)
           pushNotification(name, email, password, phone, context)
         } else {
@@ -232,7 +232,7 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
             println("Trying to add user to report_admin role")
             val userId = checkUserId(email)
             if (userId == -1) {
-              val newUserId = createUser(name, email, password)
+              val newUserId = createUser(name, email, password, uniqueUserName)
               addUserToGroup("district_manager", Some(stateName), Some(districtName), None, newUserId)
               pushNotification(name, email, password, phone, context)
             } else {
@@ -253,12 +253,12 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
       }
     }
 
-    def handleProgramUser(entity: String, eventType: String, name: String, email: String, password: String): Unit = {
+    def handleProgramUser(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String): Unit = {
       println("<<<======== Processing for the role program_manager ========>>>")
       if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
         val userId = checkUserId(email)
         if (userId == -1) {
-          val newUserId = createUser(name, email, password)
+          createUser(name, email, password, uniqueUserName)
           pushNotification(name, email, password, phone, context)
         } else {
           println("Stopped processing")
@@ -274,21 +274,11 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
             println("Trying to add user to program_manager role")
             val userId = checkUserId(email)
             if (userId == -1) {
-              val newUserId = createUser(name, email, password)
+              createUser(name, email, password, uniqueUserName)
               pushNotification(name, email, password, phone, context)
             } else {
               println("Stopped processing")
             }
-          //          case (true, false) =>
-          //            println("Trying to remove user from district_manager role")
-          //            val userId = checkUserId(email)
-          //            if (userId != -1) removeUserFromGroup("district_manager", Some(stateName), Some(districtName), None, userId)
-          //          case (true, true) =>
-          //            //This is a edge case scenario
-          //            println("User already had and still has district_manager role")
-          //            val userId = checkUserId(email)
-          //            val groupId = checkGroupId(s"${districtName}_District_Manager[$stateName]")
-          //            validateUserInGroup(userId, groupId)
           case _ => // No action needed
         }
       }
@@ -332,13 +322,16 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
     }
   }
 
-  private def createUser(firstName: String, email: String, password: String): Int = {
+  private def createUser(firstName: String, email: String, password: String, userName: String): Int = {
     val requestBody =
       s"""
          |{
          |  "first_name": "$firstName",
          |  "email": "$email",
-         |  "password": "$password"
+         |  "password": "$password",
+         |  "login_attributes": {
+         |        "userName": "$userName"
+         |    }
          |}
          |""".stripMargin
     val newUserId = mapper.readTree(metabaseUtil.createUser(requestBody)).get("id").asInt()
@@ -446,6 +439,8 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
     val notificationApiUrl = config.notificationApiUrl
     val notificationEmailTemplate = config.notificationEmailTemplate
     val notificationSmsTemplate = config.notificationSmsTemplate
+    val hasEmail = email != null && email.nonEmpty
+    val hasPhone = phone != null && phone.nonEmpty
 
     val replacementsForNotification = Map(
       "name" -> name,
@@ -456,12 +451,16 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
     )
 
     def replacePlaceholders(template: String, values: Map[String, String]): String = {
+      //println(s"Replacement Values:\n$values")
       val replaced = values.foldLeft(template) {
-        case (temp, (key, value)) => temp.replaceAllLiterally(s"{$key}", value)
+        case (temp, (key, value)) =>
+          val replacement = if (value == null || value.trim.isEmpty) "null" else value
+          val updated = temp.replaceAllLiterally(s"{$key}", replacement)
+          //println(s"""Replacing {$key} with $replacement""")
+          updated
       }
-      // Deserialize to Map
-      // mapper.readValue(replaced, classOf[Map[String, Any]])
-      JSONUtil.mapper.readTree(replaced).toPrettyString
+      val json = JSONUtil.mapper.readTree(replaced).toPrettyString
+      json
     }
 
     val emailJson = replacePlaceholders(notificationEmailTemplate, replacementsForNotification)
@@ -471,35 +470,61 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
       println(s"----> Pushing notification via kafka")
       val emailEvent = ScalaJsonUtil.serialize(emailJson)
       val smsEvent = ScalaJsonUtil.serialize(smsJson)
-      context.output(config.eventOutputTag, emailEvent)
-      context.output(config.eventOutputTag, smsEvent)
+      if (hasEmail && hasPhone) {
+        context.output(config.eventOutputTag, emailEvent)
+        context.output(config.eventOutputTag, smsEvent)
+      } else if (hasEmail) {
+        context.output(config.eventOutputTag, emailEvent)
+      } else if (hasPhone) {
+        context.output(config.eventOutputTag, smsEvent)
+      }
       println(s"----> Pushed new Kafka message to ${config.outputTopic} topic")
-      println(emailJson)
-      println(smsJson)
     } else if (notificationType == "api") {
       println(s"----> Pushing notification via api")
-      println(emailJson)
-      println(smsJson)
-      val emailResponse = requests.post(
-        notificationApiUrl,
-        data = emailJson,
-        headers = Map("Content-Type" -> "application/json")
-      )
+      var emailResponse: Option[requests.Response] = None
+      var smsResponse: Option[requests.Response] = None
+      if (hasEmail) {
+        try {
+          // println(emailJson)
+          val response = requests.post(
+            notificationApiUrl,
+            data = emailJson,
+            headers = Map("Content-Type" -> "application/json")
+          )
+          emailResponse = Some(response)
+          println(s"Email sent with status: ${response.statusCode}")
+        } catch {
+          case e: Exception =>
+            println(s"Failed to send email notification: ${e.getMessage}")
+        }
+      }
 
-      val smsResponse = requests.post(
-        notificationApiUrl,
-        data = smsJson,
-        headers = Map("Content-Type" -> "application/json")
-      )
+      if (hasPhone) {
+        try {
+          // println(smsJson)
+          val response = requests.post(
+            notificationApiUrl,
+            data = smsJson,
+            headers = Map("Content-Type" -> "application/json")
+          )
+          smsResponse = Some(response)
+          println(s"SMS sent with status: ${response.statusCode}")
+        } catch {
+          case e: Exception =>
+            println(s"Failed to send SMS notification: ${e.getMessage}")
+        }
+      }
 
-      if (emailResponse.statusCode == 200 || smsResponse.statusCode == 200) {
-        println("Sent notification via API")
+      val success = Seq(emailResponse, smsResponse).flatten.exists(_.statusCode == 200)
+
+      if (success) {
+        println("----> Pushed notification via API")
       } else {
         throw new Exception(
           s"""Failed to send notification:
-             |Email status: ${emailResponse.statusCode}, message: ${emailResponse.text}
-             |SMS status: ${smsResponse.statusCode}, message: ${smsResponse.text}
-           """.stripMargin
+             |Email status: ${emailResponse.map(_.statusCode).getOrElse("N/A")}, message: ${emailResponse.map(_.text).getOrElse("N/A")}
+             |SMS status: ${smsResponse.map(_.statusCode).getOrElse("N/A")}, message: ${smsResponse.map(_.text).getOrElse("N/A")}
+     """.stripMargin
         )
       }
     }

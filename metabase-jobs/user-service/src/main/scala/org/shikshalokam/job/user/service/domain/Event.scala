@@ -18,9 +18,9 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def organizations: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("organizations", List.empty)
 
-  def state: String = readOrDefault("state.label", null)
+  def state: String = readOrDefault("state.name", null)
 
-  def district: String = readOrDefault("district.label", null)
+  def district: String = readOrDefault("district.name", null)
 
   def status: String = readOrDefault[String]("status", null)
 
