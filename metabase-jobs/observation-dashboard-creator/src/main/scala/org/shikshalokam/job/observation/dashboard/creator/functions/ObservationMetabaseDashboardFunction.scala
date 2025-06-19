@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory
 import scala.collection.immutable._
 
 
-
 class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardConfig)(implicit val mapTypeInfo: TypeInformation[Event], @transient var postgresUtil: PostgresUtil = null, @transient var metabaseUtil: MetabaseUtil = null)
   extends BaseProcessFunction[Event, Event](config) {
 
@@ -72,9 +71,31 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
       case _ => ""
     }
 
+    val orgNameQuery = s"""SELECT org_name from "$ObservationDomainTable" where solution_id = '$targetedSolutionId' group by org_name limit 1"""
+    println(s"orgNameQuery: $orgNameQuery")
+    val orgName = postgresUtil.fetchData(orgNameQuery) match {
+      case List(map: Map[_, _]) => map.get("org_name").map(_.toString).getOrElse("")
+      case _ => ""
+    }
+
     val programDescriptionQuery = s"SELECT program_description from $solutionTable where solution_id = '$targetedSolutionId'"
     val programDescription = postgresUtil.fetchData(programDescriptionQuery) match {
       case List(map: Map[_, _]) => map.get("program_description").map(_.toString).getOrElse("")
+      case _ => ""
+    }
+
+    val externalIdQuery = s"SELECT external_id from $solutionTable where solution_id = '$targetedSolutionId'"
+    val externalId = postgresUtil.fetchData(externalIdQuery) match {
+      case List(map: Map[_, _]) => map.get("external_id").map(_.toString).getOrElse("")
+      case _ => ""
+    }
+
+    val programDescriptionAdd = programDescription + "\n" + s"[ExternalId : $externalId]" + "\n" + s"[ProgramId : $targetedProgramId]"
+    println(s"programDescriptionAdd: $programDescriptionAdd")
+
+    val solutionDescriptionQuery = s"SELECT description from $solutionTable where solution_id = '$targetedSolutionId'"
+    val solutionDescription = postgresUtil.fetchData(solutionDescriptionQuery) match {
+      case List(map: Map[_, _]) => map.get("description").map(_.toString).getOrElse("")
       case _ => ""
     }
 
@@ -121,63 +142,47 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
           println(s"===========================================================================================================================================")
           println(s"****************************************** Started Processing Metabase Admin Dashboard For Observation ************************************")
           println(s"===========================================================================================================================================")
-
-          val adminCollectionCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Admin"}]'::jsonb THEN 'Yes' ELSE 'No' END AS result FROM $metaDataTable WHERE entity_id = '1';"""
+          val adminCollectionCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Program"}]'::jsonb THEN 'Yes' ELSE 'No' END AS result FROM $metaDataTable WHERE entity_id = '1';"""
           val adminCollectionPresent = postgresUtil.fetchData(adminCollectionCheckQuery).collectFirst { case map: Map[_, _] => map.get("result").map(_.toString).getOrElse("") }.getOrElse("")
-          val adminCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Admin' AND entity_id = '1';"
+          val adminCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Program' AND entity_id = '1';"
           val adminCollectionId = postgresUtil.executeQuery[Int](adminCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
           println("=====> checking Admin collection presence ......")
           if (adminCollectionPresent == "Yes") {
             println("=====> Admin collection is present, checking Program collection presence ......")
-            val programCollectionCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"Program"}]'::jsonb THEN 'Yes' ELSE 'No' END AS result FROM $metaDataTable WHERE entity_id = '1';"""
+            val programCollectionName = s"$programName [org : $orgName]"
+            val programCollectionCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"$programCollectionName"}]'::jsonb THEN 'Yes' ELSE 'No' END AS result FROM $metaDataTable WHERE entity_id = '1';"""
             val programCollectionPresent = postgresUtil.fetchData(programCollectionCheckQuery).collectFirst { case map: Map[_, _] => map.get("result").map(_.toString).getOrElse("") }.getOrElse("")
-            val programCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = 'Program' AND entity_id = '1';"
+            val programCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = '$programCollectionName' AND entity_id = '1';"
             val programCollectionId = postgresUtil.executeQuery[Int](programCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
             if (programCollectionPresent == "Yes") {
-              println(s"=====> Admin and Program collection present, checking main program collection presence for $programName [$targetedProgramId] ......")
-              val exactProgramCollectionName = s"$programName [$targetedProgramId]"
-              val exactProgramCollectionCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"$programName [$targetedProgramId]"}]'::jsonb THEN 'Yes' ELSE 'No' END AS result FROM $metaDataTable WHERE entity_id = '1';"""
-              val exactProgramCollectionPresent = postgresUtil.fetchData(exactProgramCollectionCheckQuery).collectFirst { case map: Map[_, _] => map.get("result").map(_.toString).getOrElse("") }.getOrElse("")
-              val exactProgramCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = '$programName [$targetedProgramId]' AND entity_id = '1';"
-              val exactProgramCollectionId = postgresUtil.executeQuery[Int](exactProgramCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
-              if (exactProgramCollectionPresent == "Yes") {
-                createAdminDashboards(exactProgramCollectionId, exactProgramCollectionName, "Admin")
+              println(s"=====> Admin and Program collection present, checking solution collection presence for $solutionName ......")
+              val solutionCollectionCheckQuery: String = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"$solutionName"}]'::jsonb THEN 'Yes' ELSE 'No' END AS result FROM $metaDataTable WHERE entity_id = '$targetedSolutionId';"""
+              val solutionCollectionPresent = postgresUtil.fetchData(solutionCollectionCheckQuery).collectFirst { case map: Map[_, _] => map.get("result").map(_.toString).getOrElse("") }.getOrElse("")
+              val solutionCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = '$solutionName' AND entity_id = '$targetedSolutionId';"
+              val solutionCollectionId = postgresUtil.executeQuery[Int](solutionCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
+              if (solutionCollectionPresent == "Yes") {
+                println(s"=====> Solution collection is present, checking if Dashboard is already present for $solutionName ......")
+                createAdminDashboards(solutionCollectionId, s"$solutionName", "Admin")
               } else {
-                println(s"=====> Only Admin and Program collection is present creating [$programName] Program Collection then Solution collection & dashboard")
-                val exactProgramCollectionName = s"$programName [$targetedProgramId]"
-                val exactProgramCollectionId = createProgramCollectionInsideProgram(programCollectionId, programDescription, exactProgramCollectionName)
-                if (exactProgramCollectionId != -1) {
-                  createAdminDashboards(exactProgramCollectionId, exactProgramCollectionName, "Admin")
-                }
+                println(s"=====> Solution collection is not present creating Solution collection & dashboard for $solutionName")
+                val solutionCollectionId: Int = createSolutionCollectionInsideProgram(programCollectionId, s"$solutionName", solutionDescription)
+                createAdminDashboards(solutionCollectionId, s"$solutionName", "Admin")
               }
             } else {
-              println("=====> Only Admin collection is present creating Program Collection then Solution collection & dashboard")
-              val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId)
-              if (programCollectionId != -1) {
-                val exactProgramCollectionName = s"$programName [$targetedProgramId]"
-                val exactProgramCollectionId = createProgramCollectionInsideProgram(programCollectionId, programDescription, exactProgramCollectionName)
-                if (exactProgramCollectionId != -1) {
-                  createAdminDashboards(exactProgramCollectionId, exactProgramCollectionName, "Admin")
-                }
-              }
+              println(s"=====> Only Admin and Program collection is present creating [$programName] Program Collection then Solution collection & dashboard")
+              val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, programDescriptionAdd, programCollectionName)
+              val solutionCollectionId: Int = createSolutionCollectionInsideProgram(programCollectionId, s"$solutionName", solutionDescription)
+              createAdminDashboards(solutionCollectionId, s"$solutionName", "Admin")
             }
           } else {
             println("=====> Admin collection is not present creating Admin, Observation Collection then Solution collection & dashboard")
             val adminCollectionId = createAdminCollection
-            if (adminCollectionId != -1) {
-              val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId)
-              if (programCollectionId != -1) {
-                val exactProgramCollectionName = s"$programName [$targetedProgramId]"
-                val exactProgramCollectionId = createProgramCollectionInsideProgram(programCollectionId, programDescription, exactProgramCollectionName)
-                if (exactProgramCollectionId != -1) {
-                  createAdminDashboards(exactProgramCollectionId, exactProgramCollectionName, "Admin")
-                }
-              }
-            }
+            val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, programDescriptionAdd, s"$programName [org : $orgName]")
+            val solutionCollectionId = createSolutionCollectionInsideProgram(programCollectionId, s"$solutionName", solutionDescription)
+            createAdminDashboards(solutionCollectionId, s"$solutionName", "Admin")
           }
-        } else {
-          println(s"=====> Solution name is null, skipping the processing")
         }
+
 
         def createAdminDashboards(exactProgramCollectionId: Int, exactProgramCollectionName: String, category: String): Unit = {
           if (isRubric == "true") {
@@ -244,9 +249,9 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
         }
 
         def createAdminCollection: Int = {
-          val (adminCollectionName, adminCollectionDescription) = ("Admin", "Admin Collection which contains all the sub-collections and questions")
+          val (adminCollectionName, adminCollectionDescription) = ("Program", "Program Collection which contains all the sub-collections and questions")
           val groupName: String = s"Report_Admin"
-          val adminCollectionId: Int = Utils.checkAndCreateCollection(adminCollectionName, adminCollectionDescription, metabaseUtil)
+          val adminCollectionId: Int = Utils.createCollection(adminCollectionName, adminCollectionDescription, metabaseUtil)
           if (adminCollectionId != -1) {
             val adminMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", adminCollectionId).put("collectionName", adminCollectionName))
             postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$adminMetadataJson' ::jsonb WHERE entity_id = '1';")
@@ -272,19 +277,19 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
           }
         }
 
-        def createProgramCollectionInsideAdmin(adminCollectionId: Int): Int = {
-          val (programCollectionName, programCollectionDescription) = ("Program", "This collection contains sub-collection, questions and dashboards required for Observation")
-          val programCollectionId = Utils.createCollection(programCollectionName, programCollectionDescription, metabaseUtil, Some(adminCollectionId))
-          val programMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", programCollectionId).put("collectionName", programCollectionName))
-          postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$programMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '1';")
-          programCollectionId
+        def createSolutionCollectionInsideProgram(programCollectionId: Int, solutionName: String, solutionCollectionDescription: String): Int = {
+          val solutionCollectionName = s"$solutionName"
+          val solutionCollectionId = Utils.createCollection(solutionCollectionName, solutionCollectionDescription, metabaseUtil, Some(programCollectionId))
+          val solutionMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", solutionCollectionId).put("collectionName", solutionCollectionName))
+          postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$solutionMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '1';")
+          solutionCollectionId
         }
 
-        def createProgramCollectionInsideProgram(programCollectionId: Int, exactProgramCollectionDescription: String, exactProgramCollectionName: String): Int = {
-          val exactProgramCollectionId = Utils.createCollection(exactProgramCollectionName, exactProgramCollectionDescription, metabaseUtil, Some(programCollectionId))
-          val exactProgramMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", exactProgramCollectionId).put("collectionName", exactProgramCollectionName))
-          postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$exactProgramMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '1';")
-          exactProgramCollectionId
+        def createProgramCollectionInsideAdmin(adminCollectionId: Int, ProgramCollectionDescription: String, ProgramCollectionName: String): Int = {
+          val ProgramCollectionId = Utils.createCollection(ProgramCollectionName, ProgramCollectionDescription, metabaseUtil, Some(adminCollectionId))
+          val ProgramMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", ProgramCollectionId).put("collectionName", ProgramCollectionName))
+          postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$ProgramMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '1';")
+          ProgramCollectionId
         }
 
         /**
@@ -294,7 +299,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
           println(s"===========================================================================================================================================")
           println("********************************************** Start Observation Program Dashboard Processing **********************************************")
           println(s"===========================================================================================================================================")
-          val programCollectionName = s"$programName [$targetedProgramId]"
+          val programCollectionName = s"$programName [org : $orgName]"
           val programCollectionCheckQuery = s"""SELECT CASE WHEN main_metadata::jsonb @> '[{"collectionName":"$programCollectionName"}]'::jsonb THEN 'Yes' ELSE 'No' END AS result FROM $metaDataTable WHERE entity_id = '$targetedProgramId'"""
           val programCollectionPresent = postgresUtil.fetchData(programCollectionCheckQuery).collectFirst { case map: Map[_, _] => map.get("result").map(_.toString).getOrElse("") }.getOrElse("")
           val programCollectionIdQuery = s"SELECT jsonb_extract_path(element, 'collectionId') AS collection_id FROM $metaDataTable, LATERAL jsonb_array_elements(main_metadata::jsonb) AS element WHERE element ->> 'collectionName' = '$programCollectionName' AND entity_id = '$targetedProgramId';"
@@ -304,8 +309,8 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
             createProgramDashboards(programCollectionId, programCollectionName, "Program")
           } else {
             println("=====> Program collection is not present creating Program, Observation Collection then Solution collection & dashboard")
-            val programCollectionName = s"$programName [$targetedProgramId]"
-            val programCollectionId = createProgramCollection(programCollectionName, programDescription)
+            val programCollectionName = s"$programName [org : $orgName]"
+            val programCollectionId = createProgramCollection(programCollectionName, programDescriptionAdd)
             if (programCollectionId != -1) {
               createProgramDashboards(programCollectionId, programCollectionName, "Program")
             } else {
@@ -324,7 +329,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
    */
   def createObservationQuestionDashboard(parentCollectionId: Int, collectionName: String, metaDataTable: String, reportConfig: String, metabaseDatabase: String, solutionName: String, targetedProgramId: String, targetedSolutionId: String, observationQuestionTable: String, observationDomainTable: String, category: String): Int = {
     try {
-      val dashboardName: String = s"Domain And Question Report [$solutionName - $targetedSolutionId]"
+      val dashboardName: String = s"Domain And Question Report"
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
       if (parentCollectionId != -1) {
         val dashboardId: Int = Utils.createDashboard(parentCollectionId, dashboardName, metabaseUtil, postgresUtil)
@@ -367,7 +372,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
 
   def createObservationWithoutRubricQuestionDashboard(parentCollectionId: Int, collectionName: String, metaDataTable: String, reportConfig: String, metabaseDatabase: String, solutionName: String, targetedProgramId: String, targetedSolutionId: String, observationQuestionTable: String, category: String): Int = {
     try {
-      val dashboardName: String = s"Question Report [$solutionName - $targetedSolutionId]"
+      val dashboardName: String = s"Question Report"
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
       if (parentCollectionId != -1) {
         val dashboardId: Int = Utils.createDashboard(parentCollectionId, dashboardName, metabaseUtil, postgresUtil)
@@ -404,10 +409,9 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
     }
   }
 
-
   def createObservationStatusDashboard(parentCollectionId: Int, metaDataTable: String, reportConfig: String, metabaseDatabase: String, solutionName: String, targetedProgramId: String, targetedSolutionId: String, observationStatusTable: String, category: String): Unit = {
     try {
-      val dashboardName: String = s"Status Report [$solutionName - $targetedSolutionId]"
+      val dashboardName: String = s"Status Report"
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
       val dashboardId: Int = Utils.createDashboard(parentCollectionId, dashboardName, metabaseUtil, postgresUtil)
       val databaseId: Int = Utils.getDatabaseId(metabaseDatabase, metabaseUtil)
@@ -440,7 +444,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
 
   def createObservationDomainDashboard(parentCollectionId: Int, metaDataTable: String, reportConfig: String, metabaseDatabase: String, solutionName: String, targetedProgramId: String, targetedSolutionId: String, observationDomainTable: String, category: String): Unit = {
     try {
-      val dashboardName: String = s"Domain Report [$solutionName - $targetedSolutionId]"
+      val dashboardName: String = s"Domain Report"
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
       val dashboardId: Int = Utils.createDashboard(parentCollectionId, dashboardName, metabaseUtil, postgresUtil)
       val databaseId: Int = Utils.getDatabaseId(metabaseDatabase, metabaseUtil)
