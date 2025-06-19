@@ -39,7 +39,7 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
   }
 
   override def processElement(event: Event, context: ProcessFunction[Event, Event]#Context, metrics: Metrics): Unit = {
-    if (event.projectStatus == "started" || event.projectStatus == "inprogress" || event.projectStatus == "submitted" || event.projectStatus == "completed") {
+    if (event.projectStatus.toLowerCase() == "started" || event.projectStatus.toLowerCase() == "inprogress" || event.projectStatus.toLowerCase() == "submitted" || event.projectStatus.toLowerCase() == "completed") {
       println(s"***************** Start of Processing the Project Event with Id = ${event._id} *****************")
 
       //TODO: TO be removed later

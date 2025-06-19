@@ -39,7 +39,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
   }
 
   override def processElement(event: Event, context: ProcessFunction[Event, Event]#Context, metrics: Metrics): Unit = {
-    if (event.status == "started" || event.status == "inprogress" || event.status == "submitted" || event.status == "completed") {
+    if (event.status.toLowerCase() == "started" || event.status.toLowerCase() == "inprogress" || event.status.toLowerCase() == "submitted" || event.status.toLowerCase() == "completed") {
       println(s"***************** Start of Processing the Observation Event with Id = ${event._id} *****************")
       var userRoleIds: String = ""
       var userRoles: String = ""
