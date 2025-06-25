@@ -1,6 +1,11 @@
 package org.shikshalokam.job.observation.dashboard.creator.functions
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
+
+import scala.collection.immutable.ListMap
+import scala.collection.JavaConverters._
+import java.io.File
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
@@ -48,6 +53,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
     val targetedProgramId = event.targetedProgram
     val targetedSolutionId = event.targetedSolution
     val isRubric = event.isRubric
+    val entityType = event.entityType
     val metaDataTable = config.dashboard_metadata
     val reportConfig: String = config.report_config
     val metabaseDatabase: String = config.metabaseDatabase
@@ -66,6 +72,8 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
       case List(map: Map[_, _]) => map.get("entity_name").map(_.toString).getOrElse("")
       case _ => ""
     }
+
+    println(s"entityType: $entityType")
     println(s"domainTable: $ObservationDomainTable")
     println(s"questionTable: $ObservationQuestionTable")
     println(s"isRubric: ${event.isRubric}")
@@ -95,13 +103,13 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
               println("=====> Admin and Observation collection present creating Solution collection & dashboard")
               val solutionCollectionName: String = s"$solutionName [Admin]"
               val parentCollectionId: Int = if (isRubric == "true") {
-                createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable)
+                createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable, entityType)
               } else {
-                createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, entityType)
               }
-              createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable)
+              createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable, entityType)
               if (isRubric == "true") {
-                createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable)
+                createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable, entityType)
               }
             } else {
               println("=====> Only Admin collection is present creating Observation Collection then Solution collection & dashboard")
@@ -109,13 +117,13 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
               if (observationCollectionId != -1) {
                 val solutionCollectionName: String = s"$solutionName [Admin]"
                 val parentCollectionId: Int = if (isRubric == "true") {
-                  createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable)
+                  createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable, entityType)
                 } else {
-                  createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                  createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, entityType)
                 }
-                createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable)
+                createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable, entityType)
                 if (isRubric == "true") {
-                  createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable)
+                  createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable, entityType)
                 }
               }
             }
@@ -127,13 +135,13 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
               if (observationCollectionId != -1) {
                 val solutionCollectionName: String = s"$solutionName [Admin]"
                 val parentCollectionId: Int = if (isRubric == "true") {
-                  createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable)
+                  createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable, entityType)
                 } else {
-                  createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                  createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, entityType)
                 }
-                createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable)
+                createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable, entityType)
                 if (isRubric == "true") {
-                  createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable)
+                  createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable, entityType)
                 }
               }
             }
@@ -141,7 +149,6 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
         } else {
           println(s"=====> Solution name is null, skipping the processing")
         }
-
 
         def createAdminCollection: Int = {
           val (adminCollectionName, adminCollectionDescription) = ("Admin Collection", "Admin Collection which contains all the sub-collections and questions")
@@ -209,13 +216,13 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
               println("=====> Program and Observation collection present creating Solution collection & dashboard")
               val solutionCollectionName: String = s"$solutionName [Program]"
               val parentCollectionId: Int = if (isRubric == "true") {
-                createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable)
+                createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable, entityType)
               } else {
-                createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, entityType)
               }
-              createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable)
+              createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable, entityType)
               if (isRubric == "true") {
-                createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable)
+                createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable, entityType)
               }
             } else {
               println("=====> Only Program collection is present creating Observation Collection then Solution collection & dashboard")
@@ -223,13 +230,13 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
               if (observationCollectionId != -1) {
                 val solutionCollectionName: String = s"$solutionName [Program]"
                 val parentCollectionId: Int = if (isRubric == "true") {
-                  createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable)
+                  createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable, entityType)
                 } else {
-                  createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                  createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, entityType)
                 }
-                createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable)
+                createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable, entityType)
                 if (isRubric == "true") {
-                  createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable)
+                  createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable, entityType)
                 }
               }
             }
@@ -241,13 +248,13 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
               if (observationCollectionId != -1) {
                 val solutionCollectionName: String = s"$solutionName [Program]"
                 val parentCollectionId: Int = if (isRubric == "true") {
-                  createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable)
+                  createObservationQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, ObservationDomainTable, entityType)
                 } else {
-                  createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable)
+                  createObservationWithoutRubricQuestionDashboard(observationCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationQuestionTable, entityType)
                 }
-                createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable)
+                createObservationStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationStatusTable, entityType)
                 if (isRubric == "true") {
-                  createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable)
+                  createObservationDomainDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, ObservationDomainTable, entityType)
                 }
               }
             }
@@ -262,7 +269,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
   /**
    * Logic for Observation Question Dashboard
    */
-  def createObservationQuestionDashboard(parentCollectionId: Int, collectionName: String, metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, observationQuestionTable: String, observationDomainTable: String): Int = {
+  def createObservationQuestionDashboard(parentCollectionId: Int, collectionName: String, metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, observationQuestionTable: String, observationDomainTable: String, entityType: String): Int = {
     try {
       val dashboardName: String = s"Observation Question Report"
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
@@ -272,20 +279,18 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
         val databaseId: Int = Utils.getDatabaseId(metabaseDatabase, metabaseUtil)
         if (databaseId != -1) {
           metabaseUtil.syncDatabaseAndRescanValues(databaseId)
-          val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "state_name", postgresUtil, createDashboardQuery)
-          val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "district_name", postgresUtil, createDashboardQuery)
-          val clusterId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "cluster_name", postgresUtil, createDashboardQuery)
-          val schoolnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "school_name", postgresUtil, createDashboardQuery)
-          val domainId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "domain_name", postgresUtil, createDashboardQuery)
-          val criteriaId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "criteria_name", postgresUtil, createDashboardQuery)
+          val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Observation' AND question_type = 'Observation-Question-Parameter'"
+          val (params, diffLevelDict) =
+            extractParameterDicts(parametersQuery, entityType, databaseId, metabaseUtil, observationQuestionTable, postgresUtil, createDashboardQuery)
+          val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "parent_one_name", postgresUtil, createDashboardQuery)
+          val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "parent_two_name", postgresUtil, createDashboardQuery)
           metabaseUtil.updateColumnCategory(statenameId, "State")
           metabaseUtil.updateColumnCategory(districtnameId, "City")
           val domainReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Observation-Question-Domain';"
-          UpdateQuestionDomainJsonFiles.ProcessAndUpdateJsonFiles(domainReportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolnameId, clusterId, domainId, criteriaId, observationDomainTable, observationQuestionTable, metabaseUtil, postgresUtil)
-          val questionCardIdList = UpdateQuestionJsonFiles.ProcessAndUpdateJsonFiles(collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolnameId, clusterId, domainId, criteriaId, observationQuestionTable, metabaseUtil, postgresUtil, reportConfig)
+          UpdateQuestionDomainJsonFiles.ProcessAndUpdateJsonFiles(domainReportConfigQuery, collectionId, databaseId, dashboardId, observationDomainTable, observationQuestionTable, metabaseUtil, postgresUtil, params, diffLevelDict)
+          val questionCardIdList = UpdateQuestionJsonFiles.ProcessAndUpdateJsonFiles(collectionId, databaseId, dashboardId, observationQuestionTable, metabaseUtil, postgresUtil, reportConfig, params, diffLevelDict)
           val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
-          val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Observation' AND question_type = 'Observation-Question-Parameter'"
-          UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil)
+          UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil, diffLevelDict)
           val observationMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", collectionId).put("collectionName", collectionName).put("dashboardId", dashboardId).put("dashboardName", dashboardName).put("questionIds", questionIdsString))
           postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$observationMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$targetedSolutionId';")
           collectionId
@@ -307,8 +312,9 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
     }
   }
 
-  def createObservationWithoutRubricQuestionDashboard(parentCollectionId: Int, collectionName: String, metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, observationQuestionTable: String): Int = {
+  def createObservationWithoutRubricQuestionDashboard(parentCollectionId: Int, collectionName: String, metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, observationQuestionTable: String, entityType: String): Int = {
     try {
+      println(s"==========> started creating Observation Question Dashboard without Rubric")
       val dashboardName: String = s"Observation Question Report"
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
       val collectionId: Int = Utils.checkAndCreateCollection(collectionName, s"Solution Collection which contains all the dashboards and questions", metabaseUtil, Some(parentCollectionId))
@@ -317,16 +323,16 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
         val databaseId: Int = Utils.getDatabaseId(metabaseDatabase, metabaseUtil)
         if (databaseId != -1) {
           metabaseUtil.syncDatabaseAndRescanValues(databaseId)
-          val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "state_name", postgresUtil, createDashboardQuery)
-          val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "district_name", postgresUtil, createDashboardQuery)
-          val clusterId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "cluster_name", postgresUtil, createDashboardQuery)
-          val schoolnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "school_name", postgresUtil, createDashboardQuery)
+          val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Observation' AND question_type = 'Observation-Question-Without-Rubric-Parameter'"
+          val (params, diffLevelDict) =
+            extractParameterDicts(parametersQuery, entityType, databaseId, metabaseUtil, observationQuestionTable, postgresUtil, createDashboardQuery)
+          val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "parent_one_name", postgresUtil, createDashboardQuery)
+          val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "parent_two_name", postgresUtil, createDashboardQuery)
           metabaseUtil.updateColumnCategory(statenameId, "State")
           metabaseUtil.updateColumnCategory(districtnameId, "City")
-          val questionCardIdList = UpdateWithoutRubricQuestionJsonFiles.ProcessAndUpdateJsonFiles(collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolnameId, clusterId, observationQuestionTable, metabaseUtil, postgresUtil, reportConfig)
+          val questionCardIdList = UpdateWithoutRubricQuestionJsonFiles.ProcessAndUpdateJsonFiles(collectionId, databaseId, dashboardId, observationQuestionTable, metabaseUtil, postgresUtil, reportConfig, params, diffLevelDict)
           val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
-          val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Observation' AND question_type = 'Observation-Question-Without-Rubric-Parameter'"
-          UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil)
+          UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil, diffLevelDict)
           val observationMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", collectionId).put("collectionName", collectionName).put("dashboardId", dashboardId).put("dashboardName", dashboardName).put("questionIds", questionIdsString))
           postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$observationMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$targetedSolutionId';")
           collectionId
@@ -349,27 +355,29 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
   }
 
 
-  def createObservationStatusDashboard(parentCollectionId: Int, metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, observationStatusTable: String): Unit = {
+  def createObservationStatusDashboard(parentCollectionId: Int, metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, observationStatusTable: String, entityType: String): Unit = {
     try {
+      println(s"======> started creating Observation Status Dashboard")
       val dashboardName: String = s"Observation Status Report"
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
       val dashboardId: Int = Utils.createDashboard(parentCollectionId, dashboardName, metabaseUtil, postgresUtil)
       val databaseId: Int = Utils.getDatabaseId(metabaseDatabase, metabaseUtil)
       if (databaseId != -1) {
         metabaseUtil.syncDatabaseAndRescanValues(databaseId)
-        val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationStatusTable, "state_name", postgresUtil, createDashboardQuery)
-        val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationStatusTable, "district_name", postgresUtil, createDashboardQuery)
+        val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Observation' AND question_type = 'Observation-Status-Parameter'"
+        val (params, diffLevelDict) =
+          extractParameterDicts(parametersQuery, entityType, databaseId, metabaseUtil, observationStatusTable, postgresUtil, createDashboardQuery)
+        val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationStatusTable, "parent_one_name", postgresUtil, createDashboardQuery)
+        val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationStatusTable, "parent_two_name", postgresUtil, createDashboardQuery)
         metabaseUtil.updateColumnCategory(statenameId, "State")
         metabaseUtil.updateColumnCategory(districtnameId, "City")
-        val schoolnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationStatusTable, "school_name", postgresUtil, createDashboardQuery)
-        val clusterId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationStatusTable, "cluster_name", postgresUtil, createDashboardQuery)
-        val blockId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationStatusTable, "block_name", postgresUtil, createDashboardQuery)
-        val orgId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationStatusTable, "org_name", postgresUtil, createDashboardQuery)
         val reportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Observation-Status' AND report_name = 'Status-Report';"
-        val questionCardIdList = UpdateStatusJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, statenameId, districtnameId, schoolnameId, clusterId, blockId, orgId, observationStatusTable, metabaseUtil, postgresUtil, reportConfig)
+        val replacements: Map[String, String] = Map(
+          "${statusTable}" -> s""""$observationStatusTable""""
+        )
+        val questionCardIdList = UpdateStatusJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, metabaseUtil, postgresUtil, params, replacements, diffLevelDict)
         val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
-        val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Observation' AND question_type = 'Observation-Status-Parameter'"
-        UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil)
+        UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil, diffLevelDict)
         val observationMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", parentCollectionId).put("dashboardId", dashboardId).put("dashboardName", dashboardName).put("questionIds", questionIdsString))
         postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$observationMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$targetedSolutionId';")
       }
@@ -382,27 +390,30 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
     }
   }
 
-  def createObservationDomainDashboard(parentCollectionId: Int, metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, observationDomainTable: String): Unit = {
+
+  def createObservationDomainDashboard(parentCollectionId: Int, metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, observationDomainTable: String, entityType: String): Unit = {
     try {
+      println(s"======> started creating Observation Domain Dashboard")
       val dashboardName: String = s"Observation Domain Report"
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
       val dashboardId: Int = Utils.createDashboard(parentCollectionId, dashboardName, metabaseUtil, postgresUtil)
       val databaseId: Int = Utils.getDatabaseId(metabaseDatabase, metabaseUtil)
       if (databaseId != -1) {
         metabaseUtil.syncDatabaseAndRescanValues(databaseId)
-        val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationDomainTable, "state_name", postgresUtil, createDashboardQuery)
-        val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationDomainTable, "district_name", postgresUtil, createDashboardQuery)
+        val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Observation' AND question_type = 'Observation-Domain-Parameter'"
+        val (params, diffLevelDict) =
+          extractParameterDicts(parametersQuery, entityType, databaseId, metabaseUtil, observationDomainTable, postgresUtil, createDashboardQuery)
+        val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationDomainTable, "parent_one_name", postgresUtil, createDashboardQuery)
+        val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationDomainTable, "parent_two_name", postgresUtil, createDashboardQuery)
         metabaseUtil.updateColumnCategory(statenameId, "State")
         metabaseUtil.updateColumnCategory(districtnameId, "City")
-        val schoolnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationDomainTable, "school_name", postgresUtil, createDashboardQuery)
-        val clusterId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationDomainTable, "cluster_name", postgresUtil, createDashboardQuery)
-        val domainId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationDomainTable, "domain", postgresUtil, createDashboardQuery)
-        val criteriaId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationDomainTable, "criteria", postgresUtil, createDashboardQuery)
         val reportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Observation-Domain' AND report_name = 'Domain-Report';"
-        val questionCardIdList = UpdateDomainJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, statenameId, districtnameId, schoolnameId, clusterId, domainId, criteriaId, observationDomainTable, metabaseUtil, postgresUtil, reportConfig)
+        val replacements: Map[String, String] = Map(
+          "${domainTable}" -> s""""$observationDomainTable""""
+        )
+        val questionCardIdList = UpdateStatusJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, metabaseUtil, postgresUtil, params, replacements, diffLevelDict)
         val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
-        val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Observation' AND question_type = 'Observation-Domain-Parameter'"
-        UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil)
+        UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil, diffLevelDict)
         val observationMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", parentCollectionId).put("dashboardId", dashboardId).put("dashboardName", dashboardName).put("questionIds", questionIdsString))
         postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$observationMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$targetedSolutionId';")
       }
@@ -413,6 +424,38 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
         println(s"An error occurred: ${e.getMessage}")
         e.printStackTrace()
     }
+  }
+
+  def extractParameterDicts(parametersQuery: String, entityType: String, databaseId: Int, metabaseUtil: MetabaseUtil, tableName: String, postgresUtil: PostgresUtil, createDashboardQuery: String): (Map[String, Int], ListMap[String, String]) = {
+    val DashboardParameter = postgresUtil.fetchData(parametersQuery) match {
+      case List(map: Map[_, _]) => map.get("config").map(_.toString).getOrElse("")
+      case _ => ""
+    }
+    val mapper = new ObjectMapper()
+    val arrayNode = mapper.readTree(DashboardParameter)
+    val lastEntity: String = arrayNode.elements().asScala
+      .find(node => Option(node.get("entity_type")).exists(_.asText() == entityType))
+      .flatMap(node => Option(node.get("param")).map(_.asText()))
+      .getOrElse("")
+    val levelDict: ListMap[String, String] = ListMap(
+      arrayNode.elements().asScala
+        .map(node => node.get("param").asText() -> node.get("columnName").asText())
+        .toSeq: _*
+    )
+    def getLevelDictFrom(levelDict: ListMap[String, String], lastEntity: String): ListMap[String, String] = {
+      val keys = levelDict.keys.toList
+      val idx = keys.indexOf(lastEntity)
+      if (idx == -1) levelDict
+      else ListMap(keys.drop(idx).map(k => k -> levelDict(k)): _*)
+    }
+    val newLevelDict = getLevelDictFrom(levelDict, lastEntity)
+    val params: Map[String, Int] = newLevelDict.map { case (key, columnName) =>
+      key -> GetTableData.getTableMetadataId(databaseId, metabaseUtil, tableName, columnName, postgresUtil, createDashboardQuery)
+    }
+    val diffLevelDict: ListMap[String, String] =
+      if (newLevelDict.isEmpty) ListMap.empty
+      else levelDict.filterNot { case (k, v) => newLevelDict.contains(k) && newLevelDict(k) == v }
+    (params, diffLevelDict)
   }
 
   println(s"***************** End of Processing the Metabase Observation Dashboard *****************\n")

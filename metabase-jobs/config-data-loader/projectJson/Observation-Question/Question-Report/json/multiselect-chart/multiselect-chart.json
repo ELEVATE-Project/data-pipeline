@@ -162,19 +162,6 @@
         ],
         "name": "Criteria Param",
         "slug": "criteria_param"
-      },
-      {
-        "id": "5da8fb12-910e-4763-a44a-8c1f976b22af",
-        "type": "string/=",
-        "target": [
-          "dimension",
-          [
-            "template-tag",
-            "cluster_param"
-          ]
-        ],
-        "name": "Cluster Param",
-        "slug": "cluster_param"
       }
     ]
   },
@@ -235,17 +222,6 @@
           [
             "template-tag",
             "criteria_param"
-          ]
-        ]
-      },
-      {
-        "parameter_id": "cc7a4cd7",
-        "card_id": 1876,
-        "target": [
-          "dimension",
-          [
-            "template-tag",
-            "cluster_param"
           ]
         ]
       }

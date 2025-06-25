@@ -5,35 +5,37 @@ import com.fasterxml.jackson.databind.node.{ArrayNode, JsonNodeFactory, ObjectNo
 import org.postgresql.util.PGobject
 import org.shikshalokam.job.util.JSONUtil.mapper
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
-
+import scala.collection.JavaConverters._
+import scala.collection.immutable.ListMap
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
 object UpdateWithoutRubricQuestionJsonFiles {
-  def ProcessAndUpdateJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, question: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, report_config: String): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, question: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, report_config: String, params: Map[String, Int], newLevelDict: ListMap[String, String]): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
     val csvConfigQuery = s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question-Without-Rubric' AND question_type = 'table';"
 
-    def processCsvJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, questionTable: String, newRow : Int, newCol: Int): Unit = {
+    def processCsvJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, questionTable: String, newRow : Int, newCol: Int, params: Map[String, Int], newLevelDict: ListMap[String, String]): Unit = {
       val queryResult = postgresUtil.fetchData(csvConfigQuery)
       queryResult.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
           row.get("config") match {
             case Some(queryValue: PGobject) =>
               val configJson = objectMapper.readTree(queryValue.getValue)
-              if (configJson != null) {
-                val originalQuestionCard = configJson.path("questionCard")
+              val cleanedJson: JsonNode = objectMapper.readTree(cleanDashboardJson(configJson.toString, newLevelDict))
+              if (cleanedJson != null) {
+                val originalQuestionCard = cleanedJson.path("questionCard")
                 val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
-                val updatedQuestionCard = updateQuestionCardJsonValues(configJson, collectionId, statenameId, districtnameId, schoolId, clusterId, databaseId)
+                val updatedQuestionCard = updateQuestionCardJsonValues(cleanedJson, collectionId, databaseId, params)
                 val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, questionTable, null)
                 val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
                 println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
                 questionCardId.append(cardId)
-                val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(configJson, cardId, newRow , newCol )
+                val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(cleanedJson, cardId, newRow , newCol )
                 AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedQuestionIdInDashCard, dashboardId)
               }
             case None =>
@@ -54,7 +56,7 @@ object UpdateWithoutRubricQuestionJsonFiles {
       }
     }
 
-    def processJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, question: String, report_config: String): Unit = {
+    def processJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, question: String, report_config: String): Unit = {
       val queries = Map(
         "nonMatrix" -> s"""SELECT distinct(question_id),question_text,question_type FROM "$question" WHERE has_parent_question = 'false'""",
         "matrix" -> s"""SELECT distinct(question_id),question_type,question_text, parent_question_text FROM "$question" WHERE has_parent_question = 'true'""",
@@ -109,7 +111,7 @@ object UpdateWithoutRubricQuestionJsonFiles {
             case Some(queryValue: PGobject) =>
               val configJson = objectMapper.readTree(queryValue.getValue)
               Option(configJson).foreach { json =>
-                val updatedQuestionCard = updateQuestionCardJsonValues(json, collectionId, statenameId, districtnameId, schoolId, clusterId, databaseId)
+                val updatedQuestionCard = updateQuestionCardJsonValues(json, collectionId, databaseId, params)
                 val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, question, questionId)
                 val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
@@ -154,9 +156,75 @@ object UpdateWithoutRubricQuestionJsonFiles {
         processQuestionType(questionType, questionId, questionText)
       }
 
-      processCsvJsonFiles(collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolId, clusterId, question, newRow, newCol)
+      processCsvJsonFiles(collectionId, databaseId, dashboardId, question, newRow, newCol, params, newLevelDict)
     }
 
+    def cleanDashboardJson(jsonStr: String, newLevelDict: Map[String, String]): String = {
+      val mapper = new ObjectMapper()
+      val root = mapper.readTree(jsonStr).asInstanceOf[ObjectNode]
+
+      // Remove template-tags
+      val templateTags = root
+        .path("questionCard")
+        .path("dataset_query")
+        .path("native")
+        .path("template-tags")
+        .asInstanceOf[ObjectNode]
+      newLevelDict.keys.foreach(templateTags.remove)
+
+      // Remove parameters
+      val parametersPath = root
+        .path("questionCard")
+        .path("parameters")
+        .asInstanceOf[ArrayNode]
+      val filteredParams = mapper.createArrayNode()
+      parametersPath.elements().asScala.foreach { param =>
+        if (!newLevelDict.contains(param.path("slug").asText())) {
+          filteredParams.add(param)
+        }
+      }
+      root.path("questionCard").asInstanceOf[ObjectNode].set("parameters", filteredParams)
+
+      // Remove parameter_mappings
+      val dashCards = root.path("dashCards").asInstanceOf[ObjectNode]
+      val paramMappings = dashCards.path("parameter_mappings").asInstanceOf[ArrayNode]
+      val filteredMappings = mapper.createArrayNode()
+      paramMappings.elements().asScala.foreach { mapping =>
+        val target = mapping.path("target")
+        if (
+          target.isArray &&
+            target.size() > 1 &&
+            target.get(1).isArray &&
+            target.get(1).size() > 1 &&
+            !newLevelDict.contains(target.get(1).get(1).asText())
+        ) {
+          filteredMappings.add(mapping)
+        }
+      }
+      dashCards.set("parameter_mappings", filteredMappings)
+
+      // Remove filter parameters from query string
+      val questionCard = root.path("questionCard").asInstanceOf[ObjectNode]
+      val datasetQuery = questionCard.path("dataset_query").asInstanceOf[ObjectNode]
+      val nativeNode = datasetQuery.path("native").asInstanceOf[ObjectNode]
+      val queryNode = nativeNode.path("query")
+      if (queryNode != null && queryNode.isTextual) {
+        var queryStr = queryNode.asText()
+        newLevelDict.keys.foreach { key =>
+          val regex = raw"""(?i)\[\[\s*AND\s*\{\{\s*${java.util.regex.Pattern.quote(key)}\s*\}\}\s*\]\]""".r
+          val before = queryStr
+          queryStr = regex.replaceAllIn(queryStr, "")
+          if (before != queryStr) {
+            println(s"Removed filter for key: $key")
+          } else {
+            println(s"No filter found for key: $key")
+          }
+        }
+        nativeNode.put("query", queryStr)
+      }
+
+      mapper.writeValueAsString(root)
+    }
 
     def toOption(jsonNode: JsonNode): Option[JsonNode] = {
       if (jsonNode == null || jsonNode.isMissingNode) None else Some(jsonNode)
@@ -188,23 +256,15 @@ object UpdateWithoutRubricQuestionJsonFiles {
       }.toOption
     }
 
-    def updateQuestionCardJsonValues(configJson: JsonNode, collectionId: Int, statenameId: Int, districtnameId: Int, schoolId: Int, clusterId: Int, databaseId: Int): JsonNode = {
+    def updateQuestionCardJsonValues(configJson: JsonNode, collectionId: Int, databaseId: Int, params: Map[String, Int]): JsonNode = {
       try {
         val configObjectNode = configJson.deepCopy().asInstanceOf[ObjectNode]
         Option(configObjectNode.get("questionCard")).foreach { questionCard =>
           questionCard.asInstanceOf[ObjectNode].put("collection_id", collectionId)
-
           Option(questionCard.get("dataset_query")).foreach { datasetQuery =>
             datasetQuery.asInstanceOf[ObjectNode].put("database", databaseId)
-
             Option(datasetQuery.get("native")).foreach { nativeNode =>
               Option(nativeNode.get("template-tags")).foreach { templateTags =>
-                val params = Map(
-                  "state_param" -> statenameId,
-                  "district_param" -> districtnameId,
-                  "school_param" -> schoolId,
-                  "cluster_param" -> clusterId
-                )
                 params.foreach { case (paramName, paramId) =>
                   Option(templateTags.get(paramName)).foreach { paramNode =>
                     updateDimension(paramNode.asInstanceOf[ObjectNode], paramId)
@@ -257,7 +317,7 @@ object UpdateWithoutRubricQuestionJsonFiles {
       }
     }
 
-    processJsonFiles(collectionId, databaseId, dashboardId, statenameId, districtnameId, schoolId, clusterId, question, report_config)
+    processJsonFiles(collectionId, databaseId, dashboardId, question, report_config)
     println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardId
   }
