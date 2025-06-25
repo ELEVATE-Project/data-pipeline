@@ -110,19 +110,18 @@ object UpdateWithoutRubricQuestionJsonFiles {
           row.get("config") match {
             case Some(queryValue: PGobject) =>
               val configJson = objectMapper.readTree(queryValue.getValue)
-              Option(configJson).foreach { json =>
-                val updatedQuestionCard = updateQuestionCardJsonValues(json, collectionId, databaseId, params)
-                val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, question, questionId)
-                val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
-                val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
-                println(s">>>>>>>>> Successfully created question card with card_id: $cardId")
-                questionCardId.append(cardId)
-                val originalDashcard = json.path("dashCards")
-                val existingSizeY = originalDashcard.path("size_y").asInt()
-                val updatedDashCard = updateQuestionIdInDashCard(json, cardId, newRow, newCol)
-                newRow += existingSizeY + 1
-                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedDashCard, dashboardId)
-              }
+              val cleanedJson: JsonNode = objectMapper.readTree(cleanDashboardJson(configJson.toString, newLevelDict))
+              val updatedQuestionCard = updateQuestionCardJsonValues(cleanedJson, collectionId, databaseId, params)
+              val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, question, questionId)
+              val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
+              val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
+              println(s">>>>>>>>> Successfully created question card with card_id: $cardId")
+              questionCardId.append(cardId)
+              val originalDashcard = cleanedJson.path("dashCards")
+              val existingSizeY = originalDashcard.path("size_y").asInt()
+              val updatedDashCard = updateQuestionIdInDashCard(cleanedJson, cardId, newRow, newCol)
+              newRow += existingSizeY + 1
+              AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedDashCard, dashboardId)
             case None => println(s"Key 'config' not found in the $resultKey result row.")
           }
         }

@@ -6,7 +6,7 @@
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT domain_level,domain,count(distinct school_id) AS \"Percentage wise distribution of count of school\"\nFROM ${domainTable}\nWHERE 1 = 1\nAND state_name = (\n    SELECT state_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{state_param}}]]\n    LIMIT 1\n  )\nAND district_name = (\n    SELECT district_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{district_param}}]]\n    LIMIT 1\n  )\nAND block_name = (\n    SELECT block_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{block_param}}]]\n    LIMIT 1\n  )\nAND cluster_name = (\n    SELECT cluster_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{cluster_param}}]]\n    LIMIT 1\n  ) \nAND org_name = (\n    SELECT org_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{org_param}}]]\n    LIMIT 1\n  )  \nAND domain = (\n    SELECT domain_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{domain_param}}]]\n    LIMIT 1\n  )  \nAND criteria = (\n    SELECT criteria_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{criteria_param}}]]\n    LIMIT 1\n  )\nGROUP BY domain_level,domain\norder by domain",
+        "query": "SELECT domain_level,domain,count(distinct parent_five_id) AS \"Percentage wise distribution of count of school\"\nFROM ${domainTable}\nWHERE 1 = 1\nAND parent_one_name = (\n    SELECT parent_one_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{state_param}}]]\n    LIMIT 1\n  )\nAND parent_two_name = (\n    SELECT parent_two_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{district_param}}]]\n    LIMIT 1\n  )\nAND parent_three_name = (\n    SELECT parent_three_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{block_param}}]]\n    LIMIT 1\n  )\nAND parent_four_name = (\n    SELECT parent_four_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{cluster_param}}]]\n    LIMIT 1\n  )  \nAND parent_five_name = (\n    SELECT parent_five_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{org_param}}]]\n    LIMIT 1\n  ) \nAND domain = (\n    SELECT domain_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{domain_param}}]]\n    LIMIT 1\n  )  \nAND criteria = (\n    SELECT criteria_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{criteria_param}}]]\n    LIMIT 1\n  )\nGROUP BY domain_level,domain\norder by domain",
         "template-tags": {
           "state_param": {
             "type": "dimension",
@@ -71,20 +71,6 @@
             "dimension": [
               "field",
               1496,
-              null
-            ],
-            "widget-type": "string/=",
-            "options": null
-          },
-          "org_param": {
-            "type": "dimension",
-            "name": "org_param",
-            "id": "a45783ee-540b-486d-891a-460a97901692",
-            "display-name": "Org Param",
-            "default": null,
-            "dimension": [
-              "field",
-              485,
               null
             ],
             "widget-type": "string/=",
@@ -200,19 +186,6 @@
         "slug": "school_param"
       },
       {
-        "id": "a45783ee-540b-486d-891a-460a97901692",
-        "type": "string/=",
-        "target": [
-          "dimension",
-          [
-            "template-tag",
-            "org_param"
-          ]
-        ],
-        "name": "Org Param",
-        "slug": "org_param"
-      },
-      {
         "id": "3616e34d-373c-471d-ac8b-9442f6553360",
         "type": "string/=",
         "target": [
@@ -297,17 +270,6 @@
           [
             "template-tag",
             "school_param"
-          ]
-        ]
-      },
-      {
-        "parameter_id": "5088d3e5",
-        "card_id": 8985,
-        "target": [
-          "dimension",
-          [
-            "template-tag",
-            "org_param"
           ]
         ]
       },

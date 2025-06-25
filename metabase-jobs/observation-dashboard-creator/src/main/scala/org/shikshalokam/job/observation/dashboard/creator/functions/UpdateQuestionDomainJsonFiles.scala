@@ -12,19 +12,19 @@ import scala.util.{Failure, Success, Try}
 
 
 object UpdateQuestionDomainJsonFiles {
-  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, domainTable: String, QuestionTable: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, params: Map[String, Int], newLevelDict: ListMap[String, String]): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, domainTable: String, QuestionTable: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, params: Map[String, Int], paramsToRemove: ListMap[String, String]): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, domainTable: String, QuestionTable: String, params: Map[String, Int], newLevelDict: ListMap[String, String]): Unit = {
+    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, domainTable: String, QuestionTable: String, params: Map[String, Int], paramsToRemove: ListMap[String, String]): Unit = {
       val queryResult = postgresUtil.fetchData(reportConfigQuery)
       queryResult.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
           row.get("config") match {
             case Some(queryValue: PGobject) =>
               val configJson = objectMapper.readTree(queryValue.getValue)
-              val cleanedJson: JsonNode = objectMapper.readTree(cleanDashboardJson(configJson.toString, newLevelDict))
+              val cleanedJson: JsonNode = objectMapper.readTree(cleanDashboardJson(configJson.toString, paramsToRemove, true))
               if (cleanedJson != null) {
                 val originalQuestionCard = cleanedJson.path("questionCard")
                 val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
@@ -55,7 +55,7 @@ object UpdateQuestionDomainJsonFiles {
       }
     }
 
-    def cleanDashboardJson(jsonStr: String, newLevelDict: Map[String, String]): String = {
+    def cleanDashboardJson(jsonStr: String, paramsToRemove: Map[String, String], removeByColumnName: Boolean = false): String = {
       val mapper = new ObjectMapper()
       val root = mapper.readTree(jsonStr).asInstanceOf[ObjectNode]
 
@@ -66,7 +66,7 @@ object UpdateQuestionDomainJsonFiles {
         .path("native")
         .path("template-tags")
         .asInstanceOf[ObjectNode]
-      newLevelDict.keys.foreach(templateTags.remove)
+      paramsToRemove.keys.foreach(templateTags.remove)
 
       // Remove parameters
       val parametersPath = root
@@ -75,7 +75,7 @@ object UpdateQuestionDomainJsonFiles {
         .asInstanceOf[ArrayNode]
       val filteredParams = mapper.createArrayNode()
       parametersPath.elements().asScala.foreach { param =>
-        if (!newLevelDict.contains(param.path("slug").asText())) {
+        if (!paramsToRemove.contains(param.path("slug").asText())) {
           filteredParams.add(param)
         }
       }
@@ -92,7 +92,7 @@ object UpdateQuestionDomainJsonFiles {
             target.size() > 1 &&
             target.get(1).isArray &&
             target.get(1).size() > 1 &&
-            !newLevelDict.contains(target.get(1).get(1).asText())
+            !paramsToRemove.contains(target.get(1).get(1).asText())
         ) {
           filteredMappings.add(mapping)
         }
@@ -106,14 +106,16 @@ object UpdateQuestionDomainJsonFiles {
       val queryNode = nativeNode.path("query")
       if (queryNode != null && queryNode.isTextual) {
         var queryStr = queryNode.asText()
-        newLevelDict.keys.foreach { key =>
-          val regex = raw"""(?i)\[\[\s*AND\s*\{\{\s*${java.util.regex.Pattern.quote(key)}\s*\}\}\s*\]\]""".r
-          val before = queryStr
-          queryStr = regex.replaceAllIn(queryStr, "")
-          if (before != queryStr) {
-            println(s"Removed filter for key: $key")
+        val items = if (removeByColumnName) paramsToRemove.values else paramsToRemove.keys
+        items.foreach { item =>
+          if (removeByColumnName) {
+            // Remove entire AND <column_name> = ( ... )
+            val regex = ("""(?is)\s*AND\s+""" + java.util.regex.Pattern.quote(item) + """\s*=\s*\((?:[^()]*|\((?:[^()]*|\([^()]*\))*\))*\)""").r
+            queryStr = regex.replaceAllIn(queryStr, "")
           } else {
-            println(s"No filter found for key: $key")
+            // Remove [[AND {{key}}]]
+            val regex = raw"""(?i)\[\[\s*AND\s*\{\{\s*${java.util.regex.Pattern.quote(item)}\s*\}\}\s*\]\]""".r
+            queryStr = regex.replaceAllIn(queryStr, "")
           }
         }
         nativeNode.put("query", queryStr)
@@ -214,7 +216,7 @@ object UpdateQuestionDomainJsonFiles {
       }
     }
 
-    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, domainTable, QuestionTable, params, newLevelDict)
+    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, domainTable, QuestionTable, params, paramsToRemove)
     println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardId
   }

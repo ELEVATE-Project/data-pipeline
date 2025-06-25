@@ -84,9 +84,9 @@ object UpdateParameters {
     val objectMapper = new ObjectMapper()
     val parameterData: List[Any] = postgresUtil.fetchData(parametersQuery).flatMap(_.get("config"))
     val parameterJsonString: String = parameterData.headOption match {
-      case Some(value: String) if value.nonEmpty => value
-      case Some(value) if value.toString.nonEmpty => value.toString
-      case _ => throw new Exception("No parameter data found")
+      case Some(value: String) => value
+      case Some(value) => value.toString
+      case None => throw new Exception("No parameter data found")
     }
 
     println(s"Parameter JSON String: $parameterJsonString")
@@ -112,11 +112,10 @@ object UpdateParameters {
     }
 
     println(s"Filtered and sorted parameters: ${sortedParams.map(_.toString).mkString(", ")}")
-    // Convert back to ArrayNode
+
     val resultArray = objectMapper.createArrayNode()
     sortedParams.foreach(resultArray.add)
 
-    // Update dashboard parameters
     val dashboardResponse: String = metabaseUtil.getDashboardDetailsById(dashboardId)
     val dashboardJson = objectMapper.readTree(dashboardResponse)
     dashboardJson.asInstanceOf[ObjectNode].set("parameters", resultArray)

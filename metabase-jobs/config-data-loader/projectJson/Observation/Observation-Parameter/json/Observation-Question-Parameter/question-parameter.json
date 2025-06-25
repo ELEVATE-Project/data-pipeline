@@ -42,6 +42,27 @@
     ]
   },
   {
+    "name": "Select Block",
+    "columnName": "parent_three_name",
+    "param": "block_param",
+    "order": 3,
+    "entity_type": "block",
+    "slug": "select_block",
+    "id": "9e5a09bh",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "6e5c08dc",
+      "cc7a4cd7",
+      "74a10335",
+      "c32c8fc5",
+      "fbca1e77",
+      "ffbf9c99",
+      "5088d3e5"
+    ]
+  },
+  {
     "name": "Select District",
     "columnName": "parent_two_name",
     "param": "district_param",
@@ -122,5 +143,25 @@
       "5088d3e5"
     ],
     "isMultiSelect": false
+  },
+  {
+    "name": "Select Organisation",
+    "slug": "select_organisation",
+    "columnName": "org_name",
+    "param": "org_param",
+    "order": 6,
+    "id": "5088d3e5",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "6e5c08dc",
+      "cc7a4cd7",
+      "9e5a09bh",
+      "74a10335",
+      "c32c8fc5",
+      "fbca1e77",
+      "ffbf9c99"
+    ]
   }
 ]

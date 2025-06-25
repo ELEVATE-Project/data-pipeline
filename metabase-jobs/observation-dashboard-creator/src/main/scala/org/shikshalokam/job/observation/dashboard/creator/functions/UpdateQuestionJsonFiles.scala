@@ -25,7 +25,8 @@ object UpdateQuestionJsonFiles {
           row.get("config") match {
             case Some(queryValue: PGobject) =>
               val configJson = objectMapper.readTree(queryValue.getValue)
-              val cleanedJson: JsonNode = objectMapper.readTree(cleanDashboardJson(configJson.toString, newLevelDict))
+              val cleanedJson: JsonNode = objectMapper.readTree(cleanDashboardJson(configJson.toString, newLevelDict, false))
+              println(s"Cleaned JSON: ${cleanedJson.toString}")
               if (cleanedJson != null) {
                 val originalQuestionCard = cleanedJson.path("questionCard")
                 val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
@@ -109,18 +110,17 @@ object UpdateQuestionJsonFiles {
           row.get("config") match {
             case Some(queryValue: PGobject) =>
               val configJson = objectMapper.readTree(queryValue.getValue)
-              Option(configJson).foreach { json =>
-                val updatedQuestionCard = updateQuestionCardJsonValues(json, collectionId, databaseId, params)
-                val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, question, questionId)
-                val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
-                val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
-                questionCardId.append(cardId)
-                val originalDashcard = json.path("dashCards")
-                val existingSizeY = originalDashcard.path("size_y").asInt()
-                val updatedDashCard = updateQuestionIdInDashCard(json, cardId, newRow, newCol)
-                newRow += existingSizeY + 1
-                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedDashCard, dashboardId)
-              }
+              val cleanedJson: JsonNode = objectMapper.readTree(cleanDashboardJson(configJson.toString, newLevelDict, false))
+              val updatedQuestionCard = updateQuestionCardJsonValues(cleanedJson, collectionId, databaseId, params)
+              val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, question, questionId)
+              val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
+              val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
+              questionCardId.append(cardId)
+              val originalDashcard = cleanedJson.path("dashCards")
+              val existingSizeY = originalDashcard.path("size_y").asInt()
+              val updatedDashCard = updateQuestionIdInDashCard(cleanedJson, cardId, newRow, newCol)
+              newRow += existingSizeY + 1
+              AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedDashCard, dashboardId)
             case None => println(s"Key 'config' not found in the $resultKey result row.")
           }
         }
@@ -157,7 +157,7 @@ object UpdateQuestionJsonFiles {
       processCsvJsonFiles(collectionId, databaseId, dashboardId, question, newRow, newCol, params, newLevelDict)
     }
 
-    def cleanDashboardJson(jsonStr: String, newLevelDict: Map[String, String]): String = {
+    def cleanDashboardJson(jsonStr: String, newLevelDict: Map[String, String], removeByColumnName: Boolean = false): String = {
       val mapper = new ObjectMapper()
       val root = mapper.readTree(jsonStr).asInstanceOf[ObjectNode]
 
@@ -208,14 +208,16 @@ object UpdateQuestionJsonFiles {
       val queryNode = nativeNode.path("query")
       if (queryNode != null && queryNode.isTextual) {
         var queryStr = queryNode.asText()
-        newLevelDict.keys.foreach { key =>
-          val regex = raw"""(?i)\[\[\s*AND\s*\{\{\s*${java.util.regex.Pattern.quote(key)}\s*\}\}\s*\]\]""".r
-          val before = queryStr
-          queryStr = regex.replaceAllIn(queryStr, "")
-          if (before != queryStr) {
-            println(s"Removed filter for key: $key")
+        val items = if (removeByColumnName) newLevelDict.values else newLevelDict.keys
+        items.foreach { item =>
+          if (removeByColumnName) {
+            // Remove entire AND <column_name> = ( ... )
+            val regex = ("""(?is)\s*AND\s+""" + java.util.regex.Pattern.quote(item) + """\s*=\s*\((?:[^()]*|\((?:[^()]*|\([^()]*\))*\))*\)""").r
+            queryStr = regex.replaceAllIn(queryStr, "")
           } else {
-            println(s"No filter found for key: $key")
+            // Remove [[AND {{key}}]]
+            val regex = raw"""(?i)\[\[\s*AND\s*\{\{\s*${java.util.regex.Pattern.quote(item)}\s*\}\}\s*\]\]""".r
+            queryStr = regex.replaceAllIn(queryStr, "")
           }
         }
         nativeNode.put("query", queryStr)
