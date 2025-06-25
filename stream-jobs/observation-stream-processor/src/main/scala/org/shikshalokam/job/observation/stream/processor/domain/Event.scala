@@ -72,5 +72,27 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def completedDate: String = readOrDefault[String]("completedDate", "")
 
+  def entityType: String = readOrDefault[String]("entityType", null)
+
+  def targetedStateName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.state", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
+
+  def targetedStateId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.state", Seq.empty).headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
+
+  def targetedDistrictName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.district", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
+
+  def targetedDistrictId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.district", Seq.empty).headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
+
+  def targetedBlockName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.block", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
+
+  def targetedBlockId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.block", Seq.empty).headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
+
+  def targetedClusterName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.cluster", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
+
+  def targetedClusterId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.cluster", Seq.empty).headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
+
+  def targetedSchoolName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.school", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
+
+  def targetedSchoolId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.school", Seq.empty).headOption.flatMap(_.get("externalId")).map(_.toString).getOrElse(null)
+
 }
 

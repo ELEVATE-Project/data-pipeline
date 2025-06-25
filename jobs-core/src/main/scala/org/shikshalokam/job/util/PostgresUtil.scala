@@ -132,7 +132,7 @@ class PostgresUtil(dbUrl: String, dbUser: String, dbPassword: String) {
         }.toMap
         result = result :+ row
       }
-       //println("Fetch data query executed successfully.")
+      //println("Fetch data query executed successfully.")
       result
 
     } catch {
@@ -157,6 +157,40 @@ class PostgresUtil(dbUrl: String, dbUser: String, dbPassword: String) {
         println("Error inserting data: " + e.getMessage)
         throw e
     } finally {
+      connection.close()
+    }
+  }
+
+  def executePreparedDelete(query: String, params: Seq[Any], table: String, id: String): Unit = {
+    val connection = getConnection
+    var preparedStatement: PreparedStatement = null
+    try {
+      preparedStatement = connection.prepareStatement(query)
+      // Loop through params and set them to the PreparedStatement
+      for ((param, index) <- params.zipWithIndex) {
+        param match {
+          case v: String => preparedStatement.setString(index + 1, v)
+          case v: Int => preparedStatement.setInt(index + 1, v)
+          case v: Boolean => preparedStatement.setBoolean(index + 1, v)
+          case v: Long => preparedStatement.setLong(index + 1, v)
+          case v: Double => preparedStatement.setDouble(index + 1, v)
+          case v: Float => preparedStatement.setFloat(index + 1, v)
+          case v: BigDecimal => preparedStatement.setBigDecimal(index + 1, v.bigDecimal)
+          case v: Timestamp => preparedStatement.setTimestamp(index + 1, v)
+          case v: java.sql.Date => preparedStatement.setDate(index + 1, v)
+          case v: java.sql.Time => preparedStatement.setTime(index + 1, v)
+          case null => preparedStatement.setNull(index + 1, java.sql.Types.NULL)
+          case _ => throw new IllegalArgumentException(s"Unsupported parameter type at index ${index + 1}: ${param.getClass}")
+        }
+      }
+      val rows = preparedStatement.executeUpdate()
+      println(s"Deleted $rows rows from ${table} table")
+    } catch {
+      case e: SQLException =>
+        println("Error deleting data: " + e.getMessage)
+        throw e
+    } finally {
+      if (preparedStatement != null) preparedStatement.close()
       connection.close()
     }
   }
