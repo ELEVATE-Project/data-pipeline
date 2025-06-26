@@ -246,6 +246,9 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       postgresUtil.checkAndCreateTable(surveyStatusTable, createSurveyStatusTableQuery)
       postgresUtil.executeUpdate(AlterSurveyStatusTableQuery,surveyStatusTable,solutionId)
 
+      postgresUtil.checkAndCreateTable(surveyQuestionTable, createSurveyQuestionsTableQuery)
+      postgresUtil.executeUpdate(AlterSurveyQuestionsTableQuery, surveyQuestionTable, solutionId)
+
       val upsertSurveyDataQuery =
         s"""INSERT INTO $surveyStatusTable (
            |    survey_id, user_id, user_role_ids, user_roles, state_id, state_name, district_id, district_name,
@@ -279,8 +282,6 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       postgresUtil.executePreparedUpdate(upsertSurveyDataQuery, surveyParams, surveyStatusTable, surveyId)
 
       if (event.status == "completed") {
-        postgresUtil.checkAndCreateTable(surveyQuestionTable, createSurveyQuestionsTableQuery)
-        postgresUtil.executeUpdate(AlterSurveyQuestionsTableQuery, surveyQuestionTable, solutionId)
         /**
          * Extracting Survey Questions Data
          */
