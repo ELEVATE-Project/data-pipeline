@@ -1,91 +1,167 @@
 [
   {
-    "name": "Select State",
-    "slug": "select_state",
-    "id": "c32c8fc5",
-    "type": "string/=",
-    "sectionId": "location",
-    "isMultiSelect": false,
-    "filteringParameters": [
-      "74a10335",
-      "6e5c08dc",
-      "cc7a4cd7",
-      "fbca1e77",
-      "ffbf9c99"
-    ]
-  },
-  {
-    "slug": "select_district",
-    "filteringParameters": [
-      "c32c8fc5",
-      "6e5c08dc",
-      "cc7a4cd7",
-      "fbca1e77",
-      "ffbf9c99"
-    ],
-    "name": "Select District",
-    "isMultiSelect": false,
-    "type": "string/=",
-    "sectionId": "location",
-    "id": "74a10335"
-  },
-  {
-    "name": "Select Cluster",
-    "slug": "select_cluster",
-    "id": "cc7a4cd7",
-    "type": "string/=",
-    "sectionId": "string",
-    "filteringParameters": [
-      "c32c8fc5",
-      "74a10335",
-      "6e5c08dc",
-      "fbca1e77",
-      "ffbf9c99"
-    ]
-  },
-  {
     "name": "Select School",
+    "columnName": "parent_five_name",
+    "param": "school_param",
+    "order": 5,
+    "entity_type": "school",
     "slug": "select_school",
     "id": "6e5c08dc",
     "type": "string/=",
     "sectionId": "string",
     "isMultiSelect": false,
     "filteringParameters": [
-      "c32c8fc5",
-      "74a10335",
       "cc7a4cd7",
+      "9e5a09bh",
+      "74a10335",
+      "c32c8fc5",
       "fbca1e77",
-      "ffbf9c99"
+      "ffbf9c99",
+      "5088d3e5"
+    ]
+  },
+  {
+    "name": "Select Cluster",
+    "columnName": "parent_four_name",
+    "param": "cluster_param",
+    "order": 4,
+    "entity_type": "cluster",
+    "slug": "select_cluster",
+    "id": "cc7a4cd7",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "6e5c08dc",
+      "9e5a09bh",
+      "74a10335",
+      "c32c8fc5",
+      "fbca1e77",
+      "ffbf9c99",
+      "5088d3e5"
+    ]
+  },
+  {
+    "name": "Select Block",
+    "columnName": "parent_three_name",
+    "param": "block_param",
+    "order": 3,
+    "entity_type": "block",
+    "slug": "select_block",
+    "id": "9e5a09bh",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "6e5c08dc",
+      "cc7a4cd7",
+      "74a10335",
+      "c32c8fc5",
+      "fbca1e77",
+      "ffbf9c99",
+      "5088d3e5"
+    ]
+  },
+  {
+    "name": "Select District",
+    "columnName": "parent_two_name",
+    "param": "district_param",
+    "order": 2,
+    "entity_type": "district",
+    "slug": "select_district",
+    "isMultiSelect": false,
+    "type": "string/=",
+    "sectionId": "location",
+    "id": "74a10335",
+    "filteringParameters": [
+      "6e5c08dc",
+      "cc7a4cd7",
+      "9e5a09bh",
+      "c32c8fc5",
+      "fbca1e77",
+      "ffbf9c99",
+      "5088d3e5"
+    ]
+  },
+  {
+    "name": "Select State",
+    "columnName": "parent_one_name",
+    "param": "state_param",
+    "order": 1,
+    "entity_type": "state",
+    "slug": "select_state",
+    "id": "c32c8fc5",
+    "type": "string/=",
+    "sectionId": "location",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "6e5c08dc",
+      "cc7a4cd7",
+      "9e5a09bh",
+      "74a10335",
+      "fbca1e77",
+      "ffbf9c99",
+      "5088d3e5"
     ]
   },
   {
     "name": "Select Domain",
+    "columnName": "domain_name",
+    "param": "domain_param",
+    "order": 7,
     "slug": "select_domain",
     "id": "fbca1e77",
     "type": "string/=",
     "sectionId": "string",
     "filteringParameters": [
-      "c32c8fc5",
-      "74a10335",
       "6e5c08dc",
       "cc7a4cd7",
-      "ffbf9c99"
+      "9e5a09bh",
+      "74a10335",
+      "c32c8fc5",
+      "ffbf9c99",
+      "5088d3e5"
     ],
     "isMultiSelect": false
   },
   {
     "name": "Select Criteria",
+    "columnName": "criteria_name",
+    "param": "criteria_param",
+    "order": 8,
     "slug": "select_criteria",
     "id": "ffbf9c99",
     "type": "string/=",
     "sectionId": "string",
     "filteringParameters": [
-      "c32c8fc5",
-      "74a10335",
       "6e5c08dc",
+      "cc7a4cd7",
+      "9e5a09bh",
+      "74a10335",
+      "c32c8fc5",
       "fbca1e77",
-      "cc7a4cd7"
+      "5088d3e5"
     ],
     "isMultiSelect": false
+  },
+  {
+    "name": "Select Organisation",
+    "slug": "select_organisation",
+    "columnName": "org_name",
+    "param": "org_param",
+    "order": 6,
+    "id": "5088d3e5",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "6e5c08dc",
+      "cc7a4cd7",
+      "9e5a09bh",
+      "74a10335",
+      "c32c8fc5",
+      "fbca1e77",
+      "ffbf9c99"
+    ]
   }
 ]

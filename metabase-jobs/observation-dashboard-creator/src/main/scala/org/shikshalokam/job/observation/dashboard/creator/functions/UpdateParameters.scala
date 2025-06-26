@@ -78,7 +78,7 @@ object UpdateParameters {
     println(s"----------------Successfully updated State dashboard parameter----------------")
   }
 
-  def UpdateAdminParameterFunction(metabaseUtil: MetabaseUtil, parametersQuery: String, dashboardId: Int, postgresUtil: PostgresUtil): Unit = {
+  def UpdateAdminParameterFunction(metabaseUtil: MetabaseUtil, parametersQuery: String, dashboardId: Int, postgresUtil: PostgresUtil, diffLevelDict: Map[String, String]): Unit = {
     println(s"-----------Started Processing Admin dashboard parameter ------------")
 
     val objectMapper = new ObjectMapper()
@@ -89,31 +89,38 @@ object UpdateParameters {
       case None => throw new Exception("No parameter data found")
     }
 
+    println(s"Parameter JSON String: $parameterJsonString")
+
     val parameterJson: ArrayNode = objectMapper.readTree(parameterJsonString) match {
       case array: ArrayNode => array
       case _ => throw new Exception("Expected parameter data to be an ArrayNode")
     }
 
-    val updatedParameterJson: List[ObjectNode] = parameterJson.elements().asScala.map {
-      case param: ObjectNode => param
-      case _ => throw new Exception("Expected all parameters to be ObjectNodes")
-    }.toList
+    val keysToRemove = Set("column_name", "param", "order", "entity_type")
+
+    // Step 1: Filter out parameters whose "param" matches a key in diffLevelDict
+    val filteredParams = parameterJson.elements().asScala
+      .collect { case obj: ObjectNode => obj }
+      .filterNot(obj => diffLevelDict.contains(obj.path("param").asText()))
+
+    // Step 2: Sort by "order" key
+    val sortedParams = filteredParams.toList.sortBy(obj => obj.path("order").asInt(Int.MaxValue))
+
+    // Step 3: Remove specified keys from each dict
+    sortedParams.foreach { obj =>
+      keysToRemove.foreach(obj.remove)
+    }
+
+    println(s"Filtered and sorted parameters: ${sortedParams.map(_.toString).mkString(", ")}")
+
+    val resultArray = objectMapper.createArrayNode()
+    sortedParams.foreach(resultArray.add)
 
     val dashboardResponse: String = metabaseUtil.getDashboardDetailsById(dashboardId)
     val dashboardJson = objectMapper.readTree(dashboardResponse)
-    val currentParametersJson: ArrayNode = dashboardJson.path("parameters") match {
-      case array: ArrayNode => array
-      case _ => objectMapper.createArrayNode()
-    }
+    dashboardJson.asInstanceOf[ObjectNode].set("parameters", resultArray)
 
-    val finalParametersJson = objectMapper.createArrayNode()
-    currentParametersJson.elements().asScala.foreach(finalParametersJson.add)
-    updatedParameterJson.foreach(finalParametersJson.add)
-
-    val updatePayload = objectMapper.createObjectNode()
-    updatePayload.set("parameters", finalParametersJson)
-
-    metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString)
+    metabaseUtil.addQuestionCardToDashboard(dashboardId, dashboardJson.toString)
     println(s"----------------Successfully updated Admin dashboard parameter ----------------")
   }
 }

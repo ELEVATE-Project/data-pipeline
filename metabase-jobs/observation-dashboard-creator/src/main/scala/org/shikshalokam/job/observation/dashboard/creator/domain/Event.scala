@@ -12,6 +12,8 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def isRubric: String = readOrDefault("dashboardData.isRubric", "")
 
+  def entityType: String = readOrDefault("dashboardData.entityType", "")
+
   def targetedProgram: String = readOrDefault("dashboardData.targetedProgram", "")
 
   def targetedSolution: String = readOrDefault("dashboardData.targetedSolution", "")
