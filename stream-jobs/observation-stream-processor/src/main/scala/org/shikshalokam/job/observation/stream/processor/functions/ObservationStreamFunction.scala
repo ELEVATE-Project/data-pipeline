@@ -330,6 +330,13 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboard_metadata)
 
       /**
+       * Creating required tables
+       */
+      checkAndCreateTable(statusTable, createStatusTable)
+      checkAndCreateTable(questionTable, createQuestionsTable)
+      if (isRubric != false) checkAndCreateTable(domainTable, createDomainsTable)
+
+      /**
        * Performs an upsert operation on the solution table irrespective of the submission status.
        * This ensures the solution information is always updated/inserted in the database.
        */
@@ -369,7 +376,6 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
        */
       if (statusOfSubmission != null) {
         println("===> Processing observation status data")
-        checkAndCreateTable(statusTable, createStatusTable)
         val deleteQuery = s"""DELETE FROM $statusTable WHERE user_id = ? AND submission_id = ? AND submission_number = ?; """
         val deleteParams = Seq(userId, submissionId, submissionNumber)
         postgresUtil.executePreparedDelete(deleteQuery, deleteParams, statusTable, submissionId)
@@ -473,7 +479,6 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
         }
 
         println("===> Processing observation question data")
-        checkAndCreateTable(questionTable, createQuestionsTable)
         val deleteQuery = s"""DELETE FROM $questionTable WHERE user_id = ? AND submission_id = ? AND submission_number = ?; """
         val deleteParams = Seq(userId, submissionId, submissionNumber)
         postgresUtil.executePreparedDelete(deleteQuery, deleteParams, questionTable, submissionId)
