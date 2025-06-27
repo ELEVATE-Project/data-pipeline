@@ -32,21 +32,25 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def observationId: String = readOrDefault[String]("observationId", "")
 
-  def stateName: String = readOrDefault[String]("userProfile.state.label", "")
+  def userOneProfileName: String = readOrDefault[String]("userProfile.state.label", "")
 
-  def stateId: String = readOrDefault[String]("userProfile.state.value", "")
+  def userOneProfileId: String = readOrDefault[String]("userProfile.state.value", "")
 
-  def districtName: String = readOrDefault[String]("userProfile.district.label", "")
+  def userTwoProfileName: String = readOrDefault[String]("userProfile.district.label", "")
 
-  def districtId: String = readOrDefault[String]("userProfile.district.value", "")
+  def userTwoProfileId: String = readOrDefault[String]("userProfile.district.value", "")
 
-  def blockName: String = readOrDefault[String]("userProfile.block.label", "")
+  def userThreeProfileName: String = readOrDefault[String]("userProfile.block.label", "")
 
-  def blockId: String = readOrDefault[String]("userProfile.block.value", "")
+  def userThreeProfileId: String = readOrDefault[String]("userProfile.block.value", "")
 
-  def clusterName: String = readOrDefault[String]("userProfile.cluster.label", "")
+  def userFourProfileName: String = readOrDefault[String]("userProfile.cluster.label", "")
 
-  def clusterId: String = readOrDefault[String]("userProfile.cluster.value", "")
+  def userFourProfileId: String = readOrDefault[String]("userProfile.cluster.value", "")
+
+  def userFiveProfileName: String = readOrDefault[String]("userProfile.school.label", "")
+
+  def userFiveProfileId: String = readOrDefault[String]("userProfile.school.externalId", "")
 
   def orgName: String = readOrDefault[String]("userProfile.organization.name", "")
 
@@ -55,10 +59,6 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
   def tenantId: String = readOrDefault[String]("tenantId", "")
 
   def organisation: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("userProfile.organizations", List.empty)
-
-  def schoolName: String = readOrDefault[String]("userProfile.school.label", "")
-
-  def schoolId: String = readOrDefault[String]("userProfile.school.externalId", "")
 
   def themes: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("themes", null)
 
@@ -74,25 +74,25 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def entityType: String = readOrDefault[String]("entityType", null)
 
-  def targetedStateName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.state", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
+  def parentOneName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.state", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
 
-  def targetedStateId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.state", Seq.empty).headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
+  def parentOneId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.state", Seq.empty).headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
 
-  def targetedDistrictName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.district", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
+  def parentTwoName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.district", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
 
-  def targetedDistrictId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.district", Seq.empty).headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
+  def parentTwoId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.district", Seq.empty).headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
 
-  def targetedBlockName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.block", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
+  def parentThreeName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.block", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
 
-  def targetedBlockId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.block", Seq.empty).headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
+  def parentThreeId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.block", Seq.empty).headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
 
-  def targetedClusterName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.cluster", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
+  def parentFourName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.cluster", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
 
-  def targetedClusterId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.cluster", Seq.empty).headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
+  def parentFourId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.cluster", Seq.empty).headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
 
-  def targetedSchoolName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.school", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
+  def parentFiveName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.school", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
 
-  def targetedSchoolId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.school", Seq.empty).headOption.flatMap(_.get("externalId")).map(_.toString).getOrElse(null)
+  def parentFiveId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.school", Seq.empty).headOption.flatMap(_.get("externalId")).map(_.toString).getOrElse(null)
 
 }
 

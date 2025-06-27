@@ -92,16 +92,16 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       val submissionId = event._id
       val userId = event.createdBy
       val submissionNumber = event.submissionNumber
-      val userStateName = event.stateName
-      val userStateId = event.stateId
-      val userDistrictName = event.districtName
-      val userDistrictId = event.districtId
-      val userBlockName = event.blockName
-      val userBlockId = event.blockId
-      val userClusterName = event.clusterName
-      val userClusterId = event.clusterId
-      val userSchoolName = event.schoolName
-      val userSchoolId = event.schoolId
+      val userOneProfileName = event.userOneProfileName
+      val userOneProfileId = event.userOneProfileId
+      val userTwoProfileName = event.userTwoProfileName
+      val userTwoProfileId = event.userTwoProfileId
+      val userThreeProfileName = event.userThreeProfileName
+      val userThreeProfileId = event.userThreeProfileId
+      val userFourProfileName = event.userFourProfileName
+      val userFourProfileId = event.userFourProfileId
+      val userFiveProfileName = event.userFiveProfileName
+      val userFiveProfileId = event.userFiveProfileId
       val themes = event.themes
       val criteriaEvent = event.criteria
       val solutionId = event.solutionId
@@ -124,31 +124,31 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       val statusTable = s""""${solutionId}_status""""
       val isRubric = event.isRubric
       val entityType = event.entityType
-      val targetedStateName = event.targetedStateName
-      val targetedStateId = event.targetedStateId
-      val targetedDistrictName = event.targetedDistrictName
-      val targetedDistrictId = event.targetedDistrictId
-      val targetedBlockName = event.targetedBlockName
-      val targetedBlockId = event.targetedBlockId
-      val targetedClusterName = event.targetedClusterName
-      val targetedClusterId = event.targetedClusterId
-      val targetedSchoolName = event.targetedSchoolName
-      val targetedSchoolId = event.targetedSchoolId
+      val targetedStateName = event.parentOneName
+      val targetedStateId = event.parentOneId
+      val targetedDistrictName = event.parentTwoName
+      val targetedDistrictId = event.parentTwoId
+      val targetedBlockName = event.parentThreeName
+      val targetedBlockId = event.parentThreeId
+      val targetedClusterName = event.parentFourName
+      val targetedClusterId = event.parentFourId
+      val targetedSchoolName = event.parentFiveName
+      val targetedSchoolId = event.parentFiveId
 
       println(s"statusOfSubmission = $statusOfSubmission")
       println(s"submissionId = $submissionId")
       println(s"userId = $userId")
       println(s"submissionNumber = $submissionNumber")
-      println(s"userStateName = $userStateName")
-      println(s"userStateId = $userStateId")
-      println(s"userDistrictName = $userDistrictName")
-      println(s"userDistrictId = $userDistrictId")
-      println(s"userBlockName = $userBlockName")
-      println(s"userBlockId = $userBlockId")
-      println(s"userClusterName = $userClusterName")
-      println(s"userClusterId = $userClusterId")
-      println(s"userSchoolName = $userSchoolName")
-      println(s"userSchoolId = $userSchoolId")
+      println(s"userOneProfileName = $userOneProfileName")
+      println(s"userOneProfileId = $userOneProfileId")
+      println(s"userTwoProfileName = $userTwoProfileName")
+      println(s"userTwoProfileId = $userTwoProfileId")
+      println(s"userThreeProfileName = $userThreeProfileName")
+      println(s"userThreeProfileId = $userThreeProfileId")
+      println(s"userFourProfileName = $userFourProfileName")
+      println(s"userFourProfileId = $userFourProfileId")
+      println(s"userFiveProfileName = $userFiveProfileName")
+      println(s"userFiveProfileId = $userFiveProfileId")
       println(s"themes = $themes")
       println(s"criteriaEvent = $criteriaEvent")
       println(s"solutionId = $solutionId")
@@ -201,16 +201,16 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
            |    org_name TEXT,
            |    org_id TEXT,
            |    org_code TEXT,
-           |    user_state_name TEXT,
-           |    user_state_id TEXT,
-           |    user_district_name TEXT,
-           |    user_district_id TEXT,
-           |    user_block_name TEXT,
-           |    user_block_id TEXT,
-           |    user_cluster_name TEXT,
-           |    user_cluster_id TEXT,
-           |    user_school_name TEXT,
-           |    user_school_id TEXT,
+           |    user_one_profile_name TEXT,
+           |    user_one_profile_id TEXT,
+           |    user_two_profile_name TEXT,
+           |    user_two_profile_id TEXT,
+           |    user_three_profile_name TEXT,
+           |    user_three_profile_id TEXT,
+           |    user_four_profile_name TEXT,
+           |    user_four_profile_id TEXT,
+           |    user_five_profile_name TEXT,
+           |    user_five_profile_id TEXT,
            |    domain TEXT,
            |    domain_level TEXT,
            |    criteria TEXT,
@@ -248,16 +248,16 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
            |    org_name TEXT,
            |    org_id TEXT,
            |    org_code TEXT,
-           |    user_state_name TEXT,
-           |    user_state_id TEXT,
-           |    user_district_name TEXT,
-           |    user_district_id TEXT,
-           |    user_block_name TEXT,
-           |    user_block_id TEXT,
-           |    user_cluster_name TEXT,
-           |    user_cluster_id TEXT,
-           |    user_school_name TEXT,
-           |    user_school_id TEXT,
+           |    user_one_profile_name TEXT,
+           |    user_one_profile_id TEXT,
+           |    user_two_profile_name TEXT,
+           |    user_two_profile_id TEXT,
+           |    user_three_profile_name TEXT,
+           |    user_three_profile_id TEXT,
+           |    user_four_profile_name TEXT,
+           |    user_four_profile_id TEXT,
+           |    user_five_profile_name TEXT,
+           |    user_five_profile_id TEXT,
            |    question_id TEXT,
            |    question_text TEXT,
            |    labels TEXT,
@@ -298,16 +298,16 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
            |    program_id TEXT,
            |    observation_name TEXT,
            |    observation_id TEXT,
-           |    user_state_name TEXT,
-           |    user_state_id TEXT,
-           |    user_district_name TEXT,
-           |    user_district_id TEXT,
-           |    user_block_name TEXT,
-           |    user_block_id TEXT,
-           |    user_cluster_name TEXT,
-           |    user_cluster_id TEXT,
-           |    user_school_name TEXT,
-           |    user_school_id TEXT,
+           |    user_one_profile_name TEXT,
+           |    user_one_profile_id TEXT,
+           |    user_two_profile_name TEXT,
+           |    user_two_profile_id TEXT,
+           |    user_three_profile_name TEXT,
+           |    user_three_profile_id TEXT,
+           |    user_four_profile_name TEXT,
+           |    user_four_profile_id TEXT,
+           |    user_five_profile_name TEXT,
+           |    user_five_profile_id TEXT,
            |    tenant_id TEXT,
            |    org_id TEXT,
            |    org_code TEXT,
@@ -383,9 +383,9 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
         val insertStatusQuery =
           s"""INSERT INTO $statusTable (
              |    user_id, user_role_ids, user_roles, solution_id, solution_name, submission_id, submission_number,
-             |    program_name, program_id, observation_name, observation_id, user_state_name, user_state_id,
-             |    user_district_name, user_district_id, user_block_name, user_block_id, user_cluster_name,
-             |    user_cluster_id, user_school_name, user_school_id, tenant_id, org_id, org_code, org_name,
+             |    program_name, program_id, observation_name, observation_id, user_one_profile_name, user_one_profile_id,
+             |    user_two_profile_name, user_two_profile_id, user_three_profile_name, user_three_profile_id, user_four_profile_name,
+             |    user_four_profile_id, user_five_profile_name, user_five_profile_id, tenant_id, org_id, org_code, org_name,
              |    status_of_submission, submitted_at, entityType, parent_one_name, parent_one_id, parent_two_name,
              |    parent_two_id, parent_three_name, parent_three_id, parent_four_name, parent_four_id,
              |    parent_five_name, parent_five_id
@@ -395,9 +395,9 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
 
         val statusParams = Seq(
           userId, userRoleIds, userRoles, solutionId, solutionName, submissionId, submissionNumber,
-          programName, programId, observationName, observationId, userStateName, userStateId,
-          userDistrictName, userDistrictId, userBlockName, userBlockId, userClusterName,
-          userClusterId, userSchoolName, userSchoolId, tenantId, orgId, orgCode, orgName,
+          programName, programId, observationName, observationId, userOneProfileName, userOneProfileId,
+          userTwoProfileName, userTwoProfileId, userThreeProfileName, userThreeProfileId, userFourProfileName,
+          userFourProfileId, userFiveProfileName, userFiveProfileId, tenantId, orgId, orgCode, orgName,
           statusOfSubmission, completedDate, entityType, targetedStateName, targetedStateId, targetedDistrictName,
           targetedDistrictId, targetedBlockName, targetedBlockId, targetedClusterName, targetedClusterId,
           targetedSchoolName, targetedSchoolId
@@ -450,8 +450,8 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
                         s"""INSERT INTO $domainTable (
                            |    user_id, user_role_ids, user_roles, solution_id, solution_name, submission_id, submission_number,
                            |    program_name, program_id, observation_name, observation_id, tenant_id, org_name, org_id, org_code,
-                           |    user_state_name, user_state_id, user_district_name, user_district_id, user_block_name, user_block_id,
-                           |    user_cluster_name, user_cluster_id, user_school_name, user_school_id, domain, domain_level,
+                           |    user_one_profile_name, user_one_profile_id, user_two_profile_name, user_two_profile_id, user_three_profile_name, user_three_profile_id,
+                           |    user_four_profile_name, user_four_profile_id, user_five_profile_name, user_five_profile_id, domain, domain_level,
                            |    criteria, criteria_level, completed_date, entityType, parent_one_name, parent_one_id,
                            |    parent_two_name, parent_two_id, parent_three_name, parent_three_id, parent_four_name,
                            |    parent_four_id, parent_five_name, parent_five_id
@@ -462,8 +462,8 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
 
                       val criteriaParams = Seq(
                         userId, userRoleIds, userRoles, solutionId, solutionName, submissionId, submissionNumber, programName, programId, observationName,
-                        observationId, tenantId, orgName, orgId, orgCode, userStateName, userStateId, userDistrictName, userDistrictId, userBlockName,
-                        userBlockId, userClusterName, userClusterId, userSchoolName, userSchoolId, domainName, domainLevel, criteriaName, criteriaLevel,
+                        observationId, tenantId, orgName, orgId, orgCode, userOneProfileName, userOneProfileId, userTwoProfileName, userTwoProfileId, userThreeProfileName,
+                        userThreeProfileId, userFourProfileName, userFourProfileId, userFiveProfileName, userFiveProfileId, domainName, domainLevel, criteriaName, criteriaLevel,
                         completedDate, entityType, targetedStateName, targetedStateId, targetedDistrictName, targetedDistrictId, targetedBlockName, targetedBlockId,
                         targetedClusterName, targetedClusterId, targetedSchoolName, targetedSchoolId)
 
@@ -499,8 +499,8 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
 
           val commonParams = QuestionParams(payload = payload, questionId = questionId, solutionId = solutionId, solutionName = solutionName, submissionId = submissionId, submissionNumber = submissionNumber, userId = userId, userRoleIds = userRoleIds,
             userRoles = userRoles, programName = programName, programId = programId, observationName = observationName, observationId = observationId, value = value,
-            userStateName = userStateName, userStateId = userStateId, userDistrictName = userDistrictName, userDistrictId = userDistrictId, userBlockName = userBlockName, userBlockId = userBlockId,
-            userClusterName = userClusterName, userClusterId = userClusterId, userSchoolName = userSchoolName, userSchoolId = userSchoolId,
+            userOneProfileName = userOneProfileName, userOneProfileId = userOneProfileId, userTwoProfileName = userTwoProfileName, userTwoProfileId = userTwoProfileId, userThreeProfileName = userThreeProfileName, userThreeProfileId = userThreeProfileId,
+            userFourProfileName = userFourProfileName, userFourProfileId = userFourProfileId, userFiveProfileName = userFiveProfileName, userFiveProfileId = userFiveProfileId,
             tenantId = tenantId, orgId = orgId, orgCode = orgCode, orgName = orgName, statusOfSubmission = statusOfSubmission, submittedAt = completedDate, entityType = entityType,
             parentOneName = targetedStateName, parentOneId = targetedStateId, parentTwoName = targetedDistrictName, parentTwoId = targetedDistrictId, parentThreeName = targetedBlockName, parentThreeId = targetedBlockId,
             parentFourName = targetedClusterName, parentFourId = targetedClusterId, parentFiveName = targetedSchoolName, parentFiveId = targetedSchoolId,
