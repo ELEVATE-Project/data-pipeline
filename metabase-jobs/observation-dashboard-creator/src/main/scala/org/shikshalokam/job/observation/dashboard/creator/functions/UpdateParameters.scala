@@ -88,9 +88,6 @@ object UpdateParameters {
       case Some(value) => value.toString
       case None => throw new Exception("No parameter data found")
     }
-
-    println(s"Parameter JSON String: $parameterJsonString")
-
     val parameterJson: ArrayNode = objectMapper.readTree(parameterJsonString) match {
       case array: ArrayNode => array
       case _ => throw new Exception("Expected parameter data to be an ArrayNode")
@@ -110,12 +107,8 @@ object UpdateParameters {
     sortedParams.foreach { obj =>
       keysToRemove.foreach(obj.remove)
     }
-
-    println(s"Filtered and sorted parameters: ${sortedParams.map(_.toString).mkString(", ")}")
-
     val resultArray = objectMapper.createArrayNode()
     sortedParams.foreach(resultArray.add)
-
     val dashboardResponse: String = metabaseUtil.getDashboardDetailsById(dashboardId)
     val dashboardJson = objectMapper.readTree(dashboardResponse)
     dashboardJson.asInstanceOf[ObjectNode].set("parameters", resultArray)

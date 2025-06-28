@@ -26,7 +26,6 @@ object UpdateQuestionJsonFiles {
             case Some(queryValue: PGobject) =>
               val configJson = objectMapper.readTree(queryValue.getValue)
               val cleanedJson: JsonNode = objectMapper.readTree(cleanDashboardJson(configJson.toString, newLevelDict, false))
-              println(s"Cleaned JSON: ${cleanedJson.toString}")
               if (cleanedJson != null) {
                 val originalQuestionCard = cleanedJson.path("questionCard")
                 val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
