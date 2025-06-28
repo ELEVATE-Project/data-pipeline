@@ -653,38 +653,57 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
                 println(s"Inserted Admin details. Affected rows: $affectedRows")
                 dashboardData.put(dashboardKey, "1")
               } else {
+                val (entityColumn, sourceTable) = entityType match {
+                  case "program"  => (s"${entityType}_name", config.solutions)
+                  case "solution" => ("name", config.solutions)
+                }
+
                 val getEntityNameQuery =
                   s"""
-                     |SELECT DISTINCT ${
-                    if (entityType == "solution") "name"
-                    else s"${entityType}_name"
-                  } AS ${entityType}_name
-                     |FROM ${
-                    entityType match {
-                      case "program" => config.solutions
-                      case "solution" => config.solutions
-                    }
-                  }
+                     |SELECT DISTINCT $entityColumn AS ${entityType}_name
+                     |FROM $sourceTable
                      |WHERE ${entityType}_id = '$targetedId'
-               """.stripMargin.replaceAll("\n", " ")
+                     |""".stripMargin.replaceAll("\n", " ")
+
                 val result = postgresUtil.fetchData(getEntityNameQuery)
                 result.foreach { id =>
                   val entityName = id.get(s"${entityType}_name").map(_.toString).getOrElse("")
-                  val upsertMetaDataQuery =
-                    s"""INSERT INTO ${config.dashboard_metadata} (
-                       |    entity_type, entity_name, entity_id
-                       |) VALUES (
-                       |    ?, ?, ?
-                       |) ON CONFLICT (entity_id) DO UPDATE SET
-                       |    entity_type = ?, entity_name = ?;
-                       |""".stripMargin
 
-                  val dashboardParams = Seq(
-                    entityType, entityName, targetedId, // Insert parameters
-                    entityType, entityName // Update parameters (matching columns in the ON CONFLICT clause)
-                  )
-                  postgresUtil.executePreparedUpdate(upsertMetaDataQuery, dashboardParams, config.dashboard_metadata, targetedId)
-                  println(s"Inserted [$entityName : $targetedId] details.")
+                  if (entityType == "solution") {
+                    // Special insert/upsert logic for solution only
+                    val upsertQuery =
+                      s"""INSERT INTO ${config.dashboard_metadata} (
+                         |    entity_type, entity_name, entity_id,
+                         |    report_type, is_rubrics, parent_name, linked_to
+                         |) VALUES (?, ?, ?, ?, ?, ?, ?)
+                         |ON CONFLICT (entity_id) DO UPDATE SET
+                         |    entity_type = EXCLUDED.entity_type,
+                         |    entity_name = EXCLUDED.entity_name,
+                         |    report_type = EXCLUDED.report_type,
+                         |    is_rubrics = EXCLUDED.is_rubrics,
+                         |    parent_name = EXCLUDED.parent_name,
+                         |    linked_to = EXCLUDED.linked_to
+                         |""".stripMargin
+
+                    val params = Seq(
+                      entityType, entityName, targetedId,
+                      "observation", isRubric.asInstanceOf[AnyRef], event.entityType, programId
+                    )
+                    postgresUtil.executePreparedUpdate(upsertQuery, params, config.dashboard_metadata, targetedId)
+                    println(s"Inserted [$entityName : $targetedId] with reportType=observation, isRubric=$isRubric, parent_name=${event.entityType}, linked_to=$programId.")
+                  } else {
+                    // Default logic for program or others
+                    val insertQuery =
+                      s"""INSERT INTO ${config.dashboard_metadata} (
+                         |    entity_type, entity_name, entity_id
+                         |) VALUES ('$entityType', '$entityName', '$targetedId')
+                         |ON CONFLICT (entity_id) DO NOTHING
+                         |""".stripMargin.replaceAll("\n", " ")
+
+                    val affectedRows = postgresUtil.insertData(insertQuery)
+                    println(s"Inserted [$entityName : $targetedId] with default metadata. Affected rows: $affectedRows")
+                  }
+
                   dashboardData.put(dashboardKey, targetedId)
                 }
               }

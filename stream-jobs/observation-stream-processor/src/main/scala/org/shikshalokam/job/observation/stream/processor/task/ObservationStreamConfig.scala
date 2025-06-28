@@ -74,11 +74,16 @@ class ObservationStreamConfig(override val config: Config) extends BaseJobConfig
        |    is_rubrics Boolean,
        |    parent_name TEXT,
        |    linked_to TEXT,
-       |    collection_id TEXT,
-       |    dashboard_id TEXT,
-       |    question_ids TEXT,
+       |    main_metadata JSON,
+       |    mi_metadata JSON,
+       |    comparison_metadata JSON,
        |    status TEXT,
-       |    error_message TEXT
+       |    error_message TEXT,
+       |    state_details_url_state TEXT,
+       |    state_details_url_admin TEXT,
+       |    district_details_url_district TEXT,
+       |    district_details_url_state TEXT,
+       |    district_details_url_admin TEXT
        |);
        |""".stripMargin
 
