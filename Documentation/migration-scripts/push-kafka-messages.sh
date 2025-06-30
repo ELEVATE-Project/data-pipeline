@@ -29,7 +29,7 @@ today=$(date '+%Y-%m-%dT%H:%M:%S')
 random_id="$(uuidgen)_$today"
 
 # === Create initial JSON payload ===
-initial_json=$(jq -n \
+initial_json=$(jq -nc \
   --arg reportType "Project" \
   --arg publishedAt "$today" \
   --arg targetedDistrict "67c82d37bad58c889bc5a5de" \
@@ -73,7 +73,7 @@ echo "$query_result" | while IFS='|' read -r linked_to entity_id; do
   today=$(date '+%Y-%m-%dT%H:%M:%S')
   random_id="$(uuidgen)_$today"
 
-  projectJson=$(jq -n \
+  projectJson=$(jq -nc \
     --arg reportType "Project" \
     --arg publishedAt "$today" \
     --arg targetedProgram "$linked_to" \
@@ -119,7 +119,7 @@ echo "$query_result" | while IFS='|' read -r linked_to entity_id; do
   today=$(date '+%Y-%m-%dT%H:%M:%S')
   random_id="$(uuidgen)_$today"
 
-  surveyJson=$(jq -n \
+  surveyJson=$(jq -nc \
     --arg reportType "Survey" \
     --arg publishedAt "$today" \
     --arg targetedProgram "$linked_to" \
@@ -167,7 +167,7 @@ echo "$query_result" | while IFS='|' read -r linked_to entity_id is_rubrics pare
   today=$(date '+%Y-%m-%dT%H:%M:%S')
   random_id="$(uuidgen)_$today"
 
-  observationJson=$(jq -n \
+  observationJson=$(jq -nc \
     --arg reportType "Observation" \
     --arg publishedAt "$today" \
     --arg targetedProgram "$linked_to" \
