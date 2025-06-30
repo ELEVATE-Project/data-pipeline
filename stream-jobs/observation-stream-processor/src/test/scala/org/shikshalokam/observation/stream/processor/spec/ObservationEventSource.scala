@@ -9,8 +9,8 @@ import org.shikshalokam.observation.stream.processor.fixture.EventsMock
 class ObservationEventSource extends SourceFunction[Event] {
 
   override def run(ctx: SourceContext[Event]): Unit = {
-    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.OBS_ENTITY_INFO_CHANGE_EVENT_SUB_1), 0, 0))
-    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.OBS_ENTITY_INFO_CHANGE_EVENT_SUB_2), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.EVENT_FROM_QA_ENV_1), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.EVENT_FROM_QA_ENV_2), 0, 0))
   }
 
   override def cancel(): Unit = {}
