@@ -1,12 +1,12 @@
 {
   "questionCard": {
-    "name": "No. of distinct count of school",
+    "name": "No. of distinct count of ${entityType}",
     "collection_id": 644,
     "dataset_query": {
       "database": 2,
       "type": "native",
       "native": {
-        "query": "select count(distinct(parent_five_name))\nFROM ${domainTable}\nWHERE 1 = 1\nAND parent_five_name is not null \nAND parent_five_name <> ''\nAND parent_one_name in (\n    SELECT parent_one_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{state_param}}]]\n  )\nAND parent_two_name in (\n    SELECT parent_two_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{district_param}}]]\n  )\nAND parent_three_name in (\n    SELECT parent_three_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{block_param}}]]\n  )\nAND parent_four_name in (\n    SELECT parent_four_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{cluster_param}}]]\n  )  \nAND parent_five_name in (\n    SELECT parent_five_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{org_param}}]]\n  ) \nAND domain in (\n    SELECT domain_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{domain_param}}]]\n  )  \nAND criteria in (\n    SELECT criteria_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{criteria_param}}]]\n  )",
+        "query": "select count(distinct(${entityColumnName}))\nFROM ${domainTable}\nWHERE 1 = 1\nAND ${entityColumnName} is not null \nAND ${entityColumnName} <> ''\nAND parent_one_name in (\n    SELECT parent_one_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{state_param}}]]\n  )\nAND parent_two_name in (\n    SELECT parent_two_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{district_param}}]]\n  )\nAND parent_three_name in (\n    SELECT parent_three_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{block_param}}]]\n  )\nAND parent_four_name in (\n    SELECT parent_four_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{cluster_param}}]]\n  )  \nAND parent_five_name in (\n    SELECT parent_five_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{org_param}}]]\n  ) \nAND domain in (\n    SELECT domain_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{domain_param}}]]\n  )  \nAND criteria in (\n    SELECT criteria_name\n    FROM ${questionTable}\n    WHERE 1 = 1 [[AND {{criteria_param}}]]\n  )",
         "template-tags": {
           "state_param": {
             "type": "dimension",

@@ -277,13 +277,18 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
         if (databaseId != -1) {
           metabaseUtil.syncDatabaseAndRescanValues(databaseId)
           val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Observation' AND question_type = 'Observation-Question-Parameter'"
-          val (params, diffLevelDict) = extractParameterDicts(parametersQuery, entityType, databaseId, metabaseUtil, observationQuestionTable, postgresUtil, createDashboardQuery)
+          val (params, diffLevelDict, entityColumnName) = extractParameterDicts(parametersQuery, entityType, databaseId, metabaseUtil, observationQuestionTable, postgresUtil, createDashboardQuery)
+          val entityColumnId = if (entityColumnName.endsWith("_name")) {
+            entityColumnName.replaceAll("_name$", "_id")
+          } else {
+            entityColumnName
+          }
           val stateNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "parent_one_name", postgresUtil, createDashboardQuery)
           val districtNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "parent_two_name", postgresUtil, createDashboardQuery)
           metabaseUtil.updateColumnCategory(stateNameId, "State")
           metabaseUtil.updateColumnCategory(districtNameId, "City")
           val domainReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Observation-Question-Domain';"
-          UpdateQuestionDomainJsonFiles.ProcessAndUpdateJsonFiles(domainReportConfigQuery, collectionId, databaseId, dashboardId, observationDomainTable, observationQuestionTable, metabaseUtil, postgresUtil, params, diffLevelDict)
+          UpdateQuestionDomainJsonFiles.ProcessAndUpdateJsonFiles(domainReportConfigQuery, collectionId, databaseId, dashboardId, observationDomainTable, observationQuestionTable, metabaseUtil, postgresUtil, params, diffLevelDict, entityColumnName, entityColumnId, entityType)
           val questionCardIdList = UpdateQuestionJsonFiles.ProcessAndUpdateJsonFiles(collectionId, databaseId, dashboardId, observationQuestionTable, metabaseUtil, postgresUtil, reportConfig, params, diffLevelDict)
           val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
           UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil, diffLevelDict)
@@ -320,7 +325,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
         if (databaseId != -1) {
           metabaseUtil.syncDatabaseAndRescanValues(databaseId)
           val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Observation' AND question_type = 'Observation-Question-Without-Rubric-Parameter'"
-          val (params, diffLevelDict) = extractParameterDicts(parametersQuery, entityType, databaseId, metabaseUtil, observationQuestionTable, postgresUtil, createDashboardQuery)
+          val (params, diffLevelDict, entityColumnName) = extractParameterDicts(parametersQuery, entityType, databaseId, metabaseUtil, observationQuestionTable, postgresUtil, createDashboardQuery)
           val stateNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "parent_one_name", postgresUtil, createDashboardQuery)
           val districtNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationQuestionTable, "parent_two_name", postgresUtil, createDashboardQuery)
           metabaseUtil.updateColumnCategory(stateNameId, "State")
@@ -360,7 +365,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
       if (databaseId != -1) {
         metabaseUtil.syncDatabaseAndRescanValues(databaseId)
         val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Observation' AND question_type = 'Observation-Status-Parameter'"
-        val (params, diffLevelDict) = extractParameterDicts(parametersQuery, entityType, databaseId, metabaseUtil, observationStatusTable, postgresUtil, createDashboardQuery)
+        val (params, diffLevelDict, entityColumnName) = extractParameterDicts(parametersQuery, entityType, databaseId, metabaseUtil, observationStatusTable, postgresUtil, createDashboardQuery)
         val stateNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationStatusTable, "parent_one_name", postgresUtil, createDashboardQuery)
         val districtNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationStatusTable, "parent_two_name", postgresUtil, createDashboardQuery)
         metabaseUtil.updateColumnCategory(stateNameId, "State")
@@ -369,7 +374,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
         val replacements: Map[String, String] = Map(
           "${statusTable}" -> s""""$observationStatusTable""""
         )
-        val questionCardIdList = UpdateStatusJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, metabaseUtil, postgresUtil, params, replacements, diffLevelDict)
+        val questionCardIdList = UpdateStatusJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, metabaseUtil, postgresUtil, params, replacements, diffLevelDict, entityType)
         val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
         UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil, diffLevelDict)
         val observationMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", parentCollectionId).put("dashboardId", dashboardId).put("dashboardName", dashboardName).put("questionIds", questionIdsString))
@@ -395,16 +400,24 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
       if (databaseId != -1) {
         metabaseUtil.syncDatabaseAndRescanValues(databaseId)
         val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Observation' AND question_type = 'Observation-Domain-Parameter'"
-        val (params, diffLevelDict) = extractParameterDicts(parametersQuery, entityType, databaseId, metabaseUtil, observationDomainTable, postgresUtil, createDashboardQuery)
+        val (params, diffLevelDict, entityColumnName) = extractParameterDicts(parametersQuery, entityType, databaseId, metabaseUtil, observationDomainTable, postgresUtil, createDashboardQuery)
+        val entityColumnId = if (entityColumnName.endsWith("_name")) {
+          entityColumnName.replaceAll("_name$", "_id")
+        } else {
+          entityColumnName
+        }
         val stateNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationDomainTable, "parent_one_name", postgresUtil, createDashboardQuery)
         val districtNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, observationDomainTable, "parent_two_name", postgresUtil, createDashboardQuery)
         metabaseUtil.updateColumnCategory(stateNameId, "State")
         metabaseUtil.updateColumnCategory(districtNameId, "City")
         val reportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Observation-Domain' AND report_name = 'Domain-Report';"
         val replacements: Map[String, String] = Map(
-          "${domainTable}" -> s""""$observationDomainTable""""
+          "${domainTable}" -> s""""$observationDomainTable"""",
+          "${entityColumnName}" -> s"""$entityColumnName""",
+          "${entityColumnId}" -> s"""$entityColumnId""",
+          "${entityType}" -> s"""$entityType"""
         )
-        val questionCardIdList = UpdateStatusJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, metabaseUtil, postgresUtil, params, replacements, diffLevelDict)
+        val questionCardIdList = UpdateStatusJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, metabaseUtil, postgresUtil, params, replacements, diffLevelDict, entityType)
         val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
         UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil, diffLevelDict)
         val observationMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", parentCollectionId).put("dashboardId", dashboardId).put("dashboardName", dashboardName).put("questionIds", questionIdsString))
@@ -419,7 +432,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
     }
   }
 
-  def extractParameterDicts(parametersQuery: String, entityType: String, databaseId: Int, metabaseUtil: MetabaseUtil, tableName: String, postgresUtil: PostgresUtil, createDashboardQuery: String): (Map[String, Int], ListMap[String, String]) = {
+  def extractParameterDicts(parametersQuery: String, entityType: String, databaseId: Int, metabaseUtil: MetabaseUtil, tableName: String, postgresUtil: PostgresUtil, createDashboardQuery: String): (Map[String, Int], ListMap[String, String], String) = {
     val DashboardParameter = postgresUtil.fetchData(parametersQuery) match {
       case List(map: Map[_, _]) => map.get("config").map(_.toString).getOrElse("")
       case _ => ""
@@ -436,6 +449,8 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
         .toSeq: _*
     )
 
+    val entityColumnName: String = completeMapOfParamAndColumnName.getOrElse(removeParamsAfterThis, "")
+
     def getTheMapOfParamsAfterRemovingTheEntityParam(completeMapOfParamAndColumnName: ListMap[String, String], removeParamsAfterThis: String): ListMap[String, String] = {
       val keys = completeMapOfParamAndColumnName.keys.toList
       val idx = keys.indexOf(removeParamsAfterThis)
@@ -450,7 +465,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
     val mapOfRemovedParams: ListMap[String, String] =
       if (mapOfParamsAfterRemovingBelowEntityParams.isEmpty) ListMap.empty
       else completeMapOfParamAndColumnName.filterNot { case (k, v) => mapOfParamsAfterRemovingBelowEntityParams.contains(k) && mapOfParamsAfterRemovingBelowEntityParams(k) == v }
-    (params, mapOfRemovedParams)
+    (params, mapOfRemovedParams, entityColumnName)
   }
 
   println(s"***************** End of Processing the Metabase Observation Dashboard *****************\n")
