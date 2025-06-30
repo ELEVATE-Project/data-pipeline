@@ -72,27 +72,48 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def completedDate: String = readOrDefault[String]("completedDate", "")
 
-  def entityType: String = readOrDefault[String]("entityType", null)
+  def entityType: String = readOrDefault[String]("entityInformation.type", null)
 
-  def parentOneName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.state", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
+  def parentOneName: String = getParentName("state", entityType)
 
-  def parentOneId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.state", Seq.empty).headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
+  def parentOneId: String = getParentId("state", entityType)
 
-  def parentTwoName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.district", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
+  def parentTwoName: String = getParentName("district", entityType)
 
-  def parentTwoId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.district", Seq.empty).headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
+  def parentTwoId: String = getParentId("district", entityType)
 
-  def parentThreeName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.block", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
+  def parentThreeName: String = getParentName("block", entityType)
 
-  def parentThreeId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.block", Seq.empty).headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
+  def parentThreeId: String = getParentId("block", entityType)
 
-  def parentFourName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.cluster", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
+  def parentFourName: String = getParentName("cluster", entityType)
 
-  def parentFourId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.cluster", Seq.empty).headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
+  def parentFourId: String = getParentId("cluster", entityType)
 
-  def parentFiveName: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.school", Seq.empty).headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
+  def parentFiveName: String = getParentName("school", entityType)
 
-  def parentFiveId: String = readOrDefault[Seq[Map[String, Any]]]("entityInformation.parentInformation.school", Seq.empty).headOption.flatMap(_.get("externalId")).map(_.toString).getOrElse(null)
+  def parentFiveId: String = getParentId("school", entityType)
+
+  private def getParentName(level: String, entityType: String): String = {
+    if (entityType == level) {
+      readOrDefault[Map[String, Any]]("entityInformation", Map.empty)
+        .get("name").map(_.toString).getOrElse(null)
+    } else {
+      readOrDefault[Seq[Map[String, Any]]](s"entityInformation.parentInformation.$level", Seq.empty)
+        .headOption.flatMap(_.get("name")).map(_.toString).getOrElse(null)
+    }
+  }
+
+  private def getParentId(level: String, entityType: String): String = {
+    if (entityType == level) {
+      val key = if (level == "school") "externalId" else "_id"
+      readOrDefault[Map[String, Any]]("entityInformation", Map.empty)
+        .get(key).map(_.toString).getOrElse(null)
+    } else {
+      readOrDefault[Seq[Map[String, Any]]](s"entityInformation.parentInformation.$level", Seq.empty)
+        .headOption.flatMap(_.get("_id")).map(_.toString).getOrElse(null)
+    }
+  }
 
 }
 

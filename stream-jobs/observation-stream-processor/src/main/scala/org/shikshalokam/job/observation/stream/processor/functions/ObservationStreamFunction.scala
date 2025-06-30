@@ -124,16 +124,16 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       val statusTable = s""""${solutionId}_status""""
       val isRubric = event.isRubric
       val entityType = event.entityType
-      val targetedStateName = event.parentOneName
-      val targetedStateId = event.parentOneId
-      val targetedDistrictName = event.parentTwoName
-      val targetedDistrictId = event.parentTwoId
-      val targetedBlockName = event.parentThreeName
-      val targetedBlockId = event.parentThreeId
-      val targetedClusterName = event.parentFourName
-      val targetedClusterId = event.parentFourId
-      val targetedSchoolName = event.parentFiveName
-      val targetedSchoolId = event.parentFiveId
+      val parentOneObservedName = event.parentOneName
+      val parentOneObservedId = event.parentOneId
+      val parentTwoObservedName = event.parentTwoName
+      val parentTwoObservedId = event.parentTwoId
+      val parentThreeObservedName = event.parentThreeName
+      val parentThreeObservedId = event.parentThreeId
+      val parentFourObservedName = event.parentFourName
+      val parentFourObservedId = event.parentFourId
+      val parentFiveObservedName = event.parentFiveName
+      val parentFiveObservedId = event.parentFiveId
 
       println(s"statusOfSubmission = $statusOfSubmission")
       println(s"submissionId = $submissionId")
@@ -171,16 +171,16 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       println(s"statusTable = $statusTable")
       println(s"isRubric = $isRubric")
       println(s"entityType = $entityType")
-      println(s"targetedStateName = $targetedStateName")
-      println(s"targetedStateId = $targetedStateId")
-      println(s"targetedDistrictName = $targetedDistrictName")
-      println(s"targetedDistrictId = $targetedDistrictId")
-      println(s"targetedBlockName = $targetedBlockName")
-      println(s"targetedBlockId = $targetedBlockId")
-      println(s"targetedClusterName = $targetedClusterName")
-      println(s"targetedClusterId = $targetedClusterId")
-      println(s"targetedSchoolName = $targetedSchoolName")
-      println(s"targetedSchoolId = $targetedSchoolId")
+      println(s"parentOneObservedName = $parentOneObservedName")
+      println(s"parentOneObservedId = $parentOneObservedId")
+      println(s"parentTwoObservedName = $parentTwoObservedName")
+      println(s"parentTwoObservedId = $parentTwoObservedId")
+      println(s"parentThreeObservedName = $parentThreeObservedName")
+      println(s"parentThreeObservedId = $parentThreeObservedId")
+      println(s"parentFourObservedName = $parentFourObservedName")
+      println(s"parentFourObservedId = $parentFourObservedId")
+      println(s"parentFiveObservedName = $parentFiveObservedName")
+      println(s"parentFiveObservedId = $parentFiveObservedId")
       println("\n\n")
 
       val createDomainsTable =
@@ -398,9 +398,9 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
           programName, programId, observationName, observationId, userOneProfileName, userOneProfileId,
           userTwoProfileName, userTwoProfileId, userThreeProfileName, userThreeProfileId, userFourProfileName,
           userFourProfileId, userFiveProfileName, userFiveProfileId, tenantId, orgId, orgCode, orgName,
-          statusOfSubmission, completedDate, entityType, targetedStateName, targetedStateId, targetedDistrictName,
-          targetedDistrictId, targetedBlockName, targetedBlockId, targetedClusterName, targetedClusterId,
-          targetedSchoolName, targetedSchoolId
+          statusOfSubmission, completedDate, entityType, parentOneObservedName, parentOneObservedId, parentTwoObservedName,
+          parentTwoObservedId, parentThreeObservedName, parentThreeObservedId, parentFourObservedName, parentFourObservedId,
+          parentFiveObservedName, parentFiveObservedId
         )
         postgresUtil.executePreparedUpdate(insertStatusQuery, statusParams, statusTable, submissionId)
         println("\n\n")
@@ -464,8 +464,8 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
                         userId, userRoleIds, userRoles, solutionId, solutionName, submissionId, submissionNumber, programName, programId, observationName,
                         observationId, tenantId, orgName, orgId, orgCode, userOneProfileName, userOneProfileId, userTwoProfileName, userTwoProfileId, userThreeProfileName,
                         userThreeProfileId, userFourProfileName, userFourProfileId, userFiveProfileName, userFiveProfileId, domainName, domainLevel, criteriaName, criteriaLevel,
-                        completedDate, entityType, targetedStateName, targetedStateId, targetedDistrictName, targetedDistrictId, targetedBlockName, targetedBlockId,
-                        targetedClusterName, targetedClusterId, targetedSchoolName, targetedSchoolId)
+                        completedDate, entityType, parentOneObservedName, parentOneObservedId, parentTwoObservedName, parentTwoObservedId, parentThreeObservedName, parentThreeObservedId,
+                        parentFourObservedName, parentFourObservedId, parentFiveObservedName, parentFiveObservedId)
 
                       postgresUtil.executePreparedUpdate(insertCriteriaQuery, criteriaParams, domainTable, solutionId)
                     }
@@ -502,8 +502,8 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
             userOneProfileName = userOneProfileName, userOneProfileId = userOneProfileId, userTwoProfileName = userTwoProfileName, userTwoProfileId = userTwoProfileId, userThreeProfileName = userThreeProfileName, userThreeProfileId = userThreeProfileId,
             userFourProfileName = userFourProfileName, userFourProfileId = userFourProfileId, userFiveProfileName = userFiveProfileName, userFiveProfileId = userFiveProfileId,
             tenantId = tenantId, orgId = orgId, orgCode = orgCode, orgName = orgName, statusOfSubmission = statusOfSubmission, submittedAt = completedDate, entityType = entityType,
-            parentOneName = targetedStateName, parentOneId = targetedStateId, parentTwoName = targetedDistrictName, parentTwoId = targetedDistrictId, parentThreeName = targetedBlockName, parentThreeId = targetedBlockId,
-            parentFourName = targetedClusterName, parentFourId = targetedClusterId, parentFiveName = targetedSchoolName, parentFiveId = targetedSchoolId,
+            parentOneName = parentOneObservedName, parentOneId = parentOneObservedId, parentTwoName = parentTwoObservedName, parentTwoId = parentTwoObservedId, parentThreeName = parentThreeObservedName, parentThreeId = parentThreeObservedId,
+            parentFourName = parentFourObservedName, parentFourId = parentFourObservedId, parentFiveName = parentFiveObservedName, parentFiveId = parentFiveObservedId,
             domainName = domainName, criteriaName = criteriaName, score = score, hasParentQuestion = hasParentQuestion, parentQuestionText = parentQuestionText, evidences = evidences, remarks = remarks
           )
           responseType match {
