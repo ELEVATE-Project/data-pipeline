@@ -12,7 +12,7 @@ import scala.util.{Failure, Success, Try}
 
 
 object UpdateStatusJsonFiles {
-  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, params: Map[String, Int], replacements: Map[String, String], newLevelDict: ListMap[String, String]): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, params: Map[String, Int], replacements: Map[String, String], newLevelDict: ListMap[String, String], entityType: String): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
@@ -27,7 +27,14 @@ object UpdateStatusJsonFiles {
               val cleanedJson: JsonNode = objectMapper.readTree(cleanDashboardJson(configJson.toString, newLevelDict))
               if (cleanedJson != null) {
                 val originalQuestionCard = cleanedJson.path("questionCard")
-                val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
+                val chartName = Option(originalQuestionCard.path("name").asText())
+                  .map(name => name.replace("${entityType}", entityType))
+                  .getOrElse("Unknown Chart")
+                val nameNode = originalQuestionCard.asInstanceOf[ObjectNode].get("name")
+                if (nameNode != null && nameNode.isTextual) {
+                  val updatedName = nameNode.asText().replace("${entityType}", entityType)
+                  originalQuestionCard.asInstanceOf[ObjectNode].put("name", updatedName)
+                }
                 val updatedQuestionCard = updateQuestionCardJsonValues(cleanedJson, collectionId, databaseId, params)
                 val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, replacements)
                 val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]

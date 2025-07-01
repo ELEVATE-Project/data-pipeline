@@ -1,12 +1,12 @@
 {
   "questionCard": {
-    "name": "No. of distinct count of school",
+    "name": "No. of distinct count of ${entityType} observed",
     "collection_id": 644,
     "dataset_query": {
       "database": 2,
       "type": "native",
       "native": {
-        "query": "select count(distinct(parent_five_name))\nFROM ${domainTable}\nWHERE 1 = 1\nAND parent_five_name is not null \nAND parent_five_name <> ''\n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{block_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{org_param}}]]\n[[AND {{domain_param}}]]\n[[AND {{criteria_param}}]]",
+        "query": "select count(distinct(${entityColumnName}))\nFROM ${domainTable}\nWHERE 1 = 1\nAND ${entityColumnName} is not null \nAND ${entityColumnName} <> ''\n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{block_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{org_param}}]]\n[[AND {{domain_param}}]]\n[[AND {{criteria_param}}]]",
         "template-tags": {
           "state_param": {
             "type": "dimension",

@@ -330,13 +330,6 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboard_metadata)
 
       /**
-       * Creating required tables
-       */
-      checkAndCreateTable(statusTable, createStatusTable)
-      checkAndCreateTable(questionTable, createQuestionsTable)
-      if (isRubric != false) checkAndCreateTable(domainTable, createDomainsTable)
-
-      /**
        * Performs an upsert operation on the solution table irrespective of the submission status.
        * This ensures the solution information is always updated/inserted in the database.
        */
@@ -376,6 +369,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
        */
       if (statusOfSubmission != null) {
         println("===> Processing observation status data")
+        checkAndCreateTable(statusTable, createStatusTable)
         val deleteQuery = s"""DELETE FROM $statusTable WHERE user_id = ? AND submission_id = ? AND submission_number = ?; """
         val deleteParams = Seq(userId, submissionId, submissionNumber)
         postgresUtil.executePreparedDelete(deleteQuery, deleteParams, statusTable, submissionId)
@@ -412,7 +406,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
        */
       if (statusOfSubmission == "completed") {
         println("===> Processing observation domain data")
-        if (isRubric != false) {
+        if (isRubric) {
           checkAndCreateTable(domainTable, createDomainsTable)
           val deleteQuery = s"""DELETE FROM $domainTable WHERE user_id = ? AND submission_id = ? AND submission_number = ?; """
           val deleteParams = Seq(userId, submissionId, submissionNumber)
@@ -479,6 +473,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
         }
 
         println("===> Processing observation question data")
+        checkAndCreateTable(questionTable, createQuestionsTable)
         val deleteQuery = s"""DELETE FROM $questionTable WHERE user_id = ? AND submission_id = ? AND submission_number = ?; """
         val deleteParams = Seq(userId, submissionId, submissionNumber)
         postgresUtil.executePreparedDelete(deleteQuery, deleteParams, questionTable, submissionId)
@@ -619,23 +614,25 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       /**
        * Logic to populate kafka messages for creating metabase dashboard
        */
-      val dashboardData = new java.util.HashMap[String, String]()
-      val dashboardConfig = Seq(
-        ("admin", "1", "admin"),
-        ("program", programId, "targetedProgram"),
-        ("solution", solutionId, "targetedSolution")
-      )
+      if (statusOfSubmission == "completed") {
+        val dashboardData = new java.util.HashMap[String, String]()
+        val dashboardConfig = Seq(
+          ("admin", "1", "admin"),
+          ("program", programId, "targetedProgram"),
+          ("solution", solutionId, "targetedSolution")
+        )
 
-      dashboardConfig
-        .filter { case (key, _, _) => config.reportsEnabled.contains(key) }
-        .foreach { case (key, value, target) =>
-          checkAndInsert(key, value, dashboardData, target)
+        dashboardConfig
+          .filter { case (key, _, _) => config.reportsEnabled.contains(key) }
+          .foreach { case (key, value, target) =>
+            checkAndInsert(key, value, dashboardData, target)
+          }
+
+        if (!dashboardData.isEmpty) {
+          dashboardData.put("isRubric", isRubric.toString)
+          dashboardData.put("entityType", entityType)
+          pushObservationDashboardEvents(dashboardData, context)
         }
-
-      if (!dashboardData.isEmpty) {
-        dashboardData.put("isRubric", isRubric.toString)
-        dashboardData.put("entityType", entityType)
-        pushObservationDashboardEvents(dashboardData, context)
       }
 
       def checkAndInsert(entityType: String, targetedId: String, dashboardData: java.util.HashMap[String, String], dashboardKey: String): Unit = {

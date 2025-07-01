@@ -246,9 +246,6 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       postgresUtil.checkAndCreateTable(surveyStatusTable, createSurveyStatusTableQuery)
       postgresUtil.executeUpdate(AlterSurveyStatusTableQuery,surveyStatusTable,solutionId)
 
-      postgresUtil.checkAndCreateTable(surveyQuestionTable, createSurveyQuestionsTableQuery)
-      postgresUtil.executeUpdate(AlterSurveyQuestionsTableQuery, surveyQuestionTable, solutionId)
-
       val upsertSurveyDataQuery =
         s"""INSERT INTO $surveyStatusTable (
            |    survey_id, user_id, user_role_ids, user_roles, state_id, state_name, district_id, district_name,
@@ -285,6 +282,9 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
         /**
          * Extracting Survey Questions Data
          */
+        postgresUtil.checkAndCreateTable(surveyQuestionTable, createSurveyQuestionsTableQuery)
+        postgresUtil.executeUpdate(AlterSurveyQuestionsTableQuery, surveyQuestionTable, solutionId)
+
         val solution_id = event.solutionId
         val solution_name = event.solutionName
         val user_id = event.createdBy
@@ -492,21 +492,23 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       /**
        * Logic to populate kafka messages for creating metabase dashboard
        */
-      val dashboardData = new java.util.HashMap[String, String]()
-      val dashboardConfig = Seq(
-        ("admin", "1", "admin"),
-        ("program", event.programId, "targetedProgram"),
-        ("solution", event.solutionId, "targetedSolution")
-      )
+      if (event.status == "completed") {
+        val dashboardData = new java.util.HashMap[String, String]()
+        val dashboardConfig = Seq(
+          ("admin", "1", "admin"),
+          ("program", event.programId, "targetedProgram"),
+          ("solution", event.solutionId, "targetedSolution")
+        )
 
-      dashboardConfig
-        .filter { case (key, _, _) => config.reportsEnabled.contains(key) }
-        .foreach { case (key, value, target) =>
-          checkAndInsert(key, value, dashboardData, target)
+        dashboardConfig
+          .filter { case (key, _, _) => config.reportsEnabled.contains(key) }
+          .foreach { case (key, value, target) =>
+            checkAndInsert(key, value, dashboardData, target)
+          }
+
+        if (!dashboardData.isEmpty) {
+          pushSurveyDashboardEvents(dashboardData, context)
         }
-
-      if (!dashboardData.isEmpty) {
-        pushSurveyDashboardEvents(dashboardData, context)
       }
     } else {
       println(s"Skipping the survey event with Id = ${event._id} and status = ${event.status} as it is not in a valid status.")
