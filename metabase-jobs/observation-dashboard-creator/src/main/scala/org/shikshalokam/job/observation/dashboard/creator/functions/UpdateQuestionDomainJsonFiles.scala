@@ -117,7 +117,7 @@ object UpdateQuestionDomainJsonFiles {
         items.foreach { item =>
           if (removeByColumnName) {
             // Remove entire AND <column_name> = ( ... )
-            val regex = ("""(?is)\s*AND\s+""" + java.util.regex.Pattern.quote(item) + """\s*=\s*\((?:[^()]*|\((?:[^()]*|\([^()]*\))*\))*\)""").r
+            val regex = ("""(?is)\s*AND\s+""" + java.util.regex.Pattern.quote(item) + """\s+in\s*\((?:[^()]*|\((?:[^()]*|\([^()]*\))*\))*\)""").r
             queryStr = regex.replaceAllIn(queryStr, "")
           } else {
             // Remove [[AND {{key}}]]

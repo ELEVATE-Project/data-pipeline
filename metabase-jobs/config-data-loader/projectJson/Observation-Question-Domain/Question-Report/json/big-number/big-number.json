@@ -1,6 +1,6 @@
 {
   "questionCard": {
-    "name": "No. of distinct count of ${entityType}",
+    "name": "No. of distinct count of ${entityType} observed",
     "collection_id": 644,
     "dataset_query": {
       "database": 2,

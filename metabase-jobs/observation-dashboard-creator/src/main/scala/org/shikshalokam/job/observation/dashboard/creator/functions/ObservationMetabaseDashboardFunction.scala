@@ -46,7 +46,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
     println(s"***************** Start of Processing the Metabase Dashboard Event with Id = ${event._id}*****************")
 
     val admin = event.admin
-    val targetedProgramId = event.targetedProgram
+    val solutions: String = config.solutions
     val targetedSolutionId = event.targetedSolution
     val isRubric = event.isRubric
     val entityType = event.entityType
@@ -56,18 +56,20 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
     val ObservationDomainTable = s"${targetedSolutionId}_domain"
     val ObservationQuestionTable = s"${targetedSolutionId}_questions"
     val ObservationStatusTable = s"${targetedSolutionId}_status"
-
-    val solutionNameQuery = s"SELECT entity_name from $metaDataTable where entity_id = '$targetedSolutionId'"
-    val solutionName = postgresUtil.fetchData(solutionNameQuery) match {
-      case List(map: Map[_, _]) => map.get("entity_name").map(_.toString).getOrElse("")
-      case _ => ""
+    val solutionName = postgresUtil.fetchData(s"""SELECT entity_name FROM $metaDataTable WHERE entity_id = '$targetedSolutionId'""").collectFirst { case map: Map[_, _] => map.getOrElse("entity_name", "").toString }.getOrElse("")
+    val targetedProgramId: String = {
+      val id = Option(event.targetedProgram).map(_.trim).getOrElse("")
+      if (id.nonEmpty) id
+      else {
+        val query = s"SELECT program_id FROM $solutions WHERE solution_id = '$targetedSolutionId'"
+        println(query)
+        postgresUtil.fetchData(query) match {
+          case List(map: Map[_, _]) => map.get("program_id").map(_.toString).getOrElse("")
+          case _ => ""
+        }
+      }
     }
-
-    val programNameQuery = s"SELECT entity_name from $metaDataTable where entity_id = '$targetedProgramId'"
-    val programName = postgresUtil.fetchData(programNameQuery) match {
-      case List(map: Map[_, _]) => map.get("entity_name").map(_.toString).getOrElse("")
-      case _ => ""
-    }
+    val programName = postgresUtil.fetchData(s"""SELECT entity_name from $metaDataTable where entity_id = '$targetedProgramId'""").collectFirst { case map: Map[_, _] => map.get("entity_name").map(_.toString).getOrElse("") }.getOrElse("")
 
     println(s"entityType: $entityType")
     println(s"domainTable: $ObservationDomainTable")
