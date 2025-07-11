@@ -45,10 +45,11 @@ object Utils {
 
   }
 
-  def createDashboard(collectionId: Int, dashboardName: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): Int = {
+  def createDashboard(collectionId: Int, dashboardName: String, dashboardDescription: String, metabaseUtil: MetabaseUtil): Int = {
     val dashboardRequestBody =
       s"""{
          |  "name": "$dashboardName",
+         |  "description": "$dashboardDescription",
          |  "collection_id": "$collectionId",
          |  "collection_position": "1"
          |}""".stripMargin

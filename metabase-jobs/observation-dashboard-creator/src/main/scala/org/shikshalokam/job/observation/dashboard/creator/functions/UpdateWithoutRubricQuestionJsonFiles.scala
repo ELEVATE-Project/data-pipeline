@@ -11,14 +11,14 @@ import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
 object UpdateWithoutRubricQuestionJsonFiles {
-  def ProcessAndUpdateJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, question: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, report_config: String, params: Map[String, Int], newLevelDict: ListMap[String, String]): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, question: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, report_config: String, params: Map[String, Int], newLevelDict: ListMap[String, String], evidenceBaseUrl: String): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
     val csvConfigQuery = s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question-Without-Rubric' AND question_type = 'table';"
 
-    def processCsvJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, questionTable: String, newRow : Int, newCol: Int, params: Map[String, Int], newLevelDict: ListMap[String, String]): Unit = {
+    def processCsvJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, questionTable: String, newRow : Int, newCol: Int, params: Map[String, Int], newLevelDict: ListMap[String, String], evidenceBaseUrl: String): Unit = {
       val queryResult = postgresUtil.fetchData(csvConfigQuery)
       queryResult.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -30,13 +30,13 @@ object UpdateWithoutRubricQuestionJsonFiles {
                 val originalQuestionCard = cleanedJson.path("questionCard")
                 val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
                 val updatedQuestionCard = updateQuestionCardJsonValues(cleanedJson, collectionId, databaseId, params)
-                val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, questionTable, null)
+                val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, questionTable, null, evidenceBaseUrl)
                 val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
-                println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
                 questionCardId.append(cardId)
                 val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(cleanedJson, cardId, newRow , newCol )
                 AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedQuestionIdInDashCard, dashboardId)
+                println(s"Added question card with ID: $cardId and chart name: $chartName to dashboard with ID: $dashboardId")
               }
             case None =>
               println("Key 'config' not found in the result row.")
@@ -95,7 +95,20 @@ object UpdateWithoutRubricQuestionJsonFiles {
         }
       }
 
-      def processQuestionType(questionType: String, questionId: String, questionText: String): Unit = {
+      def formatQuestionText(questionType: String, questionText: String): String = {
+        val typeLabel = questionType.capitalize match {
+          case "multiselect" => "Multiselect Type Question"
+          case "slider" => "Slider Type Question"
+          case "radio" => "Radio Type Question"
+          case "number" => "Number Type Question"
+          case "text" => "Text Type Question"
+          case "date" => "Date Type Question"
+          case other => s"$other Type Question"
+        }
+        s"$typeLabel : $questionText"
+      }
+
+      def processQuestionType(questionType: String, questionId: String): Unit = {
         val resultKey = questionType match {
           case "slider" => "slider"
           case "radio" => "radio"
@@ -111,8 +124,12 @@ object UpdateWithoutRubricQuestionJsonFiles {
             case Some(queryValue: PGobject) =>
               val configJson = objectMapper.readTree(queryValue.getValue)
               val cleanedJson: JsonNode = objectMapper.readTree(cleanDashboardJson(configJson.toString, newLevelDict))
+              val originalQuestionCard = cleanedJson.path("questionCard")
+              if (originalQuestionCard.isObject) {
+                originalQuestionCard.asInstanceOf[com.fasterxml.jackson.databind.node.ObjectNode].put("name", ".")
+              }
               val updatedQuestionCard = updateQuestionCardJsonValues(cleanedJson, collectionId, databaseId, params)
-              val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, question, questionId)
+              val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, question, questionId, null)
               val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
               val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
               println(s">>>>>>>>> Successfully created question card with card_id: $cardId")
@@ -131,31 +148,35 @@ object UpdateWithoutRubricQuestionJsonFiles {
         val questionId = row.get("question_id").map(_.toString).getOrElse("")
         val questionText = row.get("question_text").map(_.toString).getOrElse("")
         val questionType = row.get("question_type").map(_.toString).getOrElse("")
-        processHeading(questionText)
-        processQuestionType(questionType, questionId, questionText)
+        val formattedText = formatQuestionText(questionType, questionText)
+        println(s"Formatted Question Text: $formattedText")
+        processHeading(formattedText)
+        processQuestionType(questionType, questionId)
       }
 
       val processedParentQuestions = scala.collection.mutable.Set[String]()
-      var questionCounter = 1
+//      var questionCounter = 1
 
       results("matrix").foreach { row =>
         val questionId = row.get("question_id").map(_.toString).getOrElse("")
         val questionType = row.get("question_type").map(_.toString).getOrElse("")
         val questionText = row.get("question_text").map(_.toString).getOrElse("")
         val parentQuestionText = row.get("parent_question_text").map(_.toString).getOrElse("")
-
+        val formattedParentText = s"Matrix Type Question : $parentQuestionText"
         if (!processedParentQuestions.contains(parentQuestionText)) {
-          processHeading(parentQuestionText)
+          processHeading(formattedParentText)
           processedParentQuestions.add(parentQuestionText)
         }
 
-        val numberedQuestionText = s"$questionCounter. $questionText"
-        questionCounter += 1
-        processHeading(numberedQuestionText)
-        processQuestionType(questionType, questionId, questionText)
+//        val numberedQuestionText = s"$questionCounter. $questionText"
+//        questionCounter += 1
+        val formattedText = formatQuestionText(questionType, questionText)
+        println(s"Formatted Question Text: $formattedText")
+        processHeading(formattedText)
+        processQuestionType(questionType, questionId)
       }
 
-      processCsvJsonFiles(collectionId, databaseId, dashboardId, question, newRow, newCol, params, newLevelDict)
+      processCsvJsonFiles(collectionId, databaseId, dashboardId, question, newRow, newCol, params, newLevelDict, evidenceBaseUrl)
     }
 
     def cleanDashboardJson(jsonStr: String, newLevelDict: Map[String, String]): String = {
@@ -294,7 +315,7 @@ object UpdateWithoutRubricQuestionJsonFiles {
       }
     }
 
-    def updatePostgresDatabaseQuery(json: JsonNode, questionTable: String, questionId: String): JsonNode = {
+    def updatePostgresDatabaseQuery(json: JsonNode, questionTable: String, questionId: String, evidenceBaseUrl: String): JsonNode = {
       Try {
         val queryNode = json.at("/dataset_query/native/query")
         if (queryNode.isMissingNode || !queryNode.isTextual) {
@@ -304,6 +325,7 @@ object UpdateWithoutRubricQuestionJsonFiles {
         val updatedQuery = queryNode.asText()
           .replace("${questionTable}", s""""$questionTable"""")
           .replace("${questionId}", s"""'$questionId'""")
+          .replace("${evidenceBaseUrl}", s"""'$evidenceBaseUrl'""")
         val updatedJson = json.deepCopy().asInstanceOf[ObjectNode]
         updatedJson.at("/dataset_query/native")
           .asInstanceOf[ObjectNode]
