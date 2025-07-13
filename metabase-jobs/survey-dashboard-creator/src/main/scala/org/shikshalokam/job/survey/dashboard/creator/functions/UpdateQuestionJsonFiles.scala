@@ -122,6 +122,10 @@ object UpdateQuestionJsonFiles {
             case Some(queryValue: PGobject) =>
               val configJson = objectMapper.readTree(queryValue.getValue)
               Option(configJson).foreach { json =>
+                val originalQuestionCard = configJson.path("questionCard")
+                if (originalQuestionCard.isObject) {
+                  originalQuestionCard.asInstanceOf[com.fasterxml.jackson.databind.node.ObjectNode].put("name", ".")
+                }
                 val updatedQuestionCard = updateQuestionCardJsonValues(json, collectionId, stateNameId, districtNameId, blockNameId, clusterNameId, schoolNameId, orgNameId, databaseId)
                 val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, question, questionId, evidenceBaseUrl)
                 val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
