@@ -1,0 +1,251 @@
+{
+  "questionCard": {
+    "name": "Submitted",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "query": "SELECT\n  COUNT(DISTINCT project_id) AS \"no_of_projects_submitted\"\nFROM\n  ${config.projects}\nWHERE 1 = 1\nAND status = 'submitted'\n[[AND ${config.projects}.state_id = (\n        SELECT state_id\n        FROM ${config.projects}\n        WHERE {{state_param}}\n        LIMIT 1)\n  ]]\n  [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE {{district_param}} \n        LIMIT 1)\n  ]] \n  [[AND ${config.projects}.program_id = (\n        SELECT ${config.projects}.program_id\n        FROM ${config.projects}\n        JOIN ${config.solutions} ON ${config.projects}.solution_id = ${config.solutions}.solution_id\n        WHERE {{program_param}} \n        LIMIT 1 )\n   ]]\n[[AND ${config.projects}.block_id = (\n        SELECT block_id\n        FROM ${config.projects}\n        WHERE {{block_param}} \n        LIMIT 1\n        )\n   ]] \n   [[AND ${config.projects}.cluster_id = (\n        SELECT cluster_id\n        FROM ${config.projects}\n        WHERE {{cluster_param}} \n        LIMIT 1\n        )\n   ]]\n   [[AND ${config.projects}.org_id = (\n        SELECT org_id\n        FROM ${config.projects}\n        WHERE {{org_param}} \n        LIMIT 1\n        )\n   ]]",
+        "template-tags": {
+          "block_param": {
+            "type": "dimension",
+            "name": "block_param",
+            "id": "bee6b62d-7188-4612-8a4e-d4395d31fcfe",
+            "display-name": "Block Param",
+            "dimension": [
+              "field",
+              478,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "cluster_param": {
+            "type": "dimension",
+            "name": "cluster_param",
+            "id": "5aba365a-34c9-4a92-93c6-33bc07440f71",
+            "display-name": "Cluster Param",
+            "dimension": [
+              "field",
+              491,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "district_param": {
+            "type": "dimension",
+            "name": "district_param",
+            "id": "5b2cad5e-9fc1-4d23-af8c-14d69451084f",
+            "display-name": "District Param",
+            "dimension": [
+              "field",
+              469,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "program_param": {
+            "type": "dimension",
+            "name": "program_param",
+            "id": "06c1e06d-59f2-4dea-ba99-10fd5349280b",
+            "display-name": "Program Param",
+            "dimension": [
+              "field",
+              511,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "state_param": {
+            "type": "dimension",
+            "name": "state_param",
+            "id": "f0b991a5-c929-435f-9ed6-b9ae0f71907f",
+            "display-name": "State Param",
+            "default": null,
+            "dimension": [
+              "field",
+              483,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "org_param": {
+            "type": "dimension",
+            "name": "org_param",
+            "id": "8c84c6fd-bc47-4a7e-941d-77d54dfa3411",
+            "display-name": "Org Param",
+            "default": null,
+            "dimension": [
+              "field",
+              485,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          }
+        }
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {},
+    "parameters": [
+      {
+        "id": "bee6b62d-7188-4612-8a4e-d4395d31fcfe",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "block_param"
+          ]
+        ],
+        "name": "Block Param",
+        "slug": "block_param"
+      },
+      {
+        "id": "5aba365a-34c9-4a92-93c6-33bc07440f71",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "cluster_param"
+          ]
+        ],
+        "name": "Cluster Param",
+        "slug": "cluster_param"
+      },
+      {
+        "id": "5b2cad5e-9fc1-4d23-af8c-14d69451084f",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "district_param"
+          ]
+        ],
+        "name": "District Param",
+        "slug": "district_param"
+      },
+      {
+        "id": "06c1e06d-59f2-4dea-ba99-10fd5349280b",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "program_param"
+          ]
+        ],
+        "name": "Program Param",
+        "slug": "program_param"
+      },
+      {
+        "id": "f0b991a5-c929-435f-9ed6-b9ae0f71907f",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "state_param"
+          ]
+        ],
+        "name": "State Param",
+        "slug": "state_param"
+      },
+      {
+        "id": "8c84c6fd-bc47-4a7e-941d-77d54dfa3411",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "org_param"
+          ]
+        ],
+        "name": "Org Param",
+        "slug": "org_param"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 6944,
+    "dashboard_tab_id": null,
+    "id": 20,
+    "col": 16,
+    "row": 0,
+    "size_x": 8,
+    "size_y": 3,
+    "visualization_settings": {},
+    "parameter_mappings": [
+      {
+        "card_id": 8985,
+        "parameter_id": "c32c8fc5",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "state_param"
+          ]
+        ]
+      },
+      {
+        "card_id": 8985,
+        "parameter_id": "74a10335",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "district_param"
+          ]
+        ]
+      },
+      {
+        "card_id": 8985,
+        "parameter_id": "8c7d86ea",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "program_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "6e5c08dc",
+        "card_id": 8985,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "block_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "efa886d3",
+        "card_id": 8985,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "cluster_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "5088d3e5",
+        "card_id": 8985,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "org_param"
+          ]
+        ]
+      }
+    ]
+  }
+}
