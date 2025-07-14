@@ -10,9 +10,7 @@ object UpdateAndAddProgramFilter {
   val objectMapper = new ObjectMapper()
 
   def updateAndAddFilter(metabaseUtil: MetabaseUtil, queryResult: JsonNode, programId: String, collectionId: Int, databaseId: Int, projectTable: String, solutionTable: String): Int = {
-    println(s"---------------- started processing updateAndAddFilter Function -------------------")
-
-    def replaceProgramName(json: JsonNode, targatedProgramId: String, projectTable: String, solutionTable: String): JsonNode = {
+    def replaceProgramName(json: JsonNode, targetedProgramId: String, projectTable: String, solutionTable: String): JsonNode = {
       def processNode(node: JsonNode): JsonNode = {
         node match {
           case obj: ObjectNode =>
@@ -21,7 +19,7 @@ object UpdateAndAddProgramFilter {
               if (childNode.isTextual) {
                 var updatedText = childNode.asText()
                 if (updatedText.contains("PROGRAMID")) {
-                  updatedText = updatedText.replace("PROGRAMID", targatedProgramId)
+                  updatedText = updatedText.replace("PROGRAMID", targetedProgramId)
                 }
 
                 if (updatedText.contains("${config.projects}")) {
@@ -50,7 +48,6 @@ object UpdateAndAddProgramFilter {
           case _ => node
         }
       }
-
       val updatedJson = processNode(json.deepCopy())
       updatedJson
     }
@@ -74,7 +71,6 @@ object UpdateAndAddProgramFilter {
       }
     }
 
-
     def getTheQuestionId(json: JsonNode): Int = {
       try {
         val requestBody = json.get("questionCard")
@@ -90,11 +86,9 @@ object UpdateAndAddProgramFilter {
           -1
       }
     }
-
     val ReplacedProgramNameJson = replaceProgramName(queryResult, programId, projectTable, solutionTable)
     val updatedJson = updateCollectionIdAndDatabaseId(ReplacedProgramNameJson, collectionId, databaseId)
     val questionId = getTheQuestionId(updatedJson)
-    println(s"---------------- completed processing updateAndAddFilter Function -------------------")
     questionId
   }
 }

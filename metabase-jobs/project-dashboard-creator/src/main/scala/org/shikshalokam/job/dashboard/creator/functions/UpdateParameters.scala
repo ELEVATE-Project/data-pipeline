@@ -8,7 +8,7 @@ import scala.collection.JavaConverters._
 
 object UpdateParameters {
   def updateParameterFunction(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, parametersQuery: String, slugNameToStateIdMap: Map[String, Int], dashboardId: Int): Unit = {
-    println(s"-----------Started Processing State dashboard parameter ------------")
+    println(s"=====> Started Processing Program/State dashboard parameter")
 
     val objectMapper = new ObjectMapper()
     val parameterData: List[Any] = postgresUtil.fetchData(parametersQuery).flatMap(_.get("config"))
@@ -75,11 +75,11 @@ object UpdateParameters {
     updatePayload.set("parameters", finalParametersArray)
 
     metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString)
-    println(s"----------------Successfully updated State dashboard parameter----------------")
+    println(s"=====> Successfully updated Program/State dashboard parameter")
   }
 
   def UpdateAdminParameterFunction(metabaseUtil: MetabaseUtil, parametersQuery: String, dashboardId: Int, postgresUtil: PostgresUtil): Unit = {
-    println(s"-----------Started Processing Admin dashboard parameter------------")
+    println(s"=====> Started processing Micro Improvements dashboard parameter")
 
     val objectMapper = new ObjectMapper()
     val parameterData: List[Any] = postgresUtil.fetchData(parametersQuery).flatMap(_.get("config"))
@@ -114,6 +114,6 @@ object UpdateParameters {
     updatePayload.set("parameters", finalParametersJson)
 
     metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString)
-    println(s"----------------Successfully updated Admin dashboard parameter----------------\n")
+    println(s"=====> Completed processing Micro Improvements dashboard parameter\n")
   }
 }

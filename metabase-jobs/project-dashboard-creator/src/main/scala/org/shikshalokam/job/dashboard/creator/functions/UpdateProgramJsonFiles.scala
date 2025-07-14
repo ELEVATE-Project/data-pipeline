@@ -10,7 +10,7 @@ import scala.util.{Failure, Success, Try}
 
 object UpdateProgramJsonFiles {
   def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, blocknameId: Int, clusternameId: Int, orgnameId: Int, projects: String, solutions: String, tasks: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, targetedProgramId: String): ListBuffer[Int] = {
-    println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
+    println(s"=====> Started processing program level json update function")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
@@ -25,7 +25,6 @@ object UpdateProgramJsonFiles {
               if (rootNode != null) {
                 val questionCardNode = rootNode.path("questionCard")
                 val chartName = Option(questionCardNode.path("name").asText()).getOrElse("Unknown Chart")
-                println(s" >>>>>>>>>>> Started Processing For The Chart: $chartName")
                 val updatedJson = updateJsonFiles(rootNode, collectionId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, databaseId)
                 val updatedJsonWithQuery = updateQuery(updatedJson.path("questionCard"), projects, solutions, tasks, targetedProgramId)
                 val requestBody = updatedJsonWithQuery.asInstanceOf[ObjectNode]
@@ -34,10 +33,9 @@ object UpdateProgramJsonFiles {
 
                 cardIdOpt match {
                   case Some(cardId) =>
-                    println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
+                    println(s">>> Successfully created question card with card_id: $cardId for $chartName")
                     questionCardId.append(cardId)
                     val updatedJsonOpt = updateJsonWithCardId(updatedJson, cardId)
-                    println(s"--------Successfully updated the json file---------")
                     AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedJsonOpt, dashboardId)
                   case None =>
                     println(s"Error: Unable to extract card ID for $chartName. Skipping...")
@@ -201,7 +199,7 @@ object UpdateProgramJsonFiles {
     }
 
     processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId)
-    println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
+    println(s"=====> Completed processing program level json update function")
     questionCardId
   }
 }
