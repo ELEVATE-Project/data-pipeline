@@ -58,6 +58,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
     val ObservationDomainTable = s"${targetedSolutionId}_domain"
     val ObservationQuestionTable = s"${targetedSolutionId}_questions"
     val ObservationStatusTable = s"${targetedSolutionId}_status"
+    val dashboardDescription: String = s"Analytical overview of the data for solutionId $targetedSolutionId"
     val solutionName = postgresUtil.fetchData(s"""SELECT entity_name FROM $metaDataTable WHERE entity_id = '$targetedSolutionId'""").collectFirst { case map: Map[_, _] => map.getOrElse("entity_name", "").toString }.getOrElse("")
     val targetedProgramId: String = {
       val id = Option(event.targetedProgram).map(_.trim).getOrElse("")
@@ -157,7 +158,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
               val solutionCollectionId = postgresUtil.executeQuery[Int](solutionCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
               if (solutionCollectionPresent == "Yes") {
                 println(s"=====> Solution collection is present, checking if Dashboard is already present for $solutionName [Observation] ......")
-                val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"$solutionName [Observation]", solutionDescription, metabaseUtil)
+                val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"Observation Dashboard", dashboardDescription, metabaseUtil)
                 val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
                 println(s"tabIdMap: $tabIdMap")
                 createAdminDashboards(solutionCollectionId, dashboardId, tabIdMap, s"$solutionName [Observation]", "Admin")
@@ -165,7 +166,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
               } else {
                 println(s"=====> Solution collection is not present creating Solution collection & dashboard for $solutionName [Observation]")
                 val solutionCollectionId: Int = createSolutionCollectionInsideProgram(programCollectionId, s"$solutionName [Observation]", solutionDescription)
-                val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"$solutionName [Observation]", solutionDescription, metabaseUtil)
+                val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"Observation Dashboard", dashboardDescription, metabaseUtil)
                 val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
                 println(s"tabIdMap: $tabIdMap")
                 createAdminDashboards(solutionCollectionId, dashboardId, tabIdMap, s"$solutionName [Observation]", "Admin")
@@ -175,7 +176,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
               println(s"=====> Only Admin and Program collection is present creating [$programName] Program Collection then Solution collection & dashboard")
               val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, programDescriptionAdd, programCollectionName)
               val solutionCollectionId: Int = createSolutionCollectionInsideProgram(programCollectionId, s"$solutionName [Observation]", solutionDescription)
-              val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"$solutionName [Observation]", solutionDescription, metabaseUtil)
+              val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"Observation Dashboard", dashboardDescription, metabaseUtil)
               val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
               println(s"tabIdMap: $tabIdMap")
               createAdminDashboards(solutionCollectionId, dashboardId, tabIdMap, s"$solutionName [Observation]", "Admin")
@@ -186,7 +187,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
             val adminCollectionId = createAdminCollection
             val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, programDescriptionAdd, s"$programName [org : $orgName]")
             val solutionCollectionId = createSolutionCollectionInsideProgram(programCollectionId, s"$solutionName [Observation]", solutionDescription)
-            val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"$solutionName [Observation]", solutionDescription, metabaseUtil)
+            val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"Observation Dashboard", dashboardDescription, metabaseUtil)
             val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
             println(s"tabIdMap: $tabIdMap")
             createAdminDashboards(solutionCollectionId, dashboardId, tabIdMap, s"$solutionName [Observation]", "Admin")
@@ -321,14 +322,14 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
             val solutionCollectionId = postgresUtil.executeQuery[Int](solutionCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
             if (solutionCollectionPresent == "Yes") {
               println(s"=====> Program and Solution collection is present, checking if Dashboard is already present for $solutionName [Observation] ......")
-              val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"$solutionName [Observation]", solutionDescription, metabaseUtil)
+              val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"Observation Dashboard", dashboardDescription, metabaseUtil)
               val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
               createProgramDashboards(solutionCollectionId, dashboardId, tabIdMap, programCollectionName, "Program")
               createObservationTableDashboard(solutionCollectionId, dashboardId, tabIdMap, metaDataTable, reportConfig, metabaseDatabase, evidenceBaseUrl, targetedProgramId, targetedSolutionId, ObservationStatusTable, ObservationDomainTable, ObservationQuestionTable, entityType, "Program", isRubric)
             } else {
               println(s"=====> Program collection is present but Solution collection is not present creating Solution collection & dashboard for $solutionName [Observation]")
               val solutionCollectionId: Int = createSolutionCollectionInsideProgram(programCollectionId, s"$solutionName [Observation]", solutionDescription)
-              val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"$solutionName [Observation]", solutionDescription, metabaseUtil)
+              val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"Observation Dashboard", dashboardDescription, metabaseUtil)
               val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
               createProgramDashboards(solutionCollectionId, dashboardId, tabIdMap, programCollectionName, "Program")
               createObservationTableDashboard(solutionCollectionId, dashboardId, tabIdMap, metaDataTable, reportConfig, metabaseDatabase, evidenceBaseUrl, targetedProgramId, targetedSolutionId, ObservationStatusTable, ObservationDomainTable, ObservationQuestionTable, entityType, "Program", isRubric)
@@ -338,7 +339,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
             val programCollectionName = s"$programName [org : $orgName]"
             val programCollectionId = createProgramCollection(programCollectionName, programDescriptionAdd)
             val solutionCollectionId: Int = createSolutionCollectionInsideProgram(programCollectionId, s"$solutionName [Observation]", solutionDescription)
-            val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"$solutionName [Observation]", solutionDescription, metabaseUtil)
+            val dashboardId: Int = Utils.createDashboard(solutionCollectionId,s"Observation Dashboard", dashboardDescription, metabaseUtil)
             val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
             createProgramDashboards(solutionCollectionId, dashboardId, tabIdMap, programCollectionName, "Program")
             createObservationTableDashboard(solutionCollectionId, dashboardId, tabIdMap, metaDataTable, reportConfig, metabaseDatabase, evidenceBaseUrl, targetedProgramId, targetedSolutionId, ObservationStatusTable, ObservationDomainTable, ObservationQuestionTable, entityType, "Program", isRubric)

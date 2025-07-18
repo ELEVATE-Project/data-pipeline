@@ -57,6 +57,7 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
     val admin = event.admin
     val targetedSolutionId = event.targetedSolution
     val surveyQuestionTable = s"${targetedSolutionId}"
+    val dashboardDescription = s"Analytical overview of the data for solutionId $targetedSolutionId"
     val solutionName = postgresUtil.fetchData(s"""SELECT entity_name FROM $metaDataTable WHERE entity_id = '$targetedSolutionId'""").collectFirst { case map: Map[_, _] => map.getOrElse("entity_name", "").toString }.getOrElse("")
     val surveyStatusTable = s"""${targetedSolutionId}_survey_status"""
     val targetedProgramId: String = {
@@ -164,14 +165,14 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
               val surveyCollectionId = postgresUtil.executeQuery[Int](surveyCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
               if (surveyCollectionPresent == "Yes") {
                 println("=====> Admin and Survey collection present creating Solution collection & dashboard")
-                val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"$solutionName [Survey]", solutionDescription, metabaseUtil)
+                val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
                 val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
                 createAdminDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Admin")
                 createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
               } else {
                 println(s"")
                 val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, s"$solutionName [Survey]", solutionDescription)
-                val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"$solutionName [Survey]", solutionDescription, metabaseUtil)
+                val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
                 val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
                 createAdminDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Admin")
                 createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
@@ -179,7 +180,7 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
             } else {
               val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, s"$programName [org : $orgName]", programDescriptionAdd)
               val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, s"$solutionName [Survey]", solutionDescription)
-              val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"$solutionName [Survey]", solutionDescription, metabaseUtil)
+              val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
               val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
               createAdminDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Admin")
               createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
@@ -188,7 +189,7 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
             val adminCollectionId = createAdminCollection
             val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, s"$programName [org : $orgName]", programDescriptionAdd)
             val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, s"$solutionName [Survey]", solutionDescription)
-            val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"$solutionName [Survey]", solutionDescription, metabaseUtil)
+            val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
             val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
             createAdminDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Admin")
             createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
@@ -276,14 +277,14 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
             val surveyCollectionId = postgresUtil.executeQuery[Int](surveyCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
             if (surveyCollectionPresent == "Yes") {
               println("=====> Program and Survey collection present creating Solution collection & dashboard")
-              val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"$solutionName [Survey]", solutionDescription, metabaseUtil)
+              val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
               val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
               createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Program")
               createProgramDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Program")
             } else {
               println("=====> Only Program collection is present creating Survey Collection then Solution collection & dashboard")
               val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, s"$solutionName [Survey]", solutionDescription)
-              val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"$solutionName [Survey]", solutionDescription, metabaseUtil)
+              val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
               val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
               createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Program")
               createProgramDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Program")
@@ -292,7 +293,7 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
             println("=====> Program collection is not present creating Program, Survey Collection then Solution collection & dashboard")
             val programCollectionId = createProgramCollection(s"$programName [org : $orgName]", programDescriptionAdd)
             val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, s"$solutionName [Survey]", solutionDescription)
-            val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"$solutionName [Survey]", solutionDescription, metabaseUtil)
+            val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
             val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
             createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Program")
             createProgramDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Program")
