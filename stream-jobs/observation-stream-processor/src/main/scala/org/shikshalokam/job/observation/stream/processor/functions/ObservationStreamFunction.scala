@@ -263,6 +263,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
            |    labels TEXT,
            |    value TEXT,
            |    score INTEGER,
+           |    report_type TEXT,
            |    domain_name TEXT,
            |    criteria_name TEXT,
            |    has_parent_question BOOLEAN,
@@ -481,7 +482,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
         val answersKey = event.answers
 
         def processQuestion(responseType: String, questionsMap: Map[String, Any], payload: Option[Map[String, Any]], questionId: String, domainName: String,
-                            criteriaName: String, hasParentQuestion: Boolean, parentQuestionText: String, evidences: String, remarks: String): Unit = {
+                            criteriaName: String, hasParentQuestion: Boolean, parentQuestionText: String, evidences: String, remarks: String, reportType: String): Unit = {
           val value: String = questionsMap.get("value") match {
             case Some(v: String) => v
             case Some(v: Int) => v.toString
@@ -499,7 +500,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
             tenantId = tenantId, orgId = orgId, orgCode = orgCode, orgName = orgName, statusOfSubmission = statusOfSubmission, submittedAt = completedDate, entityType = entityType,
             parentOneName = parentOneObservedName, parentOneId = parentOneObservedId, parentTwoName = parentTwoObservedName, parentTwoId = parentTwoObservedId, parentThreeName = parentThreeObservedName, parentThreeId = parentThreeObservedId,
             parentFourName = parentFourObservedName, parentFourId = parentFourObservedId, parentFiveName = parentFiveObservedName, parentFiveId = parentFiveObservedId,
-            domainName = domainName, criteriaName = criteriaName, score = score, hasParentQuestion = hasParentQuestion, parentQuestionText = parentQuestionText, evidences = evidences, remarks = remarks
+            domainName = domainName, criteriaName = criteriaName, score = score, hasParentQuestion = hasParentQuestion, parentQuestionText = parentQuestionText, evidences = evidences, remarks = remarks, reportType = reportType
           )
           responseType match {
             case "text" => questionsFunction.processQuestionType(commonParams, "text")
@@ -521,7 +522,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
                       }
                       val matrixPayload = matrixQuestionMap.get("payload").map(_.asInstanceOf[Map[String, Any]])
                       val matrixResponseType = matrixQuestionMap.get("responseType").map(_.toString).getOrElse("")
-                      processQuestion(matrixResponseType, matrixQuestionMap, matrixPayload, matrixQuestionId, domainName, criteriaName, hasParentQuestion, parentQuestionText, evidences, remarks)
+                      processQuestion(matrixResponseType, matrixQuestionMap, matrixPayload, matrixQuestionId, domainName, criteriaName, hasParentQuestion, parentQuestionText, evidences, remarks, reportType)
                     }
                   }
                 case _ => println("No matrix data found.")
@@ -539,6 +540,10 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
               val question_id: String = questionsMap.get("qid") match {
                 case Some(v: String) => v
                 case _ => ""
+              }
+              val report_type: String = questionsMap.get("reportType") match {
+                case Some(v: String) => v
+                case _ => "Default"
               }
               val question_criteria_id: String = questionsMap.get("criteriaId") match {
                 case Some(v: String) => v
@@ -597,9 +602,9 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
                   }
                   val has_parent_question: Boolean = parent_question_text.nonEmpty
 
-                  processQuestion(responseType, questionsMap, payload, question_id, domain_name, criteria_name, has_parent_question, parent_question_text, evidences, remarks)
+                  processQuestion(responseType, questionsMap, payload, question_id, domain_name, criteria_name, has_parent_question, parent_question_text, evidences, remarks, report_type)
                 } else {
-                  processQuestion(responseType, questionsMap, payload, question_id, domain_name, criteria_name, false, null, evidences, remarks)
+                  processQuestion(responseType, questionsMap, payload, question_id, domain_name, criteria_name, false, null, evidences, remarks, report_type)
                 }
               } else {
                 println(s"Skipping question_id=$question_id as payload is missing.")

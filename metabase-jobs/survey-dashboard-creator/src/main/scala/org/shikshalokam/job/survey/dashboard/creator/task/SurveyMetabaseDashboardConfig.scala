@@ -44,5 +44,6 @@ class SurveyMetabaseDashboardConfig(override val config: Config) extends BaseJob
   val metabaseUsername: String = config.getString("metabase.username")
   val metabasePassword: String = config.getString("metabase.password")
   val metabaseDatabase: String = config.getString("metabase.database")
+  val evidenceBaseUrl: String = config.getString("metabase.evidenceBaseUrl")
 
 }
