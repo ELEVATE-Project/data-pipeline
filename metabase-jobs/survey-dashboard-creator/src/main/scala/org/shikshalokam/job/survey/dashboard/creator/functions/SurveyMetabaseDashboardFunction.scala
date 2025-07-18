@@ -131,6 +131,7 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
 
     val programSurveyQuestionDashboardPresent = solutionMetadataOutput.map(dashboardExists(_, s"Question Report", "Program")).getOrElse("No")
     val programSurveyStatusDashboardPresent = solutionMetadataOutput.map(dashboardExists(_, s"Status Report", "Program")).getOrElse("No")
+    val tabList: List[String] = List("Status Report", "Question Report", "Status Raw Data for CSV Downloads", "Question Raw Data for CSV Downloads")
 
 
     println(s"surveyQuestionTable: $surveyQuestionTable")
@@ -163,51 +164,59 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
               val surveyCollectionId = postgresUtil.executeQuery[Int](surveyCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
               if (surveyCollectionPresent == "Yes") {
                 println("=====> Admin and Survey collection present creating Solution collection & dashboard")
-                createSurveyCsvDashboard(surveyCollectionId, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
-                createAdminDashboard(surveyCollectionId, s"$solutionName [Survey]", "Admin")
+                val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"$solutionName [Survey]", solutionDescription, metabaseUtil)
+                val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
+                createAdminDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Admin")
+                createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
               } else {
                 println(s"")
                 val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, s"$solutionName [Survey]", solutionDescription)
-                createSurveyCsvDashboard(surveyCollectionId, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
-                createAdminDashboard(surveyCollectionId, s"$solutionName [Survey]", "Admin")
+                val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"$solutionName [Survey]", solutionDescription, metabaseUtil)
+                val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
+                createAdminDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Admin")
+                createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
               }
             } else {
               val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, s"$programName [org : $orgName]", programDescriptionAdd)
               val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, s"$solutionName [Survey]", solutionDescription)
-              createSurveyCsvDashboard(surveyCollectionId, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
-              createAdminDashboard(surveyCollectionId, s"$solutionName [Survey]", "Admin")
+              val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"$solutionName [Survey]", solutionDescription, metabaseUtil)
+              val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
+              createAdminDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Admin")
+              createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
             }
           } else {
             val adminCollectionId = createAdminCollection
             val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, s"$programName [org : $orgName]", programDescriptionAdd)
             val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, s"$solutionName [Survey]", solutionDescription)
-            createSurveyCsvDashboard(surveyCollectionId, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
-            createAdminDashboard(surveyCollectionId, s"$solutionName [Survey]", "Admin")
+            val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"$solutionName [Survey]", solutionDescription, metabaseUtil)
+            val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
+            createAdminDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Admin")
+            createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
           }
         }
 
-        def createAdminDashboard(solutionCollectionId: Int, solutionCollectionName: String, category: String): Unit = {
+        def createAdminDashboard(solutionCollectionId: Int, dashboardId: Int, tabIdMap: Map[String, Int], solutionCollectionName: String, category: String): Unit = {
           if (adminSurveyQuestionDashboardPresent == "Yes") {
             println(s"Admin Survey Question Dashboard already present for $solutionCollectionName")
           } else {
-            val parentCollectionId = createSurveyQuestionDashboard(solutionCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, evidenceBaseUrl, category)
+            val parentCollectionId = createSurveyQuestionDashboard(solutionCollectionId, dashboardId, tabIdMap, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, evidenceBaseUrl, category)
             if (adminSurveyStatusDashboardPresent == "Yes") {
               println(s"Admin Survey Status Dashboard already present for $solutionCollectionName")
             } else {
-              createSurveyStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable, category)
+              createSurveyStatusDashboard(parentCollectionId, dashboardId, tabIdMap, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable, category)
             }
           }
         }
 
-        def createProgramDashboard(solutionCollectionId: Int, solutionCollectionName: String, category: String): Unit = {
+        def createProgramDashboard(solutionCollectionId: Int, dashboardId: Int, tabIdMap: Map[String, Int], solutionCollectionName: String, category: String): Unit = {
           if (programSurveyQuestionDashboardPresent == "Yes") {
             println(s"Program Survey Question Dashboard already present for $solutionCollectionName")
           } else {
-            val parentCollectionId = createSurveyQuestionDashboard(solutionCollectionId, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, evidenceBaseUrl, category)
+            val parentCollectionId = createSurveyQuestionDashboard(solutionCollectionId, dashboardId, tabIdMap, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, evidenceBaseUrl, category)
             if (programSurveyStatusDashboardPresent == "Yes") {
               println(s"Program Survey Status Dashboard already present for $solutionCollectionName")
             } else {
-              createSurveyStatusDashboard(parentCollectionId, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable, category)
+              createSurveyStatusDashboard(parentCollectionId, dashboardId, tabIdMap, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable, category)
             }
           }
         }
@@ -267,20 +276,26 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
             val surveyCollectionId = postgresUtil.executeQuery[Int](surveyCollectionIdQuery)(resultSet => if (resultSet.next()) resultSet.getInt("collection_id") else 0)
             if (surveyCollectionPresent == "Yes") {
               println("=====> Program and Survey collection present creating Solution collection & dashboard")
-              createSurveyCsvDashboard(surveyCollectionId, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Program")
-              createProgramDashboard(surveyCollectionId, s"$solutionName [Survey]", "Program")
+              val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"$solutionName [Survey]", solutionDescription, metabaseUtil)
+              val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
+              createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Program")
+              createProgramDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Program")
             } else {
               println("=====> Only Program collection is present creating Survey Collection then Solution collection & dashboard")
               val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, s"$solutionName [Survey]", solutionDescription)
-              createSurveyCsvDashboard(surveyCollectionId, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Program")
-              createProgramDashboard(surveyCollectionId, s"$solutionName [Survey]", "Program")
+              val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"$solutionName [Survey]", solutionDescription, metabaseUtil)
+              val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
+              createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Program")
+              createProgramDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Program")
             }
           } else {
             println("=====> Program collection is not present creating Program, Survey Collection then Solution collection & dashboard")
             val programCollectionId = createProgramCollection(s"$programName [org : $orgName]", programDescriptionAdd)
             val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, s"$solutionName [Survey]", solutionDescription)
-            createSurveyCsvDashboard(surveyCollectionId, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Program")
-            createProgramDashboard(surveyCollectionId, s"$solutionName [Survey]", "Program")
+            val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"$solutionName [Survey]", solutionDescription, metabaseUtil)
+            val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
+            createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Program")
+            createProgramDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Program")
           }
           println("~~~~~~~~ End Survey Program Dashboard Processing~~~~~~~~")
         } else {
@@ -293,13 +308,12 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
   /**
    * Logic for Survey Question Dashboard
    */
-  def createSurveyQuestionDashboard(parentCollectionId: Int, collectionName: String, metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, surveyQuestionTable: String, evidenceBaseUrl: String, category: String): Int = {
+  def createSurveyQuestionDashboard(parentCollectionId: Int, dashboardId: Int, tabIdMap: Map[String, Int], collectionName: String, metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, surveyQuestionTable: String, evidenceBaseUrl: String, category: String): Int = {
     try {
       val dashboardName: String = s"Question Report"
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
-      val dashboardDescription: String = s"This dashboard provides an analytical overview of user responses across all questions. It visualizes response patterns and trends to help assess engagement and data quality at the question level."
       if (parentCollectionId != -1) {
-        val dashboardId: Int = Utils.createDashboard(parentCollectionId, dashboardName, dashboardDescription, metabaseUtil)
+        val tabId: Int = tabIdMap.getOrElse(dashboardName, -1)
         val databaseId: Int = Utils.getDatabaseId(metabaseDatabase, metabaseUtil)
         if (databaseId != -1) {
           metabaseUtil.syncDatabaseAndRescanValues(databaseId)
@@ -311,7 +325,7 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
           metabaseUtil.updateColumnCategory(districtNameId, "City")
           val schoolNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, surveyQuestionTable, "school_name", postgresUtil, createDashboardQuery)
           val orgNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, surveyQuestionTable, "organisation_name", postgresUtil, createDashboardQuery)
-          val questionCardIdList = UpdateQuestionJsonFiles.ProcessAndUpdateJsonFiles(parentCollectionId, databaseId, dashboardId, stateNameId, districtNameId, blockNameId: Int, clusterNameId, schoolNameId, orgNameId, surveyQuestionTable, metabaseUtil, postgresUtil, reportConfig, evidenceBaseUrl)
+          val questionCardIdList = UpdateQuestionJsonFiles.ProcessAndUpdateJsonFiles(parentCollectionId, databaseId, dashboardId, tabId, stateNameId, districtNameId, blockNameId: Int, clusterNameId, schoolNameId, orgNameId, surveyQuestionTable, metabaseUtil, postgresUtil, reportConfig, evidenceBaseUrl)
           val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
           val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Survey' AND question_type = 'Question-Parameter'"
           UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil)
@@ -336,10 +350,9 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
     }
   }
 
-  def createSurveyCsvDashboard(parentCollectionId: Int, collectionName: String, metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, surveyQuestionTable: String, surveyStatusTable: String, evidenceBaseUrl: String, category: String): Unit = {
+  def createSurveyCsvDashboard(parentCollectionId: Int, dashboardId: Int, tabIdMap: Map[String, Int], collectionName: String, metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, surveyQuestionTable: String, surveyStatusTable: String, evidenceBaseUrl: String, category: String): Unit = {
     try {
       val questionDashboardName: String = s"Question Raw Data for CSV Downloads"
-      val questionDashboardDescription: String = s"Detailed table of all users question level records."
       val questionReportConfigQuery: String = s"SELECT * FROM $reportConfig WHERE dashboard_name = 'Survey' AND report_name = 'Question-Report' AND question_type = 'table';"
       val questionParametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Survey' AND report_name = 'Question-Report' AND question_type = 'Question-Parameter'"
       val questionReplacements: Map[String, String] = Map(
@@ -347,7 +360,6 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
         "${evidenceBaseUrl}" -> s"""'$evidenceBaseUrl'"""
       )
       val statusDashboardName: String = s"Status Raw Data for CSV Downloads"
-      val statusDashboardDescription: String = s"Detailed table of all users status level records."
       val statusReportConfigQuery: String = s"SELECT * FROM $reportConfig WHERE dashboard_name = 'Survey' AND report_name = 'Status-Report' AND question_type = 'table';"
       val statusParametersQuery: String = s"SELECT config FROM $reportConfig WHERE dashboard_name = 'Survey' AND report_name = 'Status-Report' AND question_type = 'Status-Parameter';"
       val statusReplacements: Map[String, String] = Map(
@@ -355,8 +367,8 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
       )
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
       
-      def commonStepsToCreateCsvDashboard(reportConfigQuery: String, dashboardName: String, dashboardDescription: String, parentCollectionId: Int, parametersQuery: String, surveyTable: String, replacements: Map[String, String] ): Unit = {
-        val dashboardId: Int = Utils.createDashboard(parentCollectionId, dashboardName, dashboardDescription, metabaseUtil)
+      def commonStepsToCreateCsvDashboard(reportConfigQuery: String, dashboardName: String, dashboardId: Int, tabIdMap: Map[String, Int], parentCollectionId: Int, parametersQuery: String, surveyTable: String, replacements: Map[String, String] ): Unit = {
+        val tabId: Int = tabIdMap.getOrElse(dashboardName, -1)
         val databaseId: Int = Utils.getDatabaseId(metabaseDatabase, metabaseUtil)
         if (databaseId != -1) {
           metabaseUtil.syncDatabaseAndRescanValues(databaseId)
@@ -368,18 +380,17 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
           metabaseUtil.updateColumnCategory(districtNameId, "City")
           val schoolNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, surveyTable, "school_name", postgresUtil, createDashboardQuery)
           val orgNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, surveyTable, "organisation_name", postgresUtil, createDashboardQuery)
-          val questionCardIdList = UpdateCsvDownloadJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, stateNameId, districtNameId, blockNameId, clusterNameId, schoolNameId, orgNameId, replacements, metabaseUtil, postgresUtil)
+          val questionCardIdList = UpdateCsvDownloadJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, tabId, stateNameId, districtNameId, blockNameId, clusterNameId, schoolNameId, orgNameId, replacements, metabaseUtil, postgresUtil)
           val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
-          UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil)
           val surveyMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", parentCollectionId).put("collectionName", collectionName).put("dashboardId", dashboardId).put("dashboardName", dashboardName).put("questionIds", questionIdsString).put("category", category))
           postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$surveyMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$targetedSolutionId';")
         }
       }
       println(s"==========> Started processing CSV dashboard for Question report <===========")
-      commonStepsToCreateCsvDashboard(questionReportConfigQuery, questionDashboardName, questionDashboardDescription, parentCollectionId, questionParametersQuery, surveyQuestionTable, questionReplacements)
+      commonStepsToCreateCsvDashboard(questionReportConfigQuery, questionDashboardName, dashboardId, tabIdMap, parentCollectionId, questionParametersQuery, surveyQuestionTable, questionReplacements)
       println(s"==========> Completed processing CSV dashboard for Question report <===========")
       println(s"==========> Started processing CSV dashboard for Status report <===========")
-      commonStepsToCreateCsvDashboard(statusReportConfigQuery, statusDashboardName, statusDashboardDescription, parentCollectionId, statusParametersQuery, surveyStatusTable, statusReplacements)
+      commonStepsToCreateCsvDashboard(statusReportConfigQuery, statusDashboardName, dashboardId, tabIdMap, parentCollectionId, statusParametersQuery, surveyStatusTable, statusReplacements)
       println(s"==========> Completed processing CSV dashboard for Status report <===========")
     } catch {
       case e: Exception =>
@@ -390,12 +401,11 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
     }
   }
 
-  def createSurveyStatusDashboard(parentCollectionId: Int, metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, surveyStatusTable: String, category: String): Unit = {
+  def createSurveyStatusDashboard(parentCollectionId: Int, dashboardId: Int, tabIdMap: Map[String, Int], metaDataTable: String, reportConfig: String, metabaseDatabase: String, targetedProgramId: String, targetedSolutionId: String, surveyStatusTable: String, category: String): Unit = {
     try {
       val dashboardName: String = s"Status Report"
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
-      val dashboardDescription: String = s"This dashboard displays the status of user submissions, including counts of users in Started and Submitted states and a detailed table of all submission records for monitoring and analysis."
-      val dashboardId: Int = Utils.createDashboard(parentCollectionId, dashboardName, dashboardDescription, metabaseUtil)
+      val tabId: Int = tabIdMap.getOrElse(dashboardName, -1)
       val databaseId: Int = Utils.getDatabaseId(metabaseDatabase, metabaseUtil)
       if (databaseId != -1) {
         metabaseUtil.syncDatabaseAndRescanValues(databaseId)
@@ -408,10 +418,8 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
         metabaseUtil.updateColumnCategory(statenNameId, "State")
         metabaseUtil.updateColumnCategory(districtNameId, "City")
         val reportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Survey' AND report_name = 'Status-Report' AND question_type IN ('big-number', 'table');"
-        val questionCardIdList = UpdateStatusJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, statenNameId, districtNameId, blockNameId, clusterNameId, schoolNameId, orgNameId, surveyStatusTable, metabaseUtil, postgresUtil)
+        val questionCardIdList = UpdateStatusJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, tabId, statenNameId, districtNameId, blockNameId, clusterNameId, schoolNameId, orgNameId, surveyStatusTable, metabaseUtil, postgresUtil)
         val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
-        val parametersQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Survey' AND report_name = 'Status-Report' AND question_type = 'Status-Parameter';"
-        UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil)
         val surveyMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", parentCollectionId).put("dashboardId", dashboardId).put("dashboardName", dashboardName).put("questionIds", questionIdsString).put("category", category))
         postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$surveyMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$targetedSolutionId';")
       }

@@ -10,14 +10,14 @@ import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
 object UpdateQuestionJsonFiles {
-  def ProcessAndUpdateJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, stateNameId: Int, districtNameId: Int, blockNameId: Int, clusterNameId: Int, schoolNameId: Int, orgNameId: Int, question: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, report_config: String, evidenceBaseUrl: String): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, stateNameId: Int, districtNameId: Int, blockNameId: Int, clusterNameId: Int, schoolNameId: Int, orgNameId: Int, question: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, report_config: String, evidenceBaseUrl: String): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
     val csvConfigQuery = s"SELECT * FROM $report_config WHERE dashboard_name = 'Survey' AND report_name = 'Question-Report' AND question_type = 'table';"
 
-    def processCsvJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, stateNameId: Int, districtNameId: Int, blockNameId: Int, clusterNameId: Int, schoolNameId: Int, orgNameId: Int, questionTable: String, newRow: Int, newCol: Int, evidenceBaseUrl: String): Unit = {
+    def processCsvJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, stateNameId: Int, districtNameId: Int, blockNameId: Int, clusterNameId: Int, schoolNameId: Int, orgNameId: Int, questionTable: String, newRow: Int, newCol: Int, evidenceBaseUrl: String): Unit = {
       val queryResult = postgresUtil.fetchData(csvConfigQuery)
       queryResult.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -33,7 +33,7 @@ object UpdateQuestionJsonFiles {
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
                 println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
                 questionCardId.append(cardId)
-                val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(configJson, cardId, newRow, newCol)
+                val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(configJson, cardId, dashboardId, tabId, newRow, newCol)
                 AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedQuestionIdInDashCard, dashboardId)
               }
             case None =>
@@ -54,7 +54,7 @@ object UpdateQuestionJsonFiles {
       }
     }
 
-    def processJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, stateNameId: Int, districtNameId: Int, blockNameId: Int, clusterNameId: Int, schoolNameId: Int, orgNameId: Int, question: String, report_config: String, evidenceBaseUrl: String): Unit = {
+    def processJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, stateNameId: Int, districtNameId: Int, blockNameId: Int, clusterNameId: Int, schoolNameId: Int, orgNameId: Int, question: String, report_config: String, evidenceBaseUrl: String): Unit = {
       val queries = Map(
         "nonMatrix" -> s"""SELECT distinct(question_id),question_text,question_type FROM "$question" WHERE has_parent_question = 'false'""",
         "matrix" -> s"""SELECT distinct(question_id),question_type,question_text, parent_question_text FROM "$question" WHERE has_parent_question = 'true'""",
@@ -86,6 +86,8 @@ object UpdateQuestionJsonFiles {
                 newRow += 3
                 dashCardsNode.asInstanceOf[ObjectNode].put("col", newCol)
                 dashCardsNode.asInstanceOf[ObjectNode].put("row", newRow)
+                dashCardsNode.asInstanceOf[ObjectNode].put("row", newRow)
+                dashCardsNode.asInstanceOf[ObjectNode].put("dashboard_tab_id", tabId)
                 AddQuestionCards.appendDashCardToDashboard(metabaseUtil, toOption(node), dashboardId)
               }
             case None => println("Key 'config' not found in the heading result row.")
@@ -134,7 +136,7 @@ object UpdateQuestionJsonFiles {
                 questionCardId.append(cardId)
                 val originalDashcard = json.path("dashCards")
                 val existingSizeY = originalDashcard.path("size_y").asInt()
-                val updatedDashCard = updateQuestionIdInDashCard(json, cardId, newRow, newCol)
+                val updatedDashCard = updateQuestionIdInDashCard(json, cardId, dashboardId, tabId, newRow, newCol)
                 newRow += existingSizeY + 1
                 AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedDashCard, dashboardId)
               }
@@ -174,7 +176,7 @@ object UpdateQuestionJsonFiles {
         processHeading(formattedText)
         processQuestionType(questionType, questionId, questionText)
       }
-      processCsvJsonFiles(collectionId, databaseId, dashboardId, stateNameId, districtNameId, blockNameId, clusterNameId, schoolNameId, orgNameId, question, newRow, newCol, evidenceBaseUrl)
+      processCsvJsonFiles(collectionId, databaseId, dashboardId, tabId, stateNameId, districtNameId, blockNameId, clusterNameId, schoolNameId, orgNameId, question, newRow, newCol, evidenceBaseUrl)
     }
 
 
@@ -182,7 +184,7 @@ object UpdateQuestionJsonFiles {
       if (jsonNode == null || jsonNode.isMissingNode) None else Some(jsonNode)
     }
 
-    def updateQuestionIdInDashCard(json: JsonNode, cardId: Int, newRow: Int, newCol: Int): Option[JsonNode] = {
+    def updateQuestionIdInDashCard(json: JsonNode, cardId: Int, dashboardId: Int, tabId: Int, newRow: Int, newCol: Int): Option[JsonNode] = {
       Try {
         val jsonObject = json.asInstanceOf[ObjectNode]
 
@@ -196,6 +198,8 @@ object UpdateQuestionJsonFiles {
         dashCardsNode.put("card_id", cardId)
         dashCardsNode.put("row", newRow)
         dashCardsNode.put("col", newCol)
+        dashCardsNode.put("dashboard_id", dashboardId)
+        dashCardsNode.put("dashboard_tab_id", tabId)
 
         if (dashCardsNode.has("parameter_mappings") && dashCardsNode.get("parameter_mappings").isArray) {
           dashCardsNode.get("parameter_mappings").elements().forEachRemaining { paramMappingNode =>
@@ -280,7 +284,7 @@ object UpdateQuestionJsonFiles {
       }
     }
 
-    processJsonFiles(collectionId, databaseId, dashboardId, stateNameId, districtNameId, blockNameId, clusterNameId, schoolNameId, orgNameId, question, report_config, evidenceBaseUrl)
+    processJsonFiles(collectionId, databaseId, dashboardId, tabId, stateNameId, districtNameId, blockNameId, clusterNameId, schoolNameId, orgNameId, question, report_config, evidenceBaseUrl)
     println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardId
   }

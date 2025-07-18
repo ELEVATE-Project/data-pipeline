@@ -10,12 +10,12 @@ import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
 object UpdateCsvDownloadJsonFiles {
-  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, stateNameId: Int, districtNameId: Int, blockNameId: Int, clusterNameId: Int, schoolNameId: Int, orgNameId: Int, replacements: Map[String, String], metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, stateNameId: Int, districtNameId: Int, blockNameId: Int, clusterNameId: Int, schoolNameId: Int, orgNameId: Int, replacements: Map[String, String], metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    def processCsvJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, stateNameId: Int, districtNameId: Int, blockNameId: Int, clusterNameId: Int, schoolNameId: Int, orgNameId: Int, replacements: Map[String, String]): Unit = {
+    def processCsvJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, stateNameId: Int, districtNameId: Int, blockNameId: Int, clusterNameId: Int, schoolNameId: Int, orgNameId: Int, replacements: Map[String, String]): Unit = {
       val queryResult = postgresUtil.fetchData(reportConfigQuery)
       queryResult.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -31,7 +31,7 @@ object UpdateCsvDownloadJsonFiles {
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
                 println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
                 questionCardId.append(cardId)
-                val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(configJson, cardId)
+                val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(configJson, cardId, dashboardId, tabId)
                 AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedQuestionIdInDashCard, dashboardId)
               }
             case None =>
@@ -56,7 +56,7 @@ object UpdateCsvDownloadJsonFiles {
       if (jsonNode == null || jsonNode.isMissingNode) None else Some(jsonNode)
     }
 
-    def updateQuestionIdInDashCard(json: JsonNode, cardId: Int): Option[JsonNode] = {
+    def updateQuestionIdInDashCard(json: JsonNode, cardId: Int, dashboardId: Int, tabId: Int): Option[JsonNode] = {
       Try {
         val jsonObject = json.asInstanceOf[ObjectNode]
 
@@ -68,6 +68,8 @@ object UpdateCsvDownloadJsonFiles {
           newDashCardsNode
         }
         dashCardsNode.put("card_id", cardId)
+        dashCardsNode.put("dashboard_id", dashboardId)
+        dashCardsNode.put("dashboard_tab_id", tabId)
         if (dashCardsNode.has("parameter_mappings") && dashCardsNode.get("parameter_mappings").isArray) {
           dashCardsNode.get("parameter_mappings").elements().forEachRemaining { paramMappingNode =>
             if (paramMappingNode.isObject) {
@@ -128,28 +130,6 @@ object UpdateCsvDownloadJsonFiles {
       }
     }
 
-//    def updatePostgresDatabaseQuery(json: JsonNode, questionTable: String, evidenceBaseUrl: String): JsonNode = {
-//      Try {
-//        val queryNode = json.at("/dataset_query/native/query")
-//        if (queryNode.isMissingNode || !queryNode.isTextual) {
-//          throw new IllegalArgumentException("Query node is missing or not a valid string.")
-//        }
-//
-//        val updatedQuery = queryNode.asText()
-//          .replace("${questionTable}", s""""$questionTable"""")
-//          .replace("${evidenceBaseUrl}", s"""'$evidenceBaseUrl'""")
-//        val updatedJson = json.deepCopy().asInstanceOf[ObjectNode]
-//        updatedJson.at("/dataset_query/native")
-//          .asInstanceOf[ObjectNode]
-//          .set("query", TextNode.valueOf(updatedQuery))
-//        updatedJson
-//      } match {
-//        case Success(updatedQueryJson) => updatedQueryJson
-//        case Failure(exception) =>
-//          throw new IllegalArgumentException("Failed to update query in JSON", exception)
-//      }
-//    }
-
     def updatePostgresDatabaseQuery(json: JsonNode, replacements: Map[String, String]): JsonNode = {
       Try {
         val queryNode = json.at("/dataset_query/native/query")
@@ -175,7 +155,7 @@ object UpdateCsvDownloadJsonFiles {
       }
     }
 
-    processCsvJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, stateNameId, districtNameId, blockNameId, schoolNameId, clusterNameId, orgNameId, replacements)
+    processCsvJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, tabId, stateNameId, districtNameId, blockNameId, schoolNameId, clusterNameId, orgNameId, replacements)
     println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardId
   }

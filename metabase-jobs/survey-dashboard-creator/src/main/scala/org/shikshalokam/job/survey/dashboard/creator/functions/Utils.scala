@@ -1,35 +1,13 @@
 package org.shikshalokam.job.survey.dashboard.creator.functions
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import org.shikshalokam.job.util.JSONUtil.mapper
-import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
+import org.shikshalokam.job.util.MetabaseUtil
 
 import scala.collection.JavaConverters._
 
 object Utils {
-
-  def checkAndCreateCollection(collectionName: String, description: String, metabaseUtil: MetabaseUtil, parentId: Option[Int] = None): Int = {
-    val collectionListJson = mapper.readTree(metabaseUtil.listCollections())
-    val existingCollectionId = collectionListJson.elements().asScala
-      .find(_.path("name").asText() == collectionName)
-      .map(_.path("id").asInt())
-    existingCollectionId match {
-      case Some(id) =>
-        println(s"$collectionName : already exists with ID: $id.")
-        -1
-
-      case None =>
-        val parentIdField = parentId.map(pid => s""""parent_id": $pid,""").getOrElse("")
-        val collectionRequestBody =
-          s"""{
-             |  $parentIdField
-             |  "name": "$collectionName",
-             |  "description": "$description"
-             |}""".stripMargin
-        val collectionId = mapper.readTree(metabaseUtil.createCollection(collectionRequestBody)).path("id").asInt()
-        println(s"$collectionName : collection created with ID = $collectionId")
-        collectionId
-    }
-  }
 
   def createCollection(collectionName: String, description: String, metabaseUtil: MetabaseUtil, parentId: Option[Int] = None): Int = {
     val parentIdField = parentId.map(pid => s""""parent_id": $pid,""").getOrElse("")
@@ -43,6 +21,48 @@ object Utils {
     println(s"$collectionName : collection created with ID = $collectionId")
     collectionId
 
+  }
+
+  def createTabs(dashboardId: Int, tabNames: List[String], metabaseUtil: MetabaseUtil): Map[String, Int] = {
+    val objectMapper = new ObjectMapper()
+    val dashboardResponse: String = metabaseUtil.getDashboardDetailsById(dashboardId)
+    val dashboardResponseJson = objectMapper.readTree(dashboardResponse)
+
+    val tabsJson =
+      if (dashboardResponseJson.has("tabs") && dashboardResponseJson.get("tabs").isArray) {
+        dashboardResponseJson.get("tabs").asInstanceOf[com.fasterxml.jackson.databind.node.ArrayNode]
+      } else {
+        objectMapper.createArrayNode()
+      }
+
+    // Add new tabs based on tabNames and their index
+    tabNames.zipWithIndex.foreach { case (tabName, index) =>
+      val tabNode = objectMapper.createObjectNode()
+      tabNode.put("id", index + 1)
+      tabNode.put("dashboard_id", dashboardId)
+      tabNode.put("name", tabName)
+      tabNode.put("position", index)
+      tabsJson.add(tabNode)
+    }
+
+    val copiedDashboardResponse = dashboardResponseJson.deepCopy().asInstanceOf[ObjectNode]
+    copiedDashboardResponse.set("tabs", tabsJson)
+
+    val updateDashboardRequestBody = copiedDashboardResponse.toString
+    val updatedDashboardResponse = objectMapper.readTree(
+      metabaseUtil.addQuestionCardToDashboard(dashboardId, updateDashboardRequestBody)
+    )
+
+    val tabIds = updatedDashboardResponse.path("tabs").elements().asScala
+      .map(tab => tab.path("name").asText() -> tab.path("id").asInt())
+      .toMap
+
+    // Logging and return
+    tabNames.foreach { tabName =>
+      println(s"$tabName : tab created with ID = ${tabIds.getOrElse(tabName, -1)}")
+    }
+
+    tabIds
   }
 
   def createDashboard(collectionId: Int, dashboardName: String, dashboardDescription: String, metabaseUtil: MetabaseUtil): Int = {

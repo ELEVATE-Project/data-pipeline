@@ -93,7 +93,7 @@
         }
       }
     },
-    "display": "table",
+    "display": "bar",
     "visualization_settings": {},
     "parameters": [
       {

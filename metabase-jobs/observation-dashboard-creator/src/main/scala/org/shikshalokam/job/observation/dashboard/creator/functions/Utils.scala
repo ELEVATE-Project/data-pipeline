@@ -1,5 +1,7 @@
 package org.shikshalokam.job.observation.dashboard.creator.functions
 
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import org.shikshalokam.job.util.JSONUtil.mapper
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 
@@ -58,6 +60,49 @@ object Utils {
     dashboardId
   }
 
+  def createTabs(dashboardId: Int, tabNames: List[String], metabaseUtil: MetabaseUtil): Map[String, Int] = {
+    val objectMapper = new ObjectMapper()
+    val dashboardResponse: String = metabaseUtil.getDashboardDetailsById(dashboardId)
+    val dashboardResponseJson = objectMapper.readTree(dashboardResponse)
+
+    val tabsJson =
+      if (dashboardResponseJson.has("tabs") && dashboardResponseJson.get("tabs").isArray) {
+        dashboardResponseJson.get("tabs").asInstanceOf[com.fasterxml.jackson.databind.node.ArrayNode]
+      } else {
+        objectMapper.createArrayNode()
+      }
+
+    // Add new tabs based on tabNames and their index
+    tabNames.zipWithIndex.foreach { case (tabName, index) =>
+      val tabNode = objectMapper.createObjectNode()
+      tabNode.put("id", index + 1)
+      tabNode.put("dashboard_id", dashboardId)
+      tabNode.put("name", tabName)
+      tabNode.put("position", index)
+      tabsJson.add(tabNode)
+    }
+
+    val copiedDashboardResponse = dashboardResponseJson.deepCopy().asInstanceOf[ObjectNode]
+    copiedDashboardResponse.set("tabs", tabsJson)
+
+    val updateDashboardRequestBody = copiedDashboardResponse.toString
+    val updatedDashboardResponse = objectMapper.readTree(
+      metabaseUtil.addQuestionCardToDashboard(dashboardId, updateDashboardRequestBody)
+    )
+
+    val tabIds = updatedDashboardResponse.path("tabs").elements().asScala
+      .map(tab => tab.path("name").asText() -> tab.path("id").asInt())
+      .toMap
+
+    // Logging and return
+    tabNames.foreach { tabName =>
+      println(s"$tabName : tab created with ID = ${tabIds.getOrElse(tabName, -1)}")
+    }
+
+    tabIds
+  }
+
+
   def getDatabaseId(metabaseDatabase: String, metabaseUtil: MetabaseUtil): Int = {
     val databaseListJson = mapper.readTree(metabaseUtil.listDatabaseDetails())
     val databaseId = databaseListJson.path("data").elements().asScala
@@ -69,5 +114,23 @@ object Utils {
       }
     println(s"Database ID = $databaseId")
     databaseId
+  }
+
+  def getTableMetadataId(databaseId: Int, metabaseUtil: MetabaseUtil, tableName: String, columnName: String, postgresUtil: PostgresUtil, metaTableQuery: String): Int = {
+    val metadataJson = mapper.readTree(metabaseUtil.getDatabaseMetadata(databaseId))
+    metadataJson.path("tables").elements().asScala
+      .find(_.path("name").asText() == s"$tableName")
+      .flatMap(table => table.path("fields").elements().asScala
+        .find(_.path("name").asText() == s"$columnName"))
+      .map(field => {
+        val fieldId = field.path("id").asInt()
+        println(s"Field ID for $columnName: $fieldId")
+        fieldId
+      }).getOrElse {
+        val errorMessage = s"$columnName field not found"
+        val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'${errorMessage.replace("'", "''")}'")
+        postgresUtil.insertData(updateTableQuery)
+        throw new Exception(s"$columnName field not found")
+      }
   }
 }
