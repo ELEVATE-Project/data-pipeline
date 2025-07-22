@@ -156,7 +156,7 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
       deleteData(userId)
     }
 
-
+    userMetrics()
 
     def extractUserRolesPerRow(roles: List[Map[String, Any]]): List[(String, String)] = {
       roles.map { role =>
@@ -341,6 +341,44 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
            |WHERE user_id = ?
            |""".stripMargin
       postgresUtil.executePreparedUpdate(deleteQuery, Seq(userId), tenantTable, userId.toString)
+    }
+
+    def userMetrics() : Unit = {
+      val tenantCode = event.tenantCode
+      val tenantUserTable = s""""${event.tenantCode}_users""""
+      val user_metrics = s""""user_metrics""""
+      val createUserMetricsTable =
+        s"""CREATE TABLE IF NOT EXISTS $user_metrics  (
+           |    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+           |    tenant_code TEXT UNIQUE,
+           |    total_users INT,
+           |    active_users INT,
+           |    deleted_users INT,
+           |    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+           |);""".stripMargin
+      checkAndCreateTable(user_metrics, createUserMetricsTable)
+      println("Created table if not exists: " + user_metrics)
+
+      val upsertQuery =
+        s"""
+           |INSERT INTO $user_metrics (tenant_code, total_users, active_users, deleted_users, last_updated)
+           |SELECT
+           |  '$tenantCode',
+           |  COUNT(user_id) AS total_users,
+           |  COUNT(*) FILTER (WHERE status = 'ACTIVE') AS active_users,
+           |  COUNT(*) FILTER (WHERE is_deleted = true) AS deleted_users,
+           |  CURRENT_TIMESTAMP
+           |FROM $tenantUserTable
+           |ON CONFLICT (tenant_code) DO UPDATE SET
+           |  total_users = EXCLUDED.total_users,
+           |  active_users = EXCLUDED.active_users,
+           |  deleted_users = EXCLUDED.deleted_users,
+           |  last_updated = EXCLUDED.last_updated;
+           |""".stripMargin
+
+      postgresUtil.executePreparedUpdate(upsertQuery, Seq.empty, user_metrics, tenantCode)
+      println(s"User metrics updated for tenant: $tenantCode")
+
     }
 
   }
