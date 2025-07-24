@@ -93,16 +93,7 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
     }
 
     val tenantTable = s""""${event.tenantCode}_users_metadata""""
-
-    val createTenantTable =
-      s"""CREATE TABLE IF NOT EXISTS $tenantTable (
-         |    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-         |    user_id INT,
-         |    attribute_code TEXT,
-         |    attribute_value TEXT,
-         |    attribute_label TEXT,
-         |    UNIQUE (user_id, attribute_value)
-         |);""".stripMargin
+    val createTenantTable = config.createTenantTable.replace("@tenantTable", tenantTable)
 
     checkAndCreateTable(tenantTable, createTenantTable)
     println("Created table if not exists: " + tenantTable)
@@ -237,35 +228,8 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
 
     def usersTable(userId: Int): Unit = {
       val usersTable = s""""${event.tenantCode}_users""""
-      val createUsersTable =
-        s"""CREATE TABLE IF NOT EXISTS $usersTable (
-           |    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-           |    user_id INT UNIQUE,
-           |    tenant_code TEXT,
-           |    username TEXT,
-           |    name TEXT,
-           |    status TEXT,
-           |    is_deleted BOOLEAN,
-           |    created_by INT,
-           |    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-           |    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-           |    user_profile_one_id TEXT,
-           |    user_profile_one_name TEXT,
-           |    user_profile_one_external_id TEXT,
-           |    user_profile_two_id  TEXT,
-           |    user_profile_two_name TEXT,
-           |    user_profile_two_external_id TEXT,
-           |    user_profile_three_id TEXT,
-           |    user_profile_three_name TEXT,
-           |    user_profile_three_external_id TEXT,
-           |    user_profile_four_id TEXT,
-           |    user_profile_four_name TEXT,
-           |    user_profile_four_external_id TEXT,
-           |    user_profile_five_id TEXT,
-           |    user_profile_five_name TEXT,
-           |    user_profile_five_external_id TEXT
-           |);
-            """.stripMargin
+      val createUsersTable = config.createUsersTable.replace("@usersTable", usersTable)
+
       checkAndCreateTable(usersTable, createUsersTable)
       println("Created table if not exists: " + usersTable)
 
@@ -347,16 +311,8 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
       val tenantCode = event.tenantCode
       val tenantUserTable = s""""${event.tenantCode}_users""""
       val user_metrics = s""""user_metrics""""
-      val createUserMetricsTable =
-        s"""CREATE TABLE IF NOT EXISTS $user_metrics  (
-           |    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-           |    tenant_code TEXT UNIQUE,
-           |    total_users INT,
-           |    active_users INT,
-           |    deleted_users INT,
-           |    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-           |);""".stripMargin
-      checkAndCreateTable(user_metrics, createUserMetricsTable)
+
+      checkAndCreateTable(user_metrics, config.createUserMetricsTable)
       println("Created table if not exists: " + user_metrics)
 
       val upsertQuery =

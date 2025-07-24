@@ -43,29 +43,33 @@ class UserStreamConfig(override val config: Config) extends BaseJobConfig(config
   val pgUsername: String = config.getString("postgres.username")
   val pgPassword: String = config.getString("postgres.password")
   val pgDataBase: String = config.getString("postgres.database")
-  val shikshagraha: String = config.getString("postgres.tables.shikshagrahaTable")
-  val shikshalokam: String = config.getString("postgres.tables.shikshalokamTable")
+  val user_metrics: String = config.getString("postgres.tables.user_metrics")
 
 
-  val createshikshagrahaTable =
-    s"""CREATE TABLE IF NOT EXISTS $shikshagraha (
+      val createTenantTable =
+      s"""
+         |CREATE TABLE IF NOT EXISTS @tenantTable (
+         |    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+         |    user_id INT,
+         |    attribute_code TEXT,
+         |    attribute_value TEXT,
+         |    attribute_label TEXT,
+         |    UNIQUE (user_id, attribute_value)
+         |);
+         |""".stripMargin
+
+  val createUsersTable =
+    s"""CREATE TABLE IF NOT EXISTS @usersTable (
        |    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+       |    user_id INT UNIQUE,
        |    tenant_code TEXT,
-       |    user_id INT,
        |    username TEXT,
        |    name TEXT,
-       |    eventType TEXT,
        |    status TEXT,
        |    is_deleted BOOLEAN,
        |    created_by INT,
-       |    professional_role_id TEXT,
-       |    professional_role_name TEXT,
-       |    professional_subrole_id TEXT,
-       |    professional_subrole_name TEXT,
-       |    organizations_id TEXT,
-       |    organizations_name TEXT,
-       |    user_role_ids TEXT,
-       |    user_roles TEXT,
+       |    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+       |    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
        |    user_profile_one_id TEXT,
        |    user_profile_one_name TEXT,
        |    user_profile_one_external_id TEXT,
@@ -81,43 +85,16 @@ class UserStreamConfig(override val config: Config) extends BaseJobConfig(config
        |    user_profile_five_id TEXT,
        |    user_profile_five_name TEXT,
        |    user_profile_five_external_id TEXT
-       |);""".stripMargin
+       |);
+            """.stripMargin
 
-  val createshikshalokamTable =
-    s"""CREATE TABLE IF NOT EXISTS $shikshalokam (
+  val createUserMetricsTable =
+    s"""CREATE TABLE IF NOT EXISTS $user_metrics  (
        |    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-       |    tenant_code TEXT,
-       |    user_id INT,
-       |    username TEXT,
-       |    name TEXT,
-       |    eventType TEXT,
-       |    status TEXT,
-       |    is_deleted BOOLEAN,
-       |    created_by INT,
-       |    professional_role_id TEXT,
-       |    professional_role_name TEXT,
-       |    professional_subrole_id TEXT,
-       |    professional_subrole_name TEXT,
-       |    organizations_id TEXT,
-       |    organizations_name TEXT,
-       |    user_role_ids TEXT,
-       |    user_roles TEXT,
-       |    user_profile_one_id TEXT,
-       |    user_profile_one_name TEXT,
-       |    user_profile_one_external_id TEXT,
-       |    user_profile_two_id  TEXT,
-       |    user_profile_two_name TEXT,
-       |    user_profile_two_external_id TEXT,
-       |    user_profile_three_id TEXT,
-       |    user_profile_three_name TEXT,
-       |    user_profile_three_external_id TEXT,
-       |    user_profile_four_id TEXT,
-       |    user_profile_four_name TEXT,
-       |    user_profile_four_external_id TEXT,
-       |    user_profile_five_id TEXT,
-       |    user_profile_five_name TEXT,
-       |    user_profile_five_external_id TEXT
+       |    tenant_code TEXT UNIQUE,
+       |    total_users INT,
+       |    active_users INT,
+       |    deleted_users INT,
+       |    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
        |);""".stripMargin
-
-
 }
