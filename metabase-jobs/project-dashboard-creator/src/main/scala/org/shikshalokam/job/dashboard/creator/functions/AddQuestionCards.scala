@@ -25,7 +25,7 @@ object AddQuestionCards {
     finalDashboardJson.set("dashcards", existingDashcards)
     val dashcardsString = objectMapper.writeValueAsString(finalDashboardJson)
     metabaseUtil.addQuestionCardToDashboard(dashboardId, dashcardsString)
-    println(s"********************* Successfully updated Dashcards  *************************")
+//    println(s"********************* Successfully updated Dashcards  *************************")
   }
 
   def readJsonFile(jsonContent: Option[JsonNode]): Option[JsonNode] = {
