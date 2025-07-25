@@ -1,12 +1,11 @@
 {
   "questionCard": {
-    "name": "Total submission with evidence",
+    "name": "Submission data",
     "collection_id": 644,
     "dataset_query": {
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT\n  COUNT(DISTINCT created_by) AS \"no_of_projects_having_evidence_with_submitted_status\"\nFROM\n  ${config.projects}\nWHERE 1 = 1\nAND status = 'submitted' \nAND evidence is not null AND TRIM(evidence) <> ''\n[[AND ${config.projects}.state_id = (\n        SELECT state_id\n        FROM ${config.projects}\n        WHERE {{state_param}}\n        LIMIT 1)\n  ]]\n  [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE {{district_param}} \n        LIMIT 1)\n  ]] \n  [[AND ${config.projects}.program_id = (\n        SELECT ${config.projects}.program_id\n        FROM ${config.projects}\n        JOIN ${config.solutions} ON ${config.projects}.solution_id = ${config.solutions}.solution_id\n        WHERE {{program_param}} \n        LIMIT 1 )\n   ]]\n[[AND ${config.projects}.block_id = (\n        SELECT block_id\n        FROM ${config.projects}\n        WHERE {{block_param}} \n        LIMIT 1\n        )\n   ]] \n   [[AND ${config.projects}.cluster_id = (\n        SELECT cluster_id\n        FROM ${config.projects}\n        WHERE {{cluster_param}} \n        LIMIT 1\n        )\n   ]]\n   [[AND ${config.projects}.org_id = (\n        SELECT org_id\n        FROM ${config.projects}\n        WHERE {{org_param}} \n        LIMIT 1\n        )\n   ]]",
         "template-tags": {
           "block_param": {
             "type": "dimension",
@@ -73,7 +72,7 @@
           "org_param": {
             "type": "dimension",
             "name": "org_param",
-            "id": "8c84c6fd-bc47-4a7e-941d-77d54dfa3411",
+            "id": "a45783ee-540b-486d-891a-460a97901692",
             "display-name": "Org Param",
             "default": null,
             "dimension": [
@@ -84,11 +83,15 @@
             "widget-type": "string/=",
             "options": null
           }
-        }
+        },
+        "query": "SELECT \n    ${config.solutions}.program_name AS \"Program\",\n    ${config.solutions}.name AS \"Project\",\n    ${config.projects}.state_name AS \"State\",\n    ${config.projects}.district_name AS \"District\",\n${config.projects}.block_name AS \"Block\", \n${config.projects}.cluster_name AS \"Cluster\",\n  ${config.projects}.org_name AS \"Organisation\",\n    SUM(CASE WHEN ${config.projects}.status = 'started' THEN 1 ELSE 0 END) AS \"Started\",\n    SUM(CASE WHEN ${config.projects}.status = 'inProgress' THEN 1 ELSE 0 END) AS \"In-Progress\",\n    SUM(CASE WHEN ${config.projects}.status = 'inProgress' AND ${config.projects}.evidence IS NOT NULL AND TRIM(${config.projects}.evidence) <> '' THEN 1 ELSE 0 END) AS \"In-Progress projects with evidence\",\n    SUM(CASE WHEN ${config.projects}.status = 'submitted' THEN 1 ELSE 0 END) AS \"Submitted\",\n SUM(CASE WHEN ${config.projects}.status = 'submitted' AND ${config.projects}.evidence IS NOT NULL AND TRIM(${config.projects}.evidence) <> '' THEN 1 ELSE 0 END) AS \"Submitted projects with evidences\"\nFROM ${config.projects} \nJOIN ${config.solutions}  ON ${config.projects}.solution_id = ${config.solutions}.solution_id\nWHERE 1 = 1\nAND ${config.projects}.state_name is not null \n[[AND ${config.projects}.state_id = (\n        SELECT state_id\n        FROM ${config.projects}\n        WHERE {{state_param}}\n        LIMIT 1)\n  ]]\n  [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE {{district_param}} \n        LIMIT 1)\n  ]] \n  [[AND ${config.projects}.program_id = (\n        SELECT ${config.projects}.program_id\n        FROM ${config.projects}\n        JOIN ${config.solutions} ON ${config.projects}.solution_id = ${config.solutions}.solution_id\n        WHERE {{program_param}} \n        LIMIT 1 )\n   ]]\n[[AND ${config.projects}.block_id = (\n        SELECT block_id\n        FROM ${config.projects}\n        WHERE {{block_param}} \n        LIMIT 1\n        )\n   ]] \n   [[AND ${config.projects}.cluster_id = (\n        SELECT cluster_id\n        FROM ${config.projects}\n        WHERE {{cluster_param}} \n        LIMIT 1\n        )\n   ]]\n   [[AND ${config.projects}.org_id = (\n        SELECT org_id\n        FROM ${config.projects}\n        WHERE {{org_param}} \n        LIMIT 1\n        )\n   ]]\nGROUP BY ${config.solutions}.program_name, ${config.solutions}.name,${config.projects}.state_name, ${config.projects}.district_name, \n${config.projects}.org_name,\n${config.projects}.block_name,\n${config.projects}.cluster_name\nORDER BY \"Submitted\" DESC;"
       }
     },
-    "display": "scalar",
-    "visualization_settings": {},
+    "display": "table",
+    "visualization_settings": {
+      "table.pivot_column": "Program Name",
+      "table.cell_column": "Started"
+    },
     "parameters": [
       {
         "id": "bee6b62d-7188-4612-8a4e-d4395d31fcfe",
@@ -156,7 +159,7 @@
         "slug": "state_param"
       },
       {
-        "id": "8c84c6fd-bc47-4a7e-941d-77d54dfa3411",
+        "id": "a45783ee-540b-486d-891a-460a97901692",
         "type": "string/=",
         "target": [
           "dimension",
@@ -171,13 +174,13 @@
     ]
   },
   "dashCards": {
-    "card_id": 6946,
+    "card_id": 6937,
     "dashboard_tab_id": null,
-    "id": 22,
-    "col": 12,
-    "row": 3,
-    "size_x": 8,
-    "size_y": 3,
+    "id": 11,
+    "col": 0,
+    "row": 0,
+    "size_x": 24,
+    "size_y": 15,
     "visualization_settings": {},
     "parameter_mappings": [
       {

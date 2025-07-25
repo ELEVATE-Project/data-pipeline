@@ -327,6 +327,11 @@
     "card_id": 707,
     "dashboard_tab_id": null,
     "id": 776,
+    "col": 0,
+    "row": 65,
+    "size_x": 24,
+    "size_y": 9,
+    "visualization_settings": {},
     "parameter_mappings": [
       {
         "card_id": 8985,
@@ -394,11 +399,6 @@
           ]
         ]
       }
-    ],
-    "col": 0,
-    "row": 81,
-    "size_x": 24,
-    "size_y": 9,
-    "visualization_settings": {}
+    ]
   }
 }

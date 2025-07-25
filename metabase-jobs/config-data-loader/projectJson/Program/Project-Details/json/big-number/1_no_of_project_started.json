@@ -1,12 +1,12 @@
 {
   "questionCard": {
-    "name": "No. of improvements submitted with evidence till date",
+    "name": "Started",
     "collection_id": 644,
     "dataset_query": {
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT\n  COUNT(DISTINCT project_id) AS \"no_of_projects_having_evidence_with_submitted_status\"\nFROM\n  ${config.projects}\nWHERE 1 = 1\nAND status = 'submitted'\nAND evidence is not null AND TRIM(evidence) <> ''\n[[AND ${config.projects}.state_id = (\n        SELECT state_id\n        FROM ${config.projects}\n        WHERE {{state_param}}\n        LIMIT 1)\n  ]]\n  [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE {{district_param}} \n        LIMIT 1)\n  ]] \n  [[AND ${config.projects}.program_id = (\n        SELECT ${config.projects}.program_id\n        FROM ${config.projects}\n        JOIN ${config.solutions} ON ${config.projects}.solution_id = ${config.solutions}.solution_id\n        WHERE {{program_param}} \n        LIMIT 1 )\n   ]]\n[[AND ${config.projects}.block_id = (\n        SELECT block_id\n        FROM ${config.projects}\n        WHERE {{block_param}} \n        LIMIT 1\n        )\n   ]] \n   [[AND ${config.projects}.cluster_id = (\n        SELECT cluster_id\n        FROM ${config.projects}\n        WHERE {{cluster_param}} \n        LIMIT 1\n        )\n   ]]\n   [[AND ${config.projects}.org_id = (\n        SELECT org_id\n        FROM ${config.projects}\n        WHERE {{org_param}} \n        LIMIT 1\n        )\n   ]]",
+        "query": "SELECT\n  COUNT(DISTINCT project_id) AS no_of_projects_started\nFROM\n  ${config.projects}\nWHERE 1 = 1\nAND status = 'started'\n[[AND ${config.projects}.state_id = (\n        SELECT state_id\n        FROM ${config.projects}\n        WHERE {{state_param}}\n        LIMIT 1)\n  ]]\n  [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE {{district_param}} \n        LIMIT 1)\n  ]] \n  [[AND ${config.projects}.program_id = (\n        SELECT ${config.projects}.program_id\n        FROM ${config.projects}\n        JOIN ${config.solutions} ON ${config.projects}.solution_id = ${config.solutions}.solution_id\n        WHERE {{program_param}} \n        LIMIT 1 )\n   ]]\n[[AND ${config.projects}.block_id = (\n        SELECT block_id\n        FROM ${config.projects}\n        WHERE {{block_param}} \n        LIMIT 1\n        )\n   ]] \n   [[AND ${config.projects}.cluster_id = (\n        SELECT cluster_id\n        FROM ${config.projects}\n        WHERE {{cluster_param}} \n        LIMIT 1\n        )\n   ]]\n   [[AND ${config.projects}.org_id = (\n        SELECT org_id\n        FROM ${config.projects}\n        WHERE {{org_param}} \n        LIMIT 1\n        )\n   ]]",
         "template-tags": {
           "block_param": {
             "type": "dimension",
@@ -73,7 +73,7 @@
           "org_param": {
             "type": "dimension",
             "name": "org_param",
-            "id": "8c84c6fd-bc47-4a7e-941d-77d54dfa3411",
+            "id": "a45783ee-540b-486d-891a-460a97901692",
             "display-name": "Org Param",
             "default": null,
             "dimension": [
@@ -156,7 +156,7 @@
         "slug": "state_param"
       },
       {
-        "id": "8c84c6fd-bc47-4a7e-941d-77d54dfa3411",
+        "id": "a45783ee-540b-486d-891a-460a97901692",
         "type": "string/=",
         "target": [
           "dimension",
@@ -171,9 +171,14 @@
     ]
   },
   "dashCards": {
-    "card_id": 6946,
+    "card_id": 6943,
     "dashboard_tab_id": null,
-    "id": 22,
+    "id": 19,
+    "col": 0,
+    "row": 0,
+    "size_x": 8,
+    "size_y": 3,
+    "visualization_settings": {},
     "parameter_mappings": [
       {
         "card_id": 8985,
@@ -241,11 +246,6 @@
           ]
         ]
       }
-    ],
-    "col": 8,
-    "row": 5,
-    "size_x": 8,
-    "size_y": 3,
-    "visualization_settings": {}
+    ]
   }
 }

@@ -1,11 +1,12 @@
 {
   "questionCard": {
-    "name": "Submission data",
+    "name": "Submitted",
     "collection_id": 644,
     "dataset_query": {
       "database": 2,
       "type": "native",
       "native": {
+        "query": "SELECT\n  COUNT(DISTINCT project_id) AS \"no_of_projects_submitted\"\nFROM\n  ${config.projects}\nWHERE 1 = 1\nAND status = 'submitted'\n[[AND ${config.projects}.state_id = (\n        SELECT state_id\n        FROM ${config.projects}\n        WHERE {{state_param}}\n        LIMIT 1)\n  ]]\n  [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE {{district_param}} \n        LIMIT 1)\n  ]] \n  [[AND ${config.projects}.program_id = (\n        SELECT ${config.projects}.program_id\n        FROM ${config.projects}\n        JOIN ${config.solutions} ON ${config.projects}.solution_id = ${config.solutions}.solution_id\n        WHERE {{program_param}} \n        LIMIT 1 )\n   ]]\n[[AND ${config.projects}.block_id = (\n        SELECT block_id\n        FROM ${config.projects}\n        WHERE {{block_param}} \n        LIMIT 1\n        )\n   ]] \n   [[AND ${config.projects}.cluster_id = (\n        SELECT cluster_id\n        FROM ${config.projects}\n        WHERE {{cluster_param}} \n        LIMIT 1\n        )\n   ]]\n   [[AND ${config.projects}.org_id = (\n        SELECT org_id\n        FROM ${config.projects}\n        WHERE {{org_param}} \n        LIMIT 1\n        )\n   ]]",
         "template-tags": {
           "block_param": {
             "type": "dimension",
@@ -72,7 +73,7 @@
           "org_param": {
             "type": "dimension",
             "name": "org_param",
-            "id": "a45783ee-540b-486d-891a-460a97901692",
+            "id": "8c84c6fd-bc47-4a7e-941d-77d54dfa3411",
             "display-name": "Org Param",
             "default": null,
             "dimension": [
@@ -83,15 +84,11 @@
             "widget-type": "string/=",
             "options": null
           }
-        },
-        "query": "SELECT \n    ${config.solutions}.program_name AS \"Program Name\",\n    ${config.solutions}.name AS \"Improvement Project Name\",\n    ${config.projects}.state_name AS \"State Name\",\n    ${config.projects}.district_name AS \"District Name\",\n${config.projects}.block_name AS \"Block Name\", \n${config.projects}.cluster_name AS \"Cluster Name\",\n  ${config.projects}.org_name AS \"Organisation Name\",\n    SUM(CASE WHEN ${config.projects}.status = 'started' THEN 1 ELSE 0 END) AS \"Started\",\n    SUM(CASE WHEN ${config.projects}.status = 'inProgress' THEN 1 ELSE 0 END) AS \"In-Progress\",\n    SUM(CASE WHEN ${config.projects}.status = 'inProgress' AND ${config.projects}.evidence IS NOT NULL AND TRIM(${config.projects}.evidence) <> '' THEN 1 ELSE 0 END) AS \"In progress projects with evidence\",\n    SUM(CASE WHEN ${config.projects}.status = 'submitted' THEN 1 ELSE 0 END) AS \"Submitted\"\nFROM ${config.projects} \nJOIN ${config.solutions}  ON ${config.projects}.solution_id = ${config.solutions}.solution_id\nWHERE 1 = 1\nAND ${config.projects}.state_name is not null \n[[AND ${config.projects}.state_id = (\n        SELECT state_id\n        FROM ${config.projects}\n        WHERE {{state_param}}\n        LIMIT 1)\n  ]]\n  [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE {{district_param}} \n        LIMIT 1)\n  ]] \n  [[AND ${config.projects}.program_id = (\n        SELECT ${config.projects}.program_id\n        FROM ${config.projects}\n        JOIN ${config.solutions} ON ${config.projects}.solution_id = ${config.solutions}.solution_id\n        WHERE {{program_param}} \n        LIMIT 1 )\n   ]]\n[[AND ${config.projects}.block_id = (\n        SELECT block_id\n        FROM ${config.projects}\n        WHERE {{block_param}} \n        LIMIT 1\n        )\n   ]] \n   [[AND ${config.projects}.cluster_id = (\n        SELECT cluster_id\n        FROM ${config.projects}\n        WHERE {{cluster_param}} \n        LIMIT 1\n        )\n   ]]\n   [[AND ${config.projects}.org_id = (\n        SELECT org_id\n        FROM ${config.projects}\n        WHERE {{org_param}} \n        LIMIT 1\n        )\n   ]]\nGROUP BY ${config.solutions}.program_name, ${config.solutions}.name,${config.projects}.state_name, ${config.projects}.district_name, \n${config.projects}.org_name,\n${config.projects}.block_name,\n${config.projects}.cluster_name\nORDER BY \"Submitted\" DESC; "
+        }
       }
     },
-    "display": "table",
-    "visualization_settings": {
-      "table.pivot_column": "Program Name",
-      "table.cell_column": "Started"
-    },
+    "display": "scalar",
+    "visualization_settings": {},
     "parameters": [
       {
         "id": "bee6b62d-7188-4612-8a4e-d4395d31fcfe",
@@ -159,7 +156,7 @@
         "slug": "state_param"
       },
       {
-        "id": "a45783ee-540b-486d-891a-460a97901692",
+        "id": "8c84c6fd-bc47-4a7e-941d-77d54dfa3411",
         "type": "string/=",
         "target": [
           "dimension",
@@ -174,13 +171,13 @@
     ]
   },
   "dashCards": {
-    "card_id": 6937,
+    "card_id": 6944,
     "dashboard_tab_id": null,
-    "id": 11,
-    "col": 0,
-    "row": 45,
-    "size_x": 24,
-    "size_y": 10,
+    "id": 20,
+    "col": 16,
+    "row": 0,
+    "size_x": 8,
+    "size_y": 3,
     "visualization_settings": {},
     "parameter_mappings": [
       {

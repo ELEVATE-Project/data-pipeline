@@ -1,12 +1,11 @@
 {
   "questionCard": {
-    "name": "No. of certificates Issued till date",
-    "collection_id": 658,
+    "collection_id": 17,
+    "name": "Status Report",
     "dataset_query": {
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT COUNT(DISTINCT  certificate_pdf_path) \nFROM ${config.projects}\nWHERE  1 = 1\nAND certificate_pdf_path IS NOT NULL \nAND certificate_pdf_path <> '' \n[[AND ${config.projects}.state_id = (\n        SELECT state_id\n        FROM ${config.projects}\n        WHERE {{state_param}}\n        LIMIT 1\n       )\n  ]]\n  [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE {{district_param}} \n        LIMIT 1\n        )\n   ]] \n   \n  [[AND ${config.projects}.program_id = (\n        SELECT ${config.projects}.program_id\n        FROM ${config.projects}\n        JOIN ${config.solutions} ON ${config.projects}.solution_id = ${config.solutions}.solution_id\n        WHERE {{program_param}} \n        LIMIT 1 )\n   ]]\n[[AND ${config.projects}.block_id = (\n        SELECT block_id\n        FROM ${config.projects}\n        WHERE {{block_param}} \n        LIMIT 1\n        )\n   ]] \n   [[AND ${config.projects}.cluster_id = (\n        SELECT cluster_id\n        FROM ${config.projects}\n        WHERE {{cluster_param}} \n        LIMIT 1\n        )\n   ]]\n   [[AND ${config.projects}.org_id = (\n        SELECT org_id\n        FROM ${config.projects}\n        WHERE {{org_param}} \n        LIMIT 1\n        )\n   ]]",
         "template-tags": {
           "block_param": {
             "type": "dimension",
@@ -84,13 +83,64 @@
             "widget-type": "string/=",
             "options": null
           }
-        }
+        },
+        "query": "SELECT \n    ${config.projects}.created_by AS \"UUID\",\n    ${config.projects}.user_roles AS \"User Type\",\n    ${config.projects}.state_name AS \"Declared State\",\n    ${config.projects}.district_name AS \"District\",\n    ${config.projects}.block_name AS \"Block\",\n    ${config.projects}.school_name AS \"School Name\",\n    ${config.projects}.school_id AS \"School ID\", \n    ${config.projects}.org_name AS \"Org Name\",\n    ${config.solutions}.program_name AS \"Program Name\",\n    ${config.solutions}.program_id AS \"Program ID\",\n    ${config.projects}.project_id AS \"Project ID\",\n    ${config.solutions}.name AS \"Project Title\",\n    ${config.solutions}.description AS \"Project Objective\",\n    ${config.projects}.created_date AS \"Project start date of the user\",\n    ${config.projects}.completed_date AS \"Project completion date of the user\",\n    ${config.solutions}.duration AS \"Project Duration\",\n    ${config.projects}.last_sync AS \"Project last Synced date\",\n    ${config.projects}.status AS \"Project Status\",\n    ${config.projects}.certificate_status AS \"Certificate Status\"\nFROM ${config.projects}\nFULL OUTER JOIN ${config.solutions} ON ${config.projects}.solution_id = ${config.solutions}.solution_id\nFULL OUTER JOIN ${config.tasks} ON ${config.projects}.project_id = ${config.tasks}.project_id\nWHERE 1 = 1\n [[AND ${config.projects}.program_id = (\n        SELECT ${config.projects}.program_id\n        FROM ${config.projects}\n        JOIN ${config.solutions} ON ${config.projects}.solution_id = ${config.solutions}.solution_id\n        WHERE {{program_param}} \n        LIMIT 1 )\n   ]]\n[[AND ${config.projects}.state_id = (\n        SELECT state_id\n        FROM ${config.projects}\n        WHERE {{state_param}}\n        LIMIT 1\n       )\n  ]]\n  [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE {{district_param}} \n        LIMIT 1\n        )\n   ]] \n      [[AND ${config.projects}.block_id = (\n        SELECT block_id\n        FROM ${config.projects}\n        WHERE {{block_param}} \n        LIMIT 1\n        )\n   ]] \n   [[AND ${config.projects}.cluster_id = (\n        SELECT cluster_id\n        FROM ${config.projects}\n        WHERE {{cluster_param}} \n        LIMIT 1\n        )\n   ]]\n [[AND ${config.projects}.org_id = (\n        SELECT org_id\n        FROM ${config.projects}\n        WHERE {{org_param}} \n        LIMIT 1\n        )\n   ]]\nGroup by \n   \"UUID\",\n   \"User Type\",\n   \"Declared State\",\n   \"District\",\n   \"Block\",\n   \"School Name\",\n   \"School ID\", \n   \"Org Name\",\n   \"Program Name\",\n   \"Program ID\",\n   \"Project ID\",\n   \"Project Title\",\n   \"Project Objective\",\n   \"Project start date of the user\",\n   \"Project completion date of the user\",\n   \"Project Duration\",\n   \"Project last Synced date\",\n   \"Project Status\",\n   \"Certificate Status\""
       }
     },
-    "display": "scalar",
+    "display": "table",
     "visualization_settings": {
-      "table.pivot_column": "Program Name",
-      "table.cell_column": "Started"
+      "table.pivot_column": "org_name",
+      "table.cell_column": "certificate_status",
+      "column_settings": {
+        "[\"name\",\"block_name\"]": {
+          "column_title": "Block"
+        },
+        "[\"name\",\"description\"]": {
+          "column_title": "Project Objective"
+        },
+        "[\"name\",\"status\"]": {
+          "column_title": "Project Status"
+        },
+        "[\"name\",\"program_name\"]": {
+          "column_title": "Program Name"
+        },
+        "[\"name\",\"state_name\"]": {
+          "column_title": "Declared State"
+        },
+        "[\"name\",\"user_roles\"]": {
+          "column_title": "User Type"
+        },
+        "[\"name\",\"created_date\"]": {
+          "column_title": "Project start date of the user"
+        },
+        "[\"name\",\"school_id\"]": {
+          "column_title": "School ID"
+        },
+        "[\"name\",\"completed_date\"]": {
+          "column_title": "Project completion date of the user"
+        },
+        "[\"name\",\"school_name\"]": {
+          "column_title": "School Name"
+        },
+        "[\"name\",\"project_id\"]": {
+          "column_title": "Project ID"
+        },
+        "[\"name\",\"org_name\"]": {
+          "column_title": "Org Name"
+        },
+        "[\"name\",\"name\"]": {
+          "column_title": "Project Title"
+        },
+        "[\"name\",\"created_by\"]": {
+          "column_title": "UUID"
+        },
+        "[\"name\",\"program_id\"]": {
+          "column_title": "Program ID"
+        },
+        "[\"name\",\"district_name\"]": {
+          "column_title": "District"
+        }
+      }
     },
     "parameters": [
       {
@@ -174,9 +224,14 @@
     ]
   },
   "dashCards": {
-    "card_id": 7362,
+    "card_id": 708,
     "dashboard_tab_id": null,
-    "id": 5,
+    "id": 777,
+    "col": 0,
+    "row": 55,
+    "size_x": 24,
+    "size_y": 9,
+    "visualization_settings": {},
     "parameter_mappings": [
       {
         "card_id": 8985,
@@ -244,11 +299,6 @@
           ]
         ]
       }
-    ],
-    "col": 16,
-    "row": 5,
-    "size_x": 8,
-    "size_y": 3,
-    "visualization_settings": {}
+    ]
   }
 }

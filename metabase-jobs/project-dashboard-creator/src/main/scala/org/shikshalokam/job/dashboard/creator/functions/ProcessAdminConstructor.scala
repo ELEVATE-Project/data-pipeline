@@ -10,8 +10,7 @@ import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
-
-object UpdateAdminJsonFiles {
+object ProcessAdminConstructor {
   def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, stateNameId: Int, districtNameId: Int, programNameId: Int, blockNameId: Int, clusterNameId: Int, orgNameId: Int, projects: String, solutions: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): ListBuffer[Int] = {
     println(s"=====> Started processing admin level json update function for Micro Improvements dashboard")
     val questionCardId = ListBuffer[Int]()
@@ -53,32 +52,9 @@ object UpdateAdminJsonFiles {
         }
       }
     }
+
     def toOption(jsonNode: JsonNode): Option[JsonNode] = {
       if (jsonNode == null || jsonNode.isMissingNode) None else Some(jsonNode)
-    }
-
-    def updateQuestionIdInDashCard(json: JsonNode, cardId: Int, tabId: Int, dashboardId: Int): Option[JsonNode] = {
-      Try {
-        val jsonObject = json.asInstanceOf[ObjectNode]
-        val dashCardsNode = if (jsonObject.has("dashCards") && jsonObject.get("dashCards").isObject) {
-          jsonObject.get("dashCards").asInstanceOf[ObjectNode]
-        } else {
-          val newDashCardsNode = JsonNodeFactory.instance.objectNode()
-          jsonObject.set("dashCards", newDashCardsNode)
-          newDashCardsNode
-        }
-        dashCardsNode.put("card_id", cardId)
-        dashCardsNode.put("dashboard_id", dashboardId)
-        dashCardsNode.put("dashboard_tab_id", tabId)
-        if (dashCardsNode.has("parameter_mappings") && dashCardsNode.get("parameter_mappings").isArray) {
-          dashCardsNode.get("parameter_mappings").elements().forEachRemaining { paramMappingNode =>
-            if (paramMappingNode.isObject) {
-              paramMappingNode.asInstanceOf[ObjectNode].put("card_id", cardId)
-            }
-          }
-        }
-        jsonObject
-      }.toOption
     }
 
     def updateQuestionCardJsonValues(configJson: JsonNode, collectionId: Int, stateNameId: Int, districtNameId: Int, programNameId: Int, blockNameId: Int, clusterNameId: Int, orgNameId: Int, databaseId: Int): JsonNode = {
@@ -152,6 +128,30 @@ object UpdateAdminJsonFiles {
         case Failure(exception) =>
           throw new IllegalArgumentException("Failed to update query in JSON", exception)
       }
+    }
+
+    def updateQuestionIdInDashCard(json: JsonNode, cardId: Int, tabId: Int, dashboardId: Int): Option[JsonNode] = {
+      Try {
+        val jsonObject = json.asInstanceOf[ObjectNode]
+        val dashCardsNode = if (jsonObject.has("dashCards") && jsonObject.get("dashCards").isObject) {
+          jsonObject.get("dashCards").asInstanceOf[ObjectNode]
+        } else {
+          val newDashCardsNode = JsonNodeFactory.instance.objectNode()
+          jsonObject.set("dashCards", newDashCardsNode)
+          newDashCardsNode
+        }
+        dashCardsNode.put("card_id", cardId)
+        dashCardsNode.put("dashboard_id", dashboardId)
+        dashCardsNode.put("dashboard_tab_id", tabId)
+        if (dashCardsNode.has("parameter_mappings") && dashCardsNode.get("parameter_mappings").isArray) {
+          dashCardsNode.get("parameter_mappings").elements().forEachRemaining { paramMappingNode =>
+            if (paramMappingNode.isObject) {
+              paramMappingNode.asInstanceOf[ObjectNode].put("card_id", cardId)
+            }
+          }
+        }
+        jsonObject
+      }.toOption
     }
 
     def appendDashCardToDashboard(metabaseUtil: MetabaseUtil, jsonFile: Option[JsonNode], dashboardId: Int): Unit = {

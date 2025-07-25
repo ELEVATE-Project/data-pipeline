@@ -81,7 +81,7 @@ object Utils {
     dashboardId
   }
 
-  def createDashboardAndTabs(collectionId: Int, dashboardName: String, dashboardDescription: String, metabaseUtil: MetabaseUtil): (Int, Int, Int) = {
+  def createMicroImprovementsDashboardAndTabs(collectionId: Int, dashboardName: String, dashboardDescription: String, metabaseUtil: MetabaseUtil): (Int, Int, Int, Int) = {
     val dashboardRequestBody =
       s"""{
          |  "name": "$dashboardName",
@@ -92,7 +92,7 @@ object Utils {
     val createDashboardResponse = mapper.readTree(metabaseUtil.createDashboard(dashboardRequestBody))
     val dashboardId = createDashboardResponse.path("id").asInt()
     val tabsJson = mapper.createArrayNode()
-    val tabNames = Seq("Project Details", "User Details")
+    val tabNames = Seq("Project Details", "User Details", "Submission CSV")
     tabNames.zipWithIndex.foreach { case (name, idx) =>
       val tabNode = mapper.createObjectNode()
       tabNode.put("id", idx + 1)
@@ -111,9 +111,47 @@ object Utils {
 
     val projectTabId = tabIds.getOrElse("Project Details", -1)
     val userTabId = tabIds.getOrElse("User Details", -1)
+    val csvTabId = tabIds.getOrElse("Submission CSV", -1)
 
-    println(s"$dashboardName : dashboard created with ID = $dashboardId, Project tab with ID = $projectTabId, User tab with ID = $userTabId" )
-    (dashboardId, projectTabId, userTabId)
+    println(s"$dashboardName : Dashboard created with ID = $dashboardId, Project tab with ID = $projectTabId, User tab with ID = $userTabId, Submission tab with ID = $csvTabId" )
+    (dashboardId, projectTabId, userTabId, csvTabId)
+  }
+
+  def createSolutionDashboardAndTabs(collectionId: Int, dashboardName: String, dashboardDescription: String, metabaseUtil: MetabaseUtil): (Int, Int, Int, Int, Int) = {
+    val dashboardRequestBody =
+      s"""{
+         |  "name": "$dashboardName",
+         |  "description": "$dashboardDescription",
+         |  "collection_id": "$collectionId",
+         |  "collection_position": "1"
+         |}""".stripMargin
+    val createDashboardResponse = mapper.readTree(metabaseUtil.createDashboard(dashboardRequestBody))
+    val dashboardId = createDashboardResponse.path("id").asInt()
+    val tabsJson = mapper.createArrayNode()
+    val tabNames = Seq("Project Details", "Submission CSV", "Task Report CSV", "Status Report CSV")
+    tabNames.zipWithIndex.foreach { case (name, idx) =>
+      val tabNode = mapper.createObjectNode()
+      tabNode.put("id", idx + 1)
+      tabNode.put("dashboard_id", dashboardId)
+      tabNode.put("name", name)
+      tabNode.put("position", idx)
+      tabsJson.add(tabNode)
+    }
+    val updatedDashboardResponse = createDashboardResponse.deepCopy().asInstanceOf[ObjectNode]
+    updatedDashboardResponse.set("tabs", tabsJson)
+    val updateDashboardRequestBody = updatedDashboardResponse.toString
+    val updateDashboardResponse = mapper.readTree(metabaseUtil.addQuestionCardToDashboard(dashboardId, updateDashboardRequestBody))
+    val tabIds = updateDashboardResponse.path("tabs").elements().asScala
+      .map(tab => tab.path("name").asText() -> tab.path("id").asInt())
+      .toMap
+
+    val projectTabId = tabIds.getOrElse("Project Details", -1)
+    val submissionCsvTabId = tabIds.getOrElse("Submission CSV", -1)
+    val taskReportCsvTabId = tabIds.getOrElse("Task Report CSV", -1)
+    val statusReportCsvTabId = tabIds.getOrElse("Status Report CSV", -1)
+
+    println(s"$dashboardName : Dashboard created with ID = $dashboardId, Project tab with ID = $projectTabId, Submission tab with ID = $submissionCsvTabId, Task Report CSV = $taskReportCsvTabId, Status Report CSV = $statusReportCsvTabId," )
+    (dashboardId, projectTabId, submissionCsvTabId, taskReportCsvTabId, statusReportCsvTabId)
   }
 
   def getDatabaseId(metabaseDatabase: String, metabaseUtil: MetabaseUtil): Int = {

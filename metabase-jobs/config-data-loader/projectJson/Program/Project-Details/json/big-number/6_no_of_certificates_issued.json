@@ -1,12 +1,12 @@
 {
   "questionCard": {
-    "name": "No. of improvements in started status currently",
-    "collection_id": 644,
+    "name": "Certificates issued",
+    "collection_id": 658,
     "dataset_query": {
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT\n  COUNT(DISTINCT project_id) AS no_of_projects_started\nFROM\n  ${config.projects}\nWHERE 1 = 1\nAND status = 'started'\n[[AND ${config.projects}.state_id = (\n        SELECT state_id\n        FROM ${config.projects}\n        WHERE {{state_param}}\n        LIMIT 1)\n  ]]\n  [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE {{district_param}} \n        LIMIT 1)\n  ]] \n  [[AND ${config.projects}.program_id = (\n        SELECT ${config.projects}.program_id\n        FROM ${config.projects}\n        JOIN ${config.solutions} ON ${config.projects}.solution_id = ${config.solutions}.solution_id\n        WHERE {{program_param}} \n        LIMIT 1 )\n   ]]\n[[AND ${config.projects}.block_id = (\n        SELECT block_id\n        FROM ${config.projects}\n        WHERE {{block_param}} \n        LIMIT 1\n        )\n   ]] \n   [[AND ${config.projects}.cluster_id = (\n        SELECT cluster_id\n        FROM ${config.projects}\n        WHERE {{cluster_param}} \n        LIMIT 1\n        )\n   ]]\n   [[AND ${config.projects}.org_id = (\n        SELECT org_id\n        FROM ${config.projects}\n        WHERE {{org_param}} \n        LIMIT 1\n        )\n   ]]",
+        "query": "SELECT COUNT(DISTINCT  certificate_pdf_path) \nFROM ${config.projects}\nWHERE  1 = 1\nAND certificate_pdf_path IS NOT NULL \nAND certificate_pdf_path <> '' \n[[AND ${config.projects}.state_id = (\n        SELECT state_id\n        FROM ${config.projects}\n        WHERE {{state_param}}\n        LIMIT 1\n       )\n  ]]\n  [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE {{district_param}} \n        LIMIT 1\n        )\n   ]] \n   \n  [[AND ${config.projects}.program_id = (\n        SELECT ${config.projects}.program_id\n        FROM ${config.projects}\n        JOIN ${config.solutions} ON ${config.projects}.solution_id = ${config.solutions}.solution_id\n        WHERE {{program_param}} \n        LIMIT 1 )\n   ]]\n[[AND ${config.projects}.block_id = (\n        SELECT block_id\n        FROM ${config.projects}\n        WHERE {{block_param}} \n        LIMIT 1\n        )\n   ]] \n   [[AND ${config.projects}.cluster_id = (\n        SELECT cluster_id\n        FROM ${config.projects}\n        WHERE {{cluster_param}} \n        LIMIT 1\n        )\n   ]]\n   [[AND ${config.projects}.org_id = (\n        SELECT org_id\n        FROM ${config.projects}\n        WHERE {{org_param}} \n        LIMIT 1\n        )\n   ]]",
         "template-tags": {
           "block_param": {
             "type": "dimension",
@@ -88,7 +88,10 @@
       }
     },
     "display": "scalar",
-    "visualization_settings": {},
+    "visualization_settings": {
+      "table.pivot_column": "Program Name",
+      "table.cell_column": "Started"
+    },
     "parameters": [
       {
         "id": "bee6b62d-7188-4612-8a4e-d4395d31fcfe",
@@ -171,9 +174,14 @@
     ]
   },
   "dashCards": {
-    "card_id": 6943,
+    "card_id": 7362,
     "dashboard_tab_id": null,
-    "id": 19,
+    "id": 5,
+    "col": 16,
+    "row": 3,
+    "size_x": 8,
+    "size_y": 3,
+    "visualization_settings": {},
     "parameter_mappings": [
       {
         "card_id": 8985,
@@ -241,11 +249,6 @@
           ]
         ]
       }
-    ],
-    "col": 0,
-    "row": 2,
-    "size_x": 8,
-    "size_y": 3,
-    "visualization_settings": {}
+    ]
   }
 }

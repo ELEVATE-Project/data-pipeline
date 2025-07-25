@@ -1,12 +1,11 @@
 {
   "questionCard": {
-    "name": "Total submission with evidence",
+    "name": "State wise submissions",
     "collection_id": 644,
     "dataset_query": {
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT\n  COUNT(DISTINCT created_by) AS \"no_of_projects_having_evidence_with_submitted_status\"\nFROM\n  ${config.projects}\nWHERE 1 = 1\nAND status = 'submitted' \nAND evidence is not null AND TRIM(evidence) <> ''\n[[AND ${config.projects}.state_id = (\n        SELECT state_id\n        FROM ${config.projects}\n        WHERE {{state_param}}\n        LIMIT 1)\n  ]]\n  [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE {{district_param}} \n        LIMIT 1)\n  ]] \n  [[AND ${config.projects}.program_id = (\n        SELECT ${config.projects}.program_id\n        FROM ${config.projects}\n        JOIN ${config.solutions} ON ${config.projects}.solution_id = ${config.solutions}.solution_id\n        WHERE {{program_param}} \n        LIMIT 1 )\n   ]]\n[[AND ${config.projects}.block_id = (\n        SELECT block_id\n        FROM ${config.projects}\n        WHERE {{block_param}} \n        LIMIT 1\n        )\n   ]] \n   [[AND ${config.projects}.cluster_id = (\n        SELECT cluster_id\n        FROM ${config.projects}\n        WHERE {{cluster_param}} \n        LIMIT 1\n        )\n   ]]\n   [[AND ${config.projects}.org_id = (\n        SELECT org_id\n        FROM ${config.projects}\n        WHERE {{org_param}} \n        LIMIT 1\n        )\n   ]]",
         "template-tags": {
           "block_param": {
             "type": "dimension",
@@ -73,7 +72,7 @@
           "org_param": {
             "type": "dimension",
             "name": "org_param",
-            "id": "8c84c6fd-bc47-4a7e-941d-77d54dfa3411",
+            "id": "a45783ee-540b-486d-891a-460a97901692",
             "display-name": "Org Param",
             "default": null,
             "dimension": [
@@ -84,11 +83,40 @@
             "widget-type": "string/=",
             "options": null
           }
-        }
+        },
+        "query": "WITH UserProjectCounts AS (\n    SELECT\n        ${config.projects}.state_name,\n        ${config.projects}.created_by,\n        COUNT(DISTINCT CASE WHEN ${config.projects}.status = 'started' THEN ${config.projects}.created_by END) AS \"Started Projects\",\n        COUNT(DISTINCT CASE WHEN ${config.projects}.status = 'inProgress' THEN ${config.projects}.created_by END) AS \"In Progress Projects\",\n        COUNT(DISTINCT CASE WHEN ${config.projects}.status = 'submitted' THEN ${config.projects}.created_by END) AS \"Submitted Projects\"\n    FROM ${config.projects}\n    JOIN ${config.solutions} on ${config.projects}.solution_id = ${config.solutions}.solution_id\n    WHERE 1 = 1\n        AND ${config.projects}.state_name is not null \n[[AND ${config.projects}.state_id = (\n        SELECT state_id\n        FROM ${config.projects}\n        WHERE {{state_param}}\n        LIMIT 1)\n  ]]\n  [[AND ${config.projects}.district_id = (\n        SELECT district_id\n        FROM ${config.projects}\n        WHERE {{district_param}} \n        LIMIT 1)\n  ]] \n  [[AND ${config.projects}.program_id = (\n        SELECT ${config.projects}.program_id\n        FROM ${config.projects}\n        JOIN ${config.solutions} ON ${config.projects}.solution_id = ${config.solutions}.solution_id\n        WHERE {{program_param}} \n        LIMIT 1 )\n   ]]\n [[AND ${config.projects}.block_id = (\n        SELECT block_id\n        FROM ${config.projects}\n        WHERE {{block_param}} \n        LIMIT 1\n        )\n   ]] \n   [[AND ${config.projects}.cluster_id = (\n        SELECT cluster_id\n        FROM ${config.projects}\n        WHERE {{cluster_param}} \n        LIMIT 1\n        )\n   ]]\n   [[AND ${config.projects}.org_id = (\n        SELECT org_id\n        FROM ${config.projects}\n        WHERE {{org_param}} \n        LIMIT 1\n        )\n   ]]\n    GROUP BY ${config.projects}.state_name, ${config.projects}.created_by\n)\nSELECT \n    state_name AS \"State\",\n    COUNT(DISTINCT CASE WHEN \"Started Projects\" > 0 THEN created_by END) AS \"Started Users\",\n    COUNT(DISTINCT CASE WHEN \"In Progress Projects\" > 0 THEN created_by END) AS \"In Progress Users\",\n    COUNT(DISTINCT CASE WHEN \"Submitted Projects\" > 0 THEN created_by END) AS \"Submitted Users\"\nFROM UserProjectCounts\nGROUP BY state_name\nORDER BY \"Submitted Users\" DESC;"
       }
     },
-    "display": "scalar",
-    "visualization_settings": {},
+    "display": "bar",
+    "visualization_settings": {
+      "graph.show_goal": false,
+      "graph.y_axis.title_text": "No. of users",
+      "graph.show_values": false,
+      "graph.x_axis.axis_enabled": true,
+      "graph.y_axis.scale": "linear",
+      "graph.metrics": [
+        "Submitted Users",
+        "In Progress Users",
+        "Started Users"
+      ],
+      "graph.y_axis.axis_enabled": true,
+      "graph.label_value_formatting": "auto",
+      "series_settings": {
+        "In Progress": {
+          "color": "#FBE499"
+        },
+        "Submitted": {
+          "color": "#A7D07C"
+        },
+        "Started": {
+          "color": "#F7C4C4"
+        }
+      },
+      "graph.dimensions": [
+        "State"
+      ],
+      "stackable.stack_type": "stacked"
+    },
     "parameters": [
       {
         "id": "bee6b62d-7188-4612-8a4e-d4395d31fcfe",
@@ -156,7 +184,7 @@
         "slug": "state_param"
       },
       {
-        "id": "8c84c6fd-bc47-4a7e-941d-77d54dfa3411",
+        "id": "a45783ee-540b-486d-891a-460a97901692",
         "type": "string/=",
         "target": [
           "dimension",
@@ -171,13 +199,13 @@
     ]
   },
   "dashCards": {
-    "card_id": 6946,
+    "card_id": 6928,
     "dashboard_tab_id": null,
-    "id": 22,
-    "col": 12,
-    "row": 3,
-    "size_x": 8,
-    "size_y": 3,
+    "id": 2,
+    "col": 0,
+    "row": 16,
+    "size_x": 24,
+    "size_y": 10,
     "visualization_settings": {},
     "parameter_mappings": [
       {
