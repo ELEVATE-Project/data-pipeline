@@ -120,7 +120,13 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
     val programObservationWithoutRubricDashboardPresent = solutionMetadataOutput.map(dashboardExists(_, s"Question Report", "Program")).getOrElse("No")
     val programObservationStatusDashboardPresent = solutionMetadataOutput.map(dashboardExists(_, s"Status Report", "Program")).getOrElse("No")
     val programObservationDomainDashboardPresent = solutionMetadataOutput.map(dashboardExists(_, s"Domain Report", "Program")).getOrElse("No")
-    val tabList: List[String] = List("Status Report", "Domain Report", "Question Report", "Status Raw Data for CSV Downloads", "Domain and Criteria Raw Data for CSV Downloads", "Question Raw Data for CSV Downloads")
+    var tabList: List[String] = List()
+    if (isRubric == "true") {
+      tabList = List("Status Report", "Domain Report", "Question Report", "Status Raw Data for CSV Downloads", "Domain and Criteria Raw Data for CSV Downloads", "Question Raw Data for CSV Downloads")
+    } else {
+      tabList = List("Status Report", "Question Report", "Status Raw Data for CSV Downloads", "Question Raw Data for CSV Downloads")
+    }
+
 
     println(s"domainTable: $ObservationDomainTable")
     println(s"questionTable: $ObservationQuestionTable")

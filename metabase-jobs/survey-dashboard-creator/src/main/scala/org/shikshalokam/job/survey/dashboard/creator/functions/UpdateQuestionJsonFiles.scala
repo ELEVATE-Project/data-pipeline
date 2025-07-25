@@ -128,6 +128,11 @@ object UpdateQuestionJsonFiles {
                 if (originalQuestionCard.isObject) {
                   originalQuestionCard.asInstanceOf[com.fasterxml.jackson.databind.node.ObjectNode].put("name", ".")
                 }
+                row.get("report_type") match {
+                  case Some(rt) if rt != "Default" =>
+                    configJson.asInstanceOf[ObjectNode].put("display", rt.toString)
+                  case _ => // do nothing
+                }
                 val updatedQuestionCard = updateQuestionCardJsonValues(json, collectionId, stateNameId, districtNameId, blockNameId, clusterNameId, schoolNameId, orgNameId, databaseId)
                 val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, question, questionId, evidenceBaseUrl)
                 val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]

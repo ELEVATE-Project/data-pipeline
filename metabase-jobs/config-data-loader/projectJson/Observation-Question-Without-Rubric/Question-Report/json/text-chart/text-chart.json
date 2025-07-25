@@ -6,7 +6,7 @@
       "database": 2,
       "type": "native",
       "native": {
-        "query": "select user_id as \"response_by\", value AS \"answer\"\nfrom ${questionTable}\nWHERE 1 = 1 \n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{block_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{org_param}}]]\nAND question_id = ${questionId}\nAND value is not null AND value <> ''",
+        "query": "select user_id as \"User ID\", value AS \"Answer\"\nfrom ${questionTable}\nWHERE 1 = 1 \n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{block_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{org_param}}]]\nAND question_id = ${questionId}\nAND value is not null AND value <> ''",
         "template-tags": {
           "state_param": {
             "type": "dimension",

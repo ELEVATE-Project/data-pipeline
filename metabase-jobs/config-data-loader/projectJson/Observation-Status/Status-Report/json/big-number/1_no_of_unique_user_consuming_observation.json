@@ -1,6 +1,6 @@
 {
   "questionCard": {
-    "name": "No of unique user consuming the observation",
+    "name": "Unique Users",
     "collection_id": 644,
     "dataset_query": {
       "database": 2,
