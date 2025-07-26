@@ -1,6 +1,6 @@
 {
   "questionCard": {
-    "name": "No of unique users in submitted status",
+    "name": "Submitted Status",
     "collection_id": 644,
     "dataset_query": {
       "database": 2,

@@ -2,66 +2,91 @@
   {
     "name": "Select State",
     "slug": "select_state",
-    "id": "2030c5fe",
+    "id": "c32c8fc5",
     "type": "string/=",
     "sectionId": "location",
+    "isMultiSelect": false,
     "filteringParameters": [
-      "3fa46e53",
-      "ebefc30b",
-      "a6683b09",
-      "98262141"
+      "5088d3e5",
+      "74a10335",
+      "9e5a09bh",
+      "cc7a4cd7",
+      "6e5c08dc"
     ]
   },
   {
     "name": "Select District",
     "slug": "select_district",
-    "id": "3fa46e53",
+    "isMultiSelect": false,
     "type": "string/=",
     "sectionId": "location",
+    "id": "74a10335",
     "filteringParameters": [
-      "2030c5fe",
-      "ebefc30b",
-      "a6683b09",
-      "98262141"
+      "5088d3e5",
+      "c32c8fc5",
+      "9e5a09bh",
+      "cc7a4cd7",
+      "6e5c08dc"
     ]
   },
   {
     "name": "Select Block",
     "slug": "select_block",
-    "id": "ebefc30b",
+    "id": "9e5a09bh",
     "type": "string/=",
     "sectionId": "string",
+    "isMultiSelect": false,
     "filteringParameters": [
-      "2030c5fe",
-      "3fa46e53",
-      "a6683b09",
-      "98262141"
+      "5088d3e5",
+      "c32c8fc5",
+      "74a10335",
+      "cc7a4cd7",
+      "6e5c08dc"
     ]
   },
   {
     "name": "Select Cluster",
     "slug": "select_cluster",
-    "id": "a6683b09",
+    "id": "cc7a4cd7",
     "type": "string/=",
     "sectionId": "string",
+    "isMultiSelect": false,
     "filteringParameters": [
-      "2030c5fe",
-      "3fa46e53",
-      "ebefc30b",
-      "98262141"
+      "5088d3e5",
+      "c32c8fc5",
+      "74a10335",
+      "9e5a09bh",
+      "6e5c08dc"
     ]
   },
   {
-    "name": "Select Organisation ",
-    "slug": "select_organisation_",
-    "id": "98262141",
+    "name": "Select School",
+    "slug": "select_school",
+    "id": "6e5c08dc",
     "type": "string/=",
     "sectionId": "string",
+    "isMultiSelect": false,
     "filteringParameters": [
-      "2030c5fe",
-      "3fa46e53",
-      "ebefc30b",
-      "a6683b09"
+      "5088d3e5",
+      "c32c8fc5",
+      "74a10335",
+      "9e5a09bh",
+      "cc7a4cd7"
+    ]
+  },
+  {
+    "name": "Select Organisation",
+    "slug": "select_organisation",
+    "id": "5088d3e5",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "c32c8fc5",
+      "74a10335",
+      "9e5a09bh",
+      "cc7a4cd7",
+      "6e5c08dc"
     ]
   }
 ]

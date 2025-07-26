@@ -1,6 +1,6 @@
 {
   "questionCard": {
-    "name": "No of unique user in started status",
+    "name": "Started",
     "collection_id": 644,
     "dataset_query": {
       "database": 2,
