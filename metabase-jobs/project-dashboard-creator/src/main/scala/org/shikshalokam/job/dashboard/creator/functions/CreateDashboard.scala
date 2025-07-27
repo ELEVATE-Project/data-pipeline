@@ -24,7 +24,7 @@ object CreateDashboard {
         val collectionRequestBody =
           s"""{
              |  "name": "$collectionName",
-             |  "description": "Collection for $description"
+             |  "description": "$description"
              |}""".stripMargin
         val collectionId = mapper.readTree(metabaseUtil.createCollection(collectionRequestBody)).path("id").asInt()
         println(s"New Collection ID = $collectionId")

@@ -1,6 +1,6 @@
 package org.shikshalokam.job.dashboard.creator.functions
 
-import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import org.shikshalokam.job.util.MetabaseUtil
 
@@ -21,11 +21,10 @@ object AddQuestionCards {
     dashCardsNode.foreach { value =>
       existingDashcards.add(value)
     }
-    val finalDashboardJson = objectMapper.createObjectNode()
-    finalDashboardJson.set("dashcards", existingDashcards)
-    val dashcardsString = objectMapper.writeValueAsString(finalDashboardJson)
-    metabaseUtil.addQuestionCardToDashboard(dashboardId, dashcardsString)
-//    println(s"********************* Successfully updated Dashcards  *************************")
+    dashboardResponse.asInstanceOf[ObjectNode].set("dashcards", existingDashcards)
+
+    val updatedDashboardStr = objectMapper.writeValueAsString(dashboardResponse)
+    metabaseUtil.addQuestionCardToDashboard(dashboardId, updatedDashboardStr)
   }
 
   def readJsonFile(jsonContent: Option[JsonNode]): Option[JsonNode] = {

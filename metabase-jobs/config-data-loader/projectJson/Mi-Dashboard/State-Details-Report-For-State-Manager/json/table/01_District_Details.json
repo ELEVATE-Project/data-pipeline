@@ -1,0 +1,35 @@
+{
+  "questionCard": {
+    "name": "District Details",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {},
+        "query": "SELECT \n    lp.district_name AS \"District Name\",\n    COUNT(DISTINCT lp.created_by) AS \"Total Projects Count\",\n    COUNT(CASE WHEN lp.status = 'started' THEN 1 END) AS \"Total Projects Initiated\",\n    COUNT(CASE WHEN lp.status = 'inProgress' THEN 1 END) AS \"Total Projects In-Progress\",\n    COUNT(CASE WHEN lp.status = 'submitted' THEN 1 END) AS \"Total Projects Submitted\",\n    ldu.district_details_url_state AS \"Dashboard URL\"\nFROM \n    ${config.projects} lp\nJOIN \n    ${config.dashboard_metadata} ldu\n    ON lp.district_id = ldu.entity_id\nWHERE \n    lp.state_id = '66bf7eb960de1616f42cb984'\n    AND lp.created_by IS NOT NULL\n    AND ldu.district_details_url_state IS NOT NULL \n    AND ldu.district_details_url_state <> ''\n    AND ldu.entity_type = 'district'\nGROUP BY \n    lp.district_name, ldu.district_details_url_state\nORDER BY \n    \"Total Projects Count\" DESC;\n"
+      }
+    },
+    "parameter_mappings": [],
+    "display": "table",
+    "entity_id": "JylOPN9NLW-oe6z5T-L6i",
+    "collection_preview": true,
+    "visualization_settings": {
+      "table.pivot_column": "Dashboard URL",
+      "table.cell_column": "Total Projects Count",
+      "map.region": "3bff4362-c7fb-4602-fac7-c0ebdf7a00bd"
+    },
+    "parameters": []
+  },
+  "dashCards": {
+    "card_id": 6937,
+    "dashboard_tab_id": null,
+    "id": 22,
+    "parameter_mappings": [],
+    "col": 0,
+    "row": 23,
+    "size_x": 24,
+    "size_y": 7,
+    "visualization_settings": {}
+  }
+}

@@ -6,17 +6,15 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.shikshalokam.job.dashboard.creator.domain.Event
-import org.shikshalokam.job.dashboard.creator.miDashboard.{ComparePage, DistrictPage, HomePage, StatePage, Utils}
+import org.shikshalokam.job.dashboard.creator.miDashboard.{ComparePage, DistrictPage, HomePage, StatePage}
 import org.shikshalokam.job.dashboard.creator.task.ProjectMetabaseDashboardConfig
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import org.shikshalokam.job.{BaseProcessFunction, Metrics}
-import org.shikshalokam.job.util.JSONUtil.mapper
-
-import scala.collection.JavaConverters._
-import scala.collection.{Seq, mutable}
 import org.slf4j.LoggerFactory
 
+import scala.collection.JavaConverters._
 import scala.collection.immutable._
+import scala.collection.mutable
 
 class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(implicit val mapTypeInfo: TypeInformation[Event], @transient var postgresUtil: PostgresUtil = null, @transient var metabaseUtil: MetabaseUtil = null)
   extends BaseProcessFunction[Event, Event](config) {
@@ -65,12 +63,38 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
     val targetedProgramId: String = Option(event.targetedProgram).map(_.trim).filter(_.nonEmpty).getOrElse(postgresUtil.fetchData(s"SELECT program_id FROM $solutions WHERE solution_id = '$targetedSolutionId'").collectFirst { case map: Map[_, _] => map.get("program_id").map(_.toString).getOrElse("") }.getOrElse(""))
     val programName = postgresUtil.fetchData(s"""SELECT program_name FROM $solutions WHERE solution_id = '$targetedSolutionId'""").collectFirst { case map: Map[_, _] => map.getOrElse("program_name", "").toString }.getOrElse("")
     val orgName = postgresUtil.fetchData(s"""SELECT org_name FROM $projects WHERE solution_id = '$targetedSolutionId' LIMIT 1 """).collectFirst { case map: Map[_, _] => map.getOrElse("org_name", "").toString }.getOrElse("")
+    val stateName = postgresUtil.fetchData(s"""SELECT entity_name FROM $metaDataTable WHERE entity_id = '$targetedStateId'""").collectFirst { case map: Map[_, _] => map.getOrElse("entity_name", "").toString }.getOrElse("")
+    val districtName = postgresUtil.fetchData(s"""SELECT entity_name FROM $metaDataTable WHERE entity_id = '$targetedDistrictId'""").collectFirst { case map: Map[_, _] => map.getOrElse("entity_name", "").toString }.getOrElse("")
+    val tenantId = postgresUtil.fetchData(s"""SELECT tenant_id FROM $projects WHERE solution_id = '$targetedSolutionId' LIMIT 1 """).collectFirst { case map: Map[_, _] => map.getOrElse("tenant_id", "").toString }.getOrElse("")
     val combinedQuery = s"SELECT program_description, program_external_id, external_id, description FROM $solutions WHERE solution_id = '$targetedSolutionId' LIMIT 1"
     val resultMap = postgresUtil.fetchData(combinedQuery).collectFirst { case map: Map[_, _] => map }.getOrElse(Map.empty[String, Any])
+    val databaseId: Int = Utils.getDatabaseId(metabaseDatabase, metabaseUtil)
     val programExternalId = resultMap.get("program_external_id").map(_.toString).getOrElse("")
     val programDescription = resultMap.get("program_description").map(_.toString).getOrElse("")
     val solutionExternalId = resultMap.get("external_id").map(_.toString).getOrElse("")
     val solutionDescription = resultMap.get("description").map(_.toString).getOrElse("")
+    val districtMetadataOutput = postgresUtil.fetchData(s"SELECT mi_metadata FROM $metaDataTable WHERE entity_id = '$targetedStateId';").collectFirst {
+      case map: Map[_, _] =>
+        map.get("mi_metadata") match {
+          case Some(value) if value != null && value.toString.trim.nonEmpty && value.toString != "null" =>
+            Some(value.toString)
+          case _ => None
+        }
+    }.flatten
+
+    val objectMapper = new ObjectMapper()
+
+    def dashboardExists(solutionMetadataOutput: String, dashboardName: String, category: String): String = {
+      if (solutionMetadataOutput == null || solutionMetadataOutput.trim.isEmpty) return "No"
+      val node: JsonNode = objectMapper.readTree(solutionMetadataOutput)
+      if (node.elements().asScala.exists { arrElem: JsonNode =>
+        arrElem.has("dashboardName") && arrElem.has("Collection For") &&
+          arrElem.get("dashboardName").asText() == dashboardName &&
+          arrElem.get("Collection For").asText() == category
+      }) "Yes" else "No"
+    }
+
+    val districtMiDashboardPresentInsideStateReport = districtMetadataOutput.map(dashboardExists(_, s"$districtName - District Overview", "State Manager")).getOrElse("No")
 
     // Printing the targetedState ID
     println(s"admin: $admin")
@@ -106,10 +130,68 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
         } else {
           println("=====> Creating National Overview Collection And Dashboard")
           createNationalOverviewCollectionAndDashboard(metaDataTable, reportConfig, metabaseDatabase)
+          if (targetedStateId.nonEmpty) {
+            val (_, nationalCollectionId) = validateCollection("National Overview", "Admin")
+            val stateReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mi-Dashboard' AND report_name = 'State-Details-Report';"
+            processMiStateDetailsPage(nationalCollectionId, "National Overview", stateName, databaseId, stateReportConfigQuery, metabaseUtil, postgresUtil, "Admin", "Admin", "No")
+            processMiDistrictDetailsPage(nationalCollectionId, "National Overview", stateName, districtName, targetedStateId, databaseId, metabaseUtil, postgresUtil, "Admin", "Admin", "No")
+          } else {
+            println("targetedState is not present or is empty")
+          }
         }
         println("\n")
 
         //TODO: @Prashant put state and district logic here
+        if (targetedStateId.nonEmpty) {
+          try {
+            val (stateCollectionPresent, stateCollectionId) = validateCollection(s"$stateName State [$tenantId]", "State Manager", Some(targetedStateId))
+            if (stateCollectionPresent && stateCollectionId != 0) {
+              println(s"=====> $stateName State collection present with id: $stateCollectionId, Skipping this step.")
+              if (districtMiDashboardPresentInsideStateReport == "Yes") {
+                println(s"=====> $districtName district MI collection present inside $stateName state, Skipping this step.")
+              } else {
+                println(s"=====> $districtName district MI collection not present inside $stateName state, Creating this dashboard.")
+                val (_, stateCollectionId) = validateCollection(s"$stateName State [$tenantId]", "State Manager", Some(targetedStateId))
+                processMiDistrictDetailsPage(stateCollectionId, s"$stateName State [$tenantId]", stateName, districtName, targetedStateId, databaseId, metabaseUtil, postgresUtil, "State", "State Manager", "Yes")
+              }
+            } else {
+              println("=====> Creating $stateName State Collection And Dashboard")
+              processStateDashboard(tenantId, stateName, targetedStateId, reportConfig, metaDataTable, metabaseDatabase, projects, solutions, metabaseUtil, postgresUtil, "State Manager")
+              val (_, stateCollectionId) = validateCollection(s"$stateName State [$tenantId]", "State Manager", Some(targetedStateId))
+              val stateReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mi-Dashboard' AND report_name = 'State-Details-Report-For-State-Manager';"
+              processMiStateDetailsPage(stateCollectionId, s"$stateName State [$tenantId]", stateName, databaseId, stateReportConfigQuery, metabaseUtil, postgresUtil, "State", "State Manager", "Yes")
+              processMiDistrictDetailsPage(stateCollectionId, s"$stateName State [$tenantId]", stateName, districtName, targetedStateId, databaseId, metabaseUtil, postgresUtil, "State", "State Manager", "No")
+            }
+          } catch {
+            case e: Exception =>
+              postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}'  WHERE entity_id = '$targetedStateId';")
+              println(s"An error occurred: ${e.getMessage}")
+              e.printStackTrace()
+          }
+        } else {
+          println("targetedState is not present or is empty")
+        }
+
+        if (targetedDistrictId.nonEmpty) {
+          try {
+            val (districtCollectionPresent, districtCollectionId) = validateCollection(s"$districtName District [$tenantId]", "District Manager", Some(targetedDistrictId))
+            if (districtCollectionPresent && districtCollectionId != 0) {
+              println(s"=====> $districtName district collection present with id: $targetedDistrictId, Skipping this step.")
+            } else {
+              println("=====> Creating $districtName district Collection And Dashboard")
+              processDistrictDashboard(tenantId, stateName, targetedStateId, districtName, targetedDistrictId, reportConfig, metaDataTable, metabaseDatabase, projects, solutions, metabaseUtil, postgresUtil, "District Manager")
+              val (_, districtCollectionId) = validateCollection(s"$districtName District [$tenantId]", "District Manager", Some(targetedDistrictId))
+              processMiDistrictDetailsPage(districtCollectionId, s"$districtName District [$tenantId]", stateName, districtName, targetedStateId, databaseId, metabaseUtil, postgresUtil, "District", "District Manager", "Yes")
+            }
+          } catch {
+            case e: Exception =>
+              postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}'  WHERE entity_id = '$targetedStateId';")
+              println(s"An error occurred: ${e.getMessage}")
+              e.printStackTrace()
+          }
+        } else {
+          println("targetedDistrict is not present or is empty")
+        }
 
         /**
          * Logic to process and create Programs Collection and project solution Dashboard for Admin
@@ -212,6 +294,103 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
       }
     }
 
+    def processStateDashboard(tenantId: String, stateName: String, targetedStateId: String, reportConfig: String, metaDataTable: String, metabaseDatabase: String, projects: String, solutions: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, reportFor: String): Unit = {
+      val collectionName = s"$stateName State [$tenantId]"
+      val collectionDescription = s"Tenant Id: $tenantId\n\nState Id: $targetedStateId\n\nCollection For: $reportFor\n\nCollection Description: This collection contains micro improvement dashboards for $stateName state"
+      val dashboardName = s"Micro Improvements"
+      val dashboardDescription = s"Analytical overview of micro improvements for $stateName state"
+      val groupName: String = s"${stateName}_State_Manager_${targetedStateId}"
+      val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Project-Parameter' AND question_type = 'state-parameter'"
+      val metaDataStatusUpdateQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedStateId';"
+      val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, collectionDescription, metabaseUtil, postgresUtil, metaDataStatusUpdateQuery)
+      if (collectionId != -1) {
+        CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
+        val (dashboardId, projectTabId, userTabId, csvTabId) = Utils.createMicroImprovementsDashboardAndTabs(collectionId, dashboardName, dashboardDescription, metabaseUtil)
+        if (dashboardId != -1) {
+          val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
+          if (databaseId != -1) {
+            val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "state_name", postgresUtil, metaDataStatusUpdateQuery)
+            val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "district_name", postgresUtil, metaDataStatusUpdateQuery)
+            val programnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, solutions, "program_name", postgresUtil, metaDataStatusUpdateQuery)
+            val blocknameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "block_name", postgresUtil, metaDataStatusUpdateQuery)
+            val clusternameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "cluster_name", postgresUtil, metaDataStatusUpdateQuery)
+            val orgnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "org_name", postgresUtil, metaDataStatusUpdateQuery)
+            val projectReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'State' AND report_name = 'Project-Details';"
+            val projectQuestionCardIdList = UpdateStateJsonFiles.ProcessAndUpdateJsonFiles(projectReportConfigQuery, collectionId, databaseId, dashboardId, projectTabId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, projects, solutions, metabaseUtil, postgresUtil, targetedStateId)
+            val userReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'State' AND report_name = 'User-Details';"
+            val userQuestionCardIdList = UpdateStateJsonFiles.ProcessAndUpdateJsonFiles(userReportConfigQuery, collectionId, databaseId, dashboardId, userTabId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, projects, solutions, metabaseUtil, postgresUtil, targetedStateId)
+            val csvQuestionConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'State' AND report_name = 'Csv-Details';"
+            val csvQuestionCardIdList = UpdateStateJsonFiles.ProcessAndUpdateJsonFiles(csvQuestionConfigQuery, collectionId, databaseId, dashboardId, csvTabId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, projects, solutions, metabaseUtil, postgresUtil, targetedStateId)
+            val mainQuestionIdsString = "[" + (projectQuestionCardIdList ++ userQuestionCardIdList ++ csvQuestionCardIdList).mkString(",") + "]"
+            val filterQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Project-Filters' AND question_type = 'state-filter'"
+            val filterResults: List[Map[String, Any]] = postgresUtil.fetchData(filterQuery)
+            val objectMapper = new ObjectMapper()
+            val slugNameToStateIdFilterMap = mutable.Map[String, Int]()
+            for (result <- filterResults) {
+              val configString = result.get("config").map(_.toString).getOrElse("")
+              val configJson = objectMapper.readTree(configString)
+              val slugName = configJson.findValue("name").asText()
+              val stateIdFilter: Int = UpdateAndAddStateFilter.updateAndAddFilter(metabaseUtil, configJson: JsonNode, s"$targetedStateId", collectionId, databaseId, projects, solutions)
+              slugNameToStateIdFilterMap(slugName) = stateIdFilter
+            }
+            val immutableSlugNameToStateIdFilterMap: Map[String, Int] = slugNameToStateIdFilterMap.toMap
+            UpdateParameters.updateParameterFunction(metabaseUtil, postgresUtil, parametersQuery, immutableSlugNameToStateIdFilterMap, dashboardId)
+            val mainMetadataJson = new ObjectMapper().createObjectNode().put("collectionId", collectionId).put("collectionName", collectionName).put("Collection For", reportFor).put("dashboardId", dashboardId).put("dashboardName", dashboardName).put("questionIds", mainQuestionIdsString)
+            postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = '$mainMetadataJson' WHERE entity_id = '$targetedStateId';")
+          }
+        }
+      }
+    }
+
+    def processDistrictDashboard(tenantId: String, stateName: String, targetedStateId: String, districtName: String, targetedDistrictId: String, reportConfig: String, metaDataTable: String, metabaseDatabase: String, projects: String, solutions: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, reportFor: String): Unit = {
+      val collectionName = s"$districtName District [$tenantId]"
+      val collectionDescription = s"Tenant Id: $tenantId\n\nDistrict Id: $targetedDistrictId\n\nCollection For: $reportFor\n\nCollection Description: This collection contains micro improvement dashboards for $districtName district in $stateName state"
+      val dashboardName = s"Micro Improvements"
+      val dashboardDescription = s"Analytical overview of micro improvements for $districtName district"
+      val groupName: String = s"${districtName}_District_Manager[$targetedDistrictId]"
+      val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Project-Parameter' AND question_type = 'district-parameter'"
+      val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedDistrictId';"
+      val collectionId: Int = CreateDashboard.checkAndCreateCollection(collectionName, collectionDescription, metabaseUtil, postgresUtil, createDashboardQuery)
+      if (collectionId != -1) {
+        CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
+        val (dashboardId, projectTabId, statusTabId, csvTabId) = Utils.createMicroImprovementsDashboardAndTabs(collectionId, dashboardName, dashboardDescription, metabaseUtil)
+        if (dashboardId != -1) {
+          val databaseId: Int = CreateDashboard.getDatabaseId(metabaseDatabase, metabaseUtil)
+          if (databaseId != -1) {
+            val statenameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "state_name", postgresUtil, createDashboardQuery)
+            val districtnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "district_name", postgresUtil, createDashboardQuery)
+            val programnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, solutions, "program_name", postgresUtil, createDashboardQuery)
+            val blocknameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "block_name", postgresUtil, createDashboardQuery)
+            val clusternameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "cluster_name", postgresUtil, createDashboardQuery)
+            val orgnameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, projects, "org_name", postgresUtil, createDashboardQuery)
+            val projectReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'District' AND report_name = 'Project-Details';"
+            val projectQuestionCardIdList = UpdateDistrictJsonFiles.ProcessAndUpdateJsonFiles(projectReportConfigQuery, collectionId, databaseId, dashboardId, projectTabId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, metabaseUtil, postgresUtil, projects, solutions, targetedStateId, targetedDistrictId)
+            val userReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'District' AND report_name = 'User-Details';"
+            val userQuestionCardIdList = UpdateDistrictJsonFiles.ProcessAndUpdateJsonFiles(userReportConfigQuery, collectionId, databaseId, dashboardId, statusTabId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, metabaseUtil, postgresUtil, projects, solutions, targetedStateId, targetedDistrictId)
+            val csvQuestionConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'District' AND report_name = 'Csv-Details';"
+            val csvQuestionCardIdList = UpdateDistrictJsonFiles.ProcessAndUpdateJsonFiles(csvQuestionConfigQuery, collectionId, databaseId, dashboardId, csvTabId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, metabaseUtil, postgresUtil, projects, solutions, targetedStateId, targetedDistrictId)
+            val mainQuestionIdsString = "[" + (projectQuestionCardIdList ++ userQuestionCardIdList ++ csvQuestionCardIdList).mkString(",") + "]"
+            val filterQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Project-Filters' AND question_type = 'district-filter'"
+            val filterResults: List[Map[String, Any]] = postgresUtil.fetchData(filterQuery)
+            val objectMapper = new ObjectMapper()
+            val slugNameToDistrictIdFilterMap = mutable.Map[String, Int]()
+            for (result <- filterResults) {
+              val configString = result.get("config").map(_.toString).getOrElse("")
+              val configJson = objectMapper.readTree(configString)
+              val slugName = configJson.findValue("name").asText()
+              val districtIdFilter: Int = UpdateAndAddDistrictFilter.updateAndAddFilter(metabaseUtil, configJson, targetedStateId, targetedDistrictId, collectionId, databaseId, projects, solutions)
+              slugNameToDistrictIdFilterMap(slugName) = districtIdFilter
+            }
+            val immutableSlugNameToDistrictIdFilterMap: Map[String, Int] = slugNameToDistrictIdFilterMap.toMap
+            UpdateParameters.updateParameterFunction(metabaseUtil, postgresUtil, parametersQuery, immutableSlugNameToDistrictIdFilterMap, dashboardId)
+
+            val districtMetadataJson = new ObjectMapper().createObjectNode().put("collectionId", collectionId).put("collectionName", collectionName).put("Collection For", reportFor).put("dashboardId", dashboardId).put("dashboardName", dashboardName).put("questionIds", mainQuestionIdsString)
+            postgresUtil.insertData(s"UPDATE $metaDataTable SET main_metadata = '$districtMetadataJson' WHERE entity_id = '$targetedDistrictId';")
+          }
+        }
+      }
+    }
+
     def createNationalOverviewCollectionAndDashboard(metaDataTable: String, reportConfig: String, metabaseDatabase: String): Unit = {
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$admin';"
       val (mainCollectionName, mainCollectionDescription) = (s"National Overview", s"A collection of dashboards that highlight progress and comparisons of Micro Improvement projects across states and districts.\n\nCollection For: Admin")
@@ -219,7 +398,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
       if (mainCollectionId != -1) {
         Utils.createGroupForCollection(metabaseUtil, s"Report_Admin_National_Overview", mainCollectionId)
         val (homeDashboardName, homeDashboardDescription) = (s"National Dashboard", s"Centralized view of regional performance data for Micro Improvement programs.")
-        val homeDashboardId: Int = Utils.createDashboard(mainCollectionId, homeDashboardName, homeDashboardDescription, metabaseUtil)
+        val homeDashboardId: Int = Utils.createDashboard(mainCollectionId, homeDashboardName, homeDashboardDescription, metabaseUtil, "Yes")
         val databaseId: Int = Utils.getDatabaseId(metabaseDatabase, metabaseUtil)
         if (databaseId != -1) {
           val homeReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mi-Dashboard' AND report_name = 'Home-Details-Report';"
@@ -243,7 +422,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
           postgresUtil.insertData(s"UPDATE $metaDataTable SET  mi_metadata = '$homeMetadataJson' WHERE entity_id = '$admin';")
 
           val (compareDashboardName, compareDashboardDescription) = (s"Region Comparison Dashboard", s"Compare Micro Improvement progress across states and districts using key metrics.")
-          val compareDashboardId: Int = Utils.createDashboard(mainCollectionId, compareDashboardName, compareDashboardDescription, metabaseUtil)
+          val compareDashboardId: Int = Utils.createDashboard(mainCollectionId, compareDashboardName, compareDashboardDescription, metabaseUtil, "Yes")
           val compareReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mi-Dashboard' AND report_name = 'Compare-Details-Report';"
           val stateNameId: Int = Utils.getTableMetadataId(databaseId, metabaseUtil, projects, "state_name", postgresUtil, createDashboardQuery)
           val districtNameId: Int = Utils.getTableMetadataId(databaseId, metabaseUtil, projects, "district_name", postgresUtil, createDashboardQuery)
@@ -259,6 +438,138 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
     }
 
     //TODO: @Prashant put state and district function logic here
+    def processMiStateDetailsPage(parentCollectionId: Int, parentCollectionName: String, stateName: String, databaseId: Int, stateReportConfigQuery: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, processType: String, reportFor: String, pinDashboard: String): Unit = {
+      if (parentCollectionId != -1) {
+        val stateDashboardName = s"$stateName - State overview"
+        val stateDescription = s"This collection contains questions and dashboards for $stateName state"
+        val stateDashboardId: Int = Utils.createDashboard(parentCollectionId, stateDashboardName, stateDescription, metabaseUtil, pinDashboard)
+        val stateQuestionCardIdList = StatePage.ProcessAndUpdateJsonFiles(stateReportConfigQuery, parentCollectionId, databaseId, stateDashboardId, projects, solutions, metaDataTable, reportConfig, metabaseUtil, postgresUtil, targetedStateId, stateName)
+        val stateQuestionIdsString = "[" + stateQuestionCardIdList.mkString(",") + "]"
+        val stateFilterQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Mi-Dashboard-Filters' AND question_type = 'state-dashboard-filter'"
+        val stateFilterResults: List[Map[String, Any]] = postgresUtil.fetchData(stateFilterQuery)
+        val stateObjectMapper = new ObjectMapper()
+        val slugNameToStateIdFilterMapForState = mutable.Map[String, Int]()
+        for (result <- stateFilterResults) {
+          val configString = result.get("config").map(_.toString).getOrElse("")
+          val configJson = stateObjectMapper.readTree(configString)
+          val slugName = configJson.findValue("name").asText()
+          val stateIdFilter: Int = StatePage.updateAndAddFilter(metabaseUtil, configJson: JsonNode, targetedStateId, parentCollectionId, databaseId, projects, solutions)
+          slugNameToStateIdFilterMapForState(slugName) = stateIdFilter
+        }
+        val parameterQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Mi-Dashboard-Parameters' AND question_type = 'state-dashboard-parameter'"
+        val stateImmutableSlugNameToStateIdFilterMap: Map[String, Int] = slugNameToStateIdFilterMapForState.toMap
+        StatePage.updateParameterFunction(metabaseUtil, postgresUtil, parameterQuery, stateImmutableSlugNameToStateIdFilterMap, stateDashboardId)
+        val objectMapper = new ObjectMapper()
+        if (processType == "Admin") {
+          val query = s"SELECT mi_metadata FROM $metaDataTable WHERE entity_type = '$processType'"
+          val existingDataArray = postgresUtil.fetchData(query)
+            .headOption.flatMap(_.get("mi_metadata"))
+            .map(_.toString).map(objectMapper.readTree)
+            .collect { case arr: ArrayNode => arr; case obj: ObjectNode => objectMapper.createArrayNode().add(obj) }
+            .getOrElse(objectMapper.createArrayNode())
+          val newMetadataJson = existingDataArray.add(objectMapper.createObjectNode().put("collectionId", parentCollectionId).put("collectionName", parentCollectionId).put("Collection For", reportFor).put("dashboardId", stateDashboardId).put("dashboardName", stateDashboardName).put("questionIds", stateQuestionIdsString))
+          postgresUtil.insertData(s"UPDATE $metaDataTable SET mi_metadata = '$newMetadataJson' WHERE entity_id = '$admin';")
+          postgresUtil.insertData(s"UPDATE $metaDataTable SET state_details_url_admin = '$domainName$stateDashboardId' WHERE entity_id = '$targetedStateId';")
+        } else {
+          val stateMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", parentCollectionId).put("collectionName", parentCollectionName).put("Collection For", reportFor).put("dashboardId", stateDashboardId).put("dashboardName", stateDashboardName).put("questionIds", stateQuestionIdsString))
+          postgresUtil.insertData(s"UPDATE $metaDataTable SET mi_metadata = '$stateMetadataJson', state_details_url_state = '$domainName$stateDashboardId' WHERE entity_id = '$targetedStateId';")
+        }
+      } else {
+        println(s"Parent collection ID is -1 for $stateName state dashboard hence skipping the creation of state dashboard.")
+      }
+    }
+
+
+    def processMiDistrictDetailsPage(parentCollectionId: Int, parentCollectionName: String, stateName: String, districtName: String, stateId: String, databaseId: Int, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, processType: String, reportFor: String, pinDashboard: String): Unit = {
+      if (parentCollectionId != -1) {
+        val districtDashboardName = s"$districtName - District Overview"
+        val dashboardDescription = s"This collection contains questions and dashboards for $districtName district in $stateName state"
+        val districtDashboardId: Int = Utils.createDashboard(parentCollectionId, districtDashboardName, dashboardDescription, metabaseUtil, pinDashboard)
+        val districtReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mi-Dashboard' AND report_name = 'District-Details-Report';"
+        val districtQuestionCardIdList = DistrictPage.ProcessAndUpdateJsonFiles(districtReportConfigQuery, parentCollectionId, databaseId, districtDashboardId, projects, solutions, reportConfig, metabaseUtil, postgresUtil, targetedDistrictId, districtName)
+        val districtQuestionIdsString = "[" + districtQuestionCardIdList.mkString(",") + "]"
+        val districtFilterQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Mi-Dashboard-Filters' AND question_type = 'district-dashboard-filter'"
+        val districtFilterResults: List[Map[String, Any]] = postgresUtil.fetchData(districtFilterQuery)
+        val districtObjectMapper = new ObjectMapper()
+        val slugNameToStateIdFilterMapForState = mutable.Map[String, Int]()
+        for (result <- districtFilterResults) {
+          val configString = result.get("config").map(_.toString).getOrElse("")
+          val configJson = districtObjectMapper.readTree(configString)
+          val slugName = configJson.findValue("name").asText()
+          val stateIdFilter: Int = DistrictPage.updateAndAddFilter(metabaseUtil, configJson: JsonNode, targetedDistrictId, parentCollectionId, databaseId, projects, solutions)
+          slugNameToStateIdFilterMapForState(slugName) = stateIdFilter
+        }
+        val parameterQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Mi-Dashboard-Parameters' AND question_type = 'district-dashboard-parameter'"
+        val stateImmutableSlugNameToStateIdFilterMap: Map[String, Int] = slugNameToStateIdFilterMapForState.toMap
+        DistrictPage.updateParameterFunction(metabaseUtil, postgresUtil, parameterQuery, stateImmutableSlugNameToStateIdFilterMap, districtDashboardId)
+        val objectMapper = new ObjectMapper()
+        if (processType == "Admin") {
+          val query = s"SELECT mi_metadata FROM $metaDataTable WHERE entity_type = '$processType'"
+          val existingDataArray = postgresUtil.fetchData(query)
+            .headOption.flatMap(_.get("mi_metadata"))
+            .map(_.toString).map(objectMapper.readTree)
+            .collect { case arr: ArrayNode => arr; case obj: ObjectNode => objectMapper.createArrayNode().add(obj) }
+            .getOrElse(objectMapper.createArrayNode())
+          val newMetadataJson = existingDataArray.add(objectMapper.createObjectNode().put("collectionId", parentCollectionId).put("collectionName", parentCollectionName).put("Collection For", reportFor).put("dashboardId", districtDashboardId).put("dashboardName", districtDashboardName).put("questionIds", districtQuestionIdsString))
+          postgresUtil.insertData(s"UPDATE $metaDataTable SET mi_metadata = '$newMetadataJson' WHERE entity_id = '$admin';")
+          postgresUtil.insertData(s"UPDATE $metaDataTable SET district_details_url_admin = '$domainName$districtDashboardId' WHERE entity_id = '$targetedDistrictId';")
+        } else if (processType == "State") {
+          val query = s"SELECT mi_metadata FROM $metaDataTable WHERE entity_id = '${stateId}' "
+          val existingDataArray = postgresUtil.fetchData(query)
+            .headOption.flatMap(_.get("mi_metadata"))
+            .map(_.toString).map(objectMapper.readTree)
+            .collect { case arr: ArrayNode => arr; case obj: ObjectNode => objectMapper.createArrayNode().add(obj) }
+            .getOrElse(objectMapper.createArrayNode())
+          val newMetadataJson = existingDataArray.add(objectMapper.createObjectNode().put("collectionId", parentCollectionId).put("collectionName", parentCollectionName).put("Collection For", reportFor).put("dashboardId", districtDashboardId).put("dashboardName", districtDashboardName).put("questionIds", districtQuestionIdsString))
+          postgresUtil.insertData(s"UPDATE $metaDataTable SET mi_metadata = '$newMetadataJson' WHERE entity_id = '${stateId}';")
+          postgresUtil.insertData(s"UPDATE $metaDataTable SET district_details_url_state = '$domainName$districtDashboardId' WHERE entity_id = '$targetedDistrictId';")
+        }
+        else {
+          val districtMetadataJson = objectMapper.createObjectNode().put("collectionId", parentCollectionId).put("collectionName", parentCollectionName).put("Collection For", reportFor).put("dashboardId", districtDashboardId).put("dashboardName", districtDashboardName).put("questionIds", districtQuestionIdsString)
+          postgresUtil.insertData(s"UPDATE $metaDataTable SET mi_metadata = '$districtMetadataJson', district_details_url_district = '$domainName$districtDashboardId' WHERE entity_id = '$targetedDistrictId';")
+        }
+      } else {
+        println(s"Parent collection ID is -1 for $parentCollectionName hence skipping dashboard creation.")
+      }
+    }
+
+    def processMiDistrictComparePage(parentCollectionId: Int, parentCollectionName: String, stateName: String, databaseId: Int, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, processType: String, reportFor: String, pinDashboard: String): Unit = {
+      val districtCompareDashboardName = s"Compare Districts [$stateName]"
+      val districtCompareDashboardDescription = s"Compare micro improvement progress across districts in $stateName state"
+      val compareDistrictDashboardId: Int = Utils.createDashboard(parentCollectionId, districtCompareDashboardName, districtCompareDashboardDescription, metabaseUtil, pinDashboard)
+      val compareReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mi-Dashboard' AND report_name = 'Compare-District-Details-Report';"
+      val compareDistrictReportQuestionCardIdList = StatePage.ProcessAndUpdateJsonFiles(compareReportConfigQuery, parentCollectionId, databaseId, compareDistrictDashboardId, projects, solutions, metaDataTable, reportConfig, metabaseUtil, postgresUtil, targetedStateId, stateName)
+      val compareDistrictReportQuestionIdsString = "[" + compareDistrictReportQuestionCardIdList.mkString(",") + "]"
+      val compareReportFilterQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Mi-Dashboard-Filters' AND question_type = 'compare-district-dashboard-filter'"
+      val compareReportFilterResults: List[Map[String, Any]] = postgresUtil.fetchData(compareReportFilterQuery)
+      val compareDistrictObjectMapper = new ObjectMapper()
+      val slugNameToDistrictIdFilterMap = mutable.Map[String, Int]()
+      for (result <- compareReportFilterResults) {
+        val configString = result.get("config").map(_.toString).getOrElse("")
+        val configJson = compareDistrictObjectMapper.readTree(configString)
+        val slugName = configJson.findValue("name").asText()
+        val districtIdFilter: Int = StatePage.updateAndAddFilter(metabaseUtil, configJson: JsonNode, targetedStateId, parentCollectionId, databaseId, projects, solutions)
+        slugNameToDistrictIdFilterMap(slugName) = districtIdFilter
+      }
+      val compareReportParameterQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Mi-Dashboard-Parameters' AND question_type = 'compare-district-dashboard-parameter'"
+      val immutableSlugNameToDistrictIdFilterMap: Map[String, Int] = slugNameToDistrictIdFilterMap.toMap
+      StatePage.updateParameterFunction(metabaseUtil, postgresUtil, compareReportParameterQuery, immutableSlugNameToDistrictIdFilterMap, compareDistrictDashboardId)
+
+      val compareReportObjectMapper = new ObjectMapper()
+      if (processType == "Admin") {
+        val query = s"SELECT comparison_metadata FROM $metaDataTable WHERE entity_type = '$processType'"
+        val existingDataArray = postgresUtil.fetchData(query)
+          .headOption.flatMap(_.get("comparison_metadata"))
+          .map(_.toString).map(compareReportObjectMapper.readTree)
+          .collect { case arr: ArrayNode => arr; case obj: ObjectNode => compareReportObjectMapper.createArrayNode().add(obj) }
+          .getOrElse(compareReportObjectMapper.createArrayNode())
+        val newMetadataJson = existingDataArray.add(compareReportObjectMapper.createObjectNode().put("collectionId", parentCollectionId).put("collectionName", parentCollectionName).put("Collection For", reportFor).put("dashboardId", compareDistrictDashboardId).put("dashboardName", districtCompareDashboardName).put("questionIds", compareDistrictReportQuestionIdsString))
+        postgresUtil.insertData(s"UPDATE $metaDataTable SET comparison_metadata = '$newMetadataJson' WHERE entity_id = '$admin';")
+      } else {
+        val stateMetadataJson = compareReportObjectMapper.createObjectNode().put("collectionId", parentCollectionId).put("collectionName", parentCollectionName).put("Collection For", reportFor).put("dashboardId", compareDistrictDashboardId).put("dashboardName", districtCompareDashboardName).put("questionIds", compareDistrictReportQuestionIdsString)
+        postgresUtil.insertData(s"UPDATE $metaDataTable SET comparison_metadata = '$stateMetadataJson' WHERE entity_id = '$targetedStateId';")
+      }
+    }
 
     def createMainProgramsCollection: Int = {
       val (mainCollectionName, mainCollectionDescription) = ("Programs", s"All programs made available on the platform are stored in this collection.\n\nCollection For: Admin")
@@ -351,7 +662,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
                 val matchesName = name == collectionName
                 val matchesReportFor = desc.contains(s"Collection For: $reportFor")
                 val matchesReportId = reportId.forall(id =>
-                  desc.contains(s"Program Id: $id") || desc.contains(s"Solution Id: $id")
+                  desc.contains(s"Program Id: $id") || desc.contains(s"Solution Id: $id") || desc.contains(s"State Id: $id") || desc.contains(s"District Id: $id") || desc.contains(s"Tenant Id: $id")
                 )
 
                 val isMatch = if (reportId.isEmpty) matchesName && matchesReportFor else matchesName && matchesReportFor && matchesReportId
