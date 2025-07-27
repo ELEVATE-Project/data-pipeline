@@ -11,12 +11,13 @@ import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
 object ProcessProgramConstructor {
-  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, blocknameId: Int, clusternameId: Int, orgnameId: Int, projects: String, solutions: String, tasks: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, targetedProgramId: String): ListBuffer[Int] = {
+
+  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, stateNameId: Int, districtNameId: Int, programNameId: Int, blockNameId: Int, clusterNameId: Int, orgNameId: Int, projects: String, solutions: String, tasks: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, targetedProgramId: String, targetedSolutionId: String, evidenceBaseUrl: String): ListBuffer[Int] = {
     println(s"=====> Started processing admin/program level json update function for Project solution dashboard")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, blocknameId: Int, clusternameId: Int, orgnameId: Int): Unit = {
+    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, stateNameId: Int, districtNameId: Int, programNameId: Int, blockNameId: Int, clusterNameId: Int, orgNameId: Int): Unit = {
       val queryResult = postgresUtil.fetchData(reportConfigQuery)
       queryResult.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -26,8 +27,8 @@ object ProcessProgramConstructor {
               if (configJson != null) {
                 val originalQuestionCard = configJson.path("questionCard")
                 val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
-                val updatedQuestionCard = updateQuestionCardJsonValues(configJson, collectionId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, databaseId)
-                val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, projects, solutions, tasks, targetedProgramId)
+                val updatedQuestionCard = updateQuestionCardJsonValues(configJson, collectionId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, databaseId)
+                val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, projects, solutions, tasks, targetedProgramId, targetedSolutionId, evidenceBaseUrl)
                 val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
                 println(s">>> Successfully created question card with card_id: $cardId for $chartName")
@@ -106,19 +107,20 @@ object ProcessProgramConstructor {
       }
     }
 
-    def updatePostgresDatabaseQuery(json: JsonNode, projectsTable: String, solutionsTable: String, tasksTable: String, targetedProgramId: String): JsonNode = {
+    def updatePostgresDatabaseQuery(json: JsonNode, projectsTable: String, solutionsTable: String, tasksTable: String, targetedProgramId: String, targetedSolutionId: String, evidenceBaseUrl: String): JsonNode = {
       Try {
         val queryNode = json.at("/dataset_query/native/query")
         if (queryNode.isMissingNode || !queryNode.isTextual) {
           throw new IllegalArgumentException("Query node is missing or not a valid string.")
         }
 
-        val programIdRegex = """(?s)\[\[\s*AND\s+\$\{config\.projects\}\.program_id\s+=\s+\(.*?WHERE\s+\{\{program_param\}\}.*?\)\s*\]\]""".r
-        val updateTableFilter = queryNode.asText().replaceAll(programIdRegex.regex, s"AND $projectsTable.program_id = '$targetedProgramId'")
-        val updatedQuery = updateTableFilter
+        val updatedQuery = queryNode.asText()
           .replace("${config.projects}", projectsTable)
           .replace("${config.solutions}", solutionsTable)
           .replace("${config.tasks}", tasksTable)
+          .replace("${program_id}", targetedProgramId)
+          .replace("${solution_id}", targetedSolutionId)
+          .replace("${base_url}", evidenceBaseUrl)
 
         val updatedJson = json.deepCopy().asInstanceOf[ObjectNode]
         updatedJson.at("/dataset_query/native")
@@ -177,7 +179,7 @@ object ProcessProgramConstructor {
       metabaseUtil.addQuestionCardToDashboard(dashboardId, dashboardResponseString)
     }
 
-    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId)
+    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId)
     println(s"=====> Completed processing admin/program level json update function for Project solution dashboard")
     questionCardId
   }

@@ -83,7 +83,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
 
     event.reportType match {
       case "Project" =>
-        println(s">>>>>>>>>>> Started Processing Metabase Project Dashboards >>>>>>>>>>>>")
+        println(s">>>>>>>>>>> Started Processing Metabase Project Dashboards >>>>>>>>>>>>\n")
 
         /**
          * Logic to process and create the Micro Improvements Dashboard
@@ -95,6 +95,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
           println("=====> Creating Micro Improvements Collection And Dashboard")
           createMicroImprovementsCollectionAndDashboard(metaDataTable, reportConfig, metabaseDatabase)
         }
+        println("\n")
 
         /**
          * Logic to process and create National Overview Dashboard
@@ -106,13 +107,14 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
           println("=====> Creating National Overview Collection And Dashboard")
           createNationalOverviewCollectionAndDashboard(metaDataTable, reportConfig, metabaseDatabase)
         }
+        println("\n")
 
         //TODO: @Prashant put state and district logic here
 
         /**
          * Logic to process and create Programs Collection and project solution Dashboard for Admin
          */
-        if (targetedSolutionId.nonEmpty && solutionName.nonEmpty && targetedProgramId.nonEmpty && programName.nonEmpty ) {
+        if (targetedSolutionId.nonEmpty && solutionName.nonEmpty && targetedProgramId.nonEmpty && programName.nonEmpty) {
           val programCollectionName = s"$programName [org : $orgName]"
           val programCollectionDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $programExternalId\n\nCollection For: Admin\n\nProgram Description: $programDescription"
           val solutionCollectionName = s"$solutionName [Project]"
@@ -141,11 +143,12 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
             createSolutionCollectionAndDashboard(programCollectionId, solutionCollectionName, solutionCollectionDescription, "Admin")
           }
         } else println("Either Solution or Program name is null")
+        println("\n")
 
         /**
          * Logic to process and create Programs Collection and project solution Dashboard for Program Manager
          */
-        if (solutionName.nonEmpty && programName.nonEmpty) {
+        if (targetedSolutionId.nonEmpty && solutionName.nonEmpty && targetedProgramId.nonEmpty && programName.nonEmpty) {
           val programCollectionName = s"$programName [org : $orgName]"
           val programCollectionDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $programExternalId\n\nCollection For: Program Manager\n\nProgram Description: $programDescription"
           val solutionCollectionName = s"$solutionName [Project]"
@@ -166,6 +169,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
             createSolutionCollectionAndDashboard(programCollectionId, solutionCollectionName, solutionCollectionDescription, "Program Manager")
           }
         } else println("Either Solution or Program name is null")
+        println("\n")
 
         println(s">>>>>>>>>>> Completed Processing Metabase Project Dashboards >>>>>>>>>>>>")
     }
@@ -203,14 +207,14 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
             println("Database Id returned -1")
           }
         } else {
-          println(s"Creating tabs failed please check: ${projectTabId}, ${userTabId}, ${csvTabId}")
+          println(s"Creating tabs failed please check: $projectTabId, $userTabId, $csvTabId")
         }
       }
     }
 
     def createNationalOverviewCollectionAndDashboard(metaDataTable: String, reportConfig: String, metabaseDatabase: String): Unit = {
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$admin';"
-      val (mainCollectionName, mainCollectionDescription) = (s"National Overview", s"A collection of dashboards that highlight progress and comparisons of Micro Improvement projects across states and districts.")
+      val (mainCollectionName, mainCollectionDescription) = (s"National Overview", s"A collection of dashboards that highlight progress and comparisons of Micro Improvement projects across states and districts.\n\nCollection For: Admin")
       val mainCollectionId = Utils.checkAndCreateCollection(mainCollectionName, mainCollectionDescription, metabaseUtil)
       if (mainCollectionId != -1) {
         Utils.createGroupForCollection(metabaseUtil, s"Report_Admin_National_Overview", mainCollectionId)
@@ -270,22 +274,22 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
     }
 
     def createProgramCollectionInsideMain(mainProgramsCollectionId: Int, programCollectionName: String, programCollectionDescription: String, reportFor: String): Int = {
-      val programCollectionId = Utils.createCollection(programCollectionName, programCollectionDescription, metabaseUtil, Some(mainProgramsCollectionId))
+      val programCollectionId = Utils.createCollection(programCollectionName.take(100), programCollectionDescription.take(255), metabaseUtil, Some(mainProgramsCollectionId))
       val programMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", programCollectionId).put("collectionName", programCollectionName).put("Collection For", reportFor))
       postgresUtil.insertData(s"UPDATE $metaDataTable SET main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$programMetadataJson' ::jsonb WHERE entity_id = '$targetedProgramId';")
       programCollectionId
     }
 
     def createProgramCollectionOutSideMain(programId: String, programCollectionName: String, programCollectionDescription: String, reportFor: String): Int = {
-      val programCollectionId = Utils.createCollection(programCollectionName, programCollectionDescription, metabaseUtil)
-      Utils.createGroupForCollection(metabaseUtil, s"Program_Manager_$programId", programCollectionId)
+      val programCollectionId = Utils.createCollection(programCollectionName.take(100), programCollectionDescription.take(255), metabaseUtil)
+      Utils.createGroupForCollection(metabaseUtil, s"Program_Manager_$programId".take(255), programCollectionId)
       val programMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", programCollectionId).put("collectionName", programCollectionName).put("Collection For", reportFor))
       postgresUtil.insertData(s"UPDATE $metaDataTable SET main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$programMetadataJson' ::jsonb WHERE entity_id = '$targetedProgramId';")
       programCollectionId
     }
 
     def createSolutionCollectionAndDashboard(programCollectionId: Int, solutionCollectionName: String, solutionCollectionDescription: String, reportFor: String): Unit = {
-      val solutionCollectionId = Utils.createCollection(solutionCollectionName, solutionCollectionDescription, metabaseUtil, Some(programCollectionId))
+      val solutionCollectionId = Utils.createCollection(solutionCollectionName.take(100), solutionCollectionDescription.take(255), metabaseUtil, Some(programCollectionId))
       println(s">>> Created Solution collection with Id: $solutionCollectionId inside the parent collection Id: $programCollectionId")
       val (solutionDashboardName, solutionDashboardDescription) = ("Dashboard", "A consolidated view of project progress, usage patterns, and unique user participation in Micro Improvement.")
       val (solutionDashboardId, projectTabId, submissionCsvTabId, taskReportCsvTabId, statusReportCsvTabId) = Utils.createSolutionDashboardAndTabs(solutionCollectionId, solutionDashboardName, solutionDashboardDescription, metabaseUtil)
@@ -300,13 +304,13 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
           val clusterNameId: Int = Utils.getTableMetadataId(databaseId, metabaseUtil, projects, "cluster_name", postgresUtil, createDashboardQuery)
           val orgNameId: Int = Utils.getTableMetadataId(databaseId, metabaseUtil, projects, "org_name", postgresUtil, createDashboardQuery)
           val projectDetailsConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Program' AND report_name = 'Project-Details';"
-          val projectQuestionCardIdList = ProcessProgramConstructor.ProcessAndUpdateJsonFiles(projectDetailsConfigQuery, solutionCollectionId, databaseId, solutionDashboardId, projectTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, tasks, metabaseUtil, postgresUtil, targetedProgramId)
-          val submissionReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Program' AND report_name = 'Status-Details-CSV';"
-          val submissionQuestionCardIdList = ProcessProgramConstructor.ProcessAndUpdateJsonFiles(submissionReportConfigQuery, solutionCollectionId, databaseId, solutionDashboardId, submissionCsvTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, tasks, metabaseUtil, postgresUtil, targetedProgramId)
+          val projectQuestionCardIdList = ProcessProgramConstructor.ProcessAndUpdateJsonFiles(projectDetailsConfigQuery, solutionCollectionId, databaseId, solutionDashboardId, projectTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, tasks, metabaseUtil, postgresUtil, targetedProgramId, targetedSolutionId, config.evidenceBaseUrl)
+          val submissionReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Program' AND report_name = 'Submission-Details-CSV';"
+          val submissionQuestionCardIdList = ProcessProgramConstructor.ProcessAndUpdateJsonFiles(submissionReportConfigQuery, solutionCollectionId, databaseId, solutionDashboardId, submissionCsvTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, tasks, metabaseUtil, postgresUtil, targetedProgramId, targetedSolutionId, config.evidenceBaseUrl)
           val taskReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Program' AND report_name = 'Task-Details-CSV';"
-          val taskQuestionCardIdList = ProcessProgramConstructor.ProcessAndUpdateJsonFiles(taskReportConfigQuery, solutionCollectionId, databaseId, solutionDashboardId, taskReportCsvTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, tasks, metabaseUtil, postgresUtil, targetedProgramId)
-          val statusReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Program' AND report_name = 'Task-Details-CSV';"
-          val statusQuestionCardIdList = ProcessProgramConstructor.ProcessAndUpdateJsonFiles(statusReportConfigQuery, solutionCollectionId, databaseId, solutionDashboardId, statusReportCsvTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, tasks, metabaseUtil, postgresUtil, targetedProgramId)
+          val taskQuestionCardIdList = ProcessProgramConstructor.ProcessAndUpdateJsonFiles(taskReportConfigQuery, solutionCollectionId, databaseId, solutionDashboardId, taskReportCsvTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, tasks, metabaseUtil, postgresUtil, targetedProgramId, targetedSolutionId, config.evidenceBaseUrl)
+          val statusReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Program' AND report_name = 'Status-Details-CSV';"
+          val statusQuestionCardIdList = ProcessProgramConstructor.ProcessAndUpdateJsonFiles(statusReportConfigQuery, solutionCollectionId, databaseId, solutionDashboardId, statusReportCsvTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, tasks, metabaseUtil, postgresUtil, targetedProgramId, targetedSolutionId, config.evidenceBaseUrl)
           val mainQuestionIdsString = "[" + (projectQuestionCardIdList ++ submissionQuestionCardIdList ++ taskQuestionCardIdList ++ statusQuestionCardIdList).mkString(",") + "]"
           val filterQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Project-Filters' AND question_type = 'program-filter'"
           val filterResults: List[Map[String, Any]] = postgresUtil.fetchData(filterQuery)

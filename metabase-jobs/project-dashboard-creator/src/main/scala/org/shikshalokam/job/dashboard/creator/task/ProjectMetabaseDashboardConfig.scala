@@ -47,5 +47,6 @@ class ProjectMetabaseDashboardConfig(override val config: Config) extends BaseJo
   val metabasePassword: String = config.getString("metabase.password")
   val metabaseDatabase: String = config.getString("metabase.database")
   val metabaseDomainName: String = config.getString("metabase.domainName")
+  val evidenceBaseUrl: String = config.getString("metabase.evidenceBaseUrl")
 
 }

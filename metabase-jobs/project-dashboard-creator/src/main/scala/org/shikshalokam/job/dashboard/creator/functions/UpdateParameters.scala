@@ -114,6 +114,6 @@ object UpdateParameters {
     updatePayload.set("parameters", finalParametersJson)
 
     metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString)
-    println(s"=====> Completed processing Micro Improvements dashboard parameter\n")
+    println(s"=====> Completed processing Micro Improvements dashboard parameter")
   }
 }

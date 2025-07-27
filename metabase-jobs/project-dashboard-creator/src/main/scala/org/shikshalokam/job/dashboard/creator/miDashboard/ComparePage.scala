@@ -231,7 +231,7 @@ object ComparePage {
     updatePayload.set("parameters", finalParametersJson)
 
     metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString)
-    println(s"=====> Completed processing Region Comparison dashboard parameter\n")
+    println(s"=====> Completed processing Region Comparison dashboard parameter")
   }
 
 }
