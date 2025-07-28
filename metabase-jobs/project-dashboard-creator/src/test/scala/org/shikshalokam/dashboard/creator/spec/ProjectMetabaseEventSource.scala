@@ -11,6 +11,11 @@ class ProjectMetabaseEventSource extends SourceFunction[Event] {
 
   override def run(ctx: SourceContext[Event]): Unit = {
     ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.METABASE_DASHBOARD_EVENT_1), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DASHBOARD_EVENT_S1), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DASHBOARD_EVENT_S2), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DASHBOARD_EVENT_S3), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DASHBOARD_EVENT_S4), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DASHBOARD_EVENT_S5), 0, 0))
   }
 
   override def cancel(): Unit = {}
