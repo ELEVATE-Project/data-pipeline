@@ -127,131 +127,132 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
     println(s"Targeted Program Name: $programName")
     println(s"Targeted Solution ID: $targetedSolutionId")
 
-    event.reportType match {
-      case "Survey" =>
 
-        /**
-         * Logic to process and create Survey Admin Dashboard
-         */
-        if (solutionName != null && solutionName.nonEmpty) {
-          val (adminCollectionPresent, adminCollectionId) = validateCollection(s"Programs", "Admin")
-          if (adminCollectionPresent && adminCollectionId != 0) {
-            val (programCollectionPresent, programCollectionId) = validateCollection(programCollectionName, "Admin", Some(targetedProgramId))
-            if (programCollectionPresent && programCollectionId != 0) {
-              val (solutionCollectionPresent, solutionCollectionId) = validateCollection(solutionCollectionName, "Admin", Some(targetedSolutionId))
-              if (solutionCollectionPresent && solutionCollectionId != 0) {
-                println(s"=====> $solutionCollectionName collection is present, hence skipping the process ......")
+    if (targetedSolutionId.nonEmpty && solutionName.nonEmpty && targetedProgramId.nonEmpty && programName.nonEmpty){
+      event.reportType match {
+        case "Survey" =>
+          /**
+           * Logic to process and create Survey Admin Dashboard
+           */
+          if (solutionName != null && solutionName.nonEmpty) {
+            val (adminCollectionPresent, adminCollectionId) = validateCollection(s"Programs", "Admin")
+            if (adminCollectionPresent && adminCollectionId != 0) {
+              val (programCollectionPresent, programCollectionId) = validateCollection(programCollectionName, "Admin", Some(targetedProgramId))
+              if (programCollectionPresent && programCollectionId != 0) {
+                val (solutionCollectionPresent, solutionCollectionId) = validateCollection(solutionCollectionName, "Admin", Some(targetedSolutionId))
+                if (solutionCollectionPresent && solutionCollectionId != 0) {
+                  println(s"=====> $solutionCollectionName collection is present, hence skipping the process ......")
+                } else {
+                  val solutionCollectionId = createSurveyCollectionInsideProgram(programCollectionId, targetedSolutionId, solutionExternalId, s"$solutionName [Survey]", solutionDescription, "Admin")
+                  val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
+                  val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
+                  createAdminDashboard(solutionCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Admin")
+                  createSurveyCsvDashboard(solutionCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
+                }
               } else {
-                val solutionCollectionId = createSurveyCollectionInsideProgram(programCollectionId, s"$solutionName [Survey]", solutionDescription, "Admin")
-                val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
+                println(s"=====> $programCollectionName collection is not present, creating $programCollectionName collection for Admin ......")
+                val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, targetedProgramId, programExternalId, s"$programName [org : $orgName]", programDescription, "Admin")
+                val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, targetedSolutionId, solutionExternalId, s"$solutionName [Survey]", solutionDescription, "Admin")
+                val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
                 val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
-                createAdminDashboard(solutionCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Admin")
-                createSurveyCsvDashboard(solutionCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
+                createAdminDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Admin")
+                createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
               }
             } else {
-              println(s"=====> $programCollectionName collection is not present, creating $programCollectionName collection for Admin ......")
-              val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, s"$programName [org : $orgName]", programDescription, "Admin")
-              val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, s"$solutionName [Survey]", solutionDescription, "Admin")
+              println(s"=====> Programs Collection is not present, creating Programs Collection ......")
+              val adminCollectionId = createAdminCollection
+              val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, targetedProgramId, programExternalId, s"$programName [org : $orgName]", programDescription, "Admin")
+              val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, targetedSolutionId, solutionExternalId, s"$solutionName [Survey]", solutionDescription, "Admin")
               val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
               val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
               createAdminDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Admin")
               createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
             }
-          } else {
-            println(s"=====> Programs Collection is not present, creating Programs Collection ......")
-            val adminCollectionId = createAdminCollection
-            val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, s"$programName [org : $orgName]", programDescription, "Admin")
-            val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, s"$solutionName [Survey]", solutionDescription, "Admin")
-            val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
-            val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
-            createAdminDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Admin")
-            createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin")
           }
-        }
 
-        def createAdminDashboard(solutionCollectionId: Int, dashboardId: Int, tabIdMap: Map[String, Int], solutionCollectionName: String, category: String): Unit = {
-          val parentCollectionId = createSurveyQuestionDashboard(solutionCollectionId, dashboardId, tabIdMap, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, evidenceBaseUrl, category)
-          createSurveyStatusDashboard(parentCollectionId, dashboardId, tabIdMap, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable, category)
-        }
+          /**
+           * Logic to process and create Program Dashboard for Survey
+           */
+          if (programName != null && programName.nonEmpty && solutionName != null && solutionName.nonEmpty) {
+            println("~~~~~~~~ Start Survey Program Dashboard Processing~~~~~~~~")
 
-        def createProgramDashboard(solutionCollectionId: Int, dashboardId: Int, tabIdMap: Map[String, Int], solutionCollectionName: String, category: String): Unit = {
-          val parentCollectionId = createSurveyQuestionDashboard(solutionCollectionId, dashboardId, tabIdMap, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, evidenceBaseUrl, category)
-          createSurveyStatusDashboard(parentCollectionId, dashboardId, tabIdMap, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable, category)
-        }
-
-        def createAdminCollection: Int = {
-          val (adminCollectionName, adminCollectionDescription) = ("Programs", s"All programs made available on the platform are stored in this collection.\n\nCollection For: Admin")
-          val groupName: String = s"Report_Admin"
-          val adminCollectionId: Int = Utils.createCollection(adminCollectionName, adminCollectionDescription, metabaseUtil)
-          val adminMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", adminCollectionId).put("collectionName", adminCollectionName))
-          postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$adminMetadataJson' ::jsonb WHERE entity_id = '1';")
-          CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, adminCollectionId)
-          adminCollectionId
-        }
-
-        def createProgramCollection(programCollectionName: String, targetedProgramId: String, programExternalId: String, programDescription: String, reportFor: String): Int = {
-          val groupName: String = s"Program_Manager[$programName - $targetedProgramId]"
-          val programCollectionDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $programExternalId\n\nCollection For: $reportFor\n\nProgram Description: $programDescription"
-          val programCollectionId: Int = Utils.createCollection(programCollectionName, programCollectionDescription, metabaseUtil)
-          if (programCollectionId != -1) {
-            val programMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", programCollectionId).put("collectionName", programCollectionName))
-            postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$programMetadataJson' ::jsonb WHERE entity_id = '$targetedProgramId';")
-            CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, programCollectionId)
-            programCollectionId
-          } else {
-            println(s"$programName [$targetedProgramId] returned -1")
-            -1
-          }
-        }
-
-        def createProgramCollectionInsideAdmin(adminCollectionId: Int, ProgramCollectionName: String, programDescription: String, reportFor: String): Int = {
-          val programCollectionDescription = s"Program Id: $targetedProgramId\n\nExternal Id: $externalId\n\nCollection For: $reportFor\n\nProgram Description: $programDescription"
-          val ProgramCollectionId = Utils.createCollection(ProgramCollectionName, programCollectionDescription, metabaseUtil, Some(adminCollectionId))
-          val ProgramMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", ProgramCollectionId).put("collectionName", ProgramCollectionName))
-          postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$ProgramMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '1';")
-          ProgramCollectionId
-        }
-
-
-        def createSurveyCollectionInsideProgram(programCollectionId: Int, surveyCollectionName: String, surveyDescription: String, reportFor: String): Int = {
-          val solutionCollectionDescription = s"Solution Id: $targetedSolutionId\n\nSolution External Id: $solutionExternalId\n\nCollection For: $reportFor\n\nSolution Description: $surveyDescription"
-          val surveyCollectionId = Utils.createCollection(surveyCollectionName, solutionCollectionDescription, metabaseUtil, Some(programCollectionId))
-          val surveyMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", surveyCollectionId).put("collectionName", surveyCollectionName))
-          postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$surveyMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$targetedProgramId';")
-          surveyCollectionId
-        }
-
-        /**
-         * Logic to process and create Program Dashboard for Survey
-         */
-        if (programName != null && programName.nonEmpty && solutionName != null && solutionName.nonEmpty) {
-          println("~~~~~~~~ Start Survey Program Dashboard Processing~~~~~~~~")
-
-          val (programCollectionPresent, programCollectionId) = validateCollection(programCollectionName, "Program Manager", Some(targetedProgramId))
-          if (programCollectionPresent && programCollectionId != 0) {
-            println(s"=====> $programCollectionName collection is present hence skipping the process ......")
-            val (solutionCollectionPresent, solutionCollectionId) = validateCollection(solutionCollectionName, "Program Manager", Some(targetedSolutionId))
-            if (solutionCollectionPresent && solutionCollectionId != 0) {
-              println(s"=====> $solutionCollectionName collection is present, hence skipping the process ......")
+            val (programCollectionPresent, programCollectionId) = validateCollection(programCollectionName, "Program Manager", Some(targetedProgramId))
+            if (programCollectionPresent && programCollectionId != 0) {
+              println(s"=====> $programCollectionName collection is present hence skipping the process ......")
+              val (solutionCollectionPresent, solutionCollectionId) = validateCollection(solutionCollectionName, "Program Manager", Some(targetedSolutionId))
+              if (solutionCollectionPresent && solutionCollectionId != 0) {
+                println(s"=====> $solutionCollectionName collection is present, hence skipping the process ......")
+              } else {
+                println(s"=====> $solutionCollectionName collection is not present, creating $solutionCollectionName collection for Program Manager ......")
+                val solutionCollectionId = createSurveyCollectionInsideProgram(programCollectionId, targetedSolutionId, solutionExternalId, solutionCollectionName, solutionDescription, "Program Manager")
+                val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
+                val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
+                createSurveyCsvDashboard(solutionCollectionId, dashboardId, tabIdMap, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Program")
+                createProgramDashboard(solutionCollectionId, dashboardId, tabIdMap, solutionCollectionName, "Program")
+              }
             } else {
-              println(s"=====> $solutionCollectionName collection is not present, creating $solutionCollectionName collection for Program Manager ......")
-              val solutionCollectionId = createSurveyCollectionInsideProgram(programCollectionId, solutionCollectionName, solutionDescription, "Program Manager")
-              val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
+              println(s"=====> $programCollectionName collection is not present, creating $programCollectionName collection for Program Manager ......")
+              val programCollectionId = createProgramCollection(programCollectionName, targetedProgramId, programExternalId, programDescription, "Program Manager")
+              val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, targetedSolutionId, solutionExternalId, solutionCollectionName, solutionDescription, "Program Manager")
+              val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
               val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
-              createSurveyCsvDashboard(solutionCollectionId, dashboardId, tabIdMap, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Program")
-              createProgramDashboard(solutionCollectionId, dashboardId, tabIdMap, solutionCollectionName, "Program")
+              createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Program")
+              createProgramDashboard(surveyCollectionId, dashboardId, tabIdMap, solutionCollectionName, "Program")
             }
-          } else {
-            println(s"=====> $programCollectionName collection is not present, creating $programCollectionName collection for Program Manager ......")
-            val programCollectionId = createProgramCollection(programCollectionName, targetedProgramId, programExternalId, programDescription, "Program Manager")
-            val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, solutionCollectionName, solutionDescription, "Program Manager")
-            val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
-            val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
-            createSurveyCsvDashboard(surveyCollectionId, dashboardId, tabIdMap, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Program")
-            createProgramDashboard(surveyCollectionId, dashboardId, tabIdMap, solutionCollectionName, "Program")
+            println(s"***************** Processing Completed for Survey Metabase Dashboard Event with Id = ${event._id}*****************\n\n")
           }
-          println(s"***************** Processing Completed for Survey Metabase Dashboard Event with Id = ${event._id}*****************\n\n")
-        }
+
+          def createAdminDashboard(solutionCollectionId: Int, dashboardId: Int, tabIdMap: Map[String, Int], solutionCollectionName: String, category: String): Unit = {
+            val parentCollectionId = createSurveyQuestionDashboard(solutionCollectionId, dashboardId, tabIdMap, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, evidenceBaseUrl, category)
+            createSurveyStatusDashboard(parentCollectionId, dashboardId, tabIdMap, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable, category)
+          }
+
+          def createProgramDashboard(solutionCollectionId: Int, dashboardId: Int, tabIdMap: Map[String, Int], solutionCollectionName: String, category: String): Unit = {
+            val parentCollectionId = createSurveyQuestionDashboard(solutionCollectionId, dashboardId, tabIdMap, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, evidenceBaseUrl, category)
+            createSurveyStatusDashboard(parentCollectionId, dashboardId, tabIdMap, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyStatusTable, category)
+          }
+
+          def createAdminCollection: Int = {
+            val (adminCollectionName, adminCollectionDescription) = ("Programs", s"All programs made available on the platform are stored in this collection.\n\nCollection For: Admin")
+            val adminCollectionId: Int = Utils.createCollection(adminCollectionName, adminCollectionDescription, metabaseUtil)
+            val adminMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", adminCollectionId).put("collectionName", adminCollectionName))
+            postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$adminMetadataJson' ::jsonb WHERE entity_id = '1';")
+            Utils.createGroupToDashboard(metabaseUtil, "Report_Admin_Programs", adminCollectionId)
+            adminCollectionId
+          }
+
+          def createProgramCollection(programCollectionName: String, targetedProgramId: String, programExternalId: String, programDescription: String, reportFor: String): Int = {
+            val programCollectionDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $programExternalId\n\nCollection For: $reportFor\n\nProgram Description: $programDescription"
+            val programCollectionId: Int = Utils.createCollection(programCollectionName, programCollectionDescription, metabaseUtil)
+            if (programCollectionId != -1) {
+              val programMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", programCollectionId).put("collectionName", programCollectionName).put("Collection For", reportFor))
+              postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$programMetadataJson' ::jsonb WHERE entity_id = '$targetedProgramId';")
+              Utils.createGroupToDashboard(metabaseUtil, s"Program_Manager_$targetedProgramId", programCollectionId)
+              programCollectionId
+            } else {
+              println(s"$programName [$targetedProgramId] returned -1")
+              -1
+            }
+          }
+
+          def createProgramCollectionInsideAdmin(adminCollectionId: Int, targetedProgramId: String, programExternalId: String, ProgramCollectionName: String, programDescription: String, reportFor: String): Int = {
+            val programCollectionDescription = s"Program Id: $targetedProgramId\n\nExternal Id: $programExternalId\n\nCollection For: $reportFor\n\nProgram Description: $programDescription"
+            val ProgramCollectionId = Utils.createCollection(ProgramCollectionName, programCollectionDescription, metabaseUtil, Some(adminCollectionId))
+            val ProgramMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", ProgramCollectionId).put("collectionName", ProgramCollectionName).put("Collection For", reportFor))
+            postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$ProgramMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$targetedProgramId';")
+            ProgramCollectionId
+          }
+
+
+          def createSurveyCollectionInsideProgram(programCollectionId: Int, targetedSolutionId: String, solutionExternalId: String, surveyCollectionName: String, surveyDescription: String, reportFor: String): Int = {
+            val solutionCollectionDescription = s"Solution Id: $targetedSolutionId\n\nSolution External Id: $solutionExternalId\n\nCollection For: $reportFor\n\nSolution Description: $surveyDescription"
+            val surveyCollectionId = Utils.createCollection(surveyCollectionName, solutionCollectionDescription, metabaseUtil, Some(programCollectionId))
+            val surveyMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", surveyCollectionId).put("collectionName", surveyCollectionName).put("Collection For", reportFor))
+            postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$surveyMetadataJson' ::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$targetedSolutionId';")
+            surveyCollectionId
+          }
+
+      }
     }
 
     /**
