@@ -1,6 +1,6 @@
 {
   "questionCard": {
-    "name": "No. of surveys in started status currently",
+    "name": "Started",
     "collection_id": 644,
     "dataset_query": {
       "database": 2,
