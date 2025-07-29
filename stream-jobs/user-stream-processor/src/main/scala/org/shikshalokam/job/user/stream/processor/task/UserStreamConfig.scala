@@ -6,6 +6,8 @@ import org.apache.flink.api.java.typeutils.TypeExtractor
 import org.apache.flink.streaming.api.scala.OutputTag
 import org.shikshalokam.job.BaseJobConfig
 import org.shikshalokam.job.user.stream.processor.domain.Event
+import scala.collection.JavaConverters._
+
 
 class UserStreamConfig(override val config: Config) extends BaseJobConfig(config, "UsersStreamJob") {
 
@@ -14,6 +16,8 @@ class UserStreamConfig(override val config: Config) extends BaseJobConfig(config
   // Kafka Topics Configuration
   val inputTopic: String = config.getString("kafka.input.topic")
   val outputTopic: String = config.getString("kafka.output.topic")
+
+  val reportsEnabled: Set[String] = config.getStringList("reports.enabled").asScala.toSet
 
   // Output Tags
   val eventOutputTag: OutputTag[String] = OutputTag[String]("user-dashboard-output-event")
@@ -25,16 +29,16 @@ class UserStreamConfig(override val config: Config) extends BaseJobConfig(config
 
   // Consumers
   val usersStreamConsumer: String = "user-stream-consumer"
-  val metabaseDashboardProducer = "metabase-users-dashboard-producer"
+  val metabaseDashboardProducer: String = "metabase-users-dashboard-producer"
 
   // Functions
   val usersStreamFunction: String = "UserStreamFunction"
 
   // user submissions job metrics
-  val usersCleanupHit = "user-cleanup-hit"
-  val skipCount = "skipped-message-count"
-  val successCount = "success-message-count"
-  val totalEventsCount = "total-user-events-count"
+  val usersCleanupHit: String = "user-cleanup-hit"
+  val skipCount: String = "skipped-message-count"
+  val successCount: String = "success-message-count"
+  val totalEventsCount: String = "total-user-events-count"
 
 
   // PostgreSQL connection config
@@ -44,22 +48,23 @@ class UserStreamConfig(override val config: Config) extends BaseJobConfig(config
   val pgPassword: String = config.getString("postgres.password")
   val pgDataBase: String = config.getString("postgres.database")
   val user_metrics: String = config.getString("postgres.tables.user_metrics")
+  val dashboard_metadata: String = config.getString("postgres.tables.dashboardMetadataTable")
 
+  val createTenantUserMetadataTable: String =
+    s"""
+       |CREATE TABLE IF NOT EXISTS @tenantTable (
+       |    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+       |    user_id INT,
+       |    attribute_code TEXT,
+       |    attribute_value TEXT,
+       |    attribute_label TEXT,
+       |    UNIQUE (user_id, attribute_value)
+       |);
+    """.stripMargin
 
-      val createTenantTable =
-      s"""
-         |CREATE TABLE IF NOT EXISTS @tenantTable (
-         |    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-         |    user_id INT,
-         |    attribute_code TEXT,
-         |    attribute_value TEXT,
-         |    attribute_label TEXT,
-         |    UNIQUE (user_id, attribute_value)
-         |);
-         |""".stripMargin
-
-  val createUsersTable =
-    s"""CREATE TABLE IF NOT EXISTS @usersTable (
+  val createTenantUserTable: String =
+    s"""
+       |CREATE TABLE IF NOT EXISTS @usersTable (
        |    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
        |    user_id INT UNIQUE,
        |    tenant_code TEXT,
@@ -86,15 +91,42 @@ class UserStreamConfig(override val config: Config) extends BaseJobConfig(config
        |    user_profile_five_name TEXT,
        |    user_profile_five_external_id TEXT
        |);
-            """.stripMargin
+    """.stripMargin
 
-  val createUserMetricsTable =
-    s"""CREATE TABLE IF NOT EXISTS $user_metrics  (
+  val createUserMetricsTable: String =
+    s"""
+       |CREATE TABLE IF NOT EXISTS $user_metrics  (
        |    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
        |    tenant_code TEXT UNIQUE,
        |    total_users INT,
        |    active_users INT,
        |    deleted_users INT,
        |    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-       |);""".stripMargin
+       |);
+    """.stripMargin
+
+  val createDashboardMetadataTable: String =
+    s"""
+       |CREATE TABLE IF NOT EXISTS $dashboard_metadata (
+       |    id SERIAL PRIMARY KEY,
+       |    entity_type TEXT NOT NULL,
+       |    entity_name TEXT NOT NULL,
+       |    entity_id TEXT UNIQUE NOT NULL,
+       |    report_type TEXT,
+       |    is_rubrics Boolean,
+       |    parent_name TEXT,
+       |    linked_to TEXT,
+       |    main_metadata JSON,
+       |    mi_metadata JSON,
+       |    comparison_metadata JSON,
+       |    status TEXT,
+       |    error_message TEXT,
+       |    state_details_url_state TEXT,
+       |    state_details_url_admin TEXT,
+       |    district_details_url_district TEXT,
+       |    district_details_url_state TEXT,
+       |    district_details_url_admin TEXT
+       |);
+    """.stripMargin
+
 }
