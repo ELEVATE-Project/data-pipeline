@@ -6,7 +6,6 @@ import org.apache.flink.api.java.typeutils.TypeExtractor
 import org.apache.flink.streaming.api.scala.OutputTag
 import org.shikshalokam.job.BaseJobConfig
 import org.shikshalokam.job.user.stream.processor.domain.Event
-import scala.collection.JavaConverters._
 
 
 class UserStreamConfig(override val config: Config) extends BaseJobConfig(config, "UsersStreamJob") {
@@ -16,8 +15,6 @@ class UserStreamConfig(override val config: Config) extends BaseJobConfig(config
   // Kafka Topics Configuration
   val inputTopic: String = config.getString("kafka.input.topic")
   val outputTopic: String = config.getString("kafka.output.topic")
-
-  val reportsEnabled: Set[String] = config.getStringList("reports.enabled").asScala.toSet
 
   // Output Tags
   val eventOutputTag: OutputTag[String] = OutputTag[String]("user-dashboard-output-event")
@@ -47,8 +44,8 @@ class UserStreamConfig(override val config: Config) extends BaseJobConfig(config
   val pgUsername: String = config.getString("postgres.username")
   val pgPassword: String = config.getString("postgres.password")
   val pgDataBase: String = config.getString("postgres.database")
-  val user_metrics: String = config.getString("postgres.tables.user_metrics")
-  val dashboard_metadata: String = config.getString("postgres.tables.dashboardMetadataTable")
+  val userMetrics: String = config.getString("postgres.tables.userMetrics")
+  val dashboardMetadata: String = config.getString("postgres.tables.dashboardMetadataTable")
 
   val createTenantUserMetadataTable: String =
     s"""
@@ -95,7 +92,7 @@ class UserStreamConfig(override val config: Config) extends BaseJobConfig(config
 
   val createUserMetricsTable: String =
     s"""
-       |CREATE TABLE IF NOT EXISTS $user_metrics  (
+       |CREATE TABLE IF NOT EXISTS $userMetrics  (
        |    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
        |    tenant_code TEXT UNIQUE,
        |    total_users INT,
@@ -107,7 +104,7 @@ class UserStreamConfig(override val config: Config) extends BaseJobConfig(config
 
   val createDashboardMetadataTable: String =
     s"""
-       |CREATE TABLE IF NOT EXISTS $dashboard_metadata (
+       |CREATE TABLE IF NOT EXISTS $dashboardMetadata (
        |    id SERIAL PRIMARY KEY,
        |    entity_type TEXT NOT NULL,
        |    entity_name TEXT NOT NULL,

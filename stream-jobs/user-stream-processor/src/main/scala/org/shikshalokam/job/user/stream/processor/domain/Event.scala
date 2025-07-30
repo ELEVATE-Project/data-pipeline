@@ -11,9 +11,9 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def eventType: String = readOrDefault[String]("eventType", null)
 
-  def userId: Int = readOrDefault[Int]("entityId", -1) //Can't be updated
+  def userId: Int = readOrDefault[Int]("entityId", -1)
 
-  def tenantCode: String = extractValue[String]("tenant_code").orNull //Can't be updated
+  def tenantCode: String = extractValue[String]("tenant_code").orNull
 
   def username: String = extractValue[String]("username").orNull
 
@@ -24,24 +24,6 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
   def isDeleted: Boolean = extractValue[Boolean]("deleted").getOrElse(false)
 
   def createdBy: Int = extractValue[Int]("created_by").getOrElse(-1)
-
-  private def parseTimestamp(value: Any): Timestamp = value match {
-    case ts: Timestamp => ts
-    case s: String if s.trim.nonEmpty =>
-      try {
-        Timestamp.valueOf(s)
-      } catch {
-        case _: IllegalArgumentException =>
-          try {
-            Timestamp.from(Instant.parse(s))
-          } catch {
-            case _: Exception =>
-              val formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-              new Timestamp(formatter.parse(s).getTime)
-          }
-      }
-    case _ => new Timestamp(System.currentTimeMillis())
-  }
 
   def createdAt: Timestamp = parseTimestamp(extractValue[Any]("created_at").orNull)
 
@@ -77,20 +59,6 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def userProfileFiveExternalId: String = extractValue[String]("school.externalId").orNull
 
-  private def extractValue[T](key: String): Option[T] = {
-    val direct = Option(readOrDefault[T](key, null.asInstanceOf[T]))
-
-    var fromNew: Option[T] = None
-    var fromOld: Option[T] = None
-
-    if (eventType == "update" || eventType == "bulk-update") {
-      fromNew = Option(readOrDefault[T](s"newValues.$key", null.asInstanceOf[T]))
-      fromOld = Option(readOrDefault[T](s"oldValues.$key", null.asInstanceOf[T]))
-    }
-
-    (direct orElse fromNew orElse fromOld).filter(_ != null)
-  }
-
   def organizations: List[Map[String, Any]] = {
     val fromDefault = Option(readOrDefault[List[Map[String, Any]]]("organizations", null)).getOrElse(List.empty)
 
@@ -105,19 +73,6 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
     (fromDefault ++ fromOld ++ fromNew).distinct
   }
 
-  def organizationsId: String = extractValue[String]("organizations.id").getOrElse("")
-
-  private def isUpdateEvent: Boolean = eventType == "update" || eventType == "bulk-update"
-
-  def extractNestedValue[T](base: String, key: String): Option[T] = {
-    val defaultMap = Option(readOrDefault[Map[String, Any]](base, null)).getOrElse(Map.empty)
-    val newMap = if (isUpdateEvent) Option(readOrDefault[Map[String, Any]](s"newValues.$base", null)).getOrElse(Map.empty) else Map.empty
-    val oldMap = if (isUpdateEvent) Option(readOrDefault[Map[String, Any]](s"oldValues.$base", null)).getOrElse(Map.empty) else Map.empty
-
-    val combined = defaultMap ++ oldMap ++ newMap
-    Option(combined.getOrElse(key, null).asInstanceOf[T]).filter(_ != null)
-  }
-
   def professionalRoleId: String = extractNestedValue[String]("professional_role", "id").orNull
 
   def professionalRoleName: String = extractNestedValue[String]("professional_role", "name").orNull
@@ -128,6 +83,49 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
     val oldList = if (isUpdateEvent) Option(readOrDefault[List[Map[String, Any]]]("oldValues.professional_subroles", null)).getOrElse(List.empty) else List.empty
 
     (defaultList ++ oldList ++ newList).distinct
+  }
+
+  private def extractValue[T](key: String): Option[T] = {
+    val direct = Option(readOrDefault[T](key, null.asInstanceOf[T]))
+
+    var fromNew: Option[T] = None
+    var fromOld: Option[T] = None
+
+    if (eventType == "update" || eventType == "bulk-update") {
+      fromNew = Option(readOrDefault[T](s"newValues.$key", null.asInstanceOf[T]))
+      fromOld = Option(readOrDefault[T](s"oldValues.$key", null.asInstanceOf[T]))
+    }
+
+    (direct orElse fromNew orElse fromOld).filter(_ != null)
+  }
+
+  private def isUpdateEvent: Boolean = eventType == "update" || eventType == "bulk-update"
+
+  private def extractNestedValue[T](base: String, key: String): Option[T] = {
+    val defaultMap = Option(readOrDefault[Map[String, Any]](base, null)).getOrElse(Map.empty)
+    val newMap = if (isUpdateEvent) Option(readOrDefault[Map[String, Any]](s"newValues.$base", null)).getOrElse(Map.empty) else Map.empty
+    val oldMap = if (isUpdateEvent) Option(readOrDefault[Map[String, Any]](s"oldValues.$base", null)).getOrElse(Map.empty) else Map.empty
+
+    val combined = defaultMap ++ oldMap ++ newMap
+    Option(combined.getOrElse(key, null).asInstanceOf[T]).filter(_ != null)
+  }
+
+  private def parseTimestamp(value: Any): Timestamp = value match {
+    case ts: Timestamp => ts
+    case s: String if s.trim.nonEmpty =>
+      try {
+        Timestamp.valueOf(s)
+      } catch {
+        case _: IllegalArgumentException =>
+          try {
+            Timestamp.from(Instant.parse(s))
+          } catch {
+            case _: Exception =>
+              val formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+              new Timestamp(formatter.parse(s).getTime)
+          }
+      }
+    case _ => new Timestamp(System.currentTimeMillis())
   }
 
 }

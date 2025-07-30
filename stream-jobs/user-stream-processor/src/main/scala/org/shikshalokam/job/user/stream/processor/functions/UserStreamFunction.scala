@@ -40,37 +40,64 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
 
   override def processElement(event: Event, context: ProcessFunction[Event, Event]#Context, metrics: Metrics): Unit = {
 
-    println(s"***************** Start of Processing the User Event with Id = ${event.userId} *****************")
-    println(s"userId: ${event.userId}")
-    println(s"tenantCode: ${event.tenantCode}")
-    println(s"username: ${event.username}")
+    println(s"***************** Start of Processing the User Event with User Id = ${event.userId} *****************")
 
-    println(s"name: ${event.name}")
-    println(s"status: ${event.status}")
-    println(s"isDeleted: ${event.isDeleted}")
-    println(s"createdBy: ${event.createdBy}")
-    println(s"createdAt: ${event.createdAt}")
-    println(s"updatedAt: ${event.updatedAt}")
+    val userId = event.userId
+    val tenantCode = event.tenantCode
+    val username = event.username
+    val name = event.name
+    val status = event.status
+    val isDeleted = event.isDeleted
+    val createdBy = event.createdBy
+    val createdAt = event.createdAt
+    val updatedAt = event.updatedAt
+    val userProfileOneId = event.userProfileOneId
+    val userProfileOneName = event.userProfileOneName
+    val userProfileOneExternalId = event.userProfileOneExternalId
+    val userProfileTwoId = event.userProfileTwoId
+    val userProfileTwoName = event.userProfileTwoName
+    val userProfileTwoExternalId = event.userProfileTwoExternalId
+    val userProfileThreeId = event.userProfileThreeId
+    val userProfileThreeName = event.userProfileThreeName
+    val userProfileThreeExternalId = event.userProfileThreeExternalId
+    val userProfileFourId = event.userProfileFourId
+    val userProfileFourName = event.userProfileFourName
+    val userProfileFourExternalId = event.userProfileFourExternalId
+    val userProfileFiveId = event.userProfileFiveId
+    val userProfileFiveName = event.userProfileFiveName
+    val userProfileFiveExternalId = event.userProfileFiveExternalId
+    val professionalRoleName = event.professionalRoleName
+    val professionalRoleId = event.professionalRoleId
+    val professionalSubroles = event.professionalSubroles
+    val tenantUserMetadataTable: String = s""""${tenantCode}_users_metadata""""
+    val tenantUserTable: String = s""""${tenantCode}_users""""
+    val userMetrics = s""""user_metrics""""
+    val eventType = event.eventType
 
-    println(s"userProfileOneId (state.id): ${event.userProfileOneId}")
-    println(s"userProfileOneName (state.name): ${event.userProfileOneName}")
-    println(s"userProfileOneExternalId (state.externalId): ${event.userProfileOneExternalId}")
-
-    println(s"userProfileTwoId (district.id): ${event.userProfileTwoId}")
-    println(s"userProfileTwoName (district.name): ${event.userProfileTwoName}")
-    println(s"userProfileTwoExternalId (district.externalId): ${event.userProfileTwoExternalId}")
-
-    println(s"userProfileThreeId (block.id): ${event.userProfileThreeId}")
-    println(s"userProfileThreeName (block.name): ${event.userProfileThreeName}")
-    println(s"userProfileThreeExternalId (block.externalId): ${event.userProfileThreeExternalId}")
-
-    println(s"userProfileFourId (cluster.id): ${event.userProfileFourId}")
-    println(s"userProfileFourName (cluster.name): ${event.userProfileFourName}")
-    println(s"userProfileFourExternalId (cluster.externalId): ${event.userProfileFourExternalId}")
-
-    println(s"userProfileFiveId (school.id): ${event.userProfileFiveId}")
-    println(s"userProfileFiveName (school.name): ${event.userProfileFiveName}")
-    println(s"userProfileFiveExternalId (school.externalId): ${event.userProfileFiveExternalId}")
+    println(s"userId: $userId")
+    println(s"tenantCode: $tenantCode")
+    println(s"username: $username")
+    println(s"name: $name")
+    println(s"status: $status")
+    println(s"isDeleted: $isDeleted")
+    println(s"createdBy: $createdBy")
+    println(s"createdAt: $createdAt")
+    println(s"updatedAt: $updatedAt")
+    println(s"userProfileOneId : $userProfileOneId")
+    println(s"userProfileOneName : $userProfileOneName")
+    println(s"userProfileOneExternalId : $userProfileOneExternalId")
+    println(s"userProfileTwoId : $userProfileTwoId")
+    println(s"userProfileTwoName : $userProfileTwoName")
+    println(s"userProfileTwoExternalId : $userProfileTwoExternalId")
+    println(s"userProfileThreeId : $userProfileThreeId")
+    println(s"userProfileThreeName : $userProfileThreeName")
+    println(s"userProfileThreeExternalId : $userProfileThreeExternalId")
+    println(s"userProfileFourId : $userProfileFourId")
+    println(s"userProfileFourName : $userProfileFourName")
+    println(s"userProfileFourExternalId : $userProfileFourExternalId")
+    println(s"userProfileFiveId : $userProfileFiveId")
+    println(s"userProfileFiveName : $userProfileFiveName")
+    println(s"userProfileFiveExternalId : $userProfileFiveExternalId")
 
     def checkAndCreateTable(tableName: String, createTableQuery: String): Unit = {
       val checkTableExistsQuery =
@@ -89,63 +116,56 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
       }
     }
 
-    val tenantUserMetadataTable: String = s""""${event.tenantCode}_users_metadata""""
-    val tenantUserTable: String = s""""${event.tenantCode}_users""""
     val createTenantTable = config.createTenantUserMetadataTable.replace("@tenantTable", tenantUserMetadataTable)
-
     checkAndCreateTable(tenantUserMetadataTable, createTenantTable)
-    println("Created table if not exists: " + tenantUserMetadataTable)
 
-    var organizationsId: String = null
-    var organizationsName: String = null
-    val userId: Int = event.userId
-
-    val professionalRoleName = event.professionalRoleName
-    val professionalRoleId = event.professionalRoleId
-    val (eventType) = (event.eventType)
     if (eventType == "update" || eventType == "bulk-update" || eventType == "create" || eventType == "bulk-create") {
-      usersTable(tenantUserTable, userId)
-      upsertUserMetadata(tenantUserMetadataTable, userId, "Professional Role", professionalRoleName, professionalRoleId)
+      processUsers(tenantUserTable, userId)
+      processUserMetadata(tenantUserMetadataTable, userId, "Professional Role", professionalRoleName, professionalRoleId)
       event.organizations.foreach { org =>
         println(s"Organization ID: ${org.get("id")}")
-        if (org.get("id").isDefined) {
-          organizationsName = org.get("name").map(_.toString).getOrElse(null)
-          organizationsId = org.get("id").map(_.toString).getOrElse(null)
-          upsertUserMetadata(tenantUserMetadataTable, userId, "Organizations", organizationsName, organizationsId)
+        val organizationsName = org.get("name").map(_.toString).orNull
+        val organizationsId = org.get("id").map(_.toString).orNull
 
-          val roles = org.get("roles").map(_.asInstanceOf[List[Map[String, Any]]]).getOrElse(List.empty)
+        /**
+         * Processing for Orgs data
+         */
+        if (organizationsName.nonEmpty && organizationsId.nonEmpty) {
+          println(s"Upserting for attribute_code: Organizations, attribute_value: $organizationsName, attribute_label: $organizationsId")
+          processUserMetadata(tenantUserMetadataTable, userId, "Organizations", organizationsName, organizationsId)
+        } else {
+          println("Org name or Org Id is empty")
+        }
+
+        /**
+         * Processing for Roles data
+         */
+        val roles = org.get("roles").map(_.asInstanceOf[List[Map[String, Any]]]).getOrElse(List.empty)
+        if (roles.nonEmpty) {
           val rolePairs = extractUserRolesPerRow(roles)
-          println(s"Extracted roles: $rolePairs")
-          val professionalSubrolesList = event.professionalSubroles
-          val subrolePairs = extractProfessionalSubrolesPerRow(professionalSubrolesList)
+          val subrolePairs = extractProfessionalSubrolesPerRow(professionalSubroles)
+          rolePairs.foreach { case (userRoleName, userRoleId) =>
+            println(s"Upserting for attribute_code: Platform Role, attribute_value: $userRoleName, attribute_label: $userRoleId")
+            processUserMetadata(tenantUserMetadataTable, userId, "Platform Role", userRoleName, userRoleId)
 
-          rolePairs.foreach { case (userRoleIds, userRoles) =>
-            val exists = checkIfRoleExists(tenantUserMetadataTable, userId.toString, organizationsId, userRoleIds)
-
-            if (!exists) {
-              upsertUserMetadata(tenantUserMetadataTable, userId, "Platform Role", userRoleIds, userRoles)
-              if (subrolePairs.nonEmpty) {
-                subrolePairs.foreach { case (professionalSubrolesName, professionalSubrolesId) =>
-                  upsertUserMetadata(tenantUserMetadataTable, userId, "Professional Subroles", professionalSubrolesName, professionalSubrolesId)
-                }
-              } else {
-                println(s"No professional subroles found for user $userId in organization $organizationsId")
+            if (subrolePairs.nonEmpty) {
+              subrolePairs.foreach { case (professionalSubrolesName, professionalSubrolesId) =>
+                println(s"Upserting for attribute_code: Professional Subroles, attribute_value: $professionalSubrolesName, attribute_label: $professionalSubrolesId")
+                processUserMetadata(tenantUserMetadataTable, userId, "Professional Subroles", professionalSubrolesName, professionalSubrolesId)
               }
             } else {
-              println(s"Role already exists: user=$userId, org=$organizationsId, role=$userRoleIds")
+              println(s"No professional subroles found for user $userId in organization $organizationsId")
             }
           }
-
         } else {
-          println(s"Organization with ID ${event.organizationsId} not found in the event data.")
+          println("Roles object is empty")
         }
       }
     } else if (eventType == "delete") {
-      println(s"Inside the else if loop for delete event")
       deleteData(tenantUserTable, userId)
     }
 
-    userMetrics(tenantUserTable)
+    userMetric(tenantUserTable)
 
     def extractUserRolesPerRow(roles: List[Map[String, Any]]): List[(String, String)] = {
       roles.map { role =>
@@ -163,7 +183,7 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
       }
     }
 
-    def upsertUserMetadata(tenantUserMetadataTable: String, userId: Int, attributeCode: String, attributeValue: String, attributeLabel: String): Unit = {
+    def processUserMetadata(tenantUserMetadataTable: String, userId: Int, attributeCode: String, attributeValue: String, attributeLabel: String): Unit = {
       val upsertQuery =
         s"""INSERT INTO $tenantUserMetadataTable (id, user_id, attribute_code, attribute_value, attribute_label)
            |VALUES (DEFAULT, ?, ?, ?, ?)
@@ -177,34 +197,10 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
       println(s"Upserted [$attributeCode] for user [$userId] into [$tenantUserMetadataTable]")
     }
 
-    def usersTable(tenantUserTable: String, userId: Int): Unit = {
+    def processUsers(tenantUserTable: String, userId: Int): Unit = {
+      println(">>> Started processing user data for a tenant")
       val createUsersTable = config.createTenantUserTable.replace("@usersTable", tenantUserTable)
-
       checkAndCreateTable(tenantUserTable, createUsersTable)
-      println("Created table if not exists: " + tenantUserTable)
-
-      val username = event.username
-      val name = event.name
-      val status = event.status
-      val isDeleted = event.isDeleted
-      val createdBy = event.createdBy
-      val createdAt = event.createdAt
-      val updatedAt = event.updatedAt
-      val userProfileOneId = event.userProfileOneId
-      val userProfileOneName = event.userProfileOneName
-      val userProfileOneExternalId = event.userProfileOneExternalId
-      val userProfileTwoId = event.userProfileTwoId
-      val userProfileTwoName = event.userProfileTwoName
-      val userProfileTwoExternalId = event.userProfileTwoExternalId
-      val userProfileThreeId = event.userProfileThreeId
-      val userProfileThreeName = event.userProfileThreeName
-      val userProfileThreeExternalId = event.userProfileThreeExternalId
-      val userProfileFourId = event.userProfileFourId
-      val userProfileFourName = event.userProfileFourName
-      val userProfileFourExternalId = event.userProfileFourExternalId
-      val userProfileFiveId = event.userProfileFiveId
-      val userProfileFiveName = event.userProfileFiveName
-      val userProfileFiveExternalId = event.userProfileFiveExternalId
 
       val upsertUserQuery =
         s"""
@@ -222,26 +218,13 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
       """.stripMargin
 
       val userParams = Seq(
-        // Insert parameters
-        userId, event.tenantCode, username, name, status, isDeleted, createdBy, createdAt, updatedAt, userProfileOneId, userProfileOneName, userProfileOneExternalId, userProfileTwoId, userProfileTwoName, userProfileTwoExternalId, userProfileThreeId, userProfileThreeName, userProfileThreeExternalId, userProfileFourId, userProfileFourName, userProfileFourExternalId, userProfileFiveId, userProfileFiveName, userProfileFiveExternalId,
-
-        event.tenantCode, username, name, status, isDeleted, createdBy, createdAt, updatedAt, userProfileOneId, userProfileOneName, userProfileOneExternalId, userProfileTwoId, userProfileTwoName, userProfileTwoExternalId, userProfileThreeId, userProfileThreeName, userProfileThreeExternalId, userProfileFourId, userProfileFourName, userProfileFourExternalId, userProfileFiveId, userProfileFiveName, userProfileFiveExternalId
+        userId, tenantCode, username, name, status, isDeleted, createdBy, createdAt, updatedAt, userProfileOneId, userProfileOneName, userProfileOneExternalId, userProfileTwoId, userProfileTwoName, userProfileTwoExternalId,
+        userProfileThreeId, userProfileThreeName, userProfileThreeExternalId, userProfileFourId, userProfileFourName, userProfileFourExternalId, userProfileFiveId, userProfileFiveName, userProfileFiveExternalId,
+        tenantCode, username, name, status, isDeleted, createdBy, createdAt, updatedAt, userProfileOneId, userProfileOneName, userProfileOneExternalId, userProfileTwoId, userProfileTwoName, userProfileTwoExternalId,
+        userProfileThreeId, userProfileThreeName, userProfileThreeExternalId, userProfileFourId, userProfileFourName, userProfileFourExternalId, userProfileFiveId, userProfileFiveName, userProfileFiveExternalId
       )
-      println(s"Inserting into table: $tenantUserTable")
       postgresUtil.executePreparedUpdate(upsertUserQuery, userParams, tenantUserTable, userId.toString)
-      println("completed a status table " + tenantUserTable)
-    }
-
-    def checkIfRoleExists(tenantUserMetadataTable: String, userId: String, organizations_name: String, user_role_ids: String): Boolean = {
-      val query =
-        s"""
-           |SELECT 1 FROM $tenantUserMetadataTable
-           |WHERE user_id = '$userId' AND attribute_value = '$organizations_name' AND attribute_label = '$user_role_ids'
-           |LIMIT 1
-         """.stripMargin
-
-      val result = postgresUtil.fetchData(query)
-      result.nonEmpty
+      println(">>> Completed processing user data for a tenant")
     }
 
     def deleteData(tenantUserTable: String, userId: Int): Unit = {
@@ -254,17 +237,14 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
       postgresUtil.executePreparedUpdate(deleteQuery, Seq(userId), tenantUserTable, userId.toString)
     }
 
-    def userMetrics(tenantUserTable: String): Unit = {
-      val user_metrics = s""""user_metrics""""
-
-      checkAndCreateTable(user_metrics, config.createUserMetricsTable)
-      println("Created table if not exists: " + user_metrics)
+    def userMetric(tenantUserTable: String): Unit = {
+      checkAndCreateTable(userMetrics, config.createUserMetricsTable)
 
       val upsertQuery =
         s"""
-           |INSERT INTO $user_metrics (tenant_code, total_users, active_users, deleted_users, last_updated)
+           |INSERT INTO $userMetrics (tenant_code, total_users, active_users, deleted_users, last_updated)
            |SELECT
-           |  '${event.tenantCode}',
+           |  '$tenantCode',
            |  COUNT(user_id) AS total_users,
            |  COUNT(*) FILTER (WHERE status = 'ACTIVE') AS active_users,
            |  COUNT(*) FILTER (WHERE is_deleted = true) AS deleted_users,
@@ -277,109 +257,69 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
            |  last_updated = EXCLUDED.last_updated;
            |""".stripMargin
 
-      postgresUtil.executePreparedUpdate(upsertQuery, Seq.empty, user_metrics, tenantUserTable)
+      postgresUtil.executePreparedUpdate(upsertQuery, Seq.empty, userMetrics, tenantUserTable)
       println(s"User metrics updated for tenant: $tenantUserTable")
 
     }
 
     /**
-     * Logic to populate kafka messages for creating metabase dashboard
+     * Logic to populate kafka messages for creating user metabase dashboard
      */
-    postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboard_metadata)
-    println("Created table if not exists: " + config.dashboard_metadata)
+    postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboardMetadata)
 
     val dashboardData = new java.util.HashMap[String, String]()
     val dashboardConfig = Seq(
-      ("admin", "1", "admin"),
-      ("report_admin", event.tenantCode, "report_admin")
+      ("User Dashboard", event.tenantCode, event.tenantCode)
     )
 
     dashboardConfig
-      .filter { case (key, _, _) => config.reportsEnabled.contains(key) }
       .foreach { case (key, value, target) =>
         checkAndInsert(key, value, dashboardData, target)
       }
 
     if (!dashboardData.isEmpty) {
       pushUserDashboardEvents(dashboardData, context, event)
-      println(s"\n***************** End of Processing the Project Event *****************")
-    }
-    else {
-      println(s"Skipping the project event with Id = ${event.userId} and status = ${event.status} as it is not in a valid status.")
     }
 
+    println(s"***************** Completed Processing the User Event with User Id = ${event.userId} *****************")
+
     def checkAndInsert(entityType: String, targetedId: String, dashboardData: java.util.HashMap[String, String], dashboardKey: String): Unit = {
-      val query = s"SELECT EXISTS (SELECT 1 FROM ${config.dashboard_metadata} WHERE entity_id = '$targetedId') AS is_${entityType}_present"
+      val query = s"SELECT EXISTS (SELECT 1 FROM ${config.dashboardMetadata} WHERE entity_id = '$targetedId') AS is_present"
+      println(query)
       val result = postgresUtil.fetchData(query)
 
       result.foreach { row =>
-        row.get(s"is_${entityType}_present") match {
+        row.get(s"is_present") match {
           case Some(isPresent: Boolean) if isPresent =>
             println(s"$entityType details already exist.")
           case _ =>
-            if (entityType == "report_admin") {
-              val insertQuery = s"INSERT INTO ${config.dashboard_metadata} (entity_type, entity_name, entity_id) VALUES ('$entityType', '${event.tenantCode}', '$targetedId')"
+            if (entityType == "User Dashboard") {
+              val insertQuery = s"INSERT INTO ${config.dashboardMetadata} (entity_type, entity_name, entity_id) VALUES ('$entityType', '${event.tenantCode}', '$targetedId')"
               val affectedRows = postgresUtil.insertData(insertQuery)
-              println(s"Inserted Tenant Admin details. Affected rows: $affectedRows")
-              dashboardData.put(dashboardKey, "1")
-            } else {
-              val getEntityNameQuery =
-                s"""
-                   |SELECT DISTINCT ${
-                  if (entityType == "report_admin") "name"
-                  else s"${entityType}_name"
-                } AS ${entityType}_name
-                   |FROM ${
-                  entityType match {
-                    case _ => config.user_metrics
-                  }
-                }
-                   |WHERE ${entityType}_id = '$targetedId'
-               """.stripMargin.replaceAll("\n", " ")
-              val result = postgresUtil.fetchData(getEntityNameQuery)
-              result.foreach { id =>
-                val entityName = id.get(s"${entityType}_name").map(_.toString).getOrElse("")
-                val upsertMetaDataQuery =
-                  s"""INSERT INTO ${config.dashboard_metadata} (
-                     |    entity_type, entity_name, entity_id
-                     |) VALUES (
-                     |    ?, ?, ?
-                     |) ON CONFLICT (entity_id) DO UPDATE SET
-                     |    entity_type = ?, entity_name = ?;
-                     |""".stripMargin
-
-                val dashboardParams = Seq(
-                  entityType, entityName, targetedId, // Insert parameters
-                  entityType, entityName // Update parameters (matching columns in the ON CONFLICT clause)
-                )
-                postgresUtil.executePreparedUpdate(upsertMetaDataQuery, dashboardParams, config.dashboard_metadata, targetedId)
-                println(s"Inserted [$entityName : $targetedId] details.")
-                dashboardData.put(dashboardKey, targetedId)
-              }
+              println(s"Inserted userDashboard details. Affected rows: $affectedRows")
+              dashboardData.put("tenantCode", targetedId)
             }
         }
       }
     }
+  }
 
-    def pushUserDashboardEvents(dashboardData: util.HashMap[String, String], context: ProcessFunction[Event, Event]#Context, event: Event): util.HashMap[String, AnyRef] = {
-      val objects = new util.HashMap[String, AnyRef]() {
-        put("targetedId", java.util.UUID.randomUUID().toString)
-        put("reportType", "Report Admin")
-        put("tenantCode", event.tenantCode)
-        put("publishedAt", DateTimeFormatter
-          .ofPattern("yyyy-MM-dd HH:mm:ss")
-          .withZone(ZoneId.systemDefault())
-          .format(Instant.ofEpochMilli(System.currentTimeMillis())).asInstanceOf[AnyRef])
-        put("dashboardData", dashboardData)
-      }
-
-      val serializedEvent = ScalaJsonUtil.serialize(objects)
-      context.output(config.eventOutputTag, serializedEvent)
-      println(s"----> Pushed new Kafka message to ${config.outputTopic} topic")
-      println(objects)
-      objects
+  private def pushUserDashboardEvents(dashboardData: util.HashMap[String, String], context: ProcessFunction[Event, Event]#Context, event: Event): util.HashMap[String, AnyRef] = {
+    val objects = new util.HashMap[String, AnyRef]() {
+      put("_id", java.util.UUID.randomUUID().toString)
+      put("reportType", "User Dashboard")
+      put("publishedAt", DateTimeFormatter
+        .ofPattern("yyyy-MM-dd HH:mm:ss")
+        .withZone(ZoneId.systemDefault())
+        .format(Instant.ofEpochMilli(System.currentTimeMillis())).asInstanceOf[AnyRef])
+      put("dashboardData", dashboardData)
     }
 
-
+    val serializedEvent = ScalaJsonUtil.serialize(objects)
+    context.output(config.eventOutputTag, serializedEvent)
+    println(s"----> Pushed new Kafka message to ${config.outputTopic} topic")
+    println(objects)
+    objects
   }
+
 }
