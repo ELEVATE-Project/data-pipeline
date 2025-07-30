@@ -7,7 +7,7 @@
       "type": "native",
       "native": {
         "template-tags": {},
-        "query": "SELECT \n    lp.block_name AS \"Block Name\",\n    COUNT(DISTINCT lp.created_by) AS \"Total Projects Count\",\n    COUNT(CASE WHEN lp.status = 'started' THEN 1 END) AS \"Total Projects Initiated\",\n    COUNT(CASE WHEN lp.status = 'inProgress' THEN 1 END) AS \"Total Projects In-Progress\",\n    COUNT(CASE WHEN lp.status = 'submitted' THEN 1 END) AS \"Total Projects Submitted\"\nFROM \n    ${config.projects} lp\nWHERE \n    lp.created_by IS NOT NULL\n    AND lp.district_id = '66bf7f3560de1616f42cb993'\nGROUP BY \n    lp.block_name\nORDER BY \n    \"Total Projects Count\" DESC;"
+        "query": "SELECT \n    lp.block_name AS \"Block Name\",\n    lp.block_id AS \"Block Id\",\n    lp.tenant_id AS \"Tenant Id\",\n    COUNT(DISTINCT lp.created_by) AS \"Total Projects Count\",\n    COUNT(CASE WHEN lp.status = 'started' THEN 1 END) AS \"Total Projects Initiated\",\n    COUNT(CASE WHEN lp.status = 'inProgress' THEN 1 END) AS \"Total Projects In-Progress\",\n    COUNT(CASE WHEN lp.status = 'submitted' THEN 1 END) AS \"Total Projects Submitted\"\nFROM \n    ${config.projects} lp\nWHERE \n    lp.created_by IS NOT NULL\n    AND lp.district_id = '66bf7f3560de1616f42cb993'\nGROUP BY \n    lp.block_name,lp.block_id, lp.tenant_id\nORDER BY \n    \"Total Projects Count\" DESC;"
       }
     },
     "parameter_mappings": [],

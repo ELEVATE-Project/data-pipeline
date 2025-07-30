@@ -1,5 +1,6 @@
 package org.shikshalokam.job.dashboard.creator.functions
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.shikshalokam.job.util.JSONUtil.mapper
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
@@ -68,14 +69,23 @@ object Utils {
     }
   }
 
-  def createDashboard(collectionId: Int, dashboardName: String, dashboardDescription: String, metabaseUtil: MetabaseUtil): Int = {
+  def createDashboard(collectionId: Int, dashboardName: String, dashboardDescription: String, metabaseUtil: MetabaseUtil, pinDashboard: String): Int = {
     val dashboardRequestBody =
-      s"""{
-         |  "name": "$dashboardName",
-         |  "description": "$dashboardDescription",
-         |  "collection_id": "$collectionId",
-         |  "collection_position": "1"
-         |}""".stripMargin
+      if (pinDashboard == "Yes") {
+        s"""{
+           |  "name": "$dashboardName",
+           |  "description": "$dashboardDescription",
+           |  "collection_id": "$collectionId",
+           |  "collection_position": "1"
+           |}""".stripMargin
+      } else {
+        s"""{
+           |  "name": "$dashboardName",
+           |  "description": "$dashboardDescription",
+           |  "collection_id": "$collectionId"
+           |}""".stripMargin
+      }
+    println(s"Creating dashboard with request body: $dashboardRequestBody")
     val dashboardId = mapper.readTree(metabaseUtil.createDashboard(dashboardRequestBody)).path("id").asInt()
     println(s"$dashboardName : dashboard created with ID = $dashboardId")
     dashboardId

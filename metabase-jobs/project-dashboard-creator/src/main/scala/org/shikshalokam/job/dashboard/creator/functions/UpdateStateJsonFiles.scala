@@ -9,12 +9,12 @@ import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
 object UpdateStateJsonFiles {
-  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, blocknameId: Int, clusternameId: Int, orgnameId: Int, projects: String, solutions: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, targetedStateId: String): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, blocknameId: Int, clusternameId: Int, orgnameId: Int, projects: String, solutions: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, targetedStateId: String): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, blocknameId: Int, clusternameId: Int, orgnameId: Int): Unit = {
+    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, blocknameId: Int, clusternameId: Int, orgnameId: Int): Unit = {
       val adminIdStatus = postgresUtil.fetchData(reportConfigQuery)
       adminIdStatus.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -36,7 +36,7 @@ object UpdateStateJsonFiles {
                   case Some(cardId) =>
                     println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
                     questionCardId.append(cardId)
-                    val updatedJsonOpt = updateJsonWithCardId(updatedJson, cardId)
+                    val updatedJsonOpt = updateJsonWithCardId(updatedJson, cardId, dashboardId, tabId)
                     println(s"--------Successfully updated the json file---------")
                     AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedJsonOpt, dashboardId)
                   case None =>
@@ -108,7 +108,7 @@ object UpdateStateJsonFiles {
       }.toOption
     }
 
-    def updateJsonWithCardId(json: JsonNode, cardId: Int): Option[JsonNode] = {
+    def updateJsonWithCardId(json: JsonNode, cardId: Int, dashboardId: Int, tabId: Int): Option[JsonNode] = {
       Try {
         val jsonObject = json.asInstanceOf[ObjectNode]
 
@@ -121,7 +121,8 @@ object UpdateStateJsonFiles {
         }
 
         dashCardsNode.put("card_id", cardId)
-
+        dashCardsNode.put("dashboard_id", dashboardId)
+        dashCardsNode.put("dashboard_tab_id", tabId)
         if (dashCardsNode.has("parameter_mappings") && dashCardsNode.get("parameter_mappings").isArray) {
           dashCardsNode.get("parameter_mappings").elements().forEachRemaining { paramMappingNode =>
             if (paramMappingNode.isObject) {
@@ -200,7 +201,7 @@ object UpdateStateJsonFiles {
       }
     }
 
-    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId)
+    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, tabId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId)
     println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardId
   }
