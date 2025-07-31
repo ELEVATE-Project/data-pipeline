@@ -2,16 +2,14 @@ package org.shikshalokam.job.dashboard.creator.functions
 
 import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
-import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
-
-import scala.util.Try
+import org.shikshalokam.job.util.MetabaseUtil
 
 object UpdateAndAddDistrictFilter {
   val objectMapper = new ObjectMapper()
 
   def updateAndAddFilter(metabaseUtil: MetabaseUtil, queryResult: JsonNode, stateId: String, districtId: String, collectionId: Int, databaseId: Int, projectTable: String, solutionTable: String): Int = {
-    println(s"---------------- started processing updateAndAddFilter Function -------------------")
 
+    println(s"** Started to update and create filter questions for district dashboard")
     val objectMapper = new ObjectMapper()
 
     def replaceDistrictName(json: JsonNode, targetedStateId: String, targetedDistrictId: String, projectTable: String, solutionTable: String): JsonNode = {
@@ -96,7 +94,7 @@ object UpdateAndAddDistrictFilter {
     val ReplacedDistrictNameJson = replaceDistrictName(queryResult, stateId, districtId, projectTable, solutionTable)
     val updatedJson = updateCollectionIdAndDatabaseId(ReplacedDistrictNameJson, collectionId, databaseId)
     val questionId = getTheQuestionId(updatedJson)
-    println(s"---------------- completed processing updateAndAddFilter Function -------------------")
+    println(s"** Completed to update and create filter questions for district dashboard")
     questionId
   }
 }

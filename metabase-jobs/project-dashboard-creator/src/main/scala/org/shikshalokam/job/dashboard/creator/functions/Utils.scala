@@ -1,6 +1,5 @@
 package org.shikshalokam.job.dashboard.creator.functions
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.shikshalokam.job.util.JSONUtil.mapper
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
@@ -85,7 +84,7 @@ object Utils {
            |  "collection_id": "$collectionId"
            |}""".stripMargin
       }
-    println(s"Creating dashboard with request body: $dashboardRequestBody")
+//    println(s"Creating dashboard with request body: $dashboardRequestBody")
     val dashboardId = mapper.readTree(metabaseUtil.createDashboard(dashboardRequestBody)).path("id").asInt()
     println(s"$dashboardName : dashboard created with ID = $dashboardId")
     dashboardId

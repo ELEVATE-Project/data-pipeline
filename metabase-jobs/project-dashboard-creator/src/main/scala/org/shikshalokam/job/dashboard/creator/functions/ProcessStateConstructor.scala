@@ -8,14 +8,14 @@ import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
+object ProcessStateConstructor {
 
-object UpdateDistrictJsonFiles {
-  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, blocknameId: Int, clusternameId: Int, orgnameId: Int, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, projects: String, solutions: String, targetedStateId: String, targetedDistrictId: String): ListBuffer[Int] = {
-    println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
+  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, stateNameId: Int, districtNameId: Int, programNameId: Int, blockNameId: Int, clusterNameId: Int, orgNameId: Int, projects: String, solutions: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, targetedStateId: String): ListBuffer[Int] = {
+    println(s"=====> Started processing state level json update function for Micro Improvements dashboard")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, blocknameId: Int, clusternameId: Int, orgnameId: Int, targetedStateId: String, targetedDistrictId: String): Unit = {
+    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, stateNameId: Int, districtNameId: Int, programNameId: Int, blockNameId: Int, clusterNameId: Int, orgNameId: Int): Unit = {
       val adminIdStatus = postgresUtil.fetchData(reportConfigQuery)
       adminIdStatus.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -26,19 +26,17 @@ object UpdateDistrictJsonFiles {
               if (rootNode != null) {
                 val questionCardNode = rootNode.path("questionCard")
                 val chartName = Option(questionCardNode.path("name").asText()).getOrElse("Unknown Chart")
-                println(s" >>>>>>>>>>> Started Processing For The Chart: $chartName")
-                val updatedJson = updateJsonFiles(rootNode, collectionId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, databaseId)
-                val updatedJsonWithQuery = updateQuery(updatedJson.path("questionCard"), projects, solutions, targetedStateId, targetedDistrictId)
+                val updatedJson = updateJsonFiles(rootNode, collectionId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, databaseId)
+                val updatedJsonWithQuery = updateQuery(updatedJson.path("questionCard"), projects, solutions, targetedStateId)
                 val requestBody = updatedJsonWithQuery.asInstanceOf[ObjectNode]
                 val response = metabaseUtil.createQuestionCard(requestBody.toString)
                 val cardIdOpt = extractCardId(response)
 
                 cardIdOpt match {
                   case Some(cardId) =>
-                    println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
+                    println(s">>> Successfully created question card with card_id: $cardId for $chartName")
                     questionCardId.append(cardId)
                     val updatedJsonOpt = updateJsonWithCardId(updatedJson, cardId, dashboardId, tabId)
-                    println(s"--------Successfully updated the json file---------")
                     AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedJsonOpt, dashboardId)
                   case None =>
                     println(s"Error: Unable to extract card ID for $chartName. Skipping...")
@@ -71,7 +69,7 @@ object UpdateDistrictJsonFiles {
       if (jsonNode == null || jsonNode.isMissingNode) None else Some(jsonNode)
     }
 
-    def updateQuery(json: JsonNode, projectsTable: String, solutionsTable: String, targetedStateId: String, targetedDistrictId: String): JsonNode = {
+    def updateQuery(json: JsonNode, projectsTable: String, solutionsTable: String, targetedStateId: String): JsonNode = {
       Try {
 
         val queryPath = "/dataset_query/native/query"
@@ -80,17 +78,13 @@ object UpdateDistrictJsonFiles {
           throw new IllegalArgumentException(s"Query node at path $queryPath is missing or not textual.")
         }
 
-        val districtIdRegex = """(?s)\[\[\s*AND\s+\$\{config\.projects\}\.district_id\s+=\s+\(.*?WHERE\s+\{\{district_param\}\}.*?\)\s*\]\]""".r
         val stateIdRegex = """(?s)\[\[\s*AND\s+\$\{config\.projects\}\.state_id\s+=\s+\(.*?WHERE\s+\{\{state_param\}\}.*?\)\s*\]\]""".r
-
-        val updateTableFilter = queryNode.asText().replaceAll(districtIdRegex.regex, s"AND $projectsTable.district_id = '$targetedDistrictId'")
-          .replaceAll(stateIdRegex.regex, s"AND $projectsTable.state_id = '$targetedStateId'")
-
+        val updateTableFilter = queryNode.asText().replaceAll(stateIdRegex.regex, s"AND $projectsTable.state_id = '$targetedStateId'")
         val updatedTableName = updateTableFilter
           .replace("${config.projects}", projectsTable)
           .replace("${config.solutions}", solutionsTable)
-          .replace("${state_id}",s"'$targetedStateId'")
-          .replace("${district_id}",s"'$targetedDistrictId'")
+          .replace("${state_id}", s"'$targetedStateId'")
+
         val datasetQuery = json.get("dataset_query").deepCopy().asInstanceOf[ObjectNode]
         val nativeNode = datasetQuery.get("native").deepCopy().asInstanceOf[ObjectNode]
         nativeNode.set("query", TextNode.valueOf(updatedTableName))
@@ -105,7 +99,6 @@ object UpdateDistrictJsonFiles {
           throw new IllegalArgumentException("Failed to update query in JSON", exception)
       }
     }
-
 
     def extractCardId(response: String): Option[Int] = {
       Try {
@@ -141,7 +134,7 @@ object UpdateDistrictJsonFiles {
       }.toOption
     }
 
-    def updateJsonFiles(jsonNode: JsonNode, collectionId: Int, statenameId: Int, districtnameId: Int, programnameId: Int, blocknameId: Int, clusternameId: Int, orgnameId: Int, databaseId: Int): JsonNode = {
+    def updateJsonFiles(jsonNode: JsonNode, collectionId: Int, stateNameId: Int, districtNameId: Int, programNameId: Int, blockNameId: Int, clusterNameId: Int, orgNameId: Int, databaseId: Int): JsonNode = {
       try {
         val rootNode = jsonNode.deepCopy().asInstanceOf[ObjectNode]
 
@@ -159,32 +152,33 @@ object UpdateDistrictJsonFiles {
                 val templateTags = nativeNode.get("template-tags").asInstanceOf[ObjectNode]
 
                 if (templateTags.has("state_param")) {
-                  updateDimension(templateTags.get("state_param").asInstanceOf[ObjectNode], statenameId)
+                  updateDimension(templateTags.get("state_param").asInstanceOf[ObjectNode], stateNameId)
                 }
 
                 if (templateTags.has("district_param")) {
-                  updateDimension(templateTags.get("district_param").asInstanceOf[ObjectNode], districtnameId)
+                  updateDimension(templateTags.get("district_param").asInstanceOf[ObjectNode], districtNameId)
                 }
 
                 if (templateTags.has("program_param")) {
-                  updateDimension(templateTags.get("program_param").asInstanceOf[ObjectNode], programnameId)
+                  updateDimension(templateTags.get("program_param").asInstanceOf[ObjectNode], programNameId)
                 }
 
                 if (templateTags.has("block_param")) {
-                  updateDimension(templateTags.get("block_param").asInstanceOf[ObjectNode], blocknameId)
+                  updateDimension(templateTags.get("block_param").asInstanceOf[ObjectNode], blockNameId)
                 }
 
                 if (templateTags.has("cluster_param")) {
-                  updateDimension(templateTags.get("cluster_param").asInstanceOf[ObjectNode], clusternameId)
+                  updateDimension(templateTags.get("cluster_param").asInstanceOf[ObjectNode], clusterNameId)
                 }
 
                 if (templateTags.has("org_param")) {
-                  updateDimension(templateTags.get("org_param").asInstanceOf[ObjectNode], orgnameId)
+                  updateDimension(templateTags.get("org_param").asInstanceOf[ObjectNode], orgNameId)
                 }
               }
             }
           }
         }
+
         rootNode
       } catch {
         case e: Exception =>
@@ -192,7 +186,6 @@ object UpdateDistrictJsonFiles {
           jsonNode
       }
     }
-
 
     def updateDimension(node: ObjectNode, newId: Int): Unit = {
       if (node.has("dimension") && node.get("dimension").isArray) {
@@ -207,8 +200,8 @@ object UpdateDistrictJsonFiles {
       }
     }
 
-    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, tabId, statenameId, districtnameId, programnameId, blocknameId, clusternameId, orgnameId, targetedStateId, targetedDistrictId)
-    println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
+    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, tabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId)
+    println(s"=====> Completed processing state level json update function for Micro Improvements dashboard")
     questionCardId
   }
 }
