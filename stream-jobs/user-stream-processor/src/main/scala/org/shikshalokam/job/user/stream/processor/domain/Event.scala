@@ -99,7 +99,7 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
     (direct orElse fromNew orElse fromOld).filter(_ != null)
   }
 
-  private def isUpdateEvent: Boolean = eventType == "update" || eventType == "bulk-update"
+  private val isUpdateEvent: Boolean = eventType == "update" || eventType == "bulk-update"
 
   private def extractNestedValue[T](base: String, key: String): Option[T] = {
     val defaultMap = Option(readOrDefault[Map[String, Any]](base, null)).getOrElse(Map.empty)

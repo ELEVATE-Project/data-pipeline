@@ -71,7 +71,7 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
     val professionalSubroles = event.professionalSubroles
     val tenantUserMetadataTable: String = s""""${tenantCode}_users_metadata""""
     val tenantUserTable: String = s""""${tenantCode}_users""""
-    val userMetrics = s""""user_metrics""""
+    val userMetrics: String = config.userMetrics
     val eventType = event.eventType
 
     println(s"userId: $userId")
@@ -269,6 +269,7 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
 
     val dashboardData = new java.util.HashMap[String, String]()
     val dashboardConfig = Seq(
+      ("admin", "1", "admin"),
       ("User Dashboard", event.tenantCode, event.tenantCode)
     )
 
@@ -285,7 +286,6 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
 
     def checkAndInsert(entityType: String, targetedId: String, dashboardData: java.util.HashMap[String, String], dashboardKey: String): Unit = {
       val query = s"SELECT EXISTS (SELECT 1 FROM ${config.dashboardMetadata} WHERE entity_id = '$targetedId') AS is_present"
-      println(query)
       val result = postgresUtil.fetchData(query)
 
       result.foreach { row =>

@@ -79,6 +79,7 @@ FILES_TO_REPLACE=(
   "$CODE_BASE_PATH/stream-jobs/observation-stream-processor/src/main/resources/observation-stream.conf"
   "$CODE_BASE_PATH/stream-jobs/project-stream-processor/src/main/resources/project-stream.conf"
   "$CODE_BASE_PATH/stream-jobs/survey-stream-processor/src/main/resources/survey-stream.conf"
+  "$CODE_BASE_PATH/stream-jobs/user-stream-processor/src/main/resources/user-stream.config"
   "$CODE_BASE_PATH/metabase-jobs/user-service/src/main/resources/user-service.conf"
 )
 
@@ -119,6 +120,7 @@ SCALA_JOB_FILES=(
   "$CODE_BASE_PATH/stream-jobs/observation-stream-processor/src/main/scala/org/shikshalokam/job/observation/stream/processor/task/ObservationStreamConfig.scala"
   "$CODE_BASE_PATH/stream-jobs/project-stream-processor/src/main/scala/org/shikshalokam/job/project/stream/processor/task/ProjectStreamConfig.scala"
   "$CODE_BASE_PATH/stream-jobs/survey-stream-processor/src/main/scala/org/shikshalokam/job/survey/stream/processor/task/SurveyStreamConfig.scala"
+  "$CODE_BASE_PATH/stream-jobs/user-stream-processor/src/main/scala/org/shikshalokam/job/user/stream/processor/task/UserStreamConfig.scala"
   "$CODE_BASE_PATH/metabase-jobs/user-service/src/main/scala/org/shikshalokam/job/user/service/task/UserServiceConfig.scala"
 )
 
@@ -164,6 +166,7 @@ JAR_PATHS=(
   "$CODE_BASE_PATH/stream-jobs/observation-stream-processor/target/observation-stream-processor-1.0.0.jar"
   "$CODE_BASE_PATH/stream-jobs/project-stream-processor/target/project-stream-processor-1.0.0.jar"
   "$CODE_BASE_PATH/stream-jobs/survey-stream-processor/target/survey-stream-processor-1.0.0.jar"
+  "$CODE_BASE_PATH/stream-jobs/user-stream-processor/target/user-stream-processor-1.0.0.jar"
   "$CODE_BASE_PATH/metabase-jobs/user-service/target/user-service-1.0.0.jar"
 )
 
