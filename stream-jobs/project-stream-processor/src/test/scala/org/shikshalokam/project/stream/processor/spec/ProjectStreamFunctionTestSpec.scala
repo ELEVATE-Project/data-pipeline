@@ -42,7 +42,7 @@ class ProjectStreamFunctionTestSpec extends BaseTestSpec {
     flinkCluster.after()
   }
 
-  def initialize() {
+  def initialize(): Unit = {
     when(mockKafkaUtil.kafkaJobRequestSource[Event](jobConfig.inputTopic))
       .thenReturn(new ProjectEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.outputTopic))

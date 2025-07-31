@@ -58,8 +58,8 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
 
     def getLabelFromSourceOrDefault(sourceMap: Map[String, Any], key: String, defaultLabel: String): String = {
       sourceMap.get(key) match {
-        case Some(map: Map[String, Any]@unchecked) =>
-          map.get("name").map(_.toString).getOrElse(defaultLabel)
+        case Some(map: Map[String, Any] @unchecked) =>
+          map.get("id").map(_.toString).getOrElse(defaultLabel)
         case _ => defaultLabel
       }
     }
@@ -70,20 +70,20 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
     val email = Option(getValue("email", event.email)).filter(_.trim.nonEmpty).getOrElse(uniqueUserName + config.domainName)
     val password = generatePassword(10)
     val phone = getValue("phone", event.phone)
-    val stateName = getLabelFromSourceOrDefault(sourceMap, "state", event.state)
-    val districtName = getLabelFromSourceOrDefault(sourceMap, "district", event.district)
+    val stateId = getLabelFromSourceOrDefault(sourceMap, "state", event.stateId)
+    val districtId = getLabelFromSourceOrDefault(sourceMap, "district", event.districtId)
     val status = getValue("status", event.status)
     val isUserDeleted = getValue("deleted", event.isUserDeleted)
     val orgDetails = getValue("organizations", event.organizations)
-    var userRoles: List[Map[String, Any]] = orgDetails.flatMap(_.get("roles").collect { case roles: List[Map[String, Any]]@unchecked => roles }.getOrElse(Nil))
+    var userRoles: List[Map[String, Any]] = orgDetails.flatMap(_.get("roles").collect { case roles: List[Map[String, Any]] @unchecked => roles }.getOrElse(Nil))
 
     if (isUpdateEvent) {
       userRoles ++= event.newValues
         .get("organizations")
-        .collect { case orgs: List[Map[String, Any]]@unchecked => orgs }
+        .collect { case orgs: List[Map[String, Any]] @unchecked => orgs }
         .getOrElse(Nil)
         .flatMap(_.get("roles").collect {
-          case roles: List[Map[String, Any]]@unchecked => roles
+          case roles: List[Map[String, Any]] @unchecked => roles
         }.getOrElse(Nil))
     }
 
@@ -94,8 +94,8 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
     println(s"Email = $email")
     println(s"Password = $password")
     println(s"Phone = $phone")
-    println(s"State Name = $stateName")
-    println(s"District Name = $districtName")
+    println(s"State Id = $stateId")
+    println(s"District ID = $districtId")
     println(s"Status = $status")
     println(s"Is User Deleted = $isUserDeleted")
     println(s"User Organizations = $orgDetails")
@@ -112,9 +112,9 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
         case Some("report_admin") =>
           handleReportAdmin(entity, eventType, name, email, password, uniqueUserName)
         case Some("state_manager") =>
-          handleStateAdmin(entity, eventType, name, email, password, uniqueUserName, stateName)
+          handleStateAdmin(entity, eventType, name, email, password, uniqueUserName, stateId)
         case Some("district_manager") =>
-          handleDistrictUser(entity, eventType, name, email, password, uniqueUserName, stateName, districtName)
+          handleDistrictUser(entity, eventType, name, email, password, uniqueUserName, stateId, districtId)
         case Some("program_manager") =>
           handleProgramUser(entity, eventType, name, email, password, uniqueUserName)
         case Some(unknownRole) =>
@@ -130,7 +130,7 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
         val userId = checkUserId(email)
         if (userId == -1) {
           val newUserId = createUser(name, email, password, uniqueUserName)
-          addUserToGroup("report_admin", None, None, None, newUserId)
+          addUserToGroup("report_admin", None, None, newUserId)
           pushNotification(name, email, password, phone, context)
         } else {
           println("Stopped processing")
@@ -147,33 +147,30 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
             val userId = checkUserId(email)
             if (userId == -1) {
               val newUserId = createUser(name, email, password, uniqueUserName)
-              addUserToGroup("report_admin", None, None, None, newUserId)
+              addUserToGroup("report_admin", None, None, newUserId)
               pushNotification(name, email, password, phone, context)
             } else {
-              addUserToGroup("report_admin", None, None, None, userId)
+              addUserToGroup("report_admin", None, None, userId)
             }
           case (true, false) =>
             println("Trying to remove user from report_admin role")
             val userId = checkUserId(email)
-            if (userId != -1) removeUserFromGroup("report_admin", None, None, None, userId)
+            if (userId != -1) removeUserFromGroup("report_admin", None, None, userId)
           case (true, true) =>
             //This is a edge case scenario
             println("User already had and still has report_admin role")
-            val userId = checkUserId(email)
-            val groupId = checkGroupId("Report_Admin")
-            validateUserInGroup(userId, groupId)
           case _ => // No action needed
         }
       }
     }
 
-    def handleStateAdmin(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, stateName: String): Unit = {
+    def handleStateAdmin(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, stateId: String): Unit = {
       println("<<<======== Processing for the role state_manager ========>>>")
       if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
         val userId = checkUserId(email)
         if (userId == -1) {
           val newUserId = createUser(name, email, password, uniqueUserName)
-          addUserToGroup("state_manager", Some(stateName), None, None, newUserId)
+          addUserToGroup("state_manager", Some(stateId), None, newUserId)
           pushNotification(name, email, password, phone, context)
         } else {
           println("Stopped processing")
@@ -190,33 +187,30 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
             val userId = checkUserId(email)
             if (userId == -1) {
               val newUserId = createUser(name, email, password, uniqueUserName)
-              addUserToGroup("state_manager", Some(stateName), None, None, newUserId)
+              addUserToGroup("state_manager", Some(stateId), None, newUserId)
               pushNotification(name, email, password, phone, context)
             } else {
-              addUserToGroup("state_manager", Some(stateName), None, None, userId)
+              addUserToGroup("state_manager", Some(stateId), None, userId)
             }
           case (true, false) =>
             println("Trying to remove user from state_manager role")
             val userId = checkUserId(email)
-            if (userId != -1) removeUserFromGroup("state_manager", Some(stateName), None, None, userId)
+            if (userId != -1) removeUserFromGroup("state_manager", Some(stateId), None, userId)
           case (true, true) =>
             //This is a edge case scenario
             println("User already had and still has state_manager role")
-            val userId = checkUserId(email)
-            val groupId = checkGroupId(s"${stateName}_State_Manager")
-            validateUserInGroup(userId, groupId)
           case _ => // No action needed
         }
       }
     }
 
-    def handleDistrictUser(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, stateName: String, districtName: String): Unit = {
+    def handleDistrictUser(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, stateId: String, districtId: String): Unit = {
       println("<<<======== Processing for the role district_manager ========>>>")
       if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
         val userId = checkUserId(email)
         if (userId == -1) {
           val newUserId = createUser(name, email, password, uniqueUserName)
-          addUserToGroup("district_manager", Some(stateName), Some(districtName), None, newUserId)
+          addUserToGroup("district_manager", Some(stateId), Some(districtId), newUserId)
           pushNotification(name, email, password, phone, context)
         } else {
           println("Stopped processing")
@@ -233,21 +227,18 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
             val userId = checkUserId(email)
             if (userId == -1) {
               val newUserId = createUser(name, email, password, uniqueUserName)
-              addUserToGroup("district_manager", Some(stateName), Some(districtName), None, newUserId)
+              addUserToGroup("district_manager", Some(stateId), Some(districtId), newUserId)
               pushNotification(name, email, password, phone, context)
             } else {
-              addUserToGroup("district_manager", Some(stateName), Some(districtName), None, userId)
+              addUserToGroup("district_manager", Some(stateId), Some(districtId), userId)
             }
           case (true, false) =>
             println("Trying to remove user from district_manager role")
             val userId = checkUserId(email)
-            if (userId != -1) removeUserFromGroup("district_manager", Some(stateName), Some(districtName), None, userId)
+            if (userId != -1) removeUserFromGroup("district_manager", Some(stateId), Some(districtId), userId)
           case (true, true) =>
             //This is a edge case scenario
             println("User already had and still has district_manager role")
-            val userId = checkUserId(email)
-            val groupId = checkGroupId(s"${districtName}_District_Manager[$stateName]")
-            validateUserInGroup(userId, groupId)
           case _ => // No action needed
         }
       }
@@ -295,9 +286,9 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
 
   private def extractRoles(data: Map[String, Any]): Set[String] = {
     data.get("organizations") match {
-      case Some(orgs: List[Map[String, Any]]@unchecked) =>
+      case Some(orgs: List[Map[String, Any]] @unchecked) =>
         orgs.flatMap(_.get("roles").collect {
-          case roles: List[Map[String, Any]]@unchecked =>
+          case roles: List[Map[String, Any]] @unchecked =>
             roles.flatMap(_.get("title").map(_.toString))
         }.getOrElse(Nil)).toSet
       case _ => Set.empty[String]
@@ -339,45 +330,56 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
     newUserId
   }
 
-  private def addUserToGroup(userRole: String, stateName: Option[String] = None, districtName: Option[String] = None, programName: Option[String] = None, userId: Int): Unit = {
+  private def addUserToGroup(userRole: String, stateId: Option[String] = None, districtId: Option[String] = None, userId: Int): Unit = {
 
     val existingUserGroups = metabaseUtil.listGroups()
-    val groupName = userRole match {
-      case "report_admin" => s"Report_Admin"
-      case "state_manager" => s"${stateName.getOrElse("")}_State_Manager"
-      case "district_manager" => s"${districtName.getOrElse("")}_District_Manager[${stateName.getOrElse("")}]"
-      case "program_manager" => s"Program_Manager[${programName.getOrElse("")}]"
-      case _ => throw new IllegalArgumentException("Invalid manager type")
+
+    val groupNames: List[String] = userRole match {
+      case "report_admin" =>
+        List("Report_Admin_Micro_Improvement", "Report_Admin_National_Overview", "Report_Admin_Programs")
+      case "state_manager" =>
+        List(s"State_Manager_${stateId.getOrElse("")}")
+      case "district_manager" =>
+        List(s"District_Manager_${districtId.getOrElse("")}")
+      case _ =>
+        throw new IllegalArgumentException("Invalid manager type")
     }
 
-    val groupId = findGroupId(existingUserGroups, groupName)
-    groupId match {
-      case Some(id) =>
-        println(s"Found group id as $id for group name $groupName")
-        validateUserInGroup(userId, id)
-      case None => println(s"No group found for $groupName. Ask Super Admin to create the group")
+    groupNames.foreach { groupName =>
+      findGroupId(existingUserGroups, groupName) match {
+        case Some(id) =>
+          println(s"Found group id as $id for group name $groupName")
+          validateUserInGroup(userId, id)
+        case None =>
+          println(s"No group found for $groupName. Ask Super Admin to create the group")
+      }
     }
-
   }
 
-  private def removeUserFromGroup(userRole: String, stateName: Option[String] = None, districtName: Option[String] = None, programName: Option[String] = None, userId: Int): Unit = {
+
+  private def removeUserFromGroup(userRole: String, stateId: Option[String] = None, districtId: Option[String] = None, userId: Int): Unit = {
 
     val existingUserGroups = metabaseUtil.listGroups()
-    val groupName = userRole match {
-      case "report_admin" => s"Report_Admin"
-      case "state_manager" => s"${stateName.getOrElse("")}_State_Manager"
-      case "district_manager" => s"${districtName.getOrElse("")}_District_Manager[${stateName.getOrElse("")}]"
-      case "program_manager" => s"Program_Manager[${programName.getOrElse("")}]"
-      case _ => throw new IllegalArgumentException("Invalid manager type")
+
+    val groupNames: List[String] = userRole match {
+      case "report_admin" =>
+        List("Report_Admin_Micro_Improvement", "Report_Admin_National_Overview", "Report_Admin_Programs")
+      case "state_manager" =>
+        List(s"State_Manager_${stateId.getOrElse("")}")
+      case "district_manager" =>
+        List(s"District_Manager_${districtId.getOrElse("")}")
+      case _ =>
+        throw new IllegalArgumentException("Invalid manager type")
     }
 
-    val groupIdOpt = findGroupId(existingUserGroups, groupName)
-    groupIdOpt match {
-      case Some(groupId) =>
-        println(s"Found group id as $groupId for group name $groupName")
-        validateUserRemoval(userId, groupId)
-      case None =>
-        println(s"No group found for $groupName. Skipping removal.")
+    groupNames.foreach { groupName =>
+      findGroupId(existingUserGroups, groupName) match {
+        case Some(groupId) =>
+          println(s"Found group id as $groupId for group name $groupName")
+          validateUserRemoval(userId, groupId)
+        case None =>
+          println(s"No group found for $groupName. Skipping removal.")
+      }
     }
   }
 
@@ -388,7 +390,7 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
       .map(node => node.get("id").asInt())
   }
 
-  private def validateUserInGroup(userId: Int, groupId: Int) = {
+  private def validateUserInGroup(userId: Int, groupId: Int): Unit = {
     val isUserInGroup = mapper.readTree(metabaseUtil.getGroupDetails(groupId))
       .get("members")
       .elements()
