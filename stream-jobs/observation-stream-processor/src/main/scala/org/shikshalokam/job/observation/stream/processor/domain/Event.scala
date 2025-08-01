@@ -74,6 +74,12 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def entityType: String = readOrDefault[String]("entityInformation.type", null)
 
+  def entityId: String = readOrDefault[String]("entityInformation._id", null)
+
+  def entityName: String = readOrDefault[String]("entityInformation.name", null)
+
+  def entityExternalId: String = readOrDefault[String]("entityInformation.externalId", null)
+
   def parentOneName: String = getParentName("state", entityType)
 
   def parentOneId: String = getParentId("state", entityType)

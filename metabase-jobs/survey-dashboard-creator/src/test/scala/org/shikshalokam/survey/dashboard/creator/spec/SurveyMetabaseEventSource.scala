@@ -16,5 +16,4 @@ class SurveyMetabaseEventSource extends SourceFunction[Event] {
 
   override def cancel(): Unit = {}
 
-
 }

@@ -1,4 +1,4 @@
-package org.shikshalokam.project.stream.processor.spec
+package org.shikshalokam.observation.stream.processor.spec
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -11,7 +11,6 @@ import org.shikshalokam.BaseTestSpec
 import org.shikshalokam.job.connector.FlinkKafkaConnector
 import org.shikshalokam.job.observation.stream.processor.domain.Event
 import org.shikshalokam.job.observation.stream.processor.task.{ObservationStreamConfig, ObservationStreamTask}
-import org.shikshalokam.obseravtion.stream.processor.spec.{GenerateObservationSink, ObservationEventSource}
 
 
 class ObservationStreamFunctionTestSpec extends BaseTestSpec {
@@ -43,7 +42,7 @@ class ObservationStreamFunctionTestSpec extends BaseTestSpec {
     flinkCluster.after()
   }
 
-  def initialize() {
+  def initialize(): Unit = {
     when(mockKafkaUtil.kafkaJobRequestSource[Event](jobConfig.inputTopic))
       .thenReturn(new ObservationEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.outputTopic))

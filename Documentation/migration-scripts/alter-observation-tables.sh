@@ -10,7 +10,7 @@ log() {
 # === PostgreSQL Connection ===
 PGHOST="localhost"
 PGPORT="5432"
-PGDBNAME="qa_elevate_data"
+PGDBNAME="test"
 PGUSER="postgres"
 PGPASSWORD="postgres"
 export PGPASSWORD
@@ -145,6 +145,34 @@ EOF
     log "✅ Successfully altered ${solution_id}_questions table"
   else
     log "❌ Failed to alter ${solution_id}_questions table"
+  fi
+done
+
+# === Alter all Observation Question Tables to include report_type ===
+log ""
+log ""
+log "📌 Altering Observation Question Tables for report_type, entity_id, entity_name, entity_external_id "
+for table in "${question_ids[@]}"; do
+  log "🔧 Altering table: ${table}_questions"
+
+  if psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -c "
+    ALTER TABLE \"${table}_questions\" ADD COLUMN IF NOT EXISTS report_type TEXT;
+    ALTER TABLE \"${table}_questions\" ADD COLUMN IF NOT EXISTS entity_id TEXT;
+    ALTER TABLE \"${table}_questions\" ADD COLUMN IF NOT EXISTS entity_name TEXT;
+    ALTER TABLE \"${table}_questions\" ADD COLUMN IF NOT EXISTS entity_external_id TEXT;
+  "; then
+    log "✅ Columns added or already exist in ${table}_questions"
+
+    if psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -c \
+      "UPDATE \"${table}_questions\" SET report_type = 'Default' WHERE report_type IS NULL OR report_type = '';" ; then
+      log "✅ Successfully updated rows in ${table}_questions"
+    else
+      log "❌ Failed to update rows in ${table}_questions"
+    fi
+
+  else
+    log "❌ Failed to add columns to ${table}_questions"
+    continue
   fi
 done
 

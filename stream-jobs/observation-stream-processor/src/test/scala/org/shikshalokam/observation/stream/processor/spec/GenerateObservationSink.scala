@@ -1,4 +1,4 @@
-package org.shikshalokam.obseravtion.stream.processor.spec
+package org.shikshalokam.observation.stream.processor.spec
 
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 

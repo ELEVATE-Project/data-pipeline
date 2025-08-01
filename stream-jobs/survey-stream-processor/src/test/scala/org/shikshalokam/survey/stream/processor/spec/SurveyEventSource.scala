@@ -12,6 +12,9 @@ class SurveyEventSource extends SourceFunction[Event] {
     ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SURVEY_EVENT_STARTED), 0, 0))
     ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SURVEY_EVENT_INPROGRESS), 0, 0))
     ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SURVEY_EVENT_COMPLETED), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_EVENT_1), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_EVENT_2), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_EVENT_3), 0, 0))
 
   }
 
