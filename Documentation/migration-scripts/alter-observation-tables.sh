@@ -10,7 +10,7 @@ log() {
 # === PostgreSQL Connection ===
 PGHOST="localhost"
 PGPORT="5432"
-PGDBNAME="qa_elevate_data"
+PGDBNAME="test"
 PGUSER="postgres"
 PGPASSWORD="postgres"
 export PGPASSWORD
@@ -147,5 +147,32 @@ EOF
     log "❌ Failed to alter ${solution_id}_questions table"
   fi
 done
+
+
+# === Alter all Observation Question Tables to include report_type ===
+log ""
+log ""
+log "📌 Altering Observation Question Tables for 'report_type'..."
+for table in "${question_ids[@]}"; do
+  log "🔧 Altering table: ${table}_questions"
+
+  if psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -c \
+    "ALTER TABLE \"${table}_questions\" ADD COLUMN IF NOT EXISTS report_type TEXT;" ; then
+    log "✅ Column added or already exists in ${table}_questions"
+
+    # Update rows only where report_type is NULL or empty
+    if psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -c \
+      "UPDATE \"${table}_questions\" SET report_type = 'Default' WHERE report_type IS NULL OR report_type = '';" ; then
+      log "✅ Successfully updated rows in ${table}_questions"
+    else
+      log "❌ Failed to update rows in ${table}_questions"
+    fi
+
+  else
+    log "❌ Failed to add column to ${table}_questions"
+    continue
+  fi
+done
+
 
 log "🏁 All observation tables processed successfully!"
