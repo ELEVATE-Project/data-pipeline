@@ -66,9 +66,9 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       val solutionDescription = event.solutionDescription
       val programExternalId = event.programExternalId
       val programDescription = event.programDescription
-      val privateProgram = null
-      val projectCategories = null
-      val projectDuration = null
+      val privateProgram: Null = null
+      val projectCategories: Null = null
+      val projectDuration: Null = null
 
       var userRoleIds: String = ""
       var userRoles: String = ""
@@ -89,7 +89,6 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
           println(s"Organisation with ID ${event.organisationId} not found in the event data.")
         }
       }
-
 
       val createSurveyQuestionsTableQuery =
         s"""CREATE TABLE IF NOT EXISTS "$surveyQuestionTable" (
@@ -517,7 +516,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
     }
   }
 
-  def extractUserRolesData(roles: List[Map[String, Any]]): (String, String) = {
+  private def extractUserRolesData(roles: List[Map[String, Any]]): (String, String) = {
     if (roles == null || roles.isEmpty) {
       ("", "")
     } else {
@@ -527,7 +526,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
     }
   }
 
-  def checkAndInsert(entityType: String, targetedId: String, dashboardData: java.util.HashMap[String, String], dashboardKey: String): Unit = {
+  private def checkAndInsert(entityType: String, targetedId: String, dashboardData: java.util.HashMap[String, String], dashboardKey: String): Unit = {
     val query = s"SELECT EXISTS (SELECT 1 FROM ${config.dashboard_metadata} WHERE entity_id = '$targetedId') AS is_${entityType}_present"
     val result = postgresUtil.fetchData(query)
 
@@ -581,7 +580,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
     }
   }
 
-  def pushSurveyDashboardEvents(dashboardData: util.HashMap[String, String], context: ProcessFunction[Event, Event]#Context): util.HashMap[String, AnyRef] = {
+  private def pushSurveyDashboardEvents(dashboardData: util.HashMap[String, String], context: ProcessFunction[Event, Event]#Context): util.HashMap[String, AnyRef] = {
     val objects = new util.HashMap[String, AnyRef]() {
       put("_id", java.util.UUID.randomUUID().toString)
       put("reportType", "Survey")
@@ -598,7 +597,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
     objects
   }
 
-  def extractEvidenceData(attachments: List[Map[String, Any]]): String = {
+  private def extractEvidenceData(attachments: List[Map[String, Any]]): String = {
     val evidenceList = attachments.map { attachment =>
       if (attachment.get("type").contains("link")) {
         attachment.get("name").map(_.toString).getOrElse("")
