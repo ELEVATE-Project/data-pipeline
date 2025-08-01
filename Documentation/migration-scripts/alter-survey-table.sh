@@ -44,11 +44,22 @@ printf '  - %s\n' "${survey_question_ids[@]}"
 log "📌 Altering Survey Question Tables..."
 for table in "${survey_question_ids[@]}"; do
   log "🔧 Altering table: $table"
+  # Add the column if not exists
   if psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -c \
-    "ALTER TABLE \"$table\" ADD COLUMN IF NOT EXISTS report_type TEXT;" ; then
-    log "✅ Successfully altered table: $table"
+    "ALTER TABLE \"$table\" ADD COLUMN IF NOT EXISTS report_type TEXT;"; then
+    log "✅ Column added or already exists in $table"
+
+    # Update rows only where report_type is NULL or empty
+    if psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -c \
+      "UPDATE \"$table\" SET report_type = 'Default' WHERE report_type IS NULL OR report_type = '';" ; then
+      log "✅ Successfully updated rows in $table"
+    else
+      log "❌ Failed to update rows in $table"
+    fi
+
   else
-    log "❌ Failed to alter table: $table"
+    log "❌ Failed to add column to $table"
+    continue
   fi
 done
 
