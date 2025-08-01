@@ -18,7 +18,22 @@ class ProjectEventSource extends SourceFunction[Event] {
     ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.TEST_DASHBOARD_1), 0, 0))
     ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.TEST_DASHBOARD_2), 0, 0))
     ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.TEST_DASHBOARD_3), 0, 0))
-}
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_S1_1), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_S1_2), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_S2_1), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_S2_2), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_S2_3), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_S2_4), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_S3_1), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_S4_1), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_S4_2), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_S4_3), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_S4_4), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_S4_5), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_S4_6), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_S5_1), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAAS_QA_DATA_S5_1), 0, 0))
+  }
 
   override def cancel(): Unit = {}
 

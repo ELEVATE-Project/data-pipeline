@@ -13,7 +13,7 @@ import scala.util.{Failure, Success, Try}
 object ComparePage {
 
   def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, projects: String, solutions: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): ListBuffer[Int] = {
-    println(s"---------------Started processing Mi dashboard Compare page function for Admin----------------")
+    println(s"=====> Started processing admin level json update function for Region Comparison dashboard")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
@@ -27,12 +27,11 @@ object ComparePage {
               if (configJson != null) {
                 val originalQuestionCard = configJson.path("questionCard")
                 val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
-                println(s" >>>>>>>>>> Processing The Chart: $chartName")
                 val updatedQuestionCard = updateQuestionCardJsonValues(configJson, collectionId, statenameId, districtnameId, databaseId)
                 val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, projects, solutions)
                 val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
-                println(s"~~ Successfully created question card with card_id: $cardId for $chartName")
+                println(s">>> Successfully created question card with card_id: $cardId for $chartName")
                 questionCardId.append(cardId)
                 val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(configJson, cardId)
                 appendDashCardToDashboard(metabaseUtil, updatedQuestionIdInDashCard, dashboardId)
@@ -154,7 +153,7 @@ object ComparePage {
     }
 
     processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenameId, districtnameId)
-    println(s"---------------Completed processing Mi dashboard Home page function for Admin----------------")
+    println(s"=====> Completed processing admin level json update function for Region Comparison dashboard")
     questionCardId
   }
 
@@ -175,7 +174,6 @@ object ComparePage {
     finalDashboardJson.set("dashcards", existingDashcards)
     val dashcardsString = objectMapper.writeValueAsString(finalDashboardJson)
     metabaseUtil.addQuestionCardToDashboard(dashboardId, dashcardsString)
-    println(s"~~ Successfully added the card to Dashcards")
   }
 
   def readJsonFile(jsonContent: Option[JsonNode]): Option[JsonNode] = {
@@ -198,7 +196,8 @@ object ComparePage {
     }
   }
 
-  def UpdateAdminParameterFunction(metabaseUtil: MetabaseUtil, parametersQuery: String, dashboardId: Int, postgresUtil: PostgresUtil): Unit = {
+  def UpdateParameterFunction(metabaseUtil: MetabaseUtil, parametersQuery: String, dashboardId: Int, postgresUtil: PostgresUtil): Unit = {
+    println(s"=====> Started processing Region Comparison dashboard parameter")
     val objectMapper = new ObjectMapper()
     val parameterData: List[Any] = postgresUtil.fetchData(parametersQuery).flatMap(_.get("config"))
     val parameterJsonString: String = parameterData.headOption match {
@@ -232,7 +231,7 @@ object ComparePage {
     updatePayload.set("parameters", finalParametersJson)
 
     metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString)
-    println(s"---------------Successfully updated parameters for Mi dashboard Compare page---------------\n")
+    println(s"=====> Completed processing Region Comparison dashboard parameter")
   }
 
 }

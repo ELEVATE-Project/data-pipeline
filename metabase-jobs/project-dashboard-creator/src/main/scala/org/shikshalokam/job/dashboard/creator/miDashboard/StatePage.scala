@@ -12,7 +12,7 @@ import scala.util.{Failure, Success, Try}
 object StatePage {
 
   def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, projects: String, solutions: String, metaDataTable: String, reportConfig: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, targetedStateId: String, targetedStateName: String): ListBuffer[Int] = {
-    println(s"---------------Started processing ProcessAndUpdateJsonFiles function----------------")
+    println(s"=====> Started processing state level json update function for State Overview dashboard")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
@@ -28,7 +28,6 @@ object StatePage {
               if (rootNode != null) {
                 val questionCardNode = rootNode.path("questionCard")
                 val chartName = Option(questionCardNode.path("name").asText()).getOrElse("Unknown Chart")
-                println(s" >>>>>>>>>> Processing The Chart: $chartName")
                 val updatedJson = updateJsonFiles(rootNode, collectionId, databaseId, reportConfig, targetedStateName)
                 val updatedJsonWithQuery = updateQuery(updatedJson.path("questionCard"), projects, solutions, metaDataTable, targetedStateId)
                 val requestBody = updatedJsonWithQuery.asInstanceOf[ObjectNode]
@@ -37,7 +36,7 @@ object StatePage {
 
                 cardIdOpt match {
                   case Some(cardId) =>
-                    println(s"~~ Successfully created question card with card_id: $cardId for $chartName")
+                    println(s">>> Successfully created question card with card_id: $cardId for $chartName")
                     questionCardId.append(cardId)
                     val updatedJsonOpt = updateJsonWithCardId(updatedJson, cardId)
                     appendDashCardToDashboard(metabaseUtil, updatedJsonOpt, dashboardId)
@@ -170,7 +169,7 @@ object StatePage {
     }
 
     processJsonFiles(reportConfigQuery, collectionId, databaseId)
-    println(s"---------------Completed processing ProcessAndUpdateJsonFiles function----------------")
+    println(s"=====> Completed processing state level json update function for State Overview dashboard")
     questionCardId
   }
 
@@ -191,7 +190,6 @@ object StatePage {
     finalDashboardJson.set("dashcards", existingDashcards)
     val dashcardsString = objectMapper.writeValueAsString(finalDashboardJson)
     metabaseUtil.addQuestionCardToDashboard(dashboardId, dashcardsString)
-    println(s"~~ Successfully added the card to Dashcards")
   }
 
   def readJsonFile(jsonContent: Option[JsonNode]): Option[JsonNode] = {
@@ -302,7 +300,7 @@ object StatePage {
   }
 
   def updateParameterFunction(metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, parametersQuery: String, slugNameToStateIdMap: Map[String, Int], dashboardId: Int): Unit = {
-    println(s"---------------Started Processing State dashboard parameter---------------")
+    println(s"=====> Started Processing State Overview dashboard parameter")
     val objectMapper = new ObjectMapper()
     val parameterData: List[Any] = postgresUtil.fetchData(parametersQuery).flatMap(_.get("config"))
     val parameterJsonString: String = parameterData.headOption match {
@@ -368,7 +366,7 @@ object StatePage {
     updatePayload.set("parameters", finalParametersArray)
 
     metabaseUtil.addQuestionCardToDashboard(dashboardId, updatePayload.toString)
-    println(s"---------------Successfully updated State dashboard parameter---------------\n\n\n")
+    println(s"=====> Completed Processing State Overview dashboard parameter")
   }
 
 }

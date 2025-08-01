@@ -18,9 +18,9 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def organizations: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("organizations", List.empty)
 
-  def state: String = readOrDefault("state.name", null)
+  def stateId: String = readOrDefault("state.id", null)
 
-  def district: String = readOrDefault("district.name", null)
+  def districtId: String = readOrDefault("district.id", null)
 
   def status: String = readOrDefault[String]("status", null)
 
@@ -30,6 +30,6 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def newValues: Map[String, Any] = readOrDefault[Map[String, Any]]("newValues", Map.empty)
 
-  def programName: String = readOrDefault("meta.programInformation.name", null)
+  def programId: String = readOrDefault("meta.programInformation.id", null)
 
 }
