@@ -1,22 +1,22 @@
 {
   "questionCard": {
-    "name": "No. of surveys in started status currently",
+    "name": "Started",
     "collection_id": 644,
     "dataset_query": {
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT\n  COUNT(DISTINCT survey_id) AS no_of_surveys_started\nFROM\n${statusTable}\nWHERE\n  1 = 1\n  AND status = 'started'\n  [[AND {{state_param}}]]\n  [[AND {{district_param}}]]\n  [[AND {{block_param}}]]\n  [[AND {{cluster_param}}]]\n  [[AND {{org_param}}]]",
+        "query": "SELECT\n  COUNT(DISTINCT survey_id) AS no_of_surveys_started\nFROM\n${statusTable}\nWHERE 1 = 1\nAND status = 'started'\n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{block_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{org_param}}]]",
         "template-tags": {
           "state_param": {
             "type": "dimension",
             "name": "state_param",
-            "id": "dd576aad-4346-411e-95cf-75d0fd8e98c5",
+            "id": "77ce5c53-d414-432f-bfa0-ef83fe4d1981",
             "display-name": "State Param",
             "default": null,
             "dimension": [
               "field",
-              482,
+              1491,
               null
             ],
             "widget-type": "string/=",
@@ -25,12 +25,12 @@
           "district_param": {
             "type": "dimension",
             "name": "district_param",
-            "id": "27f6c149-7ad5-4ab4-86f0-476bd6da44a1",
+            "id": "b338bd73-7852-4ead-91af-5ef366d16a06",
             "display-name": "District Param",
             "default": null,
             "dimension": [
               "field",
-              466,
+              1494,
               null
             ],
             "widget-type": "string/=",
@@ -39,26 +39,38 @@
           "block_param": {
             "type": "dimension",
             "name": "block_param",
-            "id": "220643b0-183d-4d0a-97c6-ac4616e9d9b1",
+            "id": "bee6b62d-7188-4612-8a4e-d4395d31fcfe",
             "display-name": "Block Param",
+            "dimension": [
+              "field",
+              478,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "cluster_param": {
+            "type": "dimension",
+            "name": "cluster_param",
+            "id": "5da8fb12-910e-4763-a44a-8c1f976b22af",
+            "display-name": "Cluster Param",
             "default": null,
             "dimension": [
               "field",
-              464,
+              1495,
               null
             ],
             "widget-type": "string/=",
             "options": null
           },
-          "cluster_param": {
+          "school_param": {
             "type": "dimension",
-            "name": "cluster_param",
-            "id": "4cee9c72-cc82-40f6-b117-11db5aee6aea",
-            "display-name": "Cluster Param",
+            "name": "school_param",
+            "id": "428eb582-a80c-4bac-8430-bdb6187e016b",
+            "display-name": "School Param",
             "default": null,
             "dimension": [
               "field",
-              469,
+              1496,
               null
             ],
             "widget-type": "string/=",
@@ -67,12 +79,12 @@
           "org_param": {
             "type": "dimension",
             "name": "org_param",
-            "id": "c1a47218-3d90-40fb-8c10-ed0f291cb18b",
+            "id": "a45783ee-540b-486d-891a-460a97901692",
             "display-name": "Org Param",
             "default": null,
             "dimension": [
               "field",
-              474,
+              485,
               null
             ],
             "widget-type": "string/=",
@@ -85,7 +97,7 @@
     "visualization_settings": {},
     "parameters": [
       {
-        "id": "dd576aad-4346-411e-95cf-75d0fd8e98c5",
+        "id": "77ce5c53-d414-432f-bfa0-ef83fe4d1981",
         "type": "string/=",
         "target": [
           "dimension",
@@ -98,7 +110,7 @@
         "slug": "state_param"
       },
       {
-        "id": "27f6c149-7ad5-4ab4-86f0-476bd6da44a1",
+        "id": "b338bd73-7852-4ead-91af-5ef366d16a06",
         "type": "string/=",
         "target": [
           "dimension",
@@ -111,7 +123,7 @@
         "slug": "district_param"
       },
       {
-        "id": "220643b0-183d-4d0a-97c6-ac4616e9d9b1",
+        "id": "bee6b62d-7188-4612-8a4e-d4395d31fcfe",
         "type": "string/=",
         "target": [
           "dimension",
@@ -124,7 +136,7 @@
         "slug": "block_param"
       },
       {
-        "id": "4cee9c72-cc82-40f6-b117-11db5aee6aea",
+        "id": "5da8fb12-910e-4763-a44a-8c1f976b22af",
         "type": "string/=",
         "target": [
           "dimension",
@@ -137,7 +149,20 @@
         "slug": "cluster_param"
       },
       {
-        "id": "c1a47218-3d90-40fb-8c10-ed0f291cb18b",
+        "id": "428eb582-a80c-4bac-8430-bdb6187e016b",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "school_param"
+          ]
+        ],
+        "name": "School Param",
+        "slug": "school_param"
+      },
+      {
+        "id": "a45783ee-540b-486d-891a-460a97901692",
         "type": "string/=",
         "target": [
           "dimension",
@@ -157,8 +182,8 @@
     "id": 22,
     "parameter_mappings": [
       {
-        "parameter_id": "2030c5fe",
-        "card_id": 2139,
+        "parameter_id": "c32c8fc5",
+        "card_id": 1876,
         "target": [
           "dimension",
           [
@@ -168,8 +193,8 @@
         ]
       },
       {
-        "parameter_id": "3fa46e53",
-        "card_id": 2139,
+        "parameter_id": "74a10335",
+        "card_id": 1876,
         "target": [
           "dimension",
           [
@@ -179,8 +204,8 @@
         ]
       },
       {
-        "parameter_id": "ebefc30b",
-        "card_id": 2139,
+        "parameter_id": "9e5a09bh",
+        "card_id": 8985,
         "target": [
           "dimension",
           [
@@ -190,8 +215,8 @@
         ]
       },
       {
-        "parameter_id": "a6683b09",
-        "card_id": 2139,
+        "parameter_id": "cc7a4cd7",
+        "card_id": 1876,
         "target": [
           "dimension",
           [
@@ -201,8 +226,19 @@
         ]
       },
       {
-        "parameter_id": "98262141",
-        "card_id": 2139,
+        "parameter_id": "6e5c08dc",
+        "card_id": 1876,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "school_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "5088d3e5",
+        "card_id": 8985,
         "target": [
           "dimension",
           [
