@@ -184,6 +184,11 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
     }
 
     def processUserMetadata(tenantUserMetadataTable: String, userId: Int, attributeCode: String, attributeValue: String, attributeLabel: String): Unit = {
+      // Skip if either value or label is null/empty
+      if (attributeValue == null || attributeValue.trim.isEmpty || attributeLabel == null || attributeLabel.trim.isEmpty) {
+        println(s"Skipped metadata insert for [$attributeCode] because attributeValue or attributeLabel is empty for user [$userId]")
+        return
+      }
       val upsertQuery =
         s"""INSERT INTO $tenantUserMetadataTable (id, user_id, attribute_code, attribute_value, attribute_label)
            |VALUES (DEFAULT, ?, ?, ?, ?)
