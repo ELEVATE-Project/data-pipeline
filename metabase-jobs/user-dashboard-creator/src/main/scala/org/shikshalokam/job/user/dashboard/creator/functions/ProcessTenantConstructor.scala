@@ -10,8 +10,8 @@ import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
 
-object UpdateStatusJsonFiles {
-  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, blocknameId: Int, clusternameId: Int, orgnameId: Int, tenantUserTable: String, tenantUserMetadataTable: String, userMetrics: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): ListBuffer[Int] = {
+object ProcessTenantConstructor {
+  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, blocknameId: Int, clusternameId: Int, orgnameId: Int, tenantUserTable: String, tenantUserMetadataTable: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
@@ -27,7 +27,7 @@ object UpdateStatusJsonFiles {
                 val originalQuestionCard = configJson.path("questionCard")
                 val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
                 val updatedQuestionCard = updateQuestionCardJsonValues(configJson, collectionId, statenameId, districtnameId, blocknameId, clusternameId, orgnameId, databaseId)
-                val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, tenantUserTable, tenantUserMetadataTable, userMetrics)
+                val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, tenantUserTable, tenantUserMetadataTable)
                 val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
                 println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
@@ -130,7 +130,7 @@ object UpdateStatusJsonFiles {
       }
     }
 
-    def updatePostgresDatabaseQuery(json: JsonNode, tenantUserTable: String, tenantUserMetadataTable: String, userMetrics: String): JsonNode = {
+    def updatePostgresDatabaseQuery(json: JsonNode, tenantUserTable: String, tenantUserMetadataTable: String): JsonNode = {
       Try {
         val queryNode = json.at("/dataset_query/native/query")
         if (queryNode.isMissingNode || !queryNode.isTextual) {
@@ -140,7 +140,6 @@ object UpdateStatusJsonFiles {
         val updatedQuery = queryNode.asText()
           .replace("${tenantUserTable}", s""""$tenantUserTable"""")
           .replace("${tenantUserMetadataTable}", s""""$tenantUserMetadataTable"""")
-          .replace("${userMetrics}", s""""$userMetrics"""")
 
 
         val updatedJson = json.deepCopy().asInstanceOf[ObjectNode]
