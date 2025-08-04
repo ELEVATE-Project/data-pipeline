@@ -123,6 +123,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
            |    value TEXT,
            |    has_parent_question BOOLEAN,
            |    parent_question_text TEXT,
+           |    report_type TEXT,
            |    evidence TEXT,
            |    remarks TEXT
            |);""".stripMargin
@@ -246,9 +247,6 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       postgresUtil.checkAndCreateTable(surveyStatusTable, createSurveyStatusTableQuery)
       postgresUtil.executeUpdate(AlterSurveyStatusTableQuery,surveyStatusTable,solutionId)
 
-      postgresUtil.checkAndCreateTable(surveyQuestionTable, createSurveyQuestionsTableQuery)
-      postgresUtil.executeUpdate(AlterSurveyQuestionsTableQuery, surveyQuestionTable, solutionId)
-
       val upsertSurveyDataQuery =
         s"""INSERT INTO $surveyStatusTable (
            |    survey_id, user_id, user_role_ids, user_roles, state_id, state_name, district_id, district_name,
@@ -285,6 +283,9 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
         /**
          * Extracting Survey Questions Data
          */
+        postgresUtil.checkAndCreateTable(surveyQuestionTable, createSurveyQuestionsTableQuery)
+        postgresUtil.executeUpdate(AlterSurveyQuestionsTableQuery, surveyQuestionTable, solutionId)
+
         val solution_id = event.solutionId
         val solution_name = event.solutionName
         val user_id = event.createdBy
@@ -313,6 +314,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
               val questionsMap = value.asInstanceOf[Map[String, Any]]
               val question_id: String = questionsMap.get("qid").collect { case v: String => v }.getOrElse("")
               val payloadOpt: Option[Map[String, Any]] = questionsMap.get("payload").collect { case m: Map[String @unchecked, Any @unchecked] => m }
+              val report_type: String = questionsMap.get("reportType").map(_.toString).getOrElse("Default")
               val responseType = questionsMap.get("responseType").map(_.toString).getOrElse("")
               val remarks: String = questionsMap.get("remarks").map(_.toString).getOrElse("")
               val attachments: List[Map[String, Any]] = questionsMap.get("fileName").collect { case list: List[Map[String, Any]] => list }.getOrElse(Nil)
@@ -332,9 +334,9 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
                   }
                   val has_parent_question: Boolean = parent_question_text.nonEmpty
 
-                  processQuestion(responseType, questionsMap, payloadOpt, question_id, has_parent_question, parent_question_text, evidence, remarks)
+                  processQuestion(responseType, questionsMap, payloadOpt, question_id, has_parent_question, parent_question_text, evidence, remarks, report_type)
                 } else {
-                  processQuestion(responseType, questionsMap, payloadOpt, question_id, has_parent_question = false, parent_question_text = null, evidence, remarks)
+                  processQuestion(responseType, questionsMap, payloadOpt, question_id, has_parent_question = false, parent_question_text = null, evidence, remarks, report_type)
                 }
               } else {
                 println(s"Skipping question_id=$question_id as payload is missing.")
@@ -346,7 +348,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
         }
 
 
-        def processQuestion(responseType: String, questionsMap: Map[String, Any], payload: Option[Map[String, Any]], question_id: String, has_parent_question: Boolean, parent_question_text: String, evidence: String, remarks: String): Unit = {
+        def processQuestion(responseType: String, questionsMap: Map[String, Any], payload: Option[Map[String, Any]], question_id: String, has_parent_question: Boolean, parent_question_text: String, evidence: String, remarks: String, report_type: String): Unit = {
           val value: String = questionsMap.get("value") match {
             case Some(v: String) => v
             case Some(v: Int) => v.toString
@@ -360,22 +362,22 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
           responseType match {
             case "text" =>
               textQuestionType(payload, question_id, solution_id, solution_name, user_id, value, state_name,
-                district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, evidence, remarks)
+                district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, evidence, remarks, report_type)
             case "radio" =>
               radioQuestionType(payload, question_id, solution_id, solution_name, user_id, value, state_name,
-                district_name, block_name, cluster_name, school_name, score, has_parent_question, parent_question_text, evidence, remarks)
+                district_name, block_name, cluster_name, school_name, score, has_parent_question, parent_question_text, evidence, remarks, report_type)
             case "date" =>
               dateQuestionType(payload, question_id, solution_id, solution_name, user_id, value, state_name,
-                district_name, block_name, cluster_name, school_name, score, has_parent_question, parent_question_text, evidence, remarks)
+                district_name, block_name, cluster_name, school_name, score, has_parent_question, parent_question_text, evidence, remarks, report_type)
             case "multiselect" =>
               multiselectQuestionType(payload, question_id, solution_id, solution_name, user_id, value, state_name,
-                district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, evidence, remarks)
+                district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, evidence, remarks, report_type)
             case "number" =>
               numberQuestionType(payload, question_id, solution_id, solution_name, user_id, value, state_name,
-                district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, evidence, remarks)
+                district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, evidence, remarks, report_type)
             case "slider" =>
               sliderQuestionType(payload, question_id, solution_id, solution_name, user_id, value, state_name,
-                district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, evidence, remarks)
+                district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, evidence, remarks, report_type)
             case "matrix" =>
               questionsMap.get("value") match {
                 case Some(valueList: List[Map[String, Any]]) =>
@@ -391,7 +393,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
                       val matrixRemarks: String = questionsMap.get("remarks").map(_.toString).getOrElse("")
                       val matrixAttachments: List[Map[String, Any]] = questionsMap.get("fileName").collect { case list: List[Map[String, Any]] => list }.getOrElse(Nil)
                       val matrixEvidence: String = extractEvidenceData(matrixAttachments)
-                      processQuestion(matrixResponseType, matrixQuestionMap, matrixPayload, matrixQuestionId, has_parent_question, parent_question_text, matrixEvidence, matrixRemarks)
+                      processQuestion(matrixResponseType, matrixQuestionMap, matrixPayload, matrixQuestionId, has_parent_question, parent_question_text, matrixEvidence, matrixRemarks, report_type)
                     }
                   }
                 case _ => println("No matrix data found.")
@@ -405,7 +407,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       def extractField(payload: Option[Map[String, Any]], key: String): String = {
         payload.flatMap(_.get(key)) match {
           case Some(qList: List[_]) =>
-            qList.collect { case q if q != null => q.toString }.headOption.getOrElse("")
+            qList.collect { case q if q != null && q.toString.nonEmpty => q.toString }.mkString(" | ")
           case _ => ""
         }
       }
@@ -413,7 +415,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       def insertQuestion(payload: Option[Map[String, Any]], question_id: String, solution_id: String, solution_name: String,
                          user_id: String, value: String, state_name: String, district_name: String,
                          block_name: String, cluster_name: String, school_name: String, has_parent_question: Boolean,
-                         parent_question_text: String, question_type: String, evidence: String, remarks: String): Unit = {
+                         parent_question_text: String, question_type: String, evidence: String, remarks: String, report_type: String): Unit = {
 
         if (!payload.exists(_.contains("labels"))) {
           println(s"Skipping question $question_id as 'labels' key is missing.")
@@ -428,12 +430,12 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
              |    survey_id, user_id, user_role_ids, user_roles, state_id, state_name, district_id, district_name,
              |    block_id, block_name, cluster_id, cluster_name, school_id, school_name, tenant_id, organisation_id,
              |    organisation_name, organisation_code, program_name, program_id, solution_name, solution_id,
-             |    question_id, question_text, labels, value, has_parent_question, parent_question_text, evidence, question_type, remarks
+             |    question_id, question_text, labels, value, has_parent_question, parent_question_text, evidence, question_type, remarks, report_type
              |) VALUES (
              |   ?, ?, ?, ?, ?, ?, ?, ?,
              |   ?, ?, ?, ?, ?, ?, ?,
              |   ?, ?, ?, ?, ?, ?,
-             |   ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+             |   ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
              |);
              |""".stripMargin
 
@@ -441,7 +443,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
           surveyId, userId, userRoleIds, userRoles, stateId, stateName, districtId, districtName,
           blockId, blockName, clusterId, clusterName, schoolId, schoolName, tenantId, organisationId,
           organisationName, organisationCode, programName, programId, solutionName, solutionId,
-          question_id, question, labels, value, has_parent_question, parent_question_text, evidence, question_type, remarks
+          question_id, question, labels, value, has_parent_question, parent_question_text, evidence, question_type, remarks, report_type
         )
         postgresUtil.executePreparedUpdate(insertQuestionQuery, questionParam, surveyQuestionTable, solution_id)
       }
@@ -449,64 +451,66 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
       def textQuestionType(payload: Option[Map[String, Any]], question_id: String, solution_id: String, solution_name: String,
                            user_id: String, value: String, state_name: String, district_name: String,
                            block_name: String, cluster_name: String, school_name: String, has_parent_question: Boolean,
-                           parent_question_text: String, evidence: String, remarks: String): Unit = {
-        insertQuestion(payload, question_id, solution_id, solution_name, user_id, value, state_name, district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, "text", evidence, remarks)
+                           parent_question_text: String, evidence: String, remarks: String, report_type: String): Unit = {
+        insertQuestion(payload, question_id, solution_id, solution_name, user_id, value, state_name, district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, "text", evidence, remarks, report_type)
       }
 
       def radioQuestionType(payload: Option[Map[String, Any]], question_id: String, solution_id: String, solution_name: String,
                             user_id: String, value: String, state_name: String, district_name: String,
                             block_name: String, cluster_name: String, school_name: String, score: Integer, has_parent_question: Boolean,
-                            parent_question_text: String, evidence: String, remarks: String): Unit = {
-        insertQuestion(payload, question_id, solution_id, solution_name, user_id, value, state_name, district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, "radio", evidence, remarks)
+                            parent_question_text: String, evidence: String, remarks: String, report_type: String): Unit = {
+        insertQuestion(payload, question_id, solution_id, solution_name, user_id, value, state_name, district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, "radio", evidence, remarks, report_type)
       }
 
       def dateQuestionType(payload: Option[Map[String, Any]], question_id: String, solution_id: String, solution_name: String,
                            user_id: String, value: String, state_name: String, district_name: String,
                            block_name: String, cluster_name: String, school_name: String, score: Integer, has_parent_question: Boolean,
-                           parent_question_text: String, evidence: String, remarks: String): Unit = {
-        insertQuestion(payload, question_id, solution_id, solution_name, user_id, value, state_name, district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, "date", evidence, remarks)
+                           parent_question_text: String, evidence: String, remarks: String, report_type: String): Unit = {
+        insertQuestion(payload, question_id, solution_id, solution_name, user_id, value, state_name, district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, "date", evidence, remarks, report_type)
       }
 
       def multiselectQuestionType(payload: Option[Map[String, Any]], question_id: String, solution_id: String, solution_name: String,
                                   user_id: String, value: String, state_name: String, district_name: String,
                                   block_name: String, cluster_name: String, school_name: String, has_parent_question: Boolean,
-                                  parent_question_text: String, evidence: String, remarks: String): Unit = {
-        insertQuestion(payload, question_id, solution_id, solution_name, user_id, value, state_name, district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, "multiselect", evidence, remarks)
+                                  parent_question_text: String, evidence: String, remarks: String, report_type: String): Unit = {
+        insertQuestion(payload, question_id, solution_id, solution_name, user_id, value, state_name, district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, "multiselect", evidence, remarks, report_type)
       }
 
       def numberQuestionType(payload: Option[Map[String, Any]], question_id: String, solution_id: String, solution_name: String,
                              user_id: String, value: String, state_name: String, district_name: String,
                              block_name: String, cluster_name: String, school_name: String, has_parent_question: Boolean,
-                             parent_question_text: String, evidence: String, remarks: String): Unit = {
-        insertQuestion(payload, question_id, solution_id, solution_name, user_id, value, state_name, district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, "number", evidence, remarks)
+                             parent_question_text: String, evidence: String, remarks: String, report_type: String): Unit = {
+        insertQuestion(payload, question_id, solution_id, solution_name, user_id, value, state_name, district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, "number", evidence, remarks, report_type)
       }
 
       def sliderQuestionType(payload: Option[Map[String, Any]], question_id: String, solution_id: String, solution_name: String,
                              user_id: String, value: String, state_name: String, district_name: String,
                              block_name: String, cluster_name: String, school_name: String, has_parent_question: Boolean,
-                             parent_question_text: String, evidence: String, remarks: String): Unit = {
-        insertQuestion(payload, question_id, solution_id, solution_name, user_id, value, state_name, district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, "slider", evidence, remarks)
+                             parent_question_text: String, evidence: String, remarks: String, report_type: String): Unit = {
+        insertQuestion(payload, question_id, solution_id, solution_name, user_id, value, state_name, district_name, block_name, cluster_name, school_name, has_parent_question, parent_question_text, "slider", evidence, remarks, report_type)
       }
 
 
       /**
        * Logic to populate kafka messages for creating metabase dashboard
        */
-      val dashboardData = new java.util.HashMap[String, String]()
-      val dashboardConfig = Seq(
-        ("admin", "1", "admin"),
-        ("program", event.programId, "targetedProgram"),
-        ("solution", event.solutionId, "targetedSolution")
-      )
+      if (event.status == "completed") {
+        val dashboardData = new java.util.HashMap[String, String]()
+        val dashboardConfig = Seq(
+          ("admin", "1", "admin"),
+          ("program", event.programId, "targetedProgram"),
+          ("solution", event.solutionId, "targetedSolution")
+        )
 
-      dashboardConfig
-        .filter { case (key, _, _) => config.reportsEnabled.contains(key) }
-        .foreach { case (key, value, target) =>
-          checkAndInsert(key, value, dashboardData, target)
+        dashboardConfig
+          .filter { case (key, _, _) => config.reportsEnabled.contains(key) }
+          .foreach { case (key, value, target) =>
+            checkAndInsert(key, value, dashboardData, target)
+          }
+
+        if (!dashboardData.isEmpty) {
+          pushSurveyDashboardEvents(dashboardData, context)
         }
-
-      if (!dashboardData.isEmpty) {
-        pushSurveyDashboardEvents(dashboardData, context)
       }
     } else {
       println(s"Skipping the survey event with Id = ${event._id} and status = ${event.status} as it is not in a valid status.")

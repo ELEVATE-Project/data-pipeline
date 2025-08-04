@@ -263,6 +263,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
            |    labels TEXT,
            |    value TEXT,
            |    score INTEGER,
+           |    report_type TEXT,
            |    domain_name TEXT,
            |    criteria_name TEXT,
            |    has_parent_question BOOLEAN,
@@ -330,13 +331,6 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboard_metadata)
 
       /**
-       * Creating required tables
-       */
-      checkAndCreateTable(statusTable, createStatusTable)
-      checkAndCreateTable(questionTable, createQuestionsTable)
-      if (isRubric != false) checkAndCreateTable(domainTable, createDomainsTable)
-
-      /**
        * Performs an upsert operation on the solution table irrespective of the submission status.
        * This ensures the solution information is always updated/inserted in the database.
        */
@@ -376,6 +370,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
        */
       if (statusOfSubmission != null) {
         println("===> Processing observation status data")
+        checkAndCreateTable(statusTable, createStatusTable)
         val deleteQuery = s"""DELETE FROM $statusTable WHERE user_id = ? AND submission_id = ? AND submission_number = ?; """
         val deleteParams = Seq(userId, submissionId, submissionNumber)
         postgresUtil.executePreparedDelete(deleteQuery, deleteParams, statusTable, submissionId)
@@ -412,7 +407,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
        */
       if (statusOfSubmission == "completed") {
         println("===> Processing observation domain data")
-        if (isRubric != false) {
+        if (isRubric) {
           checkAndCreateTable(domainTable, createDomainsTable)
           val deleteQuery = s"""DELETE FROM $domainTable WHERE user_id = ? AND submission_id = ? AND submission_number = ?; """
           val deleteParams = Seq(userId, submissionId, submissionNumber)
@@ -479,6 +474,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
         }
 
         println("===> Processing observation question data")
+        checkAndCreateTable(questionTable, createQuestionsTable)
         val deleteQuery = s"""DELETE FROM $questionTable WHERE user_id = ? AND submission_id = ? AND submission_number = ?; """
         val deleteParams = Seq(userId, submissionId, submissionNumber)
         postgresUtil.executePreparedDelete(deleteQuery, deleteParams, questionTable, submissionId)
@@ -486,7 +482,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
         val answersKey = event.answers
 
         def processQuestion(responseType: String, questionsMap: Map[String, Any], payload: Option[Map[String, Any]], questionId: String, domainName: String,
-                            criteriaName: String, hasParentQuestion: Boolean, parentQuestionText: String, evidences: String, remarks: String): Unit = {
+                            criteriaName: String, hasParentQuestion: Boolean, parentQuestionText: String, evidences: String, remarks: String, reportType: String): Unit = {
           val value: String = questionsMap.get("value") match {
             case Some(v: String) => v
             case Some(v: Int) => v.toString
@@ -504,7 +500,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
             tenantId = tenantId, orgId = orgId, orgCode = orgCode, orgName = orgName, statusOfSubmission = statusOfSubmission, submittedAt = completedDate, entityType = entityType,
             parentOneName = parentOneObservedName, parentOneId = parentOneObservedId, parentTwoName = parentTwoObservedName, parentTwoId = parentTwoObservedId, parentThreeName = parentThreeObservedName, parentThreeId = parentThreeObservedId,
             parentFourName = parentFourObservedName, parentFourId = parentFourObservedId, parentFiveName = parentFiveObservedName, parentFiveId = parentFiveObservedId,
-            domainName = domainName, criteriaName = criteriaName, score = score, hasParentQuestion = hasParentQuestion, parentQuestionText = parentQuestionText, evidences = evidences, remarks = remarks
+            domainName = domainName, criteriaName = criteriaName, score = score, hasParentQuestion = hasParentQuestion, parentQuestionText = parentQuestionText, evidences = evidences, remarks = remarks, reportType = reportType
           )
           responseType match {
             case "text" => questionsFunction.processQuestionType(commonParams, "text")
@@ -526,7 +522,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
                       }
                       val matrixPayload = matrixQuestionMap.get("payload").map(_.asInstanceOf[Map[String, Any]])
                       val matrixResponseType = matrixQuestionMap.get("responseType").map(_.toString).getOrElse("")
-                      processQuestion(matrixResponseType, matrixQuestionMap, matrixPayload, matrixQuestionId, domainName, criteriaName, hasParentQuestion, parentQuestionText, evidences, remarks)
+                      processQuestion(matrixResponseType, matrixQuestionMap, matrixPayload, matrixQuestionId, domainName, criteriaName, hasParentQuestion, parentQuestionText, evidences, remarks, reportType)
                     }
                   }
                 case _ => println("No matrix data found.")
@@ -544,6 +540,10 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
               val question_id: String = questionsMap.get("qid") match {
                 case Some(v: String) => v
                 case _ => ""
+              }
+              val report_type: String = questionsMap.get("reportType") match {
+                case Some(v: String) => v
+                case _ => "Default"
               }
               val question_criteria_id: String = questionsMap.get("criteriaId") match {
                 case Some(v: String) => v
@@ -602,9 +602,9 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
                   }
                   val has_parent_question: Boolean = parent_question_text.nonEmpty
 
-                  processQuestion(responseType, questionsMap, payload, question_id, domain_name, criteria_name, has_parent_question, parent_question_text, evidences, remarks)
+                  processQuestion(responseType, questionsMap, payload, question_id, domain_name, criteria_name, has_parent_question, parent_question_text, evidences, remarks, report_type)
                 } else {
-                  processQuestion(responseType, questionsMap, payload, question_id, domain_name, criteria_name, false, null, evidences, remarks)
+                  processQuestion(responseType, questionsMap, payload, question_id, domain_name, criteria_name, false, null, evidences, remarks, report_type)
                 }
               } else {
                 println(s"Skipping question_id=$question_id as payload is missing.")
@@ -619,23 +619,25 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       /**
        * Logic to populate kafka messages for creating metabase dashboard
        */
-      val dashboardData = new java.util.HashMap[String, String]()
-      val dashboardConfig = Seq(
-        ("admin", "1", "admin"),
-        ("program", programId, "targetedProgram"),
-        ("solution", solutionId, "targetedSolution")
-      )
+      if (statusOfSubmission == "completed") {
+        val dashboardData = new java.util.HashMap[String, String]()
+        val dashboardConfig = Seq(
+          ("admin", "1", "admin"),
+          ("program", programId, "targetedProgram"),
+          ("solution", solutionId, "targetedSolution")
+        )
 
-      dashboardConfig
-        .filter { case (key, _, _) => config.reportsEnabled.contains(key) }
-        .foreach { case (key, value, target) =>
-          checkAndInsert(key, value, dashboardData, target)
+        dashboardConfig
+          .filter { case (key, _, _) => config.reportsEnabled.contains(key) }
+          .foreach { case (key, value, target) =>
+            checkAndInsert(key, value, dashboardData, target)
+          }
+
+        if (!dashboardData.isEmpty) {
+          dashboardData.put("isRubric", isRubric.toString)
+          dashboardData.put("entityType", entityType)
+          pushObservationDashboardEvents(dashboardData, context)
         }
-
-      if (!dashboardData.isEmpty) {
-        dashboardData.put("isRubric", isRubric.toString)
-        dashboardData.put("entityType", entityType)
-        pushObservationDashboardEvents(dashboardData, context)
       }
 
       def checkAndInsert(entityType: String, targetedId: String, dashboardData: java.util.HashMap[String, String], dashboardKey: String): Unit = {

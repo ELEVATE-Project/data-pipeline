@@ -7,21 +7,57 @@
     "sectionId": "location",
     "isMultiSelect": false,
     "filteringParameters": [
+      "5088d3e5",
       "74a10335",
+      "9e5a09bh",
+      "cc7a4cd7",
       "6e5c08dc"
     ]
   },
   {
-    "slug": "select_district",
-    "filteringParameters": [
-      "c32c8fc5",
-      "6e5c08dc"
-    ],
     "name": "Select District",
+    "slug": "select_district",
     "isMultiSelect": false,
     "type": "string/=",
     "sectionId": "location",
-    "id": "74a10335"
+    "id": "74a10335",
+    "filteringParameters": [
+      "5088d3e5",
+      "c32c8fc5",
+      "9e5a09bh",
+      "cc7a4cd7",
+      "6e5c08dc"
+    ]
+  },
+  {
+    "name": "Select Block",
+    "slug": "select_block",
+    "id": "9e5a09bh",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "5088d3e5",
+      "c32c8fc5",
+      "74a10335",
+      "cc7a4cd7",
+      "6e5c08dc"
+    ]
+  },
+  {
+    "name": "Select Cluster",
+    "slug": "select_cluster",
+    "id": "cc7a4cd7",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "5088d3e5",
+      "c32c8fc5",
+      "74a10335",
+      "9e5a09bh",
+      "6e5c08dc"
+    ]
   },
   {
     "name": "Select School",
@@ -31,8 +67,26 @@
     "sectionId": "string",
     "isMultiSelect": false,
     "filteringParameters": [
+      "5088d3e5",
       "c32c8fc5",
-      "74a10335"
+      "74a10335",
+      "9e5a09bh",
+      "cc7a4cd7"
+    ]
+  },
+  {
+    "name": "Select Organisation",
+    "slug": "select_organisation",
+    "id": "5088d3e5",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "c32c8fc5",
+      "74a10335",
+      "9e5a09bh",
+      "cc7a4cd7",
+      "6e5c08dc"
     ]
   }
 ]

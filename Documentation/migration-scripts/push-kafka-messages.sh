@@ -3,17 +3,17 @@
 # === PostgreSQL connection details ===
 PGHOST="localhost"
 PGPORT="5432"
-PGDBNAME="qa_elevate_data"
+PGDBNAME="test"
 PGUSER="postgres"
 PGPASSWORD="postgres"
 export PGPASSWORD
 
 # === Kafka Details ===
-TABLE_NAME="qa_dashboard_metadata"
+TABLE_NAME="local_dashboard_metadata"
 KAFKA_BROKER="kafka:9092"
-TOPIC_1="sl-metabase-project-dashboard-qa"
-TOPIC_2="sl-metabase-survey-dashboard-qa"
-TOPIC_3="sl-metabase-observation-dashboard-qa"
+TOPIC_1="sl-metabase-project-dashboard-dev"
+TOPIC_2="sl-metabase-survey-dashboard-dev"
+TOPIC_3="sl-metabase-observation-dashboard-dev"
 
 # === Logging Setup ===
 LOG_FILE="kafka_push_log_$(date +'%Y%m%d_%H%M%S').log"
@@ -27,35 +27,6 @@ log "🚀 Script started to push kafka events"
 # === Generate fields ===
 today=$(date '+%Y-%m-%dT%H:%M:%S')
 random_id="$(uuidgen)_$today"
-
-# === Create initial JSON payload ===
-initial_json=$(jq -nc \
-  --arg reportType "Project" \
-  --arg publishedAt "$today" \
-  --arg targetedDistrict "67c82d37bad58c889bc5a5de" \
-  --arg admin "1" \
-  --arg targetedState "67c82d0c538125889163f197" \
-  --arg _id "$random_id" \
-  '{
-    _id: $_id,
-    reportType: $reportType,
-    publishedAt: $publishedAt,
-    dashboardData: {
-      targetedDistrict: $targetedDistrict,
-      admin: $admin,
-      targetedState: $targetedState
-    }
-  }')
-
-# === Push initial event using kafka-console-producer.sh ===
-echo "$initial_json" | docker exec -i kafka kafka-console-producer --broker-list kafka:9092 --topic "$TOPIC_1"
-
-if [[ $? -eq 0 ]]; then
-  log "✅ First event pushed to Kafka: $random_id"
-else
-  log "❌ Failed to push first event to Kafka"
-fi
-sleep 180
 
 log "=== Fetch and Process project-linked dashboard ==="
 query_result=$(psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -Atc \
@@ -102,6 +73,93 @@ done
 log "=== Completed Processing project-linked dashboard ==="
 log ""
 
+
+log "=== Fetch and Process state-linked dashboards ==="
+state_query_result=$(psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -Atc \
+"SELECT DISTINCT entity_id
+ FROM $TABLE_NAME
+ WHERE entity_type = 'state'
+   AND entity_id IS NOT NULL AND entity_id <> 'null';")
+
+log "STATE QUERY RESULT = $state_query_result"
+
+# === Process each state entity_id and push to Kafka ===
+echo "$state_query_result" | while IFS='|' read -r entity_id; do
+  today=$(date '+%Y-%m-%dT%H:%M:%S')
+  random_id="$(uuidgen)_$today"
+
+  stateJson=$(jq -nc \
+    --arg reportType "Project" \
+    --arg publishedAt "$today" \
+    --arg targetedState "$entity_id" \
+    --arg _id "$random_id" \
+    '{
+      _id: $_id,
+      reportType: $reportType,
+      publishedAt: $publishedAt,
+      dashboardData: {
+        targetedState: $targetedState
+      }
+    }')
+
+  echo "$stateJson" | docker exec -i kafka kafka-console-producer --broker-list kafka:9092 --topic "$TOPIC_1"
+
+  if [[ $? -eq 0 ]]; then
+    log "✅ State event pushed to Kafka: $random_id"
+    log "🚀 Event pushed for state: $entity_id"
+  else
+    log "❌ Failed to push State event to Kafka"
+  fi
+
+  sleep 90
+done
+
+log "=== Completed Processing state-linked dashboards ==="
+log ""
+
+
+log "=== Fetch and Process district-linked dashboards ==="
+district_query_result=$(psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -Atc \
+"SELECT DISTINCT entity_id
+ FROM $TABLE_NAME
+ WHERE entity_type = 'district'
+   AND entity_id IS NOT NULL AND entity_id <> 'null';")
+
+log "DISTRICT QUERY RESULT = $district_query_result"
+
+# === Process each district entity_id and push to Kafka ===
+echo "$district_query_result" | while IFS='|' read -r entity_id; do
+  today=$(date '+%Y-%m-%dT%H:%M:%S')
+  random_id="$(uuidgen)_$today"
+
+  districtJson=$(jq -nc \
+    --arg reportType "Project" \
+    --arg publishedAt "$today" \
+    --arg targetedDistrict "$entity_id" \
+    --arg _id "$random_id" \
+    '{
+      _id: $_id,
+      reportType: $reportType,
+      publishedAt: $publishedAt,
+      dashboardData: {
+        targetedDistrict: $targetedDistrict
+      }
+    }')
+
+  echo "$districtJson" | docker exec -i kafka kafka-console-producer --broker-list kafka:9092 --topic "$TOPIC_1"
+
+  if [[ $? -eq 0 ]]; then
+    log "✅ District event pushed to Kafka: $random_id"
+    log "🚀 Event pushed for district: $entity_id"
+  else
+    log "❌ Failed to push District event to Kafka"
+  fi
+
+  sleep 90
+done
+
+log "=== Completed Processing district-linked dashboards ==="
+log ""
 
 log "=== Fetch and Process survey-linked dashboard ==="
 query_result=$(psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -Atc \

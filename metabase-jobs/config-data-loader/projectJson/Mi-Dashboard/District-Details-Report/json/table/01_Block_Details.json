@@ -1,0 +1,34 @@
+{
+  "questionCard": {
+    "name": "Block Details",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "template-tags": {},
+        "query": "SELECT \n    lp.block_name AS \"Block Name\",\n    lp.block_id AS \"Block Id\",\n    lp.tenant_id AS \"Tenant Id\",\n    COUNT(DISTINCT lp.created_by) AS \"Total Projects Count\",\n    COUNT(CASE WHEN lp.status = 'started' THEN 1 END) AS \"Total Projects Initiated\",\n    COUNT(CASE WHEN lp.status = 'inProgress' THEN 1 END) AS \"Total Projects In-Progress\",\n    COUNT(CASE WHEN lp.status = 'submitted' THEN 1 END) AS \"Total Projects Submitted\"\nFROM \n    ${config.projects} lp\nWHERE \n    lp.created_by IS NOT NULL\n    AND lp.district_id = '66bf7f3560de1616f42cb993'\nGROUP BY \n    lp.block_name,lp.block_id, lp.tenant_id\nORDER BY \n    \"Total Projects Count\" DESC;"
+      }
+    },
+    "parameter_mappings": [],
+    "display": "table",
+    "entity_id": "tNg8IX-Oi4RcPp3SWv4Rr",
+    "collection_preview": true,
+    "visualization_settings": {
+      "table.pivot_column": "Total Projects Count",
+      "table.cell_column": "Total Projects Initiated"
+    },
+    "parameters": []
+  },
+  "dashCards": {
+    "card_id": 6937,
+    "dashboard_tab_id": null,
+    "id": 22,
+    "parameter_mappings": [],
+    "col": 0,
+    "row": 19,
+    "size_x": 24,
+    "size_y": 7,
+    "visualization_settings": {}
+  }
+}

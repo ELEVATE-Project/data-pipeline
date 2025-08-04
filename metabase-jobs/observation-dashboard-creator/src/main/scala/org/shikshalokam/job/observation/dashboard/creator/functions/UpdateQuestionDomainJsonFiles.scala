@@ -12,12 +12,12 @@ import scala.util.{Failure, Success, Try}
 
 
 object UpdateQuestionDomainJsonFiles {
-  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, domainTable: String, QuestionTable: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, params: Map[String, Int], paramsToRemove: ListMap[String, String]): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, domainTable: String, QuestionTable: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, params: Map[String, Int], paramsToRemove: ListMap[String, String], entityColumnName: String, entityColumnId: String, entityType: String): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, domainTable: String, QuestionTable: String, params: Map[String, Int], paramsToRemove: ListMap[String, String]): Unit = {
+    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, domainTable: String, QuestionTable: String, params: Map[String, Int], paramsToRemove: ListMap[String, String], entityColumnName: String, entityColumnId: String, entityType: String): Unit = {
       val queryResult = postgresUtil.fetchData(reportConfigQuery)
       queryResult.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -27,14 +27,21 @@ object UpdateQuestionDomainJsonFiles {
               val cleanedJson: JsonNode = objectMapper.readTree(cleanDashboardJson(configJson.toString, paramsToRemove, true))
               if (cleanedJson != null) {
                 val originalQuestionCard = cleanedJson.path("questionCard")
-                val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
+                val chartName = Option(originalQuestionCard.path("name").asText())
+                  .map(name => name.replace("${entityType}", entityType))
+                  .getOrElse("Unknown Chart")
+                val nameNode = originalQuestionCard.asInstanceOf[ObjectNode].get("name")
+                if (nameNode != null && nameNode.isTextual) {
+                  val updatedName = nameNode.asText().replace("${entityType}", entityType)
+                  originalQuestionCard.asInstanceOf[ObjectNode].put("name", updatedName)
+                }
                 val updatedQuestionCard = updateQuestionCardJsonValues(cleanedJson, collectionId, databaseId, params)
-                val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, domainTable, QuestionTable)
+                val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, domainTable, QuestionTable, entityColumnName, entityColumnId, entityType)
                 val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
                 println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
                 questionCardId.append(cardId)
-                val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(configJson, cardId)
+                val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(configJson, cardId, dashboardId, tabId)
                 AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedQuestionIdInDashCard, dashboardId)
               }
             case None =>
@@ -110,7 +117,7 @@ object UpdateQuestionDomainJsonFiles {
         items.foreach { item =>
           if (removeByColumnName) {
             // Remove entire AND <column_name> = ( ... )
-            val regex = ("""(?is)\s*AND\s+""" + java.util.regex.Pattern.quote(item) + """\s*=\s*\((?:[^()]*|\((?:[^()]*|\([^()]*\))*\))*\)""").r
+            val regex = ("""(?is)\s*AND\s+""" + java.util.regex.Pattern.quote(item) + """\s+in\s*\((?:[^()]*|\((?:[^()]*|\([^()]*\))*\))*\)""").r
             queryStr = regex.replaceAllIn(queryStr, "")
           } else {
             // Remove [[AND {{key}}]]
@@ -128,7 +135,7 @@ object UpdateQuestionDomainJsonFiles {
       if (jsonNode == null || jsonNode.isMissingNode) None else Some(jsonNode)
     }
 
-    def updateQuestionIdInDashCard(json: JsonNode, cardId: Int): Option[JsonNode] = {
+    def updateQuestionIdInDashCard(json: JsonNode, cardId: Int, dashboardId: Int, tabId: Int): Option[JsonNode] = {
       Try {
         val jsonObject = json.asInstanceOf[ObjectNode]
 
@@ -141,7 +148,8 @@ object UpdateQuestionDomainJsonFiles {
         }
 
         dashCardsNode.put("card_id", cardId)
-
+        dashCardsNode.put("dashboard_id", dashboardId)
+        dashCardsNode.put("dashboard_tab_id", tabId)
         if (dashCardsNode.has("parameter_mappings") && dashCardsNode.get("parameter_mappings").isArray) {
           dashCardsNode.get("parameter_mappings").elements().forEachRemaining { paramMappingNode =>
             if (paramMappingNode.isObject) {
@@ -192,7 +200,7 @@ object UpdateQuestionDomainJsonFiles {
       }
     }
 
-    def updatePostgresDatabaseQuery(json: JsonNode, domainTable: String, questionTable: String): JsonNode = {
+    def updatePostgresDatabaseQuery(json: JsonNode, domainTable: String, questionTable: String, entityColumnName: String, entityColumnId: String, entityType: String): JsonNode = {
       Try {
         val queryNode = json.at("/dataset_query/native/query")
         if (queryNode.isMissingNode || !queryNode.isTextual) {
@@ -202,7 +210,9 @@ object UpdateQuestionDomainJsonFiles {
         val updatedQuery = queryNode.asText()
           .replace("${questionTable}", s""""$questionTable"""")
           .replace("${domainTable}", s""""$domainTable"""")
-
+          .replace("${entityColumnName}", s"""$entityColumnName""")
+          .replace("${entityColumnId}", s"""$entityColumnId""")
+          .replace("${entityType}", s"""$entityType""")
         val updatedJson = json.deepCopy().asInstanceOf[ObjectNode]
         updatedJson.at("/dataset_query/native")
           .asInstanceOf[ObjectNode]
@@ -216,7 +226,7 @@ object UpdateQuestionDomainJsonFiles {
       }
     }
 
-    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, domainTable, QuestionTable, params, paramsToRemove)
+    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, tabId, domainTable, QuestionTable, params, paramsToRemove, entityColumnName, entityColumnId, entityType)
     println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardId
   }

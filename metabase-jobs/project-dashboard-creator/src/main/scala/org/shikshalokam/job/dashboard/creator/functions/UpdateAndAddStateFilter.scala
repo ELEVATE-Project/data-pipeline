@@ -2,19 +2,16 @@ package org.shikshalokam.job.dashboard.creator.functions
 
 import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
-import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
-
-import scala.util.Try
+import org.shikshalokam.job.util.MetabaseUtil
 
 object UpdateAndAddStateFilter {
   val objectMapper = new ObjectMapper()
 
-  def updateAndAddFilter(metabaseUtil: MetabaseUtil, queryResult: JsonNode, stateid: String, collectionId: Int, databaseId: Int, projectTable: String, solutionTable: String): Int = {
-    println(s"---------------- started processing updateAndAddFilter Function -------------------")
-
+  def updateAndAddFilter(metabaseUtil: MetabaseUtil, queryResult: JsonNode, stateId: String, collectionId: Int, databaseId: Int, projectTable: String, solutionTable: String): Int = {
+    println(s"** Started to update and create filter questions for state dashboard")
     val objectMapper = new ObjectMapper()
 
-    def replaceStateName(json: JsonNode, stateid: String, projectTable: String, solutionTable: String): JsonNode = {
+    def replaceStateName(json: JsonNode, stateId: String, projectTable: String, solutionTable: String): JsonNode = {
       def processNode(node: JsonNode): JsonNode = {
         node match {
           case obj: ObjectNode =>
@@ -24,7 +21,7 @@ object UpdateAndAddStateFilter {
                 var updatedText = childNode.asText()
 
                 if (updatedText.contains("STATEID")) {
-                  updatedText = updatedText.replace("STATEID", stateid)
+                  updatedText = updatedText.replace("STATEID", stateId)
                 }
                 if (updatedText.contains("${config.projects}")) {
                   updatedText = updatedText.replace("${config.projects}", projectTable)
@@ -91,10 +88,10 @@ object UpdateAndAddStateFilter {
     }
 
 
-    val ReplacedStateNameJson = replaceStateName(queryResult, stateid, projectTable, solutionTable)
+    val ReplacedStateNameJson = replaceStateName(queryResult, stateId, projectTable, solutionTable)
     val updatedJson = updateCollectionIdAndDatabaseId(ReplacedStateNameJson, collectionId, databaseId)
     val questionId = getTheQuestionId(updatedJson)
-    println(s"---------------- completed processing updateAndAddFilter Function -------------------")
+    println(s"** Completed to update and create filter questions for state dashboard")
     questionId
   }
 }
