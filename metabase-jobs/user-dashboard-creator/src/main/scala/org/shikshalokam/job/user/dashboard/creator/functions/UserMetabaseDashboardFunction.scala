@@ -1,6 +1,7 @@
 package org.shikshalokam.job.user.dashboard.creator.functions
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ArrayNode
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
@@ -9,6 +10,7 @@ import org.shikshalokam.job.user.dashboard.creator.task.UserMetabaseDashboardCon
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import org.shikshalokam.job.{BaseProcessFunction, Metrics}
 import org.slf4j.LoggerFactory
+import scala.collection.JavaConverters._
 import scala.collection.immutable._
 
 class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implicit val mapTypeInfo: TypeInformation[Event], @transient var postgresUtil: PostgresUtil = null, @transient var metabaseUtil: MetabaseUtil = null)
@@ -51,78 +53,54 @@ class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implici
     val tenantCode: String = event.tenantCode
     val tenantUserMetadataTable = s"${tenantCode}_users_metadata"
     val tenantUserTable = s"${tenantCode}_users"
-    val tenantName = postgresUtil.fetchData(s"""SELECT entity_name FROM $metaDataTable WHERE entity_id = '$tenantCode'""").collectFirst { case map: Map[_, _] => map.getOrElse("entity_name", "").toString }.getOrElse("")
 
     //     ----- Report Admin Collection -----
-    println("~~~~~~~~ Start Report Admin Collection Processing ~~~~~~~~")
-    val reportAdminCollectionName = s"User Activity"
-    val reportAdminCheckQuery =
-      s"""SELECT CASE
-         |WHEN main_metadata::jsonb @> '[{"collectionName":"$reportAdminCollectionName"}]'::jsonb THEN 'Yes'
-         |ELSE 'No' END AS result
-         |FROM $metaDataTable
-         |WHERE entity_id = '1';
-         |""".stripMargin
+    println("\n-->> Process Report Admin User Metrics Dashboard")
 
-    val isReportAdminPresent = postgresUtil.fetchData(reportAdminCheckQuery)
-      .collectFirst {
-        case map: Map[_, _] => map.get("result").map(_.toString).getOrElse("")
-      }.getOrElse("")
-
-    if (isReportAdminPresent == "Yes") {
-      println(s"=====> '$reportAdminCollectionName' already exists.")
+    val (reportAdminPresent, reportAdminCollectionId) = validateCollection("User Activity", "Report Admin")
+    if (reportAdminPresent && reportAdminCollectionId != 0) {
+      println(s"=====> 'User Activity' collection present with id: $reportAdminCollectionId, Skipping this step.")
     } else {
-      println(s"=====> '$reportAdminCollectionName' not found. Creating...")
-      val collectionId = createReportAdminCollection()
-      if (collectionId != -1) {
-        println(s"=====> '$reportAdminCollectionName' created.")
-        createUserMetricsDashboard(collectionId, metaDataTable, reportConfig, metabaseDatabase, tenantCode, userMetrics)
+      println("=====> Creating Report Admin Collection and User Metrics Dashboard")
+      val createdCollectionId = createReportAdminCollection()
+      if (createdCollectionId != -1) {
+        createUserMetricsDashboard(createdCollectionId, metaDataTable, reportConfig, metabaseDatabase, tenantCode, userMetrics)
+      } else {
+        println("=====> Failed to create Report Admin Collection.")
       }
-      else println("=====> Failed to create Report Admin Collection.")
     }
-    println("~~~~~~~~ End Report Admin Collection Processing ~~~~~~~~")
 
-    if (tenantName.nonEmpty) {
-      // ----- Tenant Admin Collection -----
-      println("~~~~~~~~ Start Tenant Admin Collection Processing ~~~~~~~~")
+
+    if (tenantCode.nonEmpty) {
+      println(s"\n-->> Process Tenant Admin User Metrics Dashboard [$tenantCode]")
+
       val tenantAdminCollectionName = s"User Activity [$tenantCode]"
-      val tenantAdminCheckQuery =
-        s"""SELECT CASE
-           |WHEN main_metadata::jsonb @> '[{"collectionName":"$tenantAdminCollectionName"}]'::jsonb THEN 'Yes'
-           |ELSE 'No' END AS result
-           |FROM $metaDataTable
-           |WHERE entity_id = '$tenantCode';
-           |""".stripMargin
+      val (tenantCollectionPresent, tenantCollectionId) = validateCollection(tenantAdminCollectionName, "Tenant Admin")
 
-      val isTenantAdminPresent = postgresUtil.fetchData(tenantAdminCheckQuery)
-        .collectFirst {
-          case map: Map[_, _] => map.get("result").map(_.toString).getOrElse("")
-        }.getOrElse("")
-
-      if (isTenantAdminPresent == "Yes") {
-        println(s"=====> '$tenantAdminCollectionName' already exists.")
-      }else {
+      if (tenantCollectionPresent && tenantCollectionId != 0) {
+        println(s"=====> '$tenantAdminCollectionName' collection present with id: $tenantCollectionId, Skipping this step.")
+      } else {
         println(s"=====> '$tenantAdminCollectionName' not found. Creating...")
         val collectionId = createTenantAdminCollection(tenantCode)
         if (collectionId != -1) {
           println(s"=====> '$tenantAdminCollectionName' created.")
           createTenantDashboard(collectionId, metaDataTable, reportConfig, metabaseDatabase, tenantCode, tenantUserMetadataTable)
+        } else {
+          println("=====> Failed to create Tenant Admin Collection.")
         }
-        else println("=====> Failed to create Tenant Admin Collection.")
       }
-      println("~~~~~~~~ End Tenant Admin Collection Processing ~~~~~~~~")
-    }
-    else {
+    } else {
       println("Tenant name is null or empty, skipping the processing.")
     }
 
+
     def createTenantAdminCollection(tenantCode: String): Int = {
       val collectionName = s"User Activity [$tenantCode]"
-      val description = "This report has access to a dedicated dashboard offering insights and metrics specific to their own tenant. \r\n**Collection For:** Tenant Admin"
+      val description = "This report has access to a dedicated dashboard offering insights and metrics specific to their own tenant. \n\nCollection For: Tenant Admin"
       val groupName = s"Tenant_Admin [$tenantCode]"
       val collectionId = Utils.checkAndCreateCollection(collectionName, description, metabaseUtil)
       if (collectionId != -1) {
-        CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
+        Utils.createGroupForCollection(metabaseUtil, groupName, collectionId)
         val metadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", collectionId).put("collectionName", collectionName))
         val query = s"UPDATE $metaDataTable SET main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$metadataJson'::jsonb WHERE entity_id = '$tenantCode';"
         postgresUtil.insertData(query)
@@ -135,14 +113,14 @@ class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implici
 
     def createReportAdminCollection(): Int = {
       val collectionName = s"User Activity"
-      val description = "This report is a centralized dashboard that provides a unified view across all tenants. It enables administrators to monitor user metrics, activity, and performance at a multi-tenant level. \r\n**Collection For:** Report Admin"
-      val groupName = s"Report_Admin_User Activity"
+      val description = "This report is a centralized dashboard that provides a unified view across all tenants. It enables administrators to monitor user metrics, activity, and performance at a multi-tenant level. \n\nCollection For: Report Admin"
+      val groupName = s"Report_Admin_User_Activity"
       val collectionId = Utils.checkAndCreateCollection(collectionName, description, metabaseUtil)
       if (collectionId != -1) {
         val metadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", collectionId).put("collectionName", collectionName))
         val query = s"UPDATE $metaDataTable SET main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$metadataJson'::jsonb WHERE entity_id = '1';"
         postgresUtil.insertData(query)
-        CreateAndAssignGroup.createGroupToDashboard(metabaseUtil, groupName, collectionId)
+        Utils.createGroupForCollection(metabaseUtil, groupName, collectionId)
         collectionId
       } else {
         println("Collection creation failed.")
@@ -196,11 +174,11 @@ class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implici
           throw new RuntimeException(s"Database '$metabaseDatabase' not found in Metabase.")
         }
         metabaseUtil.syncDatabaseAndRescanValues(databaseId)
-        val statenNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, tenantUserTable, "user_profile_one_name", postgresUtil, createDashboardQuery)
-        val districtNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, tenantUserTable, "user_profile_two_name", postgresUtil, createDashboardQuery)
-        val blockNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, tenantUserTable, "user_profile_three_name", postgresUtil, createDashboardQuery)
-        val clusterNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, tenantUserTable, "user_profile_four_name", postgresUtil, createDashboardQuery)
-        val organizationsNameId: Int = GetTableData.getTableMetadataId(databaseId, metabaseUtil, tenantUserMetadataTable, "attribute_code", postgresUtil, createDashboardQuery)
+        val statenNameId: Int = Utils.getTableMetadataId(databaseId, metabaseUtil, tenantUserTable, "user_profile_one_name", postgresUtil, createDashboardQuery)
+        val districtNameId: Int = Utils.getTableMetadataId(databaseId, metabaseUtil, tenantUserTable, "user_profile_two_name", postgresUtil, createDashboardQuery)
+        val blockNameId: Int = Utils.getTableMetadataId(databaseId, metabaseUtil, tenantUserTable, "user_profile_three_name", postgresUtil, createDashboardQuery)
+        val clusterNameId: Int = Utils.getTableMetadataId(databaseId, metabaseUtil, tenantUserTable, "user_profile_four_name", postgresUtil, createDashboardQuery)
+        val organizationsNameId: Int = Utils.getTableMetadataId(databaseId, metabaseUtil, tenantUserMetadataTable, "attribute_code", postgresUtil, createDashboardQuery)
         metabaseUtil.updateColumnCategory(statenNameId, "State")
         metabaseUtil.updateColumnCategory(districtNameId, "City")
         val reportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Users' AND report_name = 'User-Dashboard-Report' AND question_type IN ('big-number', 'table', 'graph');"
@@ -223,6 +201,34 @@ class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implici
           println(s"An error occurred while creating the dashboard for tenant [$tenantCode]: ${e.getMessage}")
           e.printStackTrace()
       }
+    }
+  }
+
+  def validateCollection(collectionName: String, reportFor: String, reportId: Option[String] = None): (Boolean, Int) = {
+    val mapper = new ObjectMapper()
+    println(s">>> Checking Metabase API for collection: $collectionName")
+    try {
+      val collections = mapper.readTree(metabaseUtil.listCollections())
+      val result = collections match {
+        case arr: ArrayNode =>
+          arr.asScala.find { c =>
+              val name = Option(c.get("name")).map(_.asText).getOrElse("")
+              val desc = Option(c.get("description")).map(_.asText).getOrElse("")
+
+              val matchesName = name == collectionName
+              val matchesReportFor = desc.contains(s"Collection For: $reportFor")
+              val isMatch = if (reportId.isEmpty) matchesName && matchesReportFor else matchesName && matchesReportFor
+              isMatch
+            }.map(c => (true, Option(c.get("id")).map(_.asInt).getOrElse(0)))
+            .getOrElse((false, 0))
+        case _ => (false, 0)
+      }
+      println(s">>> API result: $result")
+      result
+    } catch {
+      case e: Exception =>
+        println(s"[ERROR] API or JSON failure: ${e.getMessage}")
+        (false, 0)
     }
   }
 

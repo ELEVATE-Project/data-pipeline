@@ -6,6 +6,4 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def tenantCode: String = readOrDefault[String]("dashboardData.tenantCode", null)
 
-  def _id: String = readOrDefault[String]("_id", "")
-
 }

@@ -1,0 +1,11 @@
+[
+  {
+    "name": "Tenant Param",
+    "slug": "tenant_param",
+    "id": "c32c8fc5",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": []
+  }
+]
