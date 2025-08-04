@@ -134,7 +134,7 @@ object Utils {
       }
   }
 
-  def createGroupToDashboard(metabaseUtil: MetabaseUtil = null, groupName: String, collectionId: Int) {
+  def createGroupForCollection(metabaseUtil: MetabaseUtil = null, groupName: String, collectionId: Int) {
 
     val existingGroups = mapper.readTree(metabaseUtil.listGroups())
     val existingGroup = existingGroups.elements().asScala.find { node =>
