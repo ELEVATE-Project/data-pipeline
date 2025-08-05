@@ -13,9 +13,36 @@ PGPORT="5432"
 PGDBNAME="test"
 PGUSER="postgres"
 PGPASSWORD="postgres"
+PGMETADATA="local_dashboard_metadata"
 export PGPASSWORD
 
+# === Configurable variables ===
+AUTH_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoxLCJuYW1lIjoiTmV2aWwiLCJzZXNzaW9uX2lkIjoxMDgxNCwib3JnYW5pemF0aW9uX2lkcyI6WyIxIl0sIm9yZ2FuaXphdGlvbl9jb2RlcyI6WyJkZWZhdWx0X2NvZGUiXSwidGVuYW50X2NvZGUiOiJkZWZhdWx0Iiwib3JnYW5pemF0aW9ucyI6W3siaWQiOjEsIm5hbWUiOiJEZWZhdWx0IE9yZ2FuaXphdGlvbiIsImNvZGUiOiJkZWZhdWx0X2NvZGUiLCJkZXNjcmlwdGlvbiI6IkRlZmF1bHQgIFNMIE9yZ2FuaXNhdGlvbiIsInN0YXR1cyI6IkFDVElWRSIsInJlbGF0ZWRfb3JncyI6bnVsbCwidGVuYW50X2NvZGUiOiJkZWZhdWx0IiwibWV0YSI6bnVsbCwiY3JlYXRlZF9ieSI6bnVsbCwidXBkYXRlZF9ieSI6bnVsbCwicm9sZXMiOlt7ImlkIjo1LCJ0aXRsZSI6Im1lbnRlZSIsImxhYmVsIjpudWxsLCJ1c2VyX3R5cGUiOjAsInN0YXR1cyI6IkFDVElWRSIsIm9yZ2FuaXphdGlvbl9pZCI6MSwidmlzaWJpbGl0eSI6IlBVQkxJQyIsInRlbmFudF9jb2RlIjoiZGVmYXVsdCIsInRyYW5zbGF0aW9ucyI6bnVsbH0seyJpZCI6NiwidGl0bGUiOiJhZG1pbiIsImxhYmVsIjpudWxsLCJ1c2VyX3R5cGUiOjEsInN0YXR1cyI6IkFDVElWRSIsIm9yZ2FuaXphdGlvbl9pZCI6MSwidmlzaWJpbGl0eSI6IlBVQkxJQyIsInRlbmFudF9jb2RlIjoiZGVmYXVsdCIsInRyYW5zbGF0aW9ucyI6bnVsbH0seyJpZCI6MjUsInRpdGxlIjoibGVhcm5lciIsImxhYmVsIjoiTGVhcm5lciIsInVzZXJfdHlwZSI6MCwic3RhdHVzIjoiQUNUSVZFIiwib3JnYW5pemF0aW9uX2lkIjoxLCJ2aXNpYmlsaXR5IjoiUFVCTElDIiwidGVuYW50X2NvZGUiOiJkZWZhdWx0IiwidHJhbnNsYXRpb25zIjpudWxsfV19XX0sImlhdCI6MTc1NDMwNDIyMiwiZXhwIjoxNzU0MzkwNjIyfQ.nL3YJAnGt6d-2GWmhWOjx0MZomrKiXVA0OTIt21Dn8g"
+API_URL="https://saas-qa.tekdinext.com/survey/v1/admin/dbFind/observationSubmissions"
+
 log "🚀 Starting Observation Table Alteration Script"
+
+check_and_add_entity_type_column() {
+  local table="$1"
+  # Check for 'entity_type'
+  has_entity_type=$(psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -t -A -c \
+    "SELECT 1 FROM information_schema.columns WHERE table_name='$table' AND column_name='entity_type';")
+  # Check for 'entityType'
+  has_entityType=$(psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -t -A -c \
+    "SELECT 1 FROM information_schema.columns WHERE table_name='$table' AND column_name='entitytype';")
+
+  if [[ -n "$has_entity_type" ]]; then
+    log "ℹ️  'entity_type' already exists in $table"
+  elif [[ -n "$has_entityType" ]]; then
+    log "🔄 Renaming 'entitytype' to 'entity_type' in $table"
+    psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -c \
+      "ALTER TABLE \"$table\" RENAME COLUMN \"entitytype\" TO entity_type;"
+  else
+    log "➕ Adding 'entity_type' to $table"
+    psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -c \
+      "ALTER TABLE \"$table\" ADD COLUMN entity_type TEXT;"
+  fi
+}
 
 # === Fetch All Table Names ===
 log "🔍 Fetching public schema table names..."
@@ -47,8 +74,8 @@ log "🧾 Total Question Tables: ${#question_ids[@]}"
 log "📌 Altering Observation Status Tables..."
 for solution_id in "${status_ids[@]}"; do
   log "🔧 Altering ${solution_id}_status table..."
+  check_and_add_entity_type_column "${solution_id}_status"
   if psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" <<EOF
-ALTER TABLE "${solution_id}_status" ADD COLUMN entityType TEXT;
 ALTER TABLE "${solution_id}_status" ADD COLUMN parent_one_name TEXT;
 ALTER TABLE "${solution_id}_status" ADD COLUMN parent_one_id TEXT;
 ALTER TABLE "${solution_id}_status" ADD COLUMN parent_two_name TEXT;
@@ -82,8 +109,8 @@ done
 log "📌 Altering Observation Domain Tables..."
 for solution_id in "${domain_ids[@]}"; do
   log "🔧 Altering ${solution_id}_domain table..."
+  check_and_add_entity_type_column "${solution_id}_domain"
   if psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" <<EOF
-ALTER TABLE "${solution_id}_domain" ADD COLUMN entityType TEXT;
 ALTER TABLE "${solution_id}_domain" ADD COLUMN parent_one_name TEXT;
 ALTER TABLE "${solution_id}_domain" ADD COLUMN parent_one_id TEXT;
 ALTER TABLE "${solution_id}_domain" ADD COLUMN parent_two_name TEXT;
@@ -116,8 +143,8 @@ done
 log "📌 Altering Observation Question Tables..."
 for solution_id in "${question_ids[@]}"; do
   log "🔧 Altering ${solution_id}_questions table..."
+  check_and_add_entity_type_column "${solution_id}_questions"
   if psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" <<EOF
-ALTER TABLE "${solution_id}_questions" ADD COLUMN entityType TEXT;
 ALTER TABLE "${solution_id}_questions" ADD COLUMN parent_one_name TEXT;
 ALTER TABLE "${solution_id}_questions" ADD COLUMN parent_one_id TEXT;
 ALTER TABLE "${solution_id}_questions" ADD COLUMN parent_two_name TEXT;
@@ -148,6 +175,7 @@ EOF
   fi
 done
 
+
 # === Alter all Observation Question Tables to include report_type ===
 log ""
 log ""
@@ -173,6 +201,57 @@ for table in "${question_ids[@]}"; do
   else
     log "❌ Failed to add columns to ${table}_questions"
     continue
+  fi
+done
+
+
+# Fetch entity_ids
+entity_ids=$(psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -t -A -c \
+"SELECT entity_id FROM \"${PGMETADATA}\" WHERE entity_type = 'solution' AND report_type = 'observation';")
+
+for solution_id in $entity_ids; do
+  # Call API
+  response=$(curl -s --location "$API_URL" \
+    --header "x-auth-token: $AUTH_TOKEN" \
+    --header "appname: mentored" \
+    --header "Content-Type: application/json" \
+    --data '{
+      "query": {
+        "solutionId":"'"$solution_id"'"
+      },
+      "sort": {
+        "createdAt": "-1"
+      },
+      "projection": ["entityType", "entityId", "entityInformation.name", "entityInformation.externalId"],
+      "mongoIdKeys": ["solutionId"],
+      "Limit": 1
+    }')
+
+  # Parse response
+  entityId=$(echo "$response" | jq -r '.result[0].entityId // empty')
+  entityExternalId=$(echo "$response" | jq -r '.result[0].entityInformation.externalId // empty')
+  entityName=$(echo "$response" | jq -r '.result[0].entityInformation.name // empty')
+  entityType=$(echo "$response" | jq -r '.result[0].entityType // empty')
+
+  if [[ -n "$entityId" && -n "$entityExternalId" && -n "$entityName" ]]; then
+    for table in "${solution_id}_status" "${solution_id}_domain" "${solution_id}_questions"; do
+      table_exists_result=$(psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -t -c \
+        "SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = '$table');")
+      if [[ "$(echo "$table_exists_result" | xargs)" == "t" ]]; then
+        if psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -c \
+          "UPDATE \"$table\" SET entity_type = '$entityType', entity_id = '$entityId', entity_external_id = '$entityExternalId', entity_name = '$entityName';"
+        then
+          log "✅ Successfully updated columns in $table"
+        else
+          log "❌ Failed to update columns in $table"
+        fi
+      else
+        log "❌ Table $table does not exist in the public schema, skipping update."
+      fi
+    done
+    echo "Inserted for $entityId"
+  else
+    echo "No valid data for solutionId: $solution_id"
   fi
 done
 
