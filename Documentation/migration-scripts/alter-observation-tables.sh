@@ -13,6 +13,7 @@ PGPORT="5432"
 PGDBNAME="test"
 PGUSER="postgres"
 PGPASSWORD="postgres"
+PGMETADATA="local_dashboard_metadata"
 export PGPASSWORD
 
 # === Configurable variables ===
@@ -206,7 +207,7 @@ done
 
 # Fetch entity_ids
 entity_ids=$(psql -h "$PGHOST" -p "$PGPORT" -d "$PGDBNAME" -U "$PGUSER" -t -A -c \
-"SELECT entity_id FROM local_dashboard_metadata WHERE entity_type = 'solution' AND report_type = 'observation';")
+"SELECT entity_id FROM \"${PGMETADATA}\" WHERE entity_type = 'solution' AND report_type = 'observation';")
 
 for solution_id in $entity_ids; do
   # Call API
