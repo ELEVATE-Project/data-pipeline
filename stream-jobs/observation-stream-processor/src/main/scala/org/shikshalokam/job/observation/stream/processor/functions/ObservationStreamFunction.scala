@@ -39,7 +39,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
   }
 
   override def processElement(event: Event, context: ProcessFunction[Event, Event]#Context, metrics: Metrics): Unit = {
-    if (event.status == "started" || event.status == "inprogress" || event.status == "submitted" || event.status == "completed") {
+    if (event.status.toLowerCase() == "started" || event.status.toLowerCase() == "inprogress" || event.status.toLowerCase() == "submitted" || event.status.toLowerCase() == "completed") {
       println(s"***************** Start of Processing the Observation Event with Id = ${event._id} *****************")
       var userRoleIds: String = ""
       var userRoles: String = ""
@@ -71,64 +71,6 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
         }
       }
 
-      println("\n==> domain data ")
-      println("solutionId = " + event.solutionId)
-      println("submissionId = " + event._id)
-      println("userId = " + event.createdBy)
-      println("submissionNumber = " + event.submissionNumber)
-      println("stateName = " + event.stateName)
-      println("districtName = " + event.districtName)
-      println("blockName = " + event.blockName)
-      println("clusterName = " + event.clusterName)
-      println("schoolName = " + event.schoolName)
-      println("status = " + event.status)
-      println("tenantId = " + event.tenantId)
-      println("solutionName = " + event.solutionName)
-      println("userRoleIds = " + userRoleIds)
-      println("userRoles = " + userRoles)
-      println("organisationId = " + event.organisationId)
-      println("organisationName = " + orgName)
-      println("organisationCode = " + orgCode)
-
-      val status_of_submission = event.status
-      val submission_id = event._id
-      val user_id = event.createdBy
-      val submission_number = event.submissionNumber
-      val state_name = event.stateName
-      val state_id = event.stateId
-      val district_name = event.districtName
-      val district_id = event.districtId
-      val block_name = event.blockName
-      val block_id = event.blockId
-      val cluster_name = event.clusterName
-      val cluster_id = event.clusterId
-      val school_name = event.schoolName
-      val themes = event.themes
-      val criteria_event = event.criteria
-      val solution_id = event.solutionId
-      val solution_name = event.solutionName
-      val program_name = event.programName
-      val program_id = event.programId
-      val observation_name = event.observationName
-      val observation_id = event.observationId
-      val school_id = event.schoolId
-      val tenant_id = event.tenantId
-      val solution_external_id = event.solutionExternalId
-      val solution_description = event.solutionDescription
-      val program_external_id = event.programExternalId
-      val program_description = event.programDescription
-      val private_program = null
-      val project_categories = null
-      val project_duration = null
-      val completed_date = event.completedDate
-      val domainTable = s""""${solution_id}_domain""""
-      val questionTable = s""""${solution_id}_questions""""
-      val statusTable = s""""${solution_id}_status""""
-
-      /**
-       * Creating tables if not exists
-       */
-
       def checkAndCreateTable(tableName: String, createTableQuery: String): Unit = {
         val checkTableExistsQuery =
           s"""SELECT EXISTS (
@@ -146,104 +88,270 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
         }
       }
 
-      if (status_of_submission == "completed") {
+      val statusOfSubmission = event.status
+      val submissionId = event._id
+      val userId = event.createdBy
+      val submissionNumber = event.submissionNumber
+      val userOneProfileName = event.userOneProfileName
+      val userOneProfileId = event.userOneProfileId
+      val userTwoProfileName = event.userTwoProfileName
+      val userTwoProfileId = event.userTwoProfileId
+      val userThreeProfileName = event.userThreeProfileName
+      val userThreeProfileId = event.userThreeProfileId
+      val userFourProfileName = event.userFourProfileName
+      val userFourProfileId = event.userFourProfileId
+      val userFiveProfileName = event.userFiveProfileName
+      val userFiveProfileId = event.userFiveProfileId
+      val themes = event.themes
+      val criteriaEvent = event.criteria
+      val solutionId = event.solutionId
+      val solutionName = event.solutionName
+      val programName = event.programName
+      val programId = event.programId
+      val observationName = event.observationName
+      val observationId = event.observationId
+      val tenantId = event.tenantId
+      val solutionExternalId = event.solutionExternalId
+      val solutionDescription = event.solutionDescription
+      val programExternalId = event.programExternalId
+      val programDescription = event.programDescription
+      val privateProgram: Null = null
+      val projectCategories: Null = null
+      val projectDuration: Null = null
+      val completedDate = event.completedDate
+      val domainTable = s""""${solutionId}_domain""""
+      val questionTable = s""""${solutionId}_questions""""
+      val statusTable = s""""${solutionId}_status""""
+      val isRubric = event.isRubric
+      val entityType = event.entityType
+      val entityId = event.entityId
+      val entityName = event.entityName
+      val entityExternalId = event.entityExternalId
+      val parentOneObservedName = event.parentOneName
+      val parentOneObservedId = event.parentOneId
+      val parentTwoObservedName = event.parentTwoName
+      val parentTwoObservedId = event.parentTwoId
+      val parentThreeObservedName = event.parentThreeName
+      val parentThreeObservedId = event.parentThreeId
+      val parentFourObservedName = event.parentFourName
+      val parentFourObservedId = event.parentFourId
+      val parentFiveObservedName = event.parentFiveName
+      val parentFiveObservedId = event.parentFiveId
+
+      println(s"statusOfSubmission = $statusOfSubmission")
+      println(s"submissionId = $submissionId")
+      println(s"userId = $userId")
+      println(s"submissionNumber = $submissionNumber")
+      println(s"userOneProfileName = $userOneProfileName")
+      println(s"userOneProfileId = $userOneProfileId")
+      println(s"userTwoProfileName = $userTwoProfileName")
+      println(s"userTwoProfileId = $userTwoProfileId")
+      println(s"userThreeProfileName = $userThreeProfileName")
+      println(s"userThreeProfileId = $userThreeProfileId")
+      println(s"userFourProfileName = $userFourProfileName")
+      println(s"userFourProfileId = $userFourProfileId")
+      println(s"userFiveProfileName = $userFiveProfileName")
+      println(s"userFiveProfileId = $userFiveProfileId")
+      println(s"themes = $themes")
+      println(s"criteriaEvent = $criteriaEvent")
+      println(s"solutionId = $solutionId")
+      println(s"solutionName = $solutionName")
+      println(s"programName = $programName")
+      println(s"programId = $programId")
+      println(s"observationName = $observationName")
+      println(s"observationId = $observationId")
+      println(s"tenantId = $tenantId")
+      println(s"solutionExternalId = $solutionExternalId")
+      println(s"solutionDescription = $solutionDescription")
+      println(s"programExternalId = $programExternalId")
+      println(s"programDescription = $programDescription")
+      println(s"privateProgram = $privateProgram")
+      println(s"projectCategories = $projectCategories")
+      println(s"projectDuration = $projectDuration")
+      println(s"completedDate = $completedDate")
+      println(s"domainTable = $domainTable")
+      println(s"questionTable = $questionTable")
+      println(s"statusTable = $statusTable")
+      println(s"isRubric = $isRubric")
+      println(s"entityType = $entityType")
+      println(s"entityId = $entityId")
+      println(s"entityName = $entityName")
+      println(s"entityExternalId = $entityExternalId")
+      println(s"parentOneObservedName = $parentOneObservedName")
+      println(s"parentOneObservedId = $parentOneObservedId")
+      println(s"parentTwoObservedName = $parentTwoObservedName")
+      println(s"parentTwoObservedId = $parentTwoObservedId")
+      println(s"parentThreeObservedName = $parentThreeObservedName")
+      println(s"parentThreeObservedId = $parentThreeObservedId")
+      println(s"parentFourObservedName = $parentFourObservedName")
+      println(s"parentFourObservedId = $parentFourObservedId")
+      println(s"parentFiveObservedName = $parentFiveObservedName")
+      println(s"parentFiveObservedId = $parentFiveObservedId")
+      println("\n\n")
+
+      val createDomainsTable =
+        s"""CREATE TABLE IF NOT EXISTS $domainTable (
+           |    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+           |    user_id TEXT ,
+           |    user_role_ids TEXT,
+           |    user_roles TEXT,
+           |    solution_id TEXT ,
+           |    solution_name TEXT,
+           |    submission_id TEXT,
+           |    submission_number INTEGER,
+           |    program_name TEXT,
+           |    program_id TEXT,
+           |    observation_name TEXT,
+           |    observation_id TEXT,
+           |    tenant_id TEXT,
+           |    org_name TEXT,
+           |    org_id TEXT,
+           |    org_code TEXT,
+           |    user_one_profile_name TEXT,
+           |    user_one_profile_id TEXT,
+           |    user_two_profile_name TEXT,
+           |    user_two_profile_id TEXT,
+           |    user_three_profile_name TEXT,
+           |    user_three_profile_id TEXT,
+           |    user_four_profile_name TEXT,
+           |    user_four_profile_id TEXT,
+           |    user_five_profile_name TEXT,
+           |    user_five_profile_id TEXT,
+           |    domain TEXT,
+           |    domain_level TEXT,
+           |    criteria TEXT,
+           |    criteria_level TEXT,
+           |    completed_date TEXT,
+           |    entity_type TEXT,
+           |    entity_id TEXT,
+           |    entity_name TEXT,
+           |    entity_external_id TEXT,
+           |    parent_one_name TEXT,
+           |    parent_one_id TEXT,
+           |    parent_two_name TEXT,
+           |    parent_two_id TEXT,
+           |    parent_three_name TEXT,
+           |    parent_three_id TEXT,
+           |    parent_four_name TEXT,
+           |    parent_four_id TEXT,
+           |    parent_five_name TEXT,
+           |    parent_five_id TEXT
+           |);""".stripMargin
+
+      val createQuestionsTable =
+        s"""CREATE TABLE IF NOT EXISTS $questionTable (
+           |    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+           |    user_id TEXT ,
+           |    user_role_ids TEXT,
+           |    user_roles TEXT,
+           |    solution_id TEXT ,
+           |    solution_name TEXT,
+           |    submission_id TEXT,
+           |    submission_number INTEGER,
+           |    status_of_submission TEXT,
+           |    program_name TEXT,
+           |    program_id TEXT,
+           |    observation_name TEXT,
+           |    observation_id TEXT,
+           |    tenant_id TEXT,
+           |    org_name TEXT,
+           |    org_id TEXT,
+           |    org_code TEXT,
+           |    user_one_profile_name TEXT,
+           |    user_one_profile_id TEXT,
+           |    user_two_profile_name TEXT,
+           |    user_two_profile_id TEXT,
+           |    user_three_profile_name TEXT,
+           |    user_three_profile_id TEXT,
+           |    user_four_profile_name TEXT,
+           |    user_four_profile_id TEXT,
+           |    user_five_profile_name TEXT,
+           |    user_five_profile_id TEXT,
+           |    question_id TEXT,
+           |    question_text TEXT,
+           |    labels TEXT,
+           |    value TEXT,
+           |    score INTEGER,
+           |    report_type TEXT,
+           |    domain_name TEXT,
+           |    criteria_name TEXT,
+           |    has_parent_question BOOLEAN,
+           |    parent_question_text TEXT,
+           |    evidence TEXT,
+           |    submitted_at TEXT,
+           |    remarks TEXT,
+           |    question_type TEXT,
+           |    entity_type TEXT,
+           |    entity_id TEXT,
+           |    entity_name TEXT,
+           |    entity_external_id TEXT,
+           |    parent_one_name TEXT,
+           |    parent_one_id TEXT,
+           |    parent_two_name TEXT,
+           |    parent_two_id TEXT,
+           |    parent_three_name TEXT,
+           |    parent_three_id TEXT,
+           |    parent_four_name TEXT,
+           |    parent_four_id TEXT,
+           |    parent_five_name TEXT,
+           |    parent_five_id TEXT
+           |);""".stripMargin
+
+      val createStatusTable =
+        s"""CREATE TABLE IF NOT EXISTS $statusTable (
+           |    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+           |    user_id TEXT ,
+           |    user_role_ids TEXT,
+           |    user_roles TEXT,
+           |    solution_id TEXT ,
+           |    solution_name TEXT,
+           |    submission_id TEXT,
+           |    submission_number INTEGER,
+           |    program_name TEXT,
+           |    program_id TEXT,
+           |    observation_name TEXT,
+           |    observation_id TEXT,
+           |    user_one_profile_name TEXT,
+           |    user_one_profile_id TEXT,
+           |    user_two_profile_name TEXT,
+           |    user_two_profile_id TEXT,
+           |    user_three_profile_name TEXT,
+           |    user_three_profile_id TEXT,
+           |    user_four_profile_name TEXT,
+           |    user_four_profile_id TEXT,
+           |    user_five_profile_name TEXT,
+           |    user_five_profile_id TEXT,
+           |    tenant_id TEXT,
+           |    org_id TEXT,
+           |    org_code TEXT,
+           |    org_name TEXT,
+           |    status_of_submission TEXT,
+           |    submitted_at TEXT,
+           |    entity_type TEXT,
+           |    entity_id TEXT,
+           |    entity_name TEXT,
+           |    entity_external_id TEXT,
+           |    parent_one_name TEXT,
+           |    parent_one_id TEXT,
+           |    parent_two_name TEXT,
+           |    parent_two_id TEXT,
+           |    parent_three_name TEXT,
+           |    parent_three_id TEXT,
+           |    parent_four_name TEXT,
+           |    parent_four_id TEXT,
+           |    parent_five_name TEXT,
+           |    parent_five_id TEXT
+           |);""".stripMargin
+
+      postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboard_metadata)
+
+      /**
+       * Performs an upsert operation on the solution table irrespective of the submission status.
+       * This ensures the solution information is always updated/inserted in the database.
+       */
+      if (solutionId != null) {
+        println("===> Processing observation solution data")
         postgresUtil.createTable(config.createSolutionsTable, config.solutions)
-        postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboard_metadata)
-
-
-        val createDomainsTable =
-          s"""CREATE TABLE IF NOT EXISTS $domainTable (
-             |    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-             |    user_id TEXT ,
-             |    user_role_ids TEXT,
-             |    user_roles TEXT,
-             |    solution_id TEXT ,
-             |    solution_name TEXT,
-             |    submission_id TEXT,
-             |    submission_number INTEGER,
-             |    program_name TEXT,
-             |    program_id TEXT,
-             |    observation_name TEXT,
-             |    observation_id TEXT,
-             |    tenant_id TEXT,
-             |    org_name TEXT,
-             |    org_id TEXT,
-             |    org_code TEXT,
-             |    state_name TEXT,
-             |    state_id TEXT,
-             |    district_name TEXT,
-             |    district_id TEXT,
-             |    block_name TEXT,
-             |    block_id TEXT,
-             |    cluster_name TEXT,
-             |    cluster_id TEXT,
-             |    school_name TEXT,
-             |    school_id TEXT,
-             |    domain TEXT,
-             |    domain_level TEXT,
-             |    criteria TEXT,
-             |    criteria_level TEXT,
-             |    completed_date TEXT
-             |);""".stripMargin
-
-        val AlterDomainTable =
-          s"""ALTER TABLE IF EXISTS $domainTable
-             |ADD COLUMN IF NOT EXISTS user_role_ids TEXT,
-             |ADD COLUMN IF NOT EXISTS tenant_id TEXT,
-             |ADD COLUMN IF NOT EXISTS org_code TEXT;
-             |""".stripMargin
-
-        val createQuestionsTable =
-          s"""CREATE TABLE IF NOT EXISTS $questionTable (
-             |    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-             |    user_id TEXT ,
-             |    user_role_ids TEXT,
-             |    user_roles TEXT,
-             |    solution_id TEXT ,
-             |    solution_name TEXT,
-             |    submission_id TEXT,
-             |    program_name TEXT,
-             |    program_id TEXT,
-             |    observation_name TEXT,
-             |    observation_id TEXT,
-             |    state_name TEXT,
-             |    district_name TEXT,
-             |    block_name TEXT,
-             |    cluster_name TEXT,
-             |    school_name TEXT,
-             |    school_id TEXT,
-             |    tenant_id TEXT,
-             |    org_name TEXT,
-             |    org_id TEXT,
-             |    org_code TEXT,
-             |    question_id TEXT,
-             |    question_text TEXT,
-             |    labels TEXT,
-             |    value TEXT,
-             |    score INTEGER,
-             |    domain_name TEXT,
-             |    criteria_name TEXT,
-             |    has_parent_question BOOLEAN,
-             |    parent_question_text TEXT,
-             |    evidence TEXT,
-             |    submitted_at TEXT,
-             |    remarks TEXT,
-             |    question_type TEXT
-             |);""".stripMargin
-
-        val AlterQuestionTable =
-          s"""ALTER TABLE IF EXISTS $questionTable
-             |ADD COLUMN IF NOT EXISTS user_role_ids TEXT,
-             |ADD COLUMN IF NOT EXISTS tenant_id TEXT,
-             |ADD COLUMN IF NOT EXISTS org_id TEXT,
-             |ADD COLUMN IF NOT EXISTS org_code TEXT;
-             |""".stripMargin
-
-        checkAndCreateTable(domainTable, createDomainsTable)
-        postgresUtil.executeUpdate(AlterDomainTable, domainTable, solution_id)
-        checkAndCreateTable(questionTable, createQuestionsTable)
-        postgresUtil.executeUpdate(AlterQuestionTable, questionTable, solution_id)
-
         val upsertSolutionQuery =
           s"""INSERT INTO ${config.solutions} (solution_id, external_id, name, description, duration, categories, program_id, program_name, program_external_id, program_description, private_program)
              |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -262,108 +370,134 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
 
         val solutionParams = Seq(
           // Insert parameters
-          solution_id, solution_external_id, solution_name, solution_description, project_duration, project_categories, program_id, program_name, program_external_id, program_description, private_program,
+          solutionId, solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram,
 
           // Update parameters (matching columns in the ON CONFLICT clause)
-          solution_external_id, solution_name, solution_description, project_duration, project_categories, program_id, program_name, program_external_id, program_description, private_program
+          solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram
         )
+        postgresUtil.executePreparedUpdate(upsertSolutionQuery, solutionParams, config.solutions, solutionId)
+        println("\n\n")
+      }
 
-        postgresUtil.executePreparedUpdate(upsertSolutionQuery, solutionParams, config.solutions, solution_id)
+      /**
+       * Performs an delete and insert operation on the observation status table irrespective of the submission status.
+       * This ensures the observation status table will always holds latest data in the database.
+       */
+      if (statusOfSubmission != null) {
+        println("===> Processing observation status data")
+        checkAndCreateTable(statusTable, createStatusTable)
+        val deleteQuery = s"""DELETE FROM $statusTable WHERE user_id = ? AND submission_id = ? AND submission_number = ?; """
+        val deleteParams = Seq(userId, submissionId, submissionNumber)
+        postgresUtil.executePreparedDelete(deleteQuery, deleteParams, statusTable, submissionId)
 
+        val insertStatusQuery =
+          s"""INSERT INTO $statusTable (
+             |    user_id, user_role_ids, user_roles, solution_id, solution_name, submission_id, submission_number,
+             |    program_name, program_id, observation_name, observation_id, user_one_profile_name, user_one_profile_id,
+             |    user_two_profile_name, user_two_profile_id, user_three_profile_name, user_three_profile_id, user_four_profile_name,
+             |    user_four_profile_id, user_five_profile_name, user_five_profile_id, tenant_id, org_id, org_code, org_name,
+             |    status_of_submission, submitted_at, entity_type, entity_id, entity_name, entity_external_id, parent_one_name, parent_one_id, parent_two_name,
+             |    parent_two_id, parent_three_name, parent_three_id, parent_four_name, parent_four_id,
+             |    parent_five_name, parent_five_id
+             |) VALUES (
+             |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+             |);""".stripMargin
 
-        /**
-         * Extracting domain data
-         */
+        val statusParams = Seq(
+          userId, userRoleIds, userRoles, solutionId, solutionName, submissionId, submissionNumber,
+          programName, programId, observationName, observationId, userOneProfileName, userOneProfileId,
+          userTwoProfileName, userTwoProfileId, userThreeProfileName, userThreeProfileId, userFourProfileName,
+          userFourProfileId, userFiveProfileName, userFiveProfileId, tenantId, orgId, orgCode, orgName,
+          statusOfSubmission, completedDate, entityType, entityId, entityName, entityExternalId, parentOneObservedName, parentOneObservedId, parentTwoObservedName,
+          parentTwoObservedId, parentThreeObservedName, parentThreeObservedId, parentFourObservedName, parentFourObservedId,
+          parentFiveObservedName, parentFiveObservedId
+        )
+        postgresUtil.executePreparedUpdate(insertStatusQuery, statusParams, statusTable, submissionId)
+        println("\n\n")
+      }
 
-        val deleteQuery =
-          s"""DELETE FROM $domainTable
-             |WHERE user_id = ?
-             |  AND state_id = ?
-             |  AND district_id = ?
-             |  AND block_id = ?
-             |  AND cluster_id = ?
-             |  AND school_id = ?;
-             |""".stripMargin
+      /**
+       * Performs an delete and insert operation on the observation domain and question tables only is submission status is completed.
+       * This ensures the observation domain and question tables will always holds latest data in the database.
+       */
+      if (statusOfSubmission == "completed") {
+        println("===> Processing observation domain data")
+        if (isRubric) {
+          checkAndCreateTable(domainTable, createDomainsTable)
+          val deleteQuery = s"""DELETE FROM $domainTable WHERE user_id = ? AND submission_id = ? AND submission_number = ?; """
+          val deleteParams = Seq(userId, submissionId, submissionNumber)
+          postgresUtil.executePreparedDelete(deleteQuery, deleteParams, domainTable, submissionId)
+          themes.foreach { domain =>
+            val domainName = domain("name")
+            val domainLevel = domain.getOrElse("pointsBasedLevel", null)
+            val maybeChildren = domain.get("children").map(_.asInstanceOf[List[Map[String, Any]]])
+            val maybeCriteria = domain.get("criteria").map(_.asInstanceOf[List[Map[String, Any]]])
 
-        val deleteParams = Seq(user_id, state_id, district_id, block_id, cluster_id, school_id)
+            maybeChildren match {
+              case Some(subdomains) =>
+                subdomains.foreach { subdomain =>
+                  val maybeSubCriteria = subdomain.get("criteria").map(_.asInstanceOf[List[Map[String, Any]]])
+                  maybeSubCriteria.foreach { criteriaList =>
+                    criteriaList.foreach { criteria =>
+                      val criteriaId = criteria("criteriaId")
 
-        postgresUtil.executePreparedUpdate(deleteQuery, deleteParams, domainTable, user_id)
-
-        themes.foreach { domain =>
-          val domain_name = domain("name")
-          val domain_level = domain.getOrElse("pointsBasedLevel", null)
-          val maybeChildren = domain.get("children").map(_.asInstanceOf[List[Map[String, Any]]])
-          val maybeCriteria = domain.get("criteria").map(_.asInstanceOf[List[Map[String, Any]]])
-
-          maybeChildren match {
-            case Some(subdomains) =>
-              subdomains.foreach { subdomain =>
-                val maybeSubCriteria = subdomain.get("criteria").map(_.asInstanceOf[List[Map[String, Any]]])
-                maybeSubCriteria.foreach { criteriaList =>
-                  criteriaList.foreach { criteria =>
-                    val criteriaId = criteria("criteriaId")
-
-                    criteria_event.find(_("_id") == criteriaId).foreach { crit =>
+                      criteriaEvent.find(_("_id") == criteriaId).foreach { crit =>
+                      }
                     }
                   }
                 }
-              }
 
-            case None =>
-              maybeCriteria.foreach { criteriaList =>
-                criteriaList.foreach { criteria =>
-                  val criteriaId = criteria("criteriaId")
-                  println(s"criteria_id: $criteriaId")
+              case None =>
+                maybeCriteria.foreach { criteriaList =>
+                  criteriaList.foreach { criteria =>
+                    val criteriaId = criteria("criteriaId")
+                    println(s"criteria_id: $criteriaId")
 
-                  criteria_event.find(c => c("_id") == criteriaId).foreach { crit =>
-                    val criteria_name = crit("name")
-                    val criteria_level = crit("score")
-                    val insertCriteriaQuery =
-                      s"""INSERT INTO $domainTable (
-                         |    user_id, user_role_ids, user_roles, solution_id, solution_name, submission_id, submission_number, program_name, program_id,
-                         |    observation_name, observation_id, state_name, state_id, district_name, district_id, block_name, block_id, cluster_name,
-                         |    cluster_id, tenant_id, org_name, org_id, org_code, school_name, school_id, domain, domain_level, criteria, criteria_level, completed_date
-                         |) VALUES (
-                         |        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-                         |);
-                         |""".stripMargin
+                    criteriaEvent.find(c => c("_id") == criteriaId).foreach { crit =>
+                      val criteriaName = crit("name")
+                      val criteriaLevel = crit("score")
+                      val insertCriteriaQuery =
+                        s"""INSERT INTO $domainTable (
+                           |    user_id, user_role_ids, user_roles, solution_id, solution_name, submission_id, submission_number,
+                           |    program_name, program_id, observation_name, observation_id, tenant_id, org_name, org_id, org_code,
+                           |    user_one_profile_name, user_one_profile_id, user_two_profile_name, user_two_profile_id, user_three_profile_name, user_three_profile_id,
+                           |    user_four_profile_name, user_four_profile_id, user_five_profile_name, user_five_profile_id, domain, domain_level,
+                           |    criteria, criteria_level, completed_date, entity_type, entity_id, entity_name, entity_external_id, parent_one_name, parent_one_id,
+                           |    parent_two_name, parent_two_id, parent_three_name, parent_three_id, parent_four_name,
+                           |    parent_four_id, parent_five_name, parent_five_id
+                           |) VALUES (
+                           |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                           |);
+                           |""".stripMargin
 
-                    val criteriaParams = Seq(
-                      user_id, userRoleIds, userRoles, solution_id, solution_name, submission_id, submission_number, program_name,
-                      program_id, observation_name, observation_id, state_name, state_id, district_name, district_id, block_name, block_id,
-                      cluster_name, cluster_id, tenant_id, orgName, orgId, orgCode, school_name, school_id, domain_name, domain_level, criteria_name, criteria_level, completed_date
-                    )
+                      val criteriaParams = Seq(
+                        userId, userRoleIds, userRoles, solutionId, solutionName, submissionId, submissionNumber, programName, programId, observationName,
+                        observationId, tenantId, orgName, orgId, orgCode, userOneProfileName, userOneProfileId, userTwoProfileName, userTwoProfileId, userThreeProfileName,
+                        userThreeProfileId, userFourProfileName, userFourProfileId, userFiveProfileName, userFiveProfileId, domainName, domainLevel, criteriaName, criteriaLevel,
+                        completedDate, entityType, entityId, entityName, entityExternalId, parentOneObservedName, parentOneObservedId, parentTwoObservedName, parentTwoObservedId, parentThreeObservedName, parentThreeObservedId,
+                        parentFourObservedName, parentFourObservedId, parentFiveObservedName, parentFiveObservedId)
 
-                    postgresUtil.executePreparedUpdate(insertCriteriaQuery, criteriaParams, domainTable, solution_id)
+                      postgresUtil.executePreparedUpdate(insertCriteriaQuery, criteriaParams, domainTable, solutionId)
+                    }
                   }
                 }
-              }
+                println("\n\n")
+            }
           }
+        } else {
+          println("** This observation not attached with any rubrics so skipping processing the domain data \n\n")
         }
 
-        /**
-         * Extracting question data
-         */
-
-        val deleteQuestionQuery =
-          s"""DELETE FROM $questionTable
-             |WHERE user_id = ?
-             |  AND state_name = ?
-             |  AND district_name = ?
-             |  AND block_name = ?
-             |  AND cluster_name = ?
-             |  AND school_name = ?;
-             |""".stripMargin
-
-        val deleteQuestionParams = Seq(user_id, state_name, district_name, block_name, cluster_name, school_name)
-
-        postgresUtil.executePreparedUpdate(deleteQuestionQuery, deleteQuestionParams, questionTable, user_id)
-
+        println("===> Processing observation question data")
+        checkAndCreateTable(questionTable, createQuestionsTable)
+        val deleteQuery = s"""DELETE FROM $questionTable WHERE user_id = ? AND submission_id = ? AND submission_number = ?; """
+        val deleteParams = Seq(userId, submissionId, submissionNumber)
+        postgresUtil.executePreparedDelete(deleteQuery, deleteParams, questionTable, submissionId)
         val questionsFunction = new ObservationQuestionFunction(postgresUtil, config, questionTable)
         val answersKey = event.answers
 
-        def processQuestion(responseType: String, questionsMap: Map[String, Any], payload: Option[Map[String, Any]], question_id: String, domain_name: String,
-                            criteria_name: String, has_parent_question: Boolean, parent_question_text: String, evidences: String, remarks: String): Unit = {
+        def processQuestion(responseType: String, questionsMap: Map[String, Any], payload: Option[Map[String, Any]], questionId: String, domainName: String,
+                            criteriaName: String, hasParentQuestion: Boolean, parentQuestionText: String, evidences: String, remarks: String, reportType: String): Unit = {
           val value: String = questionsMap.get("value") match {
             case Some(v: String) => v
             case Some(v: Int) => v.toString
@@ -374,31 +508,23 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
             case _ => 0
           }
 
+          val commonParams = QuestionParams(payload = payload, questionId = questionId, solutionId = solutionId, solutionName = solutionName, submissionId = submissionId, submissionNumber = submissionNumber, userId = userId, userRoleIds = userRoleIds,
+            userRoles = userRoles, programName = programName, programId = programId, observationName = observationName, observationId = observationId, value = value,
+            userOneProfileName = userOneProfileName, userOneProfileId = userOneProfileId, userTwoProfileName = userTwoProfileName, userTwoProfileId = userTwoProfileId, userThreeProfileName = userThreeProfileName, userThreeProfileId = userThreeProfileId,
+            userFourProfileName = userFourProfileName, userFourProfileId = userFourProfileId, userFiveProfileName = userFiveProfileName, userFiveProfileId = userFiveProfileId,
+            tenantId = tenantId, orgId = orgId, orgCode = orgCode, orgName = orgName, statusOfSubmission = statusOfSubmission, submittedAt = completedDate, entityType = entityType, entityId = entityId, entityName = entityName, entityExternalId = entityExternalId,
+            parentOneName = parentOneObservedName, parentOneId = parentOneObservedId, parentTwoName = parentTwoObservedName, parentTwoId = parentTwoObservedId, parentThreeName = parentThreeObservedName, parentThreeId = parentThreeObservedId,
+            parentFourName = parentFourObservedName, parentFourId = parentFourObservedId, parentFiveName = parentFiveObservedName, parentFiveId = parentFiveObservedId,
+            domainName = domainName, criteriaName = criteriaName, score = score, hasParentQuestion = hasParentQuestion, parentQuestionText = parentQuestionText, evidences = evidences, remarks = remarks, reportType = reportType
+          )
           responseType match {
-            case "text" =>
-              questionsFunction.textQuestionType(payload, question_id, solution_id, solution_name, submission_id, user_id, userRoleIds, userRoles, program_name, program_id,
-                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, tenant_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
-                has_parent_question, parent_question_text, evidences, remarks, completed_date)
-            case "radio" =>
-              questionsFunction.radioQuestionType(payload, question_id, solution_id, solution_name, submission_id, user_id, userRoleIds, userRoles, program_name, program_id,
-                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, tenant_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
-                has_parent_question, parent_question_text, evidences, remarks, completed_date)
-            case "date" =>
-              questionsFunction.dateQuestionType(payload, question_id, solution_id, solution_name, submission_id, user_id, userRoleIds, userRoles, program_name, program_id,
-                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, tenant_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
-                has_parent_question, parent_question_text, evidences, remarks, completed_date)
-            case "multiselect" =>
-              questionsFunction.multiselectQuestionType(payload, question_id, solution_id, solution_name, submission_id, user_id, userRoleIds, userRoles, program_name, program_id,
-                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, tenant_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
-                has_parent_question, parent_question_text, evidences, remarks, completed_date)
-            case "number" =>
-              questionsFunction.numberQuestionType(payload, question_id, solution_id, solution_name, submission_id, user_id, userRoleIds, userRoles, program_name, program_id,
-                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, tenant_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
-                has_parent_question, parent_question_text, evidences, remarks, completed_date)
-            case "slider" =>
-              questionsFunction.sliderQuestionType(payload, question_id, solution_id, solution_name, submission_id, user_id, userRoleIds, userRoles, program_name, program_id,
-                observation_name, observation_id, value, state_name, district_name, block_name, cluster_name, school_name, school_id, tenant_id, orgId, orgCode, orgName, domain_name, criteria_name, score,
-                has_parent_question, parent_question_text, evidences, remarks, completed_date)
+            case "text" => questionsFunction.processQuestionType(commonParams, "text")
+            case "radio" => questionsFunction.processQuestionType(commonParams, "radio")
+            case "date" => questionsFunction.processQuestionType(commonParams, "date")
+            case "multiselect" => questionsFunction.processQuestionType(commonParams, "multiselect")
+            case "number" => questionsFunction.processQuestionType(commonParams, "number")
+            case "slider" => questionsFunction.processQuestionType(commonParams, "slider")
+
             case "matrix" =>
               questionsMap.get("value") match {
                 case Some(valueList: List[Map[String, Any]]) =>
@@ -411,7 +537,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
                       }
                       val matrixPayload = matrixQuestionMap.get("payload").map(_.asInstanceOf[Map[String, Any]])
                       val matrixResponseType = matrixQuestionMap.get("responseType").map(_.toString).getOrElse("")
-                      processQuestion(matrixResponseType, matrixQuestionMap, matrixPayload, matrixQuestionId, domain_name, criteria_name, has_parent_question, parent_question_text, evidences, remarks)
+                      processQuestion(matrixResponseType, matrixQuestionMap, matrixPayload, matrixQuestionId, domainName, criteriaName, hasParentQuestion, parentQuestionText, evidences, remarks, reportType)
                     }
                   }
                 case _ => println("No matrix data found.")
@@ -424,11 +550,15 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
           case answersMap: Map[_, _] =>
             answersMap.foreach { case (_, value) =>
               val questionsMap = value.asInstanceOf[Map[String, Any]]
-              val payloadOpt: Option[Map[String, Any]] = questionsMap.get("payload").collect { case m: Map[String @unchecked, Any @unchecked] => m }
+              val payloadOpt: Option[Map[String, Any]] = questionsMap.get("payload").collect { case m: Map[String@unchecked, Any@unchecked] => m }
               println(s"qid: ${questionsMap.get("qid")}")
               val question_id: String = questionsMap.get("qid") match {
                 case Some(v: String) => v
                 case _ => ""
+              }
+              val report_type: String = questionsMap.get("reportType") match {
+                case Some(v: String) => v
+                case _ => "Default"
               }
               val question_criteria_id: String = questionsMap.get("criteriaId") match {
                 case Some(v: String) => v
@@ -458,7 +588,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
                 criteriaList = theme("criteria").asInstanceOf[List[Map[String, Any]]]
                 matchingCriteria <- criteriaList.find(_("criteriaId") == question_criteria_id)
                 themeName = theme("name").toString
-                criteriaName <- criteria_event.find(_("_id") == question_criteria_id).map(_("name").toString)
+                criteriaName <- criteriaEvent.find(_("_id") == question_criteria_id).map(_("name").toString)
               } yield (themeName, criteriaName)
 
               result.foreach { case (themeName, criteriaName) =>
@@ -487,9 +617,9 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
                   }
                   val has_parent_question: Boolean = parent_question_text.nonEmpty
 
-                  processQuestion(responseType, questionsMap, payload, question_id, domain_name, criteria_name, has_parent_question, parent_question_text, evidences, remarks)
+                  processQuestion(responseType, questionsMap, payload, question_id, domain_name, criteria_name, has_parent_question, parent_question_text, evidences, remarks, report_type)
                 } else {
-                  processQuestion(responseType, questionsMap, payload, question_id, domain_name, criteria_name, false, null, evidences, remarks)
+                  processQuestion(responseType, questionsMap, payload, question_id, domain_name, criteria_name, false, null, evidences, remarks, report_type)
                 }
               } else {
                 println(s"Skipping question_id=$question_id as payload is missing.")
@@ -499,14 +629,17 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
             logger.error("Unexpected structure for answers field")
         }
 
-        /**
-         * Logic to populate kafka messages for creating metabase dashboard
-         */
+      }
+
+      /**
+       * Logic to populate kafka messages for creating metabase dashboard
+       */
+      if (statusOfSubmission == "completed") {
         val dashboardData = new java.util.HashMap[String, String]()
         val dashboardConfig = Seq(
           ("admin", "1", "admin"),
-          ("program", program_id, "targetedProgram"),
-          ("solution", solution_id, "targetedSolution")
+          ("program", programId, "targetedProgram"),
+          ("solution", solutionId, "targetedSolution")
         )
 
         dashboardConfig
@@ -514,9 +647,10 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
           .foreach { case (key, value, target) =>
             checkAndInsert(key, value, dashboardData, target)
           }
-        dashboardData.put("isRubric", event.isRubric.toString)
 
         if (!dashboardData.isEmpty) {
+          dashboardData.put("isRubric", isRubric.toString)
+          dashboardData.put("entityType", entityType)
           pushObservationDashboardEvents(dashboardData, context)
         }
       }
@@ -536,115 +670,62 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
                 println(s"Inserted Admin details. Affected rows: $affectedRows")
                 dashboardData.put(dashboardKey, "1")
               } else {
+                val (entityColumn, sourceTable) = entityType match {
+                  case "program"  => (s"${entityType}_name", config.solutions)
+                  case "solution" => ("name", config.solutions)
+                }
+
                 val getEntityNameQuery =
                   s"""
-                     |SELECT DISTINCT ${
-                    if (entityType == "solution") "name"
-                    else s"${entityType}_name"
-                  } AS ${entityType}_name
-                     |FROM ${
-                    entityType match {
-                      case "program" => config.solutions
-                      case "solution" => config.solutions
-                    }
-                  }
+                     |SELECT DISTINCT $entityColumn AS ${entityType}_name
+                     |FROM $sourceTable
                      |WHERE ${entityType}_id = '$targetedId'
-               """.stripMargin.replaceAll("\n", " ")
+                     |""".stripMargin.replaceAll("\n", " ")
+
                 val result = postgresUtil.fetchData(getEntityNameQuery)
                 result.foreach { id =>
                   val entityName = id.get(s"${entityType}_name").map(_.toString).getOrElse("")
-                  val upsertMetaDataQuery =
-                    s"""INSERT INTO ${config.dashboard_metadata} (
-                       |    entity_type, entity_name, entity_id
-                       |) VALUES (
-                       |    ?, ?, ?
-                       |) ON CONFLICT (entity_id) DO UPDATE SET
-                       |    entity_type = ?, entity_name = ?;
-                       |""".stripMargin
 
-                  val dashboardParams = Seq(
-                    entityType, entityName, targetedId, // Insert parameters
-                    entityType, entityName // Update parameters (matching columns in the ON CONFLICT clause)
-                  )
-                  postgresUtil.executePreparedUpdate(upsertMetaDataQuery, dashboardParams, config.dashboard_metadata, targetedId)
-                  println(s"Inserted [$entityName : $targetedId] details.")
+                  if (entityType == "solution") {
+                    // Special insert/upsert logic for solution only
+                    val upsertQuery =
+                      s"""INSERT INTO ${config.dashboard_metadata} (
+                         |    entity_type, entity_name, entity_id,
+                         |    report_type, is_rubrics, parent_name, linked_to
+                         |) VALUES (?, ?, ?, ?, ?, ?, ?)
+                         |ON CONFLICT (entity_id) DO UPDATE SET
+                         |    entity_type = EXCLUDED.entity_type,
+                         |    entity_name = EXCLUDED.entity_name,
+                         |    report_type = EXCLUDED.report_type,
+                         |    is_rubrics = EXCLUDED.is_rubrics,
+                         |    parent_name = EXCLUDED.parent_name,
+                         |    linked_to = EXCLUDED.linked_to
+                         |""".stripMargin
+
+                    val params = Seq(
+                      entityType, entityName, targetedId,
+                      "observation", isRubric.asInstanceOf[AnyRef], event.entityType, programId
+                    )
+                    postgresUtil.executePreparedUpdate(upsertQuery, params, config.dashboard_metadata, targetedId)
+                    println(s"Inserted [$entityName : $targetedId] with reportType=observation, isRubric=$isRubric, parent_name=${event.entityType}, linked_to=$programId.")
+                  } else {
+                    // Default logic for program or others
+                    val insertQuery =
+                      s"""INSERT INTO ${config.dashboard_metadata} (
+                         |    entity_type, entity_name, entity_id
+                         |) VALUES ('$entityType', '$entityName', '$targetedId')
+                         |ON CONFLICT (entity_id) DO NOTHING
+                         |""".stripMargin.replaceAll("\n", " ")
+
+                    val affectedRows = postgresUtil.insertData(insertQuery)
+                    println(s"Inserted [$entityName : $targetedId] with default metadata. Affected rows: $affectedRows")
+                  }
+
                   dashboardData.put(dashboardKey, targetedId)
                 }
               }
           }
         }
-      }
-
-      if (status_of_submission != null) {
-        val createStatusTable =
-          s"""CREATE TABLE IF NOT EXISTS $statusTable (
-             |    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-             |    user_id TEXT ,
-             |    user_role_ids TEXT,
-             |    user_roles TEXT,
-             |    solution_id TEXT ,
-             |    solution_name TEXT,
-             |    submission_id TEXT,
-             |    program_name TEXT,
-             |    program_id TEXT,
-             |    observation_name TEXT,
-             |    observation_id TEXT,
-             |    state_name TEXT,
-             |    district_name TEXT,
-             |    block_name TEXT,
-             |    cluster_name TEXT,
-             |    school_name TEXT,
-             |    school_id TEXT,
-             |    tenant_id TEXT,
-             |    org_id TEXT,
-             |    org_code TEXT,
-             |    org_name TEXT,
-             |    status_of_submission TEXT,
-             |    submitted_at TEXT
-             |);""".stripMargin
-
-        val AlterStatusTable =
-          s"""ALTER TABLE IF EXISTS $questionTable
-             |ADD COLUMN IF NOT EXISTS user_role_ids TEXT,
-             |ADD COLUMN IF NOT EXISTS tenant_id TEXT,
-             |ADD COLUMN IF NOT EXISTS org_id TEXT,
-             |ADD COLUMN IF NOT EXISTS org_code TEXT;
-             |""".stripMargin
-
-        checkAndCreateTable(statusTable, createStatusTable)
-        postgresUtil.executeUpdate(AlterStatusTable, statusTable, solution_id)
-
-        val deleteQuery =
-          s"""DELETE FROM $statusTable
-             |WHERE user_id = ?
-             |  AND state_name = ?
-             |  AND district_name = ?
-             |  AND block_name = ?
-             |  AND cluster_name = ?
-             |  AND school_name = ?;
-             |""".stripMargin
-
-        val deleteParams = Seq(user_id, state_name, district_name, block_name, cluster_name, school_name)
-
-        postgresUtil.executePreparedUpdate(deleteQuery, deleteParams, statusTable, user_id)
-
-        val insertStatusQuery =
-          s"""INSERT INTO $statusTable (
-             |    user_id, user_role_ids, user_roles, solution_id, solution_name, submission_id, program_name, program_id,
-             |    observation_name, observation_id, state_name, district_name, block_name, cluster_name, tenant_id, org_id, org_code, org_name,
-             |    school_name, school_id, status_of_submission, submitted_at
-             |) VALUES (
-             |        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-             |);
-             |""".stripMargin
-
-        val statusParams = Seq(
-          user_id, userRoleIds, userRoles, solution_id, solution_name, submission_id, program_name,
-          program_id, observation_name, observation_id, state_name, district_name, block_name, cluster_name,
-          tenant_id, orgId, orgCode, orgName, school_name, school_id, status_of_submission, completed_date
-        )
-
-        postgresUtil.executePreparedUpdate(insertStatusQuery, statusParams, statusTable, solution_id)
       }
 
       def pushObservationDashboardEvents(dashboardData: util.HashMap[String, String], context: ProcessFunction[Event, Event]#Context): util.HashMap[String, AnyRef] = {

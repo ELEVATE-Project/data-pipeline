@@ -70,11 +70,20 @@ class ObservationStreamConfig(override val config: Config) extends BaseJobConfig
        |    entity_type TEXT NOT NULL,
        |    entity_name TEXT NOT NULL,
        |    entity_id TEXT UNIQUE NOT NULL,
-       |    collection_id TEXT,
-       |    dashboard_id TEXT,
-       |    question_ids TEXT,
+       |    report_type TEXT,
+       |    is_rubrics Boolean,
+       |    parent_name TEXT,
+       |    linked_to TEXT,
+       |    main_metadata JSON,
+       |    mi_metadata JSON,
+       |    comparison_metadata JSON,
        |    status TEXT,
-       |    error_message TEXT
+       |    error_message TEXT,
+       |    state_details_url_state TEXT,
+       |    state_details_url_admin TEXT,
+       |    district_details_url_district TEXT,
+       |    district_details_url_state TEXT,
+       |    district_details_url_admin TEXT
        |);
        |""".stripMargin
 

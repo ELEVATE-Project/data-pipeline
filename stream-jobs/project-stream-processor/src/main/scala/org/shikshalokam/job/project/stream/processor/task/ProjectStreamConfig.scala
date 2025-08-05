@@ -51,7 +51,7 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
   val tasks: String = config.getString("postgres.tables.tasksTable")
   val dashboard_metadata: String = config.getString("postgres.tables.dashboardMetadataTable")
 
-  val createSolutionsTable =
+  val createSolutionsTable: String =
     s"""CREATE TABLE IF NOT EXISTS $solutions (
        |    solution_id TEXT PRIMARY KEY,
        |    external_id TEXT,
@@ -66,7 +66,7 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
        |    private_program BOOLEAN
        |);""".stripMargin
 
-  val createProjectTable =
+  val createProjectTable: String =
     s"""CREATE TABLE IF NOT EXISTS $projects (
        |    project_id TEXT PRIMARY KEY,
        |    solution_id TEXT REFERENCES $solutions(solution_id),
@@ -80,6 +80,7 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
        |    evidence TEXT,
        |    evidence_count TEXT,
        |    program_id TEXT,
+       |    program_name TEXT,
        |    task_count TEXT,
        |    user_role_ids TEXT,
        |    user_roles TEXT,
@@ -104,11 +105,11 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
        |    certificate_pdf_path TEXT
        |);""".stripMargin
 
-  val AlterProjectTable =
+  val AlterProjectTable: String =
     s"""ALTER TABLE IF EXISTS $projects
        |ADD COLUMN IF NOT EXISTS tenant_id TEXT;""".stripMargin
 
-  val createTasksTable =
+  val createTasksTable: String =
     s"""CREATE TABLE IF NOT EXISTS $tasks (
        |    task_id TEXT PRIMARY KEY,
        |    project_id TEXT REFERENCES $projects(project_id),
@@ -125,12 +126,16 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
        |    evidence_count TEXT
        |);""".stripMargin
 
-  val createDashboardMetadataTable =
+  val createDashboardMetadataTable: String =
     s"""CREATE TABLE IF NOT EXISTS $dashboard_metadata (
        |    id SERIAL PRIMARY KEY,
        |    entity_type TEXT NOT NULL,
        |    entity_name TEXT NOT NULL,
        |    entity_id TEXT UNIQUE NOT NULL,
+       |    report_type TEXT,
+       |    is_rubrics Boolean,
+       |    parent_name TEXT,
+       |    linked_to TEXT,
        |    main_metadata JSON,
        |    mi_metadata JSON,
        |    comparison_metadata JSON,

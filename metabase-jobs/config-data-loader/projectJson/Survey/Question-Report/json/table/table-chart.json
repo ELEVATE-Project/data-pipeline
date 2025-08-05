@@ -6,17 +6,17 @@
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT user_id as \"UUID\",\nuser_roles as \"User Type\",\nstate_name as \"State Name\",\ndistrict_name as \"District Name\",\nblock_name as \"Block Name\",\nschool_id as \"School ID\",\nschool_name as \"School Name\",\norganisation_name as \"Org Name\",\nprogram_name as \"Program Name\",\nprogram_id as \"Program ID\",\nsolution_name as \"Survey Name\",\nsolution_id as \"Survey ID\",\nsurvey_id as \"Survey Submission ID\",\nquestion_id as \"Question ID\",\nquestion_text as \"Question\",\nlabels as \"Question Response Label\",\n  (\n    SELECT string_agg(\n      'https://saas-qa.tekdinext.com/project/v1/cloud-services/files/download?file=' || trim(value),\n      ', '\n    )\n    FROM unnest(string_to_array(evidence, ',')) AS value\n  ) AS \"Evidences\",\nremarks as \"Remarks\"\nFROM ${questionTable}\nWHERE 1 =1 \n[[AND {{state_param}}]]\n[[AND {{district_param}}]];",
+        "query": "SELECT user_id as \"UUID\",\nuser_roles as \"User Type\",\nstate_name as \"State\",\ndistrict_name as \"District\",\nblock_name as \"Block\",\nschool_id as \"School ID\",\nschool_name as \"School\",\norganisation_name as \"Organisation\",\nprogram_name as \"Program\",\nprogram_id as \"Program ID\",\nsolution_name as \"Survey\",\nsolution_id as \"Survey ID\",\nsurvey_id as \"Survey Submission ID\",\nquestion_id as \"Question ID\",\nquestion_text as \"Question\",\nlabels as \"Question Response Label\",\n  (\n    SELECT string_agg(\n      ${evidenceBaseUrl} || trim(value),\n      ', '\n    )\n    FROM unnest(string_to_array(evidence, ',')) AS value\n  ) AS \"Evidences\",\nremarks as \"Remarks\"\nFROM ${questionTable}\nWHERE 1 =1 \n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{block_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{org_param}}]];",
         "template-tags": {
           "state_param": {
             "type": "dimension",
             "name": "state_param",
-            "id": "ac6bfb57-39b4-4500-bbb9-478620182815",
+            "id": "77ce5c53-d414-432f-bfa0-ef83fe4d1981",
             "display-name": "State Param",
             "default": null,
             "dimension": [
               "field",
-              140,
+              1491,
               null
             ],
             "widget-type": "string/=",
@@ -25,12 +25,38 @@
           "district_param": {
             "type": "dimension",
             "name": "district_param",
-            "id": "6a9a6bc3-1388-4140-9e7b-71db75a1f6e3",
+            "id": "b338bd73-7852-4ead-91af-5ef366d16a06",
             "display-name": "District Param",
             "default": null,
             "dimension": [
               "field",
-              141,
+              1494,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "block_param": {
+            "type": "dimension",
+            "name": "block_param",
+            "id": "bee6b62d-7188-4612-8a4e-d4395d31fcfe",
+            "display-name": "Block Param",
+            "dimension": [
+              "field",
+              478,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "cluster_param": {
+            "type": "dimension",
+            "name": "cluster_param",
+            "id": "5da8fb12-910e-4763-a44a-8c1f976b22af",
+            "display-name": "Cluster Param",
+            "default": null,
+            "dimension": [
+              "field",
+              1495,
               null
             ],
             "widget-type": "string/=",
@@ -39,12 +65,26 @@
           "school_param": {
             "type": "dimension",
             "name": "school_param",
-            "id": "b0f29eb1-7939-4968-8bcb-6063887cde46",
+            "id": "428eb582-a80c-4bac-8430-bdb6187e016b",
             "display-name": "School Param",
             "default": null,
             "dimension": [
               "field",
-              131,
+              1496,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "org_param": {
+            "type": "dimension",
+            "name": "org_param",
+            "id": "a45783ee-540b-486d-891a-460a97901692",
+            "display-name": "Org Param",
+            "default": null,
+            "dimension": [
+              "field",
+              485,
               null
             ],
             "widget-type": "string/=",
@@ -60,7 +100,7 @@
     },
     "parameters": [
       {
-        "id": "ac6bfb57-39b4-4500-bbb9-478620182815",
+        "id": "77ce5c53-d414-432f-bfa0-ef83fe4d1981",
         "type": "string/=",
         "target": [
           "dimension",
@@ -73,7 +113,7 @@
         "slug": "state_param"
       },
       {
-        "id": "6a9a6bc3-1388-4140-9e7b-71db75a1f6e3",
+        "id": "b338bd73-7852-4ead-91af-5ef366d16a06",
         "type": "string/=",
         "target": [
           "dimension",
@@ -86,7 +126,33 @@
         "slug": "district_param"
       },
       {
-        "id": "b0f29eb1-7939-4968-8bcb-6063887cde46",
+        "id": "bee6b62d-7188-4612-8a4e-d4395d31fcfe",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "block_param"
+          ]
+        ],
+        "name": "Block Param",
+        "slug": "block_param"
+      },
+      {
+        "id": "5da8fb12-910e-4763-a44a-8c1f976b22af",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "cluster_param"
+          ]
+        ],
+        "name": "Cluster Param",
+        "slug": "cluster_param"
+      },
+      {
+        "id": "428eb582-a80c-4bac-8430-bdb6187e016b",
         "type": "string/=",
         "target": [
           "dimension",
@@ -97,6 +163,19 @@
         ],
         "name": "School Param",
         "slug": "school_param"
+      },
+      {
+        "id": "a45783ee-540b-486d-891a-460a97901692",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "org_param"
+          ]
+        ],
+        "name": "Org Param",
+        "slug": "org_param"
       }
     ]
   },
@@ -107,7 +186,7 @@
     "parameter_mappings": [
       {
         "parameter_id": "c32c8fc5",
-        "card_id": 2161,
+        "card_id": 1876,
         "target": [
           "dimension",
           [
@@ -118,7 +197,7 @@
       },
       {
         "parameter_id": "74a10335",
-        "card_id": 2161,
+        "card_id": 1876,
         "target": [
           "dimension",
           [
@@ -128,13 +207,46 @@
         ]
       },
       {
+        "parameter_id": "9e5a09bh",
+        "card_id": 8985,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "block_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "cc7a4cd7",
+        "card_id": 1876,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "cluster_param"
+          ]
+        ]
+      },
+      {
         "parameter_id": "6e5c08dc",
-        "card_id": 2161,
+        "card_id": 1876,
         "target": [
           "dimension",
           [
             "template-tag",
             "school_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "5088d3e5",
+        "card_id": 8985,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "org_param"
           ]
         ]
       }

@@ -108,6 +108,7 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def certificatePdfPath: String = readOrDefault[String]("certificate.pdfPath", "")
 
+  def entityType: String = readOrDefault[String]("entityInformation.entityType", null)
 
 }
 

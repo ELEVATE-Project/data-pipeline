@@ -1,12 +1,12 @@
 {
   "questionCard": {
-    "name": "Slider Type chart",
+    "name": "Slider Type Chart",
     "collection_id": 644,
     "dataset_query": {
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT value AS \"Rating\", COUNT(*) AS \"Total count of users\"\nFROM ${questionTable}\nWHERE 1 = 1 \n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{school_param}}]]\nAND question_type = 'slider' \nAND question_id = ${questionId}\nAND value is not null AND value <> ''\nGROUP BY value\nORDER BY value;",
+        "query": "SELECT value AS \"Rating\", COUNT(*) AS \"Total count of users\"\nFROM ${questionTable}\nWHERE 1 = 1 \n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{block_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{org_param}}]]\nAND question_type = 'slider' \nAND question_id = ${questionId}\nAND value is not null AND value <> ''\nGROUP BY value\nORDER BY value;",
         "template-tags": {
           "state_param": {
             "type": "dimension",
@@ -36,6 +36,32 @@
             "widget-type": "string/=",
             "options": null
           },
+          "block_param": {
+            "type": "dimension",
+            "name": "block_param",
+            "id": "bee6b62d-7188-4612-8a4e-d4395d31fcfe",
+            "display-name": "Block Param",
+            "dimension": [
+              "field",
+              478,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "cluster_param": {
+            "type": "dimension",
+            "name": "cluster_param",
+            "id": "5da8fb12-910e-4763-a44a-8c1f976b22af",
+            "display-name": "Cluster Param",
+            "default": null,
+            "dimension": [
+              "field",
+              1495,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
           "school_param": {
             "type": "dimension",
             "name": "school_param",
@@ -45,6 +71,20 @@
             "dimension": [
               "field",
               1496,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "org_param": {
+            "type": "dimension",
+            "name": "org_param",
+            "id": "a45783ee-540b-486d-891a-460a97901692",
+            "display-name": "Org Param",
+            "default": null,
+            "dimension": [
+              "field",
+              485,
               null
             ],
             "widget-type": "string/=",
@@ -83,6 +123,32 @@
         "slug": "district_param"
       },
       {
+        "id": "bee6b62d-7188-4612-8a4e-d4395d31fcfe",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "block_param"
+          ]
+        ],
+        "name": "Block Param",
+        "slug": "block_param"
+      },
+      {
+        "id": "5da8fb12-910e-4763-a44a-8c1f976b22af",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "cluster_param"
+          ]
+        ],
+        "name": "Cluster Param",
+        "slug": "cluster_param"
+      },
+      {
         "id": "428eb582-a80c-4bac-8430-bdb6187e016b",
         "type": "string/=",
         "target": [
@@ -94,6 +160,19 @@
         ],
         "name": "School Param",
         "slug": "school_param"
+      },
+      {
+        "id": "a45783ee-540b-486d-891a-460a97901692",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "org_param"
+          ]
+        ],
+        "name": "Org Param",
+        "slug": "org_param"
       }
     ]
   },
@@ -125,6 +204,28 @@
         ]
       },
       {
+        "parameter_id": "9e5a09bh",
+        "card_id": 8985,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "block_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "cc7a4cd7",
+        "card_id": 1876,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "cluster_param"
+          ]
+        ]
+      },
+      {
         "parameter_id": "6e5c08dc",
         "card_id": 1876,
         "target": [
@@ -132,6 +233,17 @@
           [
             "template-tag",
             "school_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "5088d3e5",
+        "card_id": 8985,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "org_param"
           ]
         ]
       }

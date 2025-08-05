@@ -59,21 +59,19 @@ class ProgramServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo
 
       // Fetching from oldValues or using fallback
       val uniqueUserName = getValue("username", event.username)
-      val email = Option(getValue("email", event.email)).filter(_.trim.nonEmpty).getOrElse(uniqueUserName + config.domainName)
-      val programName = event.programName
+      val programId = event.programId
 
       println(s"Entity = $entity")
       println(s"EntityType = $eventType")
       println(s"Unique User Name = $uniqueUserName")
-      println(s"Email = $email")
-      println(s"Program Name = $programName")
+      println(s"Program Id = $programId")
 
       if (entity == "program" && eventType == "create") {
-        val userId = checkUserId(email)
-        if (userId != -1) addUserToGroup("program_manager", None, None, Some(programName), userId) else println("User Not Found. Stopped processing")
-      } else if (entity == "program" && eventType == "delete"){
-        val userId = checkUserId(email)
-        if (userId != -1) removeUserFromGroup("program_manager", None, None, Some(programName), userId) else println("User Not Found. Stopped processing")
+        val userId = getUserId(uniqueUserName)
+        if (userId != -1) addUserToGroup("program_manager", programId, userId) else println("User Not Found. Stopped processing")
+      } else if (entity == "program" && eventType == "delete") {
+        val userId = getUserId(uniqueUserName)
+        if (userId != -1) removeUserFromGroup("program_manager", programId, userId) else println("User Not Found. Stopped processing")
       }
 
       println(s"***************** End of Processing the Program Service Event *****************")
@@ -81,32 +79,34 @@ class ProgramServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo
 
   }
 
-  private def checkUserId(email: String): Int = {
+  private def getUserId(uniqueUserName: String): Int = {
     val users = mapper.readTree(metabaseUtil.listUsers()).path("data").elements().asScala
 
-    users.find(_.get("email").asText().equalsIgnoreCase(email)) match {
+    users.find { user =>
+      val loginAttrs = user.path("login_attributes")
+      loginAttrs.has("userName") && loginAttrs.get("userName").asText().equalsIgnoreCase(uniqueUserName)
+    } match {
       case Some(user) =>
         val id = user.get("id").asInt()
+        val email = user.get("email")
         if (user.get("is_active").asBoolean()) {
-          println(s"User already exists and is active: $email with id: $id")
+          println(s"User already exists and is active: $uniqueUserName with id: $id and email: $email")
           id
         } else {
-          println(s"User with email: $email exists but has been deactivated (id: $id)")
+          println(s"User with userName: $uniqueUserName exists but has been deactivated (id: $id)")
           id
         }
       case None =>
+        println(s"No user found with userName: $uniqueUserName")
         -1
     }
   }
 
-  private def addUserToGroup(userRole: String, stateName: Option[String] = None, districtName: Option[String] = None, programName: Option[String] = None, userId: Int): Unit = {
+  private def addUserToGroup(userRole: String, programId: String, userId: Int): Unit = {
 
     val existingUserGroups = metabaseUtil.listGroups()
     val groupName = userRole match {
-      case "report_admin" => s"Report_Admin"
-      case "state_manager" => s"${stateName}_State_Manager"
-      case "district_manager" => s"${districtName}_District_Manager[$stateName]"
-      case "program_manager" => s"Program_Manager[${programName.getOrElse("")}]"
+      case "program_manager" => s"Program_Manager_$programId"
       case _ => throw new IllegalArgumentException("Invalid manager type")
     }
 
@@ -120,14 +120,11 @@ class ProgramServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo
 
   }
 
-  private def removeUserFromGroup(userRole: String, stateName: Option[String] = None, districtName: Option[String] = None, programName: Option[String] = None, userId: Int): Unit = {
+  private def removeUserFromGroup(userRole: String, programId: String, userId: Int): Unit = {
 
     val existingUserGroups = metabaseUtil.listGroups()
     val groupName = userRole match {
-      case "report_admin" => s"Report_Admin"
-      case "state_manager" => s"${stateName}_State_Manager"
-      case "district_manager" => s"${districtName}_District_Manager[$stateName]"
-      case "program_manager" => s"Program_Manager[${programName.getOrElse("")}]"
+      case "program_manager" => s"Program_Manager_$programId"
       case _ => throw new IllegalArgumentException("Invalid manager type")
     }
 
@@ -148,7 +145,7 @@ class ProgramServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo
       .map(node => node.get("id").asInt())
   }
 
-  private def validateUserInGroup(userId: Int, groupId: Int) = {
+  private def validateUserInGroup(userId: Int, groupId: Int): Unit = {
     val isUserInGroup = mapper.readTree(metabaseUtil.getGroupDetails(groupId))
       .get("members")
       .elements()

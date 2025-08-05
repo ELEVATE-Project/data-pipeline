@@ -13,6 +13,7 @@ RUN apt update && apt install -y \
     curl \
     maven \
     jq \
+    nano \
     postgresql postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
@@ -32,10 +33,11 @@ ENV SCALA_HOME=/usr/local/scala
 ENV PATH="$SCALA_HOME/bin:$PATH"
 
 # Install Maven
-RUN wget https://downloads.apache.org/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz && \
-    tar -xzf apache-maven-3.8.8-bin.tar.gz && \
-    mv apache-maven-3.8.8 /usr/local/maven && \
-    rm apache-maven-3.8.8-bin.tar.gz
+RUN MAVEN_VERSION=$(curl -s https://maven.apache.org/download.cgi | grep -oP 'apache-maven-\K[0-9.]+(?=-bin\.tar\.gz)' | head -1) && \
+    wget https://downloads.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz && \
+    tar -xzf apache-maven-${MAVEN_VERSION}-bin.tar.gz && \
+    mv apache-maven-${MAVEN_VERSION} /usr/local/maven && \
+    rm apache-maven-${MAVEN_VERSION}-bin.tar.gz
 
 ENV MAVEN_HOME=/usr/local/maven
 ENV PATH=$MAVEN_HOME/bin:$PATH
