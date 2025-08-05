@@ -119,53 +119,56 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
     val createTenantTable = config.createTenantUserMetadataTable.replace("@tenantTable", tenantUserMetadataTable)
     checkAndCreateTable(tenantUserMetadataTable, createTenantTable)
 
-    if (eventType == "update" || eventType == "bulk-update" || eventType == "create" || eventType == "bulk-create") {
-      processUsers(tenantUserTable, userId)
-      processUserMetadata(tenantUserMetadataTable, userId, "Professional Role", professionalRoleName, professionalRoleId)
-      event.organizations.foreach { org =>
-        println(s"Organization ID: ${org.get("id")}")
-        val organizationsName = org.get("name").map(_.toString).orNull
-        val organizationsId = org.get("id").map(_.toString).orNull
+    if (tenantCode.nonEmpty) {
+      if (eventType == "update" || eventType == "bulk-update" || eventType == "create" || eventType == "bulk-create") {
+        processUsers(tenantUserTable, userId)
+        processUserMetadata(tenantUserMetadataTable, userId, "Professional Role", professionalRoleName, professionalRoleId)
+        event.organizations.foreach { org =>
+          println(s"Organization ID: ${org.get("id")}")
+          val organizationsName = org.get("name").map(_.toString).orNull
+          val organizationsId = org.get("id").map(_.toString).orNull
 
-        /**
-         * Processing for Orgs data
-         */
-        if (organizationsName.nonEmpty && organizationsId.nonEmpty) {
-          println(s"Upserting for attribute_code: Organizations, attribute_value: $organizationsName, attribute_label: $organizationsId")
-          processUserMetadata(tenantUserMetadataTable, userId, "Organizations", organizationsName, organizationsId)
-        } else {
-          println("Org name or Org Id is empty")
-        }
-
-        /**
-         * Processing for Roles data
-         */
-        val roles = org.get("roles").map(_.asInstanceOf[List[Map[String, Any]]]).getOrElse(List.empty)
-        if (roles.nonEmpty) {
-          val rolePairs = extractUserRolesPerRow(roles)
-          val subrolePairs = extractProfessionalSubrolesPerRow(professionalSubroles)
-          rolePairs.foreach { case (userRoleName, userRoleId) =>
-            println(s"Upserting for attribute_code: Platform Role, attribute_value: $userRoleName, attribute_label: $userRoleId")
-            processUserMetadata(tenantUserMetadataTable, userId, "Platform Role", userRoleName, userRoleId)
-
-            if (subrolePairs.nonEmpty) {
-              subrolePairs.foreach { case (professionalSubrolesName, professionalSubrolesId) =>
-                println(s"Upserting for attribute_code: Professional Subroles, attribute_value: $professionalSubrolesName, attribute_label: $professionalSubrolesId")
-                processUserMetadata(tenantUserMetadataTable, userId, "Professional Subroles", professionalSubrolesName, professionalSubrolesId)
-              }
-            } else {
-              println(s"No professional subroles found for user $userId in organization $organizationsId")
-            }
+          /**
+           * Processing for Orgs data
+           */
+          if (organizationsName.nonEmpty && organizationsId.nonEmpty) {
+            println(s"Upserting for attribute_code: Organizations, attribute_value: $organizationsName, attribute_label: $organizationsId")
+            processUserMetadata(tenantUserMetadataTable, userId, "Organizations", organizationsName, organizationsId)
+          } else {
+            println("Org name or Org Id is empty")
           }
-        } else {
-          println("Roles object is empty")
-        }
-      }
-    } else if (eventType == "delete") {
-      deleteData(tenantUserTable, userId)
-    }
 
-    userMetric(tenantUserTable)
+          /**
+           * Processing for Roles data
+           */
+          val roles = org.get("roles").map(_.asInstanceOf[List[Map[String, Any]]]).getOrElse(List.empty)
+          if (roles.nonEmpty) {
+            val rolePairs = extractUserRolesPerRow(roles)
+            val subrolePairs = extractProfessionalSubrolesPerRow(professionalSubroles)
+            rolePairs.foreach { case (userRoleName, userRoleId) =>
+              println(s"Upserting for attribute_code: Platform Role, attribute_value: $userRoleName, attribute_label: $userRoleId")
+              processUserMetadata(tenantUserMetadataTable, userId, "Platform Role", userRoleName, userRoleId)
+
+              if (subrolePairs.nonEmpty) {
+                subrolePairs.foreach { case (professionalSubrolesName, professionalSubrolesId) =>
+                  println(s"Upserting for attribute_code: Professional Subroles, attribute_value: $professionalSubrolesName, attribute_label: $professionalSubrolesId")
+                  processUserMetadata(tenantUserMetadataTable, userId, "Professional Subroles", professionalSubrolesName, professionalSubrolesId)
+                }
+              } else {
+                println(s"No professional subroles found for user $userId in organization $organizationsId")
+              }
+            }
+          } else {
+            println("Roles object is empty")
+          }
+        }
+      } else if (eventType == "delete") {
+        deleteData(tenantUserTable, userId)
+      }
+      userMetric(tenantUserTable)
+    } else {
+      println("Tenant Code is Empty")
+    }
 
     def extractUserRolesPerRow(roles: List[Map[String, Any]]): List[(String, String)] = {
       roles.map { role =>
@@ -290,6 +293,10 @@ class UserStreamFunction(config: UserStreamConfig)(implicit val mapTypeInfo: Typ
     println(s"***************** Completed Processing the User Event with User Id = ${event.userId} *****************")
 
     def checkAndInsert(entityType: String, targetedId: String, dashboardData: java.util.HashMap[String, String], dashboardKey: String): Unit = {
+      if (tenantCode.isEmpty) {
+        println(s"Tenant code is empty, skipping insertion.")
+        return
+      }
       val query = s"SELECT EXISTS (SELECT 1 FROM ${config.dashboardMetadata} WHERE entity_id = '$targetedId') AS is_present"
       val result = postgresUtil.fetchData(query)
 

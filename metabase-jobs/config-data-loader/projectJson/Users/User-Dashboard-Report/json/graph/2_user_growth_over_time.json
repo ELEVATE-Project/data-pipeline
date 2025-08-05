@@ -1,0 +1,332 @@
+{
+  "questionCard": {
+    "name": "User Growth Over Time",
+    "collection_id": 147,
+    "dataset_query": {
+      "database": 8,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "state_param": {
+            "type": "dimension",
+            "name": "state_param",
+            "id": "650f319a-ff01-4489-b31e-c8e8be28e8ef",
+            "display-name": "State Param",
+            "dimension": [
+              "field",
+              1886,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "district_param": {
+            "type": "dimension",
+            "name": "district_param",
+            "id": "4c5e0d89-4da9-4823-8361-42d048a66dbd",
+            "display-name": "District Param",
+            "dimension": [
+              "field",
+              1902,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "block_param": {
+            "type": "dimension",
+            "name": "block_param",
+            "id": "b16dd71f-829b-4dba-af2a-12778ea18fcf",
+            "display-name": "Block Param",
+            "dimension": [
+              "field",
+              1885,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "cluster_param": {
+            "type": "dimension",
+            "name": "cluster_param",
+            "id": "5e73d90c-cf96-46dd-89ef-470bbd7b6c48",
+            "display-name": "Cluster Param",
+            "dimension": [
+              "field",
+              1890,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "organizations_param": {
+            "type": "dimension",
+            "name": "organizations_param",
+            "id": "d63bc309-e569-4f7a-a0b1-2ebf6afb26dd",
+            "display-name": "Organizations Param",
+            "dimension": [
+              "field",
+              1910,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "platform_role_param": {
+            "type": "dimension",
+            "name": "platform_role_param",
+            "id": "43305781-58b6-43ce-a94e-2cba5c8df2c2",
+            "display-name": "Platform Role Param",
+            "dimension": [
+              "field",
+              1910,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "professional_role_param": {
+            "type": "dimension",
+            "name": "professional_role_param",
+            "id": "a7927ad2-9a1d-4b69-9bcb-6476f727f202",
+            "display-name": "Professional Role Param",
+            "dimension": [
+              "field",
+              1910,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "professional_subroles_param": {
+            "type": "dimension",
+            "name": "professional_subroles_param",
+            "id": "a395b135-332f-4666-882c-d91dc1caeaa2",
+            "display-name": "Professional Subroles Param",
+            "dimension": [
+              "field",
+              1910,
+              null
+            ],
+            "widget-type": "string/="
+          }
+        },
+        "query": "SELECT\r\n DATE_TRUNC('day', created_at) AS day,\r\n  COUNT(*) AS users_created,\r\n  SUM(COUNT(*)) OVER (ORDER BY DATE_TRUNC('day', created_at)) AS overall_users\r\nFROM\r\n  ${tenantUserTable}\r\nWHERE\r\n  status = 'ACTIVE'\r\n\r\n  [[AND user_profile_one_name = (\r\n    SELECT user_profile_one_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{state_param}}\r\n    LIMIT 1)]]\r\n\r\n  [[AND user_profile_two_name = (\r\n    SELECT user_profile_two_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{district_param}}\r\n    LIMIT 1)]]\r\n    \r\n  [[AND user_profile_three_name = (\r\n    SELECT user_profile_three_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{block_param}}\r\n    LIMIT 1)]]\r\n    \r\n  [[AND user_profile_four_name = (\r\n    SELECT user_profile_four_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{cluster_param}}\r\n    LIMIT 1)]]\r\n    \r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Organizations'\r\n      AND {{organizations_param}})]]\r\n\r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Platform Role'\r\n      AND {{platform_role_param}})]]\r\n      \r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Professional Role'\r\n      AND {{professional_role_param}})]]\r\n      \r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Professional Subroles'\r\n      AND {{professional_subroles_param}})]]\r\n      \r\nGROUP BY\r\n  DATE_TRUNC('day', created_at)\r\nORDER BY\r\n  day;\r\n"
+      }
+    },
+    "parameter_mappings": [],
+    "display": "line",
+    "entity_id": "gtUic0Rme4-4ifruV4Pd-",
+    "collection_preview": true,
+    "visualization_settings": {
+      "graph.show_trendline": false,
+      "graph.dimensions": [
+        "day"
+      ],
+      "graph.series_order_dimension": null,
+      "graph.series_order": null,
+      "graph.metrics": [
+        "users_created"
+      ]
+    },
+    "parameters": [
+      {
+        "id": "650f319a-ff01-4489-b31e-c8e8be28e8ef",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "state_param"
+          ]
+        ],
+        "name": "State Param",
+        "slug": "state_param"
+      },
+      {
+        "id": "4c5e0d89-4da9-4823-8361-42d048a66dbd",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "district_param"
+          ]
+        ],
+        "name": "District Param",
+        "slug": "district_param"
+      },
+      {
+        "id": "b16dd71f-829b-4dba-af2a-12778ea18fcf",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "block_param"
+          ]
+        ],
+        "name": "Block Param",
+        "slug": "block_param"
+      },
+      {
+        "id": "5e73d90c-cf96-46dd-89ef-470bbd7b6c48",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "cluster_param"
+          ]
+        ],
+        "name": "Cluster Param",
+        "slug": "cluster_param"
+      },
+      {
+        "id": "d63bc309-e569-4f7a-a0b1-2ebf6afb26dd",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "organizations_param"
+          ]
+        ],
+        "name": "Organizations Param",
+        "slug": "organizations_param"
+      },
+      {
+        "id": "43305781-58b6-43ce-a94e-2cba5c8df2c2",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "platform_role_param"
+          ]
+        ],
+        "name": "Platform Role Param",
+        "slug": "platform_role_param"
+      },
+      {
+        "id": "a7927ad2-9a1d-4b69-9bcb-6476f727f202",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "professional_role_param"
+          ]
+        ],
+        "name": "Professional Role Param",
+        "slug": "professional_role_param"
+      },
+      {
+        "id": "a395b135-332f-4666-882c-d91dc1caeaa2",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "professional_subroles_param"
+          ]
+        ],
+        "name": "Professional Subroles Param",
+        "slug": "professional_subroles_param"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 379,
+    "dashboard_tab_id": null,
+    "id": 5,
+    "parameter_mappings": [
+      {
+        "parameter_id": "2030c5fe",
+        "card_id": 377,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "state_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "3fa46e53",
+        "card_id": 377,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "district_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "ebefc30b",
+        "card_id": 377,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "block_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "a6683b09",
+        "card_id": 377,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "cluster_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "98262141",
+        "card_id": 377,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "organizations_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753241",
+        "card_id": 377,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "platform_role_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753242",
+        "card_id": 377,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "professional_role_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753243",
+        "card_id": 377,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "professional_subroles_param"
+          ]
+        ]
+      }
+    ],
+    "col": 0,
+    "row": 35,
+    "size_x": 24,
+    "size_y": 10,
+    "visualization_settings": {}
+  }
+}
