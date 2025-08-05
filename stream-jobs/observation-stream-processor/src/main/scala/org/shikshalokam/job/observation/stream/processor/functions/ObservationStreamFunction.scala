@@ -115,15 +115,18 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       val solutionDescription = event.solutionDescription
       val programExternalId = event.programExternalId
       val programDescription = event.programDescription
-      val privateProgram = null
-      val projectCategories = null
-      val projectDuration = null
+      val privateProgram: Null = null
+      val projectCategories: Null = null
+      val projectDuration: Null = null
       val completedDate = event.completedDate
       val domainTable = s""""${solutionId}_domain""""
       val questionTable = s""""${solutionId}_questions""""
       val statusTable = s""""${solutionId}_status""""
       val isRubric = event.isRubric
       val entityType = event.entityType
+      val entityId = event.entityId
+      val entityName = event.entityName
+      val entityExternalId = event.entityExternalId
       val parentOneObservedName = event.parentOneName
       val parentOneObservedId = event.parentOneId
       val parentTwoObservedName = event.parentTwoName
@@ -171,6 +174,9 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
       println(s"statusTable = $statusTable")
       println(s"isRubric = $isRubric")
       println(s"entityType = $entityType")
+      println(s"entityId = $entityId")
+      println(s"entityName = $entityName")
+      println(s"entityExternalId = $entityExternalId")
       println(s"parentOneObservedName = $parentOneObservedName")
       println(s"parentOneObservedId = $parentOneObservedId")
       println(s"parentTwoObservedName = $parentTwoObservedName")
@@ -216,7 +222,10 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
            |    criteria TEXT,
            |    criteria_level TEXT,
            |    completed_date TEXT,
-           |    entityType TEXT,
+           |    entity_type TEXT,
+           |    entity_id TEXT,
+           |    entity_name TEXT,
+           |    entity_external_id TEXT,
            |    parent_one_name TEXT,
            |    parent_one_id TEXT,
            |    parent_two_name TEXT,
@@ -272,7 +281,10 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
            |    submitted_at TEXT,
            |    remarks TEXT,
            |    question_type TEXT,
-           |    entityType TEXT,
+           |    entity_type TEXT,
+           |    entity_id TEXT,
+           |    entity_name TEXT,
+           |    entity_external_id TEXT,
            |    parent_one_name TEXT,
            |    parent_one_id TEXT,
            |    parent_two_name TEXT,
@@ -315,7 +327,10 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
            |    org_name TEXT,
            |    status_of_submission TEXT,
            |    submitted_at TEXT,
-           |    entityType TEXT,
+           |    entity_type TEXT,
+           |    entity_id TEXT,
+           |    entity_name TEXT,
+           |    entity_external_id TEXT,
            |    parent_one_name TEXT,
            |    parent_one_id TEXT,
            |    parent_two_name TEXT,
@@ -381,11 +396,11 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
              |    program_name, program_id, observation_name, observation_id, user_one_profile_name, user_one_profile_id,
              |    user_two_profile_name, user_two_profile_id, user_three_profile_name, user_three_profile_id, user_four_profile_name,
              |    user_four_profile_id, user_five_profile_name, user_five_profile_id, tenant_id, org_id, org_code, org_name,
-             |    status_of_submission, submitted_at, entityType, parent_one_name, parent_one_id, parent_two_name,
+             |    status_of_submission, submitted_at, entity_type, entity_id, entity_name, entity_external_id, parent_one_name, parent_one_id, parent_two_name,
              |    parent_two_id, parent_three_name, parent_three_id, parent_four_name, parent_four_id,
              |    parent_five_name, parent_five_id
              |) VALUES (
-             |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+             |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
              |);""".stripMargin
 
         val statusParams = Seq(
@@ -393,7 +408,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
           programName, programId, observationName, observationId, userOneProfileName, userOneProfileId,
           userTwoProfileName, userTwoProfileId, userThreeProfileName, userThreeProfileId, userFourProfileName,
           userFourProfileId, userFiveProfileName, userFiveProfileId, tenantId, orgId, orgCode, orgName,
-          statusOfSubmission, completedDate, entityType, parentOneObservedName, parentOneObservedId, parentTwoObservedName,
+          statusOfSubmission, completedDate, entityType, entityId, entityName, entityExternalId, parentOneObservedName, parentOneObservedId, parentTwoObservedName,
           parentTwoObservedId, parentThreeObservedName, parentThreeObservedId, parentFourObservedName, parentFourObservedId,
           parentFiveObservedName, parentFiveObservedId
         )
@@ -447,11 +462,11 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
                            |    program_name, program_id, observation_name, observation_id, tenant_id, org_name, org_id, org_code,
                            |    user_one_profile_name, user_one_profile_id, user_two_profile_name, user_two_profile_id, user_three_profile_name, user_three_profile_id,
                            |    user_four_profile_name, user_four_profile_id, user_five_profile_name, user_five_profile_id, domain, domain_level,
-                           |    criteria, criteria_level, completed_date, entityType, parent_one_name, parent_one_id,
+                           |    criteria, criteria_level, completed_date, entity_type, entity_id, entity_name, entity_external_id, parent_one_name, parent_one_id,
                            |    parent_two_name, parent_two_id, parent_three_name, parent_three_id, parent_four_name,
                            |    parent_four_id, parent_five_name, parent_five_id
                            |) VALUES (
-                           |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                           |    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                            |);
                            |""".stripMargin
 
@@ -459,7 +474,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
                         userId, userRoleIds, userRoles, solutionId, solutionName, submissionId, submissionNumber, programName, programId, observationName,
                         observationId, tenantId, orgName, orgId, orgCode, userOneProfileName, userOneProfileId, userTwoProfileName, userTwoProfileId, userThreeProfileName,
                         userThreeProfileId, userFourProfileName, userFourProfileId, userFiveProfileName, userFiveProfileId, domainName, domainLevel, criteriaName, criteriaLevel,
-                        completedDate, entityType, parentOneObservedName, parentOneObservedId, parentTwoObservedName, parentTwoObservedId, parentThreeObservedName, parentThreeObservedId,
+                        completedDate, entityType, entityId, entityName, entityExternalId, parentOneObservedName, parentOneObservedId, parentTwoObservedName, parentTwoObservedId, parentThreeObservedName, parentThreeObservedId,
                         parentFourObservedName, parentFourObservedId, parentFiveObservedName, parentFiveObservedId)
 
                       postgresUtil.executePreparedUpdate(insertCriteriaQuery, criteriaParams, domainTable, solutionId)
@@ -497,7 +512,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
             userRoles = userRoles, programName = programName, programId = programId, observationName = observationName, observationId = observationId, value = value,
             userOneProfileName = userOneProfileName, userOneProfileId = userOneProfileId, userTwoProfileName = userTwoProfileName, userTwoProfileId = userTwoProfileId, userThreeProfileName = userThreeProfileName, userThreeProfileId = userThreeProfileId,
             userFourProfileName = userFourProfileName, userFourProfileId = userFourProfileId, userFiveProfileName = userFiveProfileName, userFiveProfileId = userFiveProfileId,
-            tenantId = tenantId, orgId = orgId, orgCode = orgCode, orgName = orgName, statusOfSubmission = statusOfSubmission, submittedAt = completedDate, entityType = entityType,
+            tenantId = tenantId, orgId = orgId, orgCode = orgCode, orgName = orgName, statusOfSubmission = statusOfSubmission, submittedAt = completedDate, entityType = entityType, entityId = entityId, entityName = entityName, entityExternalId = entityExternalId,
             parentOneName = parentOneObservedName, parentOneId = parentOneObservedId, parentTwoName = parentTwoObservedName, parentTwoId = parentTwoObservedId, parentThreeName = parentThreeObservedName, parentThreeId = parentThreeObservedId,
             parentFourName = parentFourObservedName, parentFourId = parentFourObservedId, parentFiveName = parentFiveObservedName, parentFiveId = parentFiveObservedId,
             domainName = domainName, criteriaName = criteriaName, score = score, hasParentQuestion = hasParentQuestion, parentQuestionText = parentQuestionText, evidences = evidences, remarks = remarks, reportType = reportType
