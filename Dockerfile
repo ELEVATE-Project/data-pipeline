@@ -13,6 +13,7 @@ RUN apt update && apt install -y \
     curl \
     maven \
     jq \
+    nano \
     postgresql postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
