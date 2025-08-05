@@ -1,0 +1,94 @@
+[
+  {
+    "name": "State Param",
+    "slug": "state_param",
+    "id": "2030c5fe",
+    "type": "string/=",
+    "sectionId": "location",
+    "filteringParameters": [
+      "3fa46e53",
+      "ebefc30b",
+      "a6683b09",
+      "98262141"
+    ]
+  },
+  {
+    "name": "District Param",
+    "slug": "district_param",
+    "id": "3fa46e53",
+    "type": "string/=",
+    "sectionId": "location",
+    "filteringParameters": [
+      "2030c5fe",
+      "ebefc30b",
+      "a6683b09",
+      "98262141"
+    ]
+  },
+  {
+    "name": "Block Param",
+    "slug": "block_param",
+    "id": "ebefc30b",
+    "type": "string/=",
+    "sectionId": "string",
+    "filteringParameters": [
+      "2030c5fe",
+      "3fa46e53",
+      "a6683b09",
+      "98262141"
+    ]
+  },
+  {
+    "name": "Cluster Param",
+    "slug": "cluster_param",
+    "id": "a6683b09",
+    "type": "string/=",
+    "sectionId": "string",
+    "filteringParameters": [
+      "2030c5fe",
+      "3fa46e53",
+      "ebefc30b",
+      "98262141"
+    ]
+  },
+  {
+    "name": "Organizations Param",
+    "slug": "organizations_param",
+    "id": "98262141",
+    "type": "string/=",
+    "sectionId": "string",
+    "filteringParameters": [
+      "2030c5fe",
+      "3fa46e53",
+      "ebefc30b",
+      "a6683b09"
+    ]
+  },
+  {
+    "name": "Platform Role Param",
+    "slug": "platform_role_param",
+    "id": "89753241",
+    "type": "string/=",
+    "sectionId": "string",
+    "filteringParameters": [
+    ]
+  },
+  {
+    "name": "Professional Role Param",
+    "slug": "professional_role_param",
+    "id": "89753242",
+    "type": "string/=",
+    "sectionId": "string",
+    "filteringParameters": [
+    ]
+  },
+  {
+    "name": "Professional Subroles Param",
+    "slug": "professional_subroles_param",
+    "id": "89753243",
+    "type": "string/=",
+    "sectionId": "string",
+    "filteringParameters": [
+    ]
+  }
+]
