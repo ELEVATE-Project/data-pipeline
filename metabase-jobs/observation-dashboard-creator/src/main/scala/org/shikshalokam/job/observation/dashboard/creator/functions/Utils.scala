@@ -117,24 +117,6 @@ object Utils {
     databaseId
   }
 
-  def getTableMetadataId(databaseId: Int, metabaseUtil: MetabaseUtil, tableName: String, columnName: String, postgresUtil: PostgresUtil, metaTableQuery: String): Int = {
-    val metadataJson = mapper.readTree(metabaseUtil.getDatabaseMetadata(databaseId))
-    metadataJson.path("tables").elements().asScala
-      .find(_.path("name").asText() == s"$tableName")
-      .flatMap(table => table.path("fields").elements().asScala
-        .find(_.path("name").asText() == s"$columnName"))
-      .map(field => {
-        val fieldId = field.path("id").asInt()
-        println(s"Field ID for $columnName: $fieldId")
-        fieldId
-      }).getOrElse {
-        val errorMessage = s"$columnName field not found"
-        val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'${errorMessage.replace("'", "''")}'")
-        postgresUtil.insertData(updateTableQuery)
-        throw new Exception(s"$columnName field not found")
-      }
-  }
-
   def createGroupForCollection(metabaseUtil: MetabaseUtil = null, groupName: String, collectionId: Int) {
 
     val existingGroups = mapper.readTree(metabaseUtil.listGroups())
