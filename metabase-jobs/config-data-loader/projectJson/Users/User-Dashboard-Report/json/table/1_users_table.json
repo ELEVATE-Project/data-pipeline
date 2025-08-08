@@ -1,6 +1,6 @@
 {
   "questionCard": {
-    "name": "User Growth Over Time",
+    "name": "Users Table",
     "collection_id": 147,
     "dataset_query": {
       "database": 8,
@@ -100,23 +100,13 @@
             "options": null
           }
         },
-        "query": "SELECT\r\n DATE_TRUNC('day', created_at) AS day,\r\n  COUNT(*) AS users_created,\r\n  SUM(COUNT(*)) OVER (ORDER BY DATE_TRUNC('day', created_at)) AS overall_users\r\nFROM\r\n  ${tenantUserTable}\r\nWHERE\r\n  status = 'ACTIVE'\r\n\r\n  [[AND user_profile_one_name = (\r\n    SELECT user_profile_one_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{state_param}}\r\n    LIMIT 1)]]\r\n\r\n  [[AND user_profile_two_name = (\r\n    SELECT user_profile_two_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{district_param}}\r\n    LIMIT 1)]]\r\n    \r\n  [[AND user_profile_three_name = (\r\n    SELECT user_profile_three_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{block_param}}\r\n    LIMIT 1)]]\r\n    \r\n  [[AND user_profile_four_name = (\r\n    SELECT user_profile_four_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{cluster_param}}\r\n    LIMIT 1)]]\r\n    \r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Organizations'\r\n      AND attribute_value = {{organizations_param}})]]\r\n\r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Platform Role'\r\n      AND attribute_value = {{platform_role_param}})]]\r\n      \r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Professional Role'\r\n      AND attribute_value = {{professional_role_param}})]]\r\n      \r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Professional Subroles'\r\n      AND attribute_value = {{professional_subroles_param}})]]\r\n      \r\nGROUP BY\r\n  DATE_TRUNC('day', created_at)\r\nORDER BY\r\n  day;\r\n"
+        "query": "SELECT\r\n  user_id AS \"User Id\",\r\n  name AS \"Name\",\r\n  status AS \"Status\",\r\n  created_by AS \"Created By\",\r\n  created_at AS \"Created At\",\r\n  user_profile_one_name AS \"State\",\r\n  user_profile_two_name AS \"District\",\r\n  user_profile_three_name AS \"Block\",\r\n  user_profile_four_name AS \"Cluster\",\r\n  user_profile_five_name AS \"School\"\r\nFROM\r\n  ${tenantUserTable}\r\nWHERE\r\n  1 = 1\r\n\r\n  [[AND user_profile_one_name = (\r\n    SELECT user_profile_one_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{state_param}}\r\n    LIMIT 1)]]\r\n\r\n  [[AND user_profile_two_name = (\r\n    SELECT user_profile_two_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{district_param}}\r\n    LIMIT 1)]]\r\n    \r\n  [[AND user_profile_three_name = (\r\n    SELECT user_profile_three_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{block_param}}\r\n    LIMIT 1)]]\r\n    \r\n  [[AND user_profile_four_name = (\r\n    SELECT user_profile_four_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{cluster_param}}\r\n    LIMIT 1)]]\r\n    \r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Organizations'\r\n      AND attribute_value = {{organizations_param}})]]\r\n\r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Platform Role'\r\n      AND attribute_value = {{platform_role_param}})]]\r\n      \r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Professional Role'\r\n      AND attribute_value = {{professional_role_param}})]]\r\n      \r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Professional Subroles'\r\n      AND attribute_value = {{professional_subroles_param}})]]\r\n"
       }
     },
-    "parameter_mappings": [],
-    "display": "line",
-    "entity_id": "gtUic0Rme4-4ifruV4Pd-",
-    "collection_preview": true,
+    "display": "table",
     "visualization_settings": {
-      "graph.show_trendline": false,
-      "graph.dimensions": [
-        "day"
-      ],
-      "graph.series_order_dimension": null,
-      "graph.series_order": null,
-      "graph.metrics": [
-        "users_created"
-      ]
+      "table.pivot_column": "id",
+      "table.cell_column": "created_by"
     },
     "parameters": [
       {
@@ -276,7 +266,7 @@
   "dashCards": {
     "card_id": 1578,
     "dashboard_tab_id": null,
-    "id": 5,
+    "id": 23,
     "parameter_mappings": [
       {
         "parameter_id": "2030c5fe",
@@ -368,7 +358,7 @@
       }
     ],
     "col": 0,
-    "row": 35,
+    "row": 3,
     "size_x": 24,
     "size_y": 10,
     "visualization_settings": {}

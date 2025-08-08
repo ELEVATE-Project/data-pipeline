@@ -1,6 +1,6 @@
 package org.shikshalokam.job.user.dashboard.creator.functions
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.fasterxml.jackson.databind.node.ArrayNode
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
@@ -10,8 +10,10 @@ import org.shikshalokam.job.user.dashboard.creator.task.UserMetabaseDashboardCon
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import org.shikshalokam.job.{BaseProcessFunction, Metrics}
 import org.slf4j.LoggerFactory
+
 import scala.collection.JavaConverters._
 import scala.collection.immutable._
+import scala.collection.mutable
 
 class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implicit val mapTypeInfo: TypeInformation[Event], @transient var postgresUtil: PostgresUtil = null, @transient var metabaseUtil: MetabaseUtil = null)
   extends BaseProcessFunction[Event, Event](config) {
@@ -45,7 +47,6 @@ class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implici
 
     println(s"***************** Start of Processing the User Metabase Dashboard Event with = ${event.tenantCode} *****************")
 
-    //TODO search success and failed keyword
     val metaDataTable = config.dashboardMetadata
     val userMetrics: String = config.userMetrics
     val metabaseDatabase: String = config.metabaseDatabase
@@ -54,7 +55,6 @@ class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implici
     val tenantUserMetadataTable = s"${tenantCode}_users_metadata"
     val tenantUserTable = s"${tenantCode}_users"
 
-    //     ----- Report Admin Collection -----
     println("\n-->> Process Report Admin User Metrics Dashboard")
 
     val (reportAdminPresent, reportAdminCollectionId) = validateCollection("User Activity", "Admin")
@@ -62,12 +62,7 @@ class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implici
       println(s"=====> 'User Activity' collection present with id: $reportAdminCollectionId, Skipping this step.")
     } else {
       println("=====> Creating Report Admin Collection and User Metrics Dashboard")
-      val createdCollectionId = createUserMetricsCollectionAndDashboardForAdmin()
-      if (createdCollectionId != -1) {
-        println("=====> Report Admin Collection and User Metrics Dashboard created successfully.")
-      } else {
-        println("=====> Failed to create Report Admin Collection.")
-      }
+      createUserMetricsCollectionAndDashboardForAdmin()
     }
 
     if (tenantCode.nonEmpty) {
@@ -80,12 +75,7 @@ class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implici
         println(s"=====> '$tenantAdminCollectionName' collection present with id: $tenantCollectionId, Skipping this step.")
       } else {
         println(s"=====> '$tenantAdminCollectionName' not found. Creating...")
-        val collectionId = createUserMetricsCollectionAndDashboardForTenant()
-        if (collectionId != -1) {
-          println(s"=====> Tenant Admin Collection and User Activity Dashboard created successfully for tenant [$tenantCode].")
-        } else {
-          println("=====> Failed to create Tenant Admin Collection.")
-        }
+        createUserMetricsCollectionAndDashboardForTenant()
       }
     } else {
       println("Tenant name is null or empty, skipping the processing.")
@@ -105,7 +95,7 @@ class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implici
           val questionCardIdList = ProcessAdminConstructor.processAdminJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, userMetrics, metabaseUtil, postgresUtil)
           val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
           val parametersQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Admin' AND report_name = 'User-Metrics-Report' AND question_type = 'tenant-parameter';"
-          UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil)
+          UpdateParameters.updateDashboardParameters(metabaseUtil, postgresUtil, parametersQuery, dashboardId)
           val userMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", collectionId).put("collectionName", collectionName).put("dashboardId", dashboardId).put("dashboardName", dashboardName).put("collectionFor", "Admin").put("questionIds", questionIdsString))
           val updateMetadataQuery = s"UPDATE $metaDataTable SET main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$userMetadataJson'::jsonb, status = 'Success' WHERE entity_id = '1';"
           postgresUtil.insertData(updateMetadataQuery)
@@ -129,14 +119,27 @@ class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implici
           val districtNameId: Int = Utils.getTableMetadataId(databaseId, metabaseUtil, tenantUserTable, "user_profile_two_name", postgresUtil, createDashboardQuery)
           val blockNameId: Int = Utils.getTableMetadataId(databaseId, metabaseUtil, tenantUserTable, "user_profile_three_name", postgresUtil, createDashboardQuery)
           val clusterNameId: Int = Utils.getTableMetadataId(databaseId, metabaseUtil, tenantUserTable, "user_profile_four_name", postgresUtil, createDashboardQuery)
-          val organizationsNameId: Int = Utils.getTableMetadataId(databaseId, metabaseUtil, tenantUserMetadataTable, "attribute_code", postgresUtil, createDashboardQuery)
           metabaseUtil.updateColumnCategory(statenNameId, "State")
           metabaseUtil.updateColumnCategory(districtNameId, "City")
+          val filterQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Users-Filter' AND question_type = 'tenant-dashboard-filter'"
+          val filterResults: List[Map[String, Any]] = postgresUtil.fetchData(filterQuery)
+          val objectMapper = new ObjectMapper()
+          val slugNameToFilterMap = mutable.Map[String, Int]()
+          for (result <- filterResults) {
+            val configString = result.get("config").map(_.toString).getOrElse("")
+            val configJson = objectMapper.readTree(configString)
+            val slugName = configJson.findValue("name").asText()
+            val metadataFilter: Int = AddMetadataFilter.updateAndAddFilter(metabaseUtil, configJson: JsonNode, collectionId, databaseId, tenantUserMetadataTable)
+            slugNameToFilterMap(slugName) = metadataFilter
+          }
+          val immutableSlugNameToFilterMap: Map[String, Int] = slugNameToFilterMap.toMap
           val reportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Users' AND report_name = 'User-Dashboard-Report' AND question_type IN ('big-number', 'table', 'graph');"
-          val questionCardIdList = ProcessTenantConstructor.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenNameId, districtNameId, blockNameId, clusterNameId, organizationsNameId, tenantUserTable, tenantUserMetadataTable, metabaseUtil, postgresUtil)
+          val questionCardIdList = ProcessTenantConstructor.ProcessAndUpdateJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, statenNameId, districtNameId, blockNameId, clusterNameId, tenantUserTable, tenantUserMetadataTable, immutableSlugNameToFilterMap, metabaseUtil, postgresUtil)
           val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
-          val parametersQuery = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Users' AND report_name = 'User-Dashboard-Report' AND question_type = 'metadata-parameters';"
-          UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil)
+          val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'User-Dashboard-Report' AND question_type = 'metadata-parameters'"
+          UpdateParameters.updateDashboardParameters(metabaseUtil, postgresUtil, parametersQuery, dashboardId, immutableSlugNameToFilterMap)
+          val mainMetadataJson = new ObjectMapper().createObjectNode().put("collectionId", collectionId).put("collectionName", collectionName).put("dashboardId", dashboardId).put("dashboardName", dashboardName).put("collectionFor", "Tenant Admin").put("questionIds", questionIdsString)
+          postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = '$mainMetadataJson' WHERE entity_id = '$tenantCode';")
           val userMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", collectionId).put("Collection Name", collectionName).put("dashboardId", dashboardId).put("dashboardName", dashboardName).put("collectionFor", "Tenant Admin").put("questionIds", questionIdsString))
           val updateMetadataQuery = s"UPDATE $metaDataTable SET main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$userMetadataJson'::jsonb, status = 'Success', error_message = '' WHERE entity_id = '$tenantCode';"
           postgresUtil.insertData(updateMetadataQuery)
@@ -156,7 +159,6 @@ class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implici
           arr.asScala.find { c =>
               val name = Option(c.get("name")).map(_.asText).getOrElse("")
               val desc = Option(c.get("description")).map(_.asText).getOrElse("")
-
               val matchesName = name == collectionName
               val matchesReportFor = desc.contains(s"Collection For: $reportFor")
               val isMatch = if (reportId.isEmpty) matchesName && matchesReportFor else matchesName && matchesReportFor
