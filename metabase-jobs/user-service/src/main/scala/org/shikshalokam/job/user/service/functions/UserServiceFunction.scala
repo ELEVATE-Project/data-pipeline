@@ -336,7 +336,7 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
 
     val groupNames: List[String] = userRole match {
       case "report_admin" =>
-        List("Report_Admin_Micro_Improvement", "Report_Admin_National_Overview", "Report_Admin_Programs")
+        List("Report_Admin_Micro_Improvement", "Report_Admin_National_Overview", "Report_Admin_Programs", "Report_Admin_User_Activity")
       case "state_manager" =>
         List(s"State_Manager_${stateId.getOrElse("")}")
       case "district_manager" =>
@@ -363,7 +363,7 @@ class UserServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: T
 
     val groupNames: List[String] = userRole match {
       case "report_admin" =>
-        List("Report_Admin_Micro_Improvement", "Report_Admin_National_Overview", "Report_Admin_Programs")
+        List("Report_Admin_Micro_Improvement", "Report_Admin_National_Overview", "Report_Admin_Programs", "Report_Admin_User_Activity")
       case "state_manager" =>
         List(s"State_Manager_${stateId.getOrElse("")}")
       case "district_manager" =>

@@ -81,6 +81,7 @@ FILES_TO_REPLACE=(
   "$CODE_BASE_PATH/stream-jobs/survey-stream-processor/src/main/resources/survey-stream.conf"
   "$CODE_BASE_PATH/stream-jobs/user-stream-processor/src/main/resources/user-stream.config"
   "$CODE_BASE_PATH/metabase-jobs/user-service/src/main/resources/user-service.conf"
+  "$CODE_BASE_PATH/metabase-jobs/user-dashboard-creator/src/main/resources/metabase-user-dashboard.conf"
 )
 
 # Set the correct source directory based on the environment
@@ -122,6 +123,7 @@ SCALA_JOB_FILES=(
   "$CODE_BASE_PATH/stream-jobs/survey-stream-processor/src/main/scala/org/shikshalokam/job/survey/stream/processor/task/SurveyStreamConfig.scala"
   "$CODE_BASE_PATH/stream-jobs/user-stream-processor/src/main/scala/org/shikshalokam/job/user/stream/processor/task/UserStreamConfig.scala"
   "$CODE_BASE_PATH/metabase-jobs/user-service/src/main/scala/org/shikshalokam/job/user/service/task/UserServiceConfig.scala"
+  "$CODE_BASE_PATH/metabase-jobs/user-dashboard-creator/src/main/scala/org/shikshalokam/job/user/dashboard/creator/task/UserMetabaseDashboardConfig.scala"
 )
 
 echo -e "\n${CYAN}Updating job names in Scala files...${NC}"
@@ -168,6 +170,7 @@ JAR_PATHS=(
   "$CODE_BASE_PATH/stream-jobs/survey-stream-processor/target/survey-stream-processor-1.0.0.jar"
   "$CODE_BASE_PATH/stream-jobs/user-stream-processor/target/user-stream-processor-1.0.0.jar"
   "$CODE_BASE_PATH/metabase-jobs/user-service/target/user-service-1.0.0.jar"
+  "$CODE_BASE_PATH/metabase-jobs/user-dashboard-creator/target/user-dashboard-creator-1.0.0.jar"
 )
 
 

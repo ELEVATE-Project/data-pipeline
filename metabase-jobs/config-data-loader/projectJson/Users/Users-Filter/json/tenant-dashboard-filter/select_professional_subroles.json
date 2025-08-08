@@ -1,0 +1,19 @@
+{
+  "questionCard": {
+    "name": "select_professional_subroles",
+    "collection_id": 538,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "query": "select distinct(attribute_value) from ${tenantUserMetadataTable} where attribute_code = 'Professional Subroles'",
+        "template-tags": {}
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {
+      "table.pivot_column": "attribute_value"
+    },
+    "parameters": []
+  }
+}

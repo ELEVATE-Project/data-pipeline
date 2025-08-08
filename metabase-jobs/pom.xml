@@ -19,6 +19,7 @@
         <module>project-dashboard-creator</module>
         <module>survey-dashboard-creator</module>
         <module>observation-dashboard-creator</module>
+        <module>user-dashboard-creator</module>
         <module>users-via-csv</module>
         <module>user-service</module>
     </modules>
