@@ -385,8 +385,7 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
               columnId
 
             case None =>
-              val columnQuery =
-                s"SELECT id FROM metabase_field WHERE table_id = '$tableId' AND name = '$columnName';"
+              val columnQuery = s"SELECT id FROM metabase_field WHERE table_id = '$tableId' AND name = '$columnName';"
 
               val columnIdOpt = metabasePostgresUtil.fetchData(columnQuery) match {
                 case List(map: Map[_, _]) =>
@@ -400,8 +399,7 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
                 storedColumnIds.put((tableId, columnName), columnId)
                 columnId
               } else {
-                val errorMessage =
-                  s"Column '$columnName' not found in table '$tableName' (tableId: $tableId)"
+                val errorMessage = s"Column '$columnName' not found in table '$tableName' (tableId: $tableId)"
                 val escapedError = errorMessage.replace("'", "''")
                 val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'$escapedError'")
                 postgresUtil.insertData(updateTableQuery)

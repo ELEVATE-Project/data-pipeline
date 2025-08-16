@@ -457,9 +457,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
               columnId
 
             case None =>
-              val columnQuery =
-                s"SELECT id FROM metabase_field WHERE table_id = '$tableId' AND name = '$columnName';"
-              println(s"columnQuery = $columnQuery")
+              val columnQuery = s"SELECT id FROM metabase_field WHERE table_id = '$tableId' AND name = '$columnName';"
 
               val columnIdOpt = metabasePostgresUtil.fetchData(columnQuery) match {
                 case List(map: Map[_, _]) =>
@@ -471,11 +469,9 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
 
               if (columnId != -1) {
                 storedColumnIds.put((tableId, columnName), columnId)
-                println(s"columnId = $columnId")
                 columnId
               } else {
-                val errorMessage =
-                  s"Column '$columnName' not found in table '$tableName' (tableId: $tableId)"
+                val errorMessage = s"Column '$columnName' not found in table '$tableName' (tableId: $tableId)"
                 val escapedError = errorMessage.replace("'", "''")
                 val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'$escapedError'")
                 postgresUtil.insertData(updateTableQuery)
