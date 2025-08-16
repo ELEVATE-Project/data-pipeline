@@ -16,6 +16,7 @@ object ProcessDistrictConstructor {
     val objectMapper = new ObjectMapper()
 
     def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, stateNameId: Int, districtNameId: Int, programNameId: Int, blockNameId: Int, clusterNameId: Int, orgNameId: Int, targetedStateId: String, targetedDistrictId: String): Unit = {
+      val dashcardsArray = objectMapper.createArrayNode()
       val adminIdStatus = postgresUtil.fetchData(reportConfigQuery)
       adminIdStatus.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -37,7 +38,14 @@ object ProcessDistrictConstructor {
                     println(s">>> Successfully created question card with card_id: $cardId for $chartName")
                     questionCardId.append(cardId)
                     val updatedJsonOpt = updateJsonWithCardId(updatedJson, cardId, dashboardId, tabId)
-                    AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedJsonOpt, dashboardId)
+                    updatedJsonOpt.foreach { node =>
+                      val dashCardsNode = node.path("dashCards")
+                      if (!dashCardsNode.isMissingNode && !dashCardsNode.isNull) {
+                        dashcardsArray.add(dashCardsNode)
+                      } else {
+                        println("No 'dashCards' key found in the JSON.")
+                      }
+                    }
                   case None =>
                     println(s"Error: Unable to extract card ID for $chartName. Skipping...")
                 }
@@ -58,11 +66,19 @@ object ProcessDistrictConstructor {
               val rootNode = objectMapper.readTree(jsonString)
               if (rootNode != null) {
                 val optJsonNode = toOption(rootNode)
-                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, optJsonNode, dashboardId)
+                optJsonNode.foreach { node =>
+                  val dashCardsNode = node.path("dashCards")
+                  if (!dashCardsNode.isMissingNode && !dashCardsNode.isNull) {
+                    dashcardsArray.add(dashCardsNode)
+                  } else {
+                    println("No 'dashCards' key found in the JSON.")
+                  }
+                }
               }
           }
         }
       }
+      Utils.appendDashCardToDashboard(metabaseUtil, dashcardsArray, dashboardId)
     }
 
     def toOption(jsonNode: JsonNode): Option[JsonNode] = {

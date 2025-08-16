@@ -19,6 +19,7 @@ object UpdateQuestionJsonFiles {
     val csvConfigQuery = s"SELECT * FROM $report_config WHERE dashboard_name = 'Observation-Question' AND question_type = 'table';"
 
     def processCsvJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, questionTable: String, newRow: Int, newCol: Int, params: Map[String, Int], newLevelDict: ListMap[String, String], evidenceBaseUrl: String): Unit = {
+      val dashcardsArray = objectMapper.createArrayNode()
       val queryResult = postgresUtil.fetchData(csvConfigQuery)
       queryResult.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -35,7 +36,14 @@ object UpdateQuestionJsonFiles {
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
                 questionCardId.append(cardId)
                 val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(cleanedJson, cardId, dashboardId, tabId, newRow, newCol)
-                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedQuestionIdInDashCard, dashboardId)
+                updatedQuestionIdInDashCard.foreach { node =>
+                  val dashCardsNode = node.path("dashCards")
+                  if (!dashCardsNode.isMissingNode && !dashCardsNode.isNull) {
+                    dashcardsArray.add(dashCardsNode)
+                  } else {
+                    println("No 'dashCards' key found in the JSON.")
+                  }
+                }
                 println(s"Added question card with ID: $cardId and chart name: $chartName to dashboard with ID: $dashboardId")
               }
             case None =>
@@ -49,14 +57,23 @@ object UpdateQuestionJsonFiles {
               val rootNode = objectMapper.readTree(jsonString)
               if (rootNode != null) {
                 val optJsonNode = toOption(rootNode)
-                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, optJsonNode, dashboardId)
+                optJsonNode.foreach { node =>
+                  val dashCardsNode = node.path("dashCards")
+                  if (!dashCardsNode.isMissingNode && !dashCardsNode.isNull) {
+                    dashcardsArray.add(dashCardsNode)
+                  } else {
+                    println("No 'dashCards' key found in the JSON.")
+                  }
+                }
               }
           }
         }
       }
+      Utils.appendDashCardToDashboard(metabaseUtil, dashcardsArray, dashboardId)
     }
 
     def processJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, question: String, report_config: String): Unit = {
+      val dashcardsArray = objectMapper.createArrayNode()
       val queries = Map(
         "nonMatrix" -> s"""SELECT distinct(question_id),question_text,question_type FROM "$question" WHERE has_parent_question = 'false'""",
         "matrix" -> s"""SELECT distinct(question_id),question_type,question_text, parent_question_text FROM "$question" WHERE has_parent_question = 'true'""",
@@ -89,7 +106,14 @@ object UpdateQuestionJsonFiles {
                 dashCardsNode.asInstanceOf[ObjectNode].put("col", newCol)
                 dashCardsNode.asInstanceOf[ObjectNode].put("row", newRow)
                 dashCardsNode.asInstanceOf[ObjectNode].put("dashboard_tab_id", tabId)
-                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, toOption(node), dashboardId)
+                toOption(node).foreach { node =>
+                  val dashCardsNode = node.path("dashCards")
+                  if (!dashCardsNode.isMissingNode && !dashCardsNode.isNull) {
+                    dashcardsArray.add(dashCardsNode)
+                  } else {
+                    println("No 'dashCards' key found in the JSON.")
+                  }
+                }
               }
             case None => println("Key 'config' not found in the heading result row.")
           }
@@ -143,7 +167,14 @@ object UpdateQuestionJsonFiles {
               val existingSizeY = originalDashcard.path("size_y").asInt()
               val updatedDashCard = updateQuestionIdInDashCard(cleanedJson, cardId, dashboardId, tabId, newRow, newCol)
               newRow += existingSizeY + 1
-              AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedDashCard, dashboardId)
+              updatedDashCard.foreach { node =>
+                val dashCardsNode = node.path("dashCards")
+                if (!dashCardsNode.isMissingNode && !dashCardsNode.isNull) {
+                  dashcardsArray.add(dashCardsNode)
+                } else {
+                  println("No 'dashCards' key found in the JSON.")
+                }
+              }
             case None => println(s"Key 'config' not found in the $resultKey result row.")
           }
         }
@@ -178,7 +209,7 @@ object UpdateQuestionJsonFiles {
         processHeading(formattedText)
         processQuestionType(questionType, questionId)
       }
-
+      Utils.appendDashCardToDashboard(metabaseUtil, dashcardsArray, dashboardId)
       processCsvJsonFiles(collectionId, databaseId, dashboardId, tabId, question, newRow, newCol, params, newLevelDict, evidenceBaseUrl)
     }
 
