@@ -73,7 +73,7 @@ object Utils {
   def createGroupForCollection(metabaseUtil: MetabaseUtil = null, groupName: String, collectionId: Int) {
 
     val existingGroups = mapper.readTree(metabaseUtil.listGroups())
-    val existingGroup = existingGroups.elements().asScala.find { node => node.get("name").asText().equalsIgnoreCase(groupName)}
+    val existingGroup = existingGroups.elements().asScala.find { node => node.get("name").asText().equalsIgnoreCase(groupName) }
     existingGroup match {
       case Some(group) =>
         println(s"Group '$groupName' already exists with ID: ${group.get("id").asInt()}")
@@ -96,7 +96,7 @@ object Utils {
              |    "revision": $revisionId,
              |    "groups": {
              |        "$id": {
-             |            "$collectionId": "read"
+             |         "$collectionId": "read"
              |        }
              |    }
              |}

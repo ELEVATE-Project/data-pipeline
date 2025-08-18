@@ -1,7 +1,7 @@
 {
   "questionCard": {
     "name": "Total No. of Users",
-    "collection_id": 147,
+    "collection_id": 317,
     "dataset_query": {
       "database": 8,
       "type": "native",
@@ -9,13 +9,13 @@
         "template-tags": {
           "state_param": {
             "type": "dimension",
-            "name": "state_param",
+            "name": "select_state",
             "id": "b103d08d-ddcf-470e-bfb8-85c2afe13082",
-            "display-name": "State Param",
+            "display-name": "Select State",
             "default": null,
             "dimension": [
               "field",
-              1886,
+              18,
               null
             ],
             "widget-type": "string/=",
@@ -23,13 +23,13 @@
           },
           "district_param": {
             "type": "dimension",
-            "name": "district_param",
+            "name": "select_district",
             "id": "9cc9bbb1-6321-440d-b9d5-5c8ac5159453",
-            "display-name": "District Param",
+            "display-name": "Select District",
             "default": null,
             "dimension": [
               "field",
-              1902,
+              19,
               null
             ],
             "widget-type": "string/=",
@@ -37,13 +37,13 @@
           },
           "block_param": {
             "type": "dimension",
-            "name": "block_param",
+            "name": "select_block",
             "id": "f8b1da9a-452a-4d7e-98a4-f3256acd5bd6",
-            "display-name": "Block Param",
+            "display-name": "Select Block",
             "default": null,
             "dimension": [
               "field",
-              1885,
+              20,
               null
             ],
             "widget-type": "string/=",
@@ -51,76 +51,56 @@
           },
           "cluster_param": {
             "type": "dimension",
-            "name": "cluster_param",
+            "name": "select_cluster",
             "id": "858e4360-42ae-4482-8099-5901a5541aae",
-            "display-name": "Cluster Param",
+            "display-name": "Select Cluster",
             "default": null,
             "dimension": [
               "field",
-              1890,
+              21,
               null
             ],
             "widget-type": "string/=",
             "options": null
           },
           "organizations_param": {
-            "type": "dimension",
-            "name": "organizations_param",
+            "type": "text",
+            "name": "select_organizations",
             "id": "3ef775f4-24df-455f-83a3-606098ac82e2",
-            "display-name": "Organizations Param",
+            "display-name": "Select Organizations",
             "default": null,
-            "dimension": [
-              "field",
-              1910,
-              null
-            ],
             "widget-type": "string/=",
             "options": null
           },
           "platform_role_param": {
-            "type": "dimension",
-            "name": "platform_role_param",
+            "type": "text",
+            "name": "select_platform_role",
             "id": "b1647117-1916-44e0-8059-e78b751df81f",
-            "display-name": "Platform Role Param",
+            "display-name": "Select Platform Role",
             "default": null,
-            "dimension": [
-              "field",
-              1910,
-              null
-            ],
             "widget-type": "string/=",
             "options": null
           },
           "professional_role_param": {
-            "type": "dimension",
-            "name": "professional_role_param",
+            "type": "text",
+            "name": "select_professional_role",
             "id": "aa4e48a6-d030-49fe-bc19-3d6a1e9bb0f6",
-            "display-name": "Professional Role Param",
+            "display-name": "Select Professional Role",
             "default": null,
-            "dimension": [
-              "field",
-              1910,
-              null
-            ],
             "widget-type": "string/=",
             "options": null
           },
           "professional_subroles_param": {
-            "type": "dimension",
-            "name": "professional_subroles_param",
+            "type": "text",
+            "name": "select_professional_subroles",
             "id": "563782e7-35b9-4248-8104-010dba4104a8",
-            "display-name": "Professional Subroles Param",
+            "display-name": "Select Professional Subroles",
             "default": null,
-            "dimension": [
-              "field",
-              1910,
-              null
-            ],
             "widget-type": "string/=",
             "options": null
           }
         },
-        "query": "SELECT\r\n  COUNT(DISTINCT user_id)\r\nFROM\r\n  ${tenantUserTable}\r\nWHERE\r\n  1 = 1\r\n\r\n  [[AND user_profile_one_name = (\r\n    SELECT user_profile_one_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{state_param}}\r\n    LIMIT 1)]]\r\n\r\n  [[AND user_profile_two_name = (\r\n    SELECT user_profile_two_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{district_param}}\r\n    LIMIT 1)]]\r\n    \r\n  [[AND user_profile_three_name = (\r\n    SELECT user_profile_three_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{block_param}}\r\n    LIMIT 1)]]\r\n    \r\n  [[AND user_profile_four_name = (\r\n    SELECT user_profile_four_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{cluster_param}}\r\n    LIMIT 1)]]\r\n    \r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Organizations'\r\n      AND {{organizations_param}})]]\r\n\r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Platform Role'\r\n      AND {{platform_role_param}})]]\r\n      \r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Professional Role'\r\n      AND {{professional_role_param}})]]\r\n      \r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Professional Subroles'\r\n      AND {{professional_subroles_param}})]]\r\n"
+        "query": "SELECT\n  COUNT(DISTINCT user_id)\nFROM\n  ${tenantUserTable}\nWHERE\n  1 = 1\n\n  [[AND user_profile_one_name = (\n    SELECT user_profile_one_name\n    FROM ${tenantUserTable}\n    WHERE {{state_param}}\n    LIMIT 1)]]\n\n  [[AND user_profile_two_name = (\n    SELECT user_profile_two_name\n    FROM ${tenantUserTable}\n    WHERE {{district_param}}\n    LIMIT 1)]]\n    \n  [[AND user_profile_three_name = (\n    SELECT user_profile_three_name\n    FROM ${tenantUserTable}\n    WHERE {{block_param}}\n    LIMIT 1)]]\n    \n  [[AND user_profile_four_name = (\n    SELECT user_profile_four_name\n    FROM ${tenantUserTable}\n    WHERE {{cluster_param}}\n    LIMIT 1)]]\n    \n  [[AND user_id IN (\n    SELECT user_id\n    FROM ${tenantUserMetadataTable}\n    WHERE attribute_code = 'Organizations'\n      AND attribute_value = {{organizations_param}})]]\n\n  [[AND user_id IN (\n    SELECT user_id\n    FROM ${tenantUserMetadataTable}\n    WHERE attribute_code = 'Platform Role'\n      AND attribute_value = {{platform_role_param}})]]\n      \n  [[AND user_id IN (\n    SELECT user_id\n    FROM ${tenantUserMetadataTable}\n    WHERE attribute_code = 'Professional Role'\n      AND attribute_value = {{professional_role_param}})]]\n      \n  [[AND user_id IN (\n    SELECT user_id\n    FROM ${tenantUserMetadataTable}\n    WHERE attribute_code = 'Professional Subroles'\n      AND attribute_value = {{professional_subroles_param}})]]\n"
       }
     },
     "display": "scalar",
@@ -136,8 +116,8 @@
             "state_param"
           ]
         ],
-        "name": "State Param",
-        "slug": "state_param"
+        "name": "Select State",
+        "slug": "select_state"
       },
       {
         "id": "9cc9bbb1-6321-440d-b9d5-5c8ac5159453",
@@ -149,8 +129,8 @@
             "district_param"
           ]
         ],
-        "name": "District Param",
-        "slug": "district_param"
+        "name": "Select District",
+        "slug": "select_district"
       },
       {
         "id": "f8b1da9a-452a-4d7e-98a4-f3256acd5bd6",
@@ -162,8 +142,8 @@
             "block_param"
           ]
         ],
-        "name": "Block Param",
-        "slug": "block_param"
+        "name": "Select Block",
+        "slug": "select_block"
       },
       {
         "id": "858e4360-42ae-4482-8099-5901a5541aae",
@@ -175,71 +155,119 @@
             "cluster_param"
           ]
         ],
-        "name": "Cluster Param",
-        "slug": "cluster_param"
+        "name": "Select Cluster",
+        "slug": "select_cluster"
       },
       {
         "id": "3ef775f4-24df-455f-83a3-606098ac82e2",
-        "type": "string/=",
+        "type": "category",
         "target": [
-          "dimension",
+          "variable",
           [
             "template-tag",
             "organizations_param"
           ]
         ],
-        "name": "Organizations Param",
-        "slug": "organizations_param"
+        "name": "Select Organizations",
+        "slug": "select_organizations",
+        "values_query_type": "list",
+        "values_source_type": "card",
+        "values_source_config": {
+          "card_id": 1519,
+          "value_field": [
+            "field",
+            "attribute_value",
+            {
+              "base-type": "type/Text"
+            }
+          ]
+        }
       },
       {
         "id": "b1647117-1916-44e0-8059-e78b751df81f",
-        "type": "string/=",
+        "type": "category",
         "target": [
-          "dimension",
+          "variable",
           [
             "template-tag",
             "platform_role_param"
           ]
         ],
-        "name": "Platform Role Param",
-        "slug": "platform_role_param"
+        "name": "Select Platform Role",
+        "slug": "select_platform_role",
+        "values_query_type": "list",
+        "values_source_type": "card",
+        "values_source_config": {
+          "card_id": 1520,
+          "value_field": [
+            "field",
+            "attribute_value",
+            {
+              "base-type": "type/Text"
+            }
+          ]
+        }
       },
       {
         "id": "aa4e48a6-d030-49fe-bc19-3d6a1e9bb0f6",
-        "type": "string/=",
+        "type": "category",
         "target": [
-          "dimension",
+          "variable",
           [
             "template-tag",
             "professional_role_param"
           ]
         ],
-        "name": "Professional Role Param",
-        "slug": "professional_role_param"
+        "name": "Select Professional Role",
+        "slug": "select_professional_role",
+        "values_query_type": "list",
+        "values_source_type": "card",
+        "values_source_config": {
+          "card_id": 1521,
+          "value_field": [
+            "field",
+            "attribute_value",
+            {
+              "base-type": "type/Text"
+            }
+          ]
+        }
       },
       {
         "id": "563782e7-35b9-4248-8104-010dba4104a8",
-        "type": "string/=",
+        "type": "category",
         "target": [
-          "dimension",
+          "variable",
           [
             "template-tag",
             "professional_subroles_param"
           ]
         ],
-        "name": "Professional Subroles Param",
-        "slug": "professional_subroles_param"
+        "name": "Select Professional Subroles",
+        "slug": "select_professional_subroles",
+        "values_query_type": "list",
+        "values_source_type": "card",
+        "values_source_config": {
+          "card_id": 1518,
+          "value_field": [
+            "field",
+            "attribute_value",
+            {
+              "base-type": "type/Text"
+            }
+          ]
+        }
       }
     ]
   },
   "dashCards": {
-    "card_id": 377,
+    "card_id": 1578,
     "dashboard_tab_id": null,
     "id": 17,
     "parameter_mappings": [
       {
         "parameter_id": "2030c5fe",
-        "card_id": 377,
+        "card_id": 1578,
         "target": [
           "dimension",
           [
@@ -250,7 +278,7 @@
       },
       {
         "parameter_id": "3fa46e53",
-        "card_id": 377,
+        "card_id": 1578,
         "target": [
           "dimension",
           [
@@ -261,7 +289,7 @@
       },
       {
         "parameter_id": "ebefc30b",
-        "card_id": 377,
+        "card_id": 1578,
         "target": [
           "dimension",
           [
@@ -272,7 +300,7 @@
       },
       {
         "parameter_id": "a6683b09",
-        "card_id": 377,
+        "card_id": 1578,
         "target": [
           "dimension",
           [
@@ -283,9 +311,9 @@
       },
       {
         "parameter_id": "98262141",
-        "card_id": 377,
+        "card_id": 1519,
         "target": [
-          "dimension",
+          "variable",
           [
             "template-tag",
             "organizations_param"
@@ -294,9 +322,9 @@
       },
       {
         "parameter_id": "89753241",
-        "card_id": 377,
+        "card_id": 1520,
         "target": [
-          "dimension",
+          "variable",
           [
             "template-tag",
             "platform_role_param"
@@ -305,9 +333,9 @@
       },
       {
         "parameter_id": "89753242",
-        "card_id": 377,
+        "card_id": 1521,
         "target": [
-          "dimension",
+          "variable",
           [
             "template-tag",
             "professional_role_param"
@@ -316,9 +344,9 @@
       },
       {
         "parameter_id": "89753243",
-        "card_id": 377,
+        "card_id": 1518,
         "target": [
-          "dimension",
+          "variable",
           [
             "template-tag",
             "professional_subroles_param"
