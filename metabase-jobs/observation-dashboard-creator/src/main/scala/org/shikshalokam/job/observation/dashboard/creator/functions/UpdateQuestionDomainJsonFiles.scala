@@ -12,12 +12,13 @@ import scala.util.{Failure, Success, Try}
 
 
 object UpdateQuestionDomainJsonFiles {
-  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, domainTable: String, QuestionTable: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, params: Map[String, Int], paramsToRemove: ListMap[String, String], entityColumnName: String, entityColumnId: String, entityType: String): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, domainTable: String, QuestionTable: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, params: Map[String, Int], paramsToRemove: ListMap[String, String], entityColumnName: String, entityColumnId: String, entityType: String): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, domainTable: String, QuestionTable: String, params: Map[String, Int], paramsToRemove: ListMap[String, String], entityColumnName: String, entityColumnId: String, entityType: String): Unit = {
+    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, domainTable: String, QuestionTable: String, params: Map[String, Int], paramsToRemove: ListMap[String, String], entityColumnName: String, entityColumnId: String, entityType: String): Unit = {
+      val dashcardsArray = objectMapper.createArrayNode()
       val queryResult = postgresUtil.fetchData(reportConfigQuery)
       queryResult.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -41,8 +42,15 @@ object UpdateQuestionDomainJsonFiles {
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
                 println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
                 questionCardId.append(cardId)
-                val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(configJson, cardId)
-                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedQuestionIdInDashCard, dashboardId)
+                val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(cleanedJson, cardId, dashboardId, tabId)
+                updatedQuestionIdInDashCard.foreach { node =>
+                  val dashCardsNode = node.path("dashCards")
+                  if (!dashCardsNode.isMissingNode && !dashCardsNode.isNull) {
+                    dashcardsArray.add(dashCardsNode)
+                  } else {
+                    println("No 'dashCards' key found in the JSON.")
+                  }
+                }
               }
             case None =>
               println("Key 'config' not found in the result row.")
@@ -55,11 +63,19 @@ object UpdateQuestionDomainJsonFiles {
               val rootNode = objectMapper.readTree(jsonString)
               if (rootNode != null) {
                 val optJsonNode = toOption(rootNode)
-                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, optJsonNode, dashboardId)
+                optJsonNode.foreach { node =>
+                  val dashCardsNode = node.path("dashCards")
+                  if (!dashCardsNode.isMissingNode && !dashCardsNode.isNull) {
+                    dashcardsArray.add(dashCardsNode)
+                  } else {
+                    println("No 'dashCards' key found in the JSON.")
+                  }
+                }
               }
           }
         }
       }
+      Utils.appendDashCardToDashboard(metabaseUtil, dashcardsArray, dashboardId)
     }
 
     def cleanDashboardJson(jsonStr: String, paramsToRemove: Map[String, String], removeByColumnName: Boolean = false): String = {
@@ -135,7 +151,7 @@ object UpdateQuestionDomainJsonFiles {
       if (jsonNode == null || jsonNode.isMissingNode) None else Some(jsonNode)
     }
 
-    def updateQuestionIdInDashCard(json: JsonNode, cardId: Int): Option[JsonNode] = {
+    def updateQuestionIdInDashCard(json: JsonNode, cardId: Int, dashboardId: Int, tabId: Int): Option[JsonNode] = {
       Try {
         val jsonObject = json.asInstanceOf[ObjectNode]
 
@@ -148,7 +164,8 @@ object UpdateQuestionDomainJsonFiles {
         }
 
         dashCardsNode.put("card_id", cardId)
-
+        dashCardsNode.put("dashboard_id", dashboardId)
+        dashCardsNode.put("dashboard_tab_id", tabId)
         if (dashCardsNode.has("parameter_mappings") && dashCardsNode.get("parameter_mappings").isArray) {
           dashCardsNode.get("parameter_mappings").elements().forEachRemaining { paramMappingNode =>
             if (paramMappingNode.isObject) {
@@ -209,7 +226,7 @@ object UpdateQuestionDomainJsonFiles {
         val updatedQuery = queryNode.asText()
           .replace("${questionTable}", s""""$questionTable"""")
           .replace("${domainTable}", s""""$domainTable"""")
-          .replace("${entityColumnName}", s"""$entityColumnName""" )
+          .replace("${entityColumnName}", s"""$entityColumnName""")
           .replace("${entityColumnId}", s"""$entityColumnId""")
           .replace("${entityType}", s"""$entityType""")
         val updatedJson = json.deepCopy().asInstanceOf[ObjectNode]
@@ -225,7 +242,7 @@ object UpdateQuestionDomainJsonFiles {
       }
     }
 
-    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, domainTable, QuestionTable, params, paramsToRemove, entityColumnName, entityColumnId, entityType)
+    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, tabId, domainTable, QuestionTable, params, paramsToRemove, entityColumnName, entityColumnId, entityType)
     println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardId
   }

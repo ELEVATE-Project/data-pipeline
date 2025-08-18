@@ -1,0 +1,363 @@
+{
+  "questionCard": {
+    "name": "No. of Deleted Users",
+    "collection_id": 147,
+    "dataset_query": {
+      "database": 8,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "state_param": {
+            "type": "dimension",
+            "name": "select_state",
+            "id": "b103d08d-ddcf-470e-bfb8-85c2afe13082",
+            "display-name": "Select State",
+            "default": null,
+            "dimension": [
+              "field",
+              1886,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "district_param": {
+            "type": "dimension",
+            "name": "select_district",
+            "id": "9cc9bbb1-6321-440d-b9d5-5c8ac5159453",
+            "display-name": "Select District",
+            "default": null,
+            "dimension": [
+              "field",
+              1902,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "block_param": {
+            "type": "dimension",
+            "name": "select_block",
+            "id": "f8b1da9a-452a-4d7e-98a4-f3256acd5bd6",
+            "display-name": "Select Block",
+            "default": null,
+            "dimension": [
+              "field",
+              1885,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "cluster_param": {
+            "type": "dimension",
+            "name": "select_cluster",
+            "id": "858e4360-42ae-4482-8099-5901a5541aae",
+            "display-name": "Select Cluster",
+            "default": null,
+            "dimension": [
+              "field",
+              1890,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "organizations_param": {
+            "type": "text",
+            "name": "select_organizations",
+            "id": "3ef775f4-24df-455f-83a3-606098ac82e2",
+            "display-name": "Select Organizations",
+            "default": null,
+            "widget-type": "string/=",
+            "options": null
+          },
+          "platform_role_param": {
+            "type": "text",
+            "name": "select_platform_role",
+            "id": "b1647117-1916-44e0-8059-e78b751df81f",
+            "display-name": "Select Platform Role",
+            "default": null,
+            "widget-type": "string/=",
+            "options": null
+          },
+          "professional_role_param": {
+            "type": "text",
+            "name": "select_professional_role",
+            "id": "aa4e48a6-d030-49fe-bc19-3d6a1e9bb0f6",
+            "display-name": "Select Professional Role",
+            "default": null,
+            "widget-type": "string/=",
+            "options": null
+          },
+          "professional_subroles_param": {
+            "type": "text",
+            "name": "select_professional_subroles",
+            "id": "563782e7-35b9-4248-8104-010dba4104a8",
+            "display-name": "Select Professional Subroles",
+            "default": null,
+            "widget-type": "string/=",
+            "options": null
+          }
+        },
+        "query": "SELECT\r\n  COUNT(DISTINCT user_id)\r\nFROM\r\n  ${tenantUserTable}\r\nWHERE\r\n  status = 'INACTIVE'\r\n\r\n  [[AND user_profile_one_name = (\r\n    SELECT user_profile_one_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{state_param}}\r\n    LIMIT 1)]]\r\n\r\n  [[AND user_profile_two_name = (\r\n    SELECT user_profile_two_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{district_param}}\r\n    LIMIT 1)]]\r\n    \r\n  [[AND user_profile_three_name = (\r\n    SELECT user_profile_three_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{block_param}}\r\n    LIMIT 1)]]\r\n    \r\n  [[AND user_profile_four_name = (\r\n    SELECT user_profile_four_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{cluster_param}}\r\n    LIMIT 1)]]\r\n    \r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Organizations'\r\n      AND attribute_value = {{organizations_param}})]]\r\n\r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Platform Role'\r\n      AND attribute_value = {{platform_role_param}})]]\r\n      \r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Professional Role'\r\n      AND attribute_value = {{professional_role_param}})]]\r\n      \r\n  [[AND user_id IN (\r\n    SELECT user_id\r\n    FROM ${tenantUserMetadataTable}\r\n    WHERE attribute_code = 'Professional Subroles'\r\n      AND attribute_value = {{professional_subroles_param}})]]\r\n"
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {},
+    "parameters": [
+      {
+        "id": "b103d08d-ddcf-470e-bfb8-85c2afe13082",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "state_param"
+          ]
+        ],
+        "name": "Select State",
+        "slug": "select_state"
+      },
+      {
+        "id": "9cc9bbb1-6321-440d-b9d5-5c8ac5159453",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "district_param"
+          ]
+        ],
+        "name": "Select District",
+        "slug": "select_district"
+      },
+      {
+        "id": "f8b1da9a-452a-4d7e-98a4-f3256acd5bd6",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "block_param"
+          ]
+        ],
+        "name": "Select Block",
+        "slug": "select_block"
+      },
+      {
+        "id": "858e4360-42ae-4482-8099-5901a5541aae",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "cluster_param"
+          ]
+        ],
+        "name": "Select Cluster",
+        "slug": "select_cluster"
+      },
+      {
+        "id": "3ef775f4-24df-455f-83a3-606098ac82e2",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "organizations_param"
+          ]
+        ],
+        "name": "Select Organizations",
+        "slug": "select_organizations",
+        "values_query_type": "list",
+        "values_source_type": "card",
+        "values_source_config": {
+          "card_id": 1519,
+          "value_field": [
+            "field",
+            "attribute_value",
+            {
+              "base-type": "type/Text"
+            }
+          ]
+        }
+      },
+      {
+        "id": "b1647117-1916-44e0-8059-e78b751df81f",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "platform_role_param"
+          ]
+        ],
+        "name": "Select Platform Role",
+        "slug": "select_platform_role",
+        "values_query_type": "list",
+        "values_source_type": "card",
+        "values_source_config": {
+          "card_id": 1520,
+          "value_field": [
+            "field",
+            "attribute_value",
+            {
+              "base-type": "type/Text"
+            }
+          ]
+        }
+      },
+      {
+        "id": "aa4e48a6-d030-49fe-bc19-3d6a1e9bb0f6",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "professional_role_param"
+          ]
+        ],
+        "name": "Select Professional Role",
+        "slug": "select_professional_role",
+        "values_query_type": "list",
+        "values_source_type": "card",
+        "values_source_config": {
+          "card_id": 1521,
+          "value_field": [
+            "field",
+            "attribute_value",
+            {
+              "base-type": "type/Text"
+            }
+          ]
+        }
+      },
+      {
+        "id": "563782e7-35b9-4248-8104-010dba4104a8",
+        "type": "category",
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "professional_subroles_param"
+          ]
+        ],
+        "name": "Select Professional Subroles",
+        "slug": "select_professional_subroles",
+        "values_query_type": "list",
+        "values_source_type": "card",
+        "values_source_config": {
+          "card_id": 1518,
+          "value_field": [
+            "field",
+            "attribute_value",
+            {
+              "base-type": "type/Text"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 1578,
+    "dashboard_tab_id": null,
+    "id": 17,
+    "parameter_mappings": [
+      {
+        "parameter_id": "2030c5fe",
+        "card_id": 1578,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "state_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "3fa46e53",
+        "card_id": 1578,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "district_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "ebefc30b",
+        "card_id": 1578,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "block_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "a6683b09",
+        "card_id": 1578,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "cluster_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "98262141",
+        "card_id": 1519,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "organizations_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753241",
+        "card_id": 1520,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "platform_role_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753242",
+        "card_id": 1521,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "professional_role_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753243",
+        "card_id": 1518,
+        "target": [
+          "variable",
+          [
+            "template-tag",
+            "professional_subroles_param"
+          ]
+        ]
+      }
+    ],
+    "col": 16,
+    "row": 0,
+    "size_x": 8,
+    "size_y": 3,
+    "visualization_settings": {}
+  }
+}

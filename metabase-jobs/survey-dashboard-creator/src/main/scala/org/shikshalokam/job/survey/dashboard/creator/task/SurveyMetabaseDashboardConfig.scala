@@ -38,11 +38,14 @@ class SurveyMetabaseDashboardConfig(override val config: Config) extends BaseJob
   val solutions: String = config.getString("postgres.tables.solutionsTable")
   val dashboard_metadata: String = config.getString("postgres.tables.dashboardMetadataTable")
   val report_config: String = config.getString("postgres.tables.reportConfigTable")
+  val metabasePgDatabase: String = config.getString("postgres.metabaseDb")
 
   // Metabase connection config
   val metabaseUrl: String = config.getString("metabase.url")
   val metabaseUsername: String = config.getString("metabase.username")
   val metabasePassword: String = config.getString("metabase.password")
   val metabaseDatabase: String = config.getString("metabase.database")
+  val evidenceBaseUrl: String = config.getString("metabase.evidenceBaseUrl")
+  val metabaseApiKey: String = config.getString("metabase.metabaseApiKey")
 
 }

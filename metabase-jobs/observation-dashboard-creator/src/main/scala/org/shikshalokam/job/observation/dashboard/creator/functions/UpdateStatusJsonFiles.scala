@@ -12,12 +12,13 @@ import scala.util.{Failure, Success, Try}
 
 
 object UpdateStatusJsonFiles {
-  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, params: Map[String, Int], replacements: Map[String, String], newLevelDict: ListMap[String, String], entityType: String): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, params: Map[String, Int], replacements: Map[String, String], newLevelDict: ListMap[String, String], entityType: String): ListBuffer[Int] = {
     println(s"---------------started processing ProcessAndUpdateJsonFiles function----------------")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    def processJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, params: Map[String, Int], replacements: Map[String, String], newLevelDict: ListMap[String, String]): Unit = {
+    def processJsonFiles(collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, params: Map[String, Int], replacements: Map[String, String], newLevelDict: ListMap[String, String]): Unit = {
+      val dashcardsArray = objectMapper.createArrayNode()
       val queryResult = postgresUtil.fetchData(reportConfigQuery)
       queryResult.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -41,8 +42,15 @@ object UpdateStatusJsonFiles {
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
                 println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
                 questionCardId.append(cardId)
-                val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(cleanedJson, cardId)
-                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedQuestionIdInDashCard, dashboardId)
+                val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(cleanedJson, cardId, dashboardId, tabId)
+                updatedQuestionIdInDashCard.foreach { node =>
+                  val dashCardsNode = node.path("dashCards")
+                  if (!dashCardsNode.isMissingNode && !dashCardsNode.isNull) {
+                    dashcardsArray.add(dashCardsNode)
+                  } else {
+                    println("No 'dashCards' key found in the JSON.")
+                  }
+                }
               }
             case None =>
               println("Key 'config' not found in the result row.")
@@ -55,11 +63,20 @@ object UpdateStatusJsonFiles {
               val rootNode = objectMapper.readTree(jsonString)
               if (rootNode != null) {
                 val optJsonNode = toOption(rootNode)
-                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, optJsonNode, dashboardId)
+                optJsonNode.foreach(dashcardsArray.add)
+                optJsonNode.foreach { node =>
+                  val dashCardsNode = node.path("dashCards")
+                  if (!dashCardsNode.isMissingNode && !dashCardsNode.isNull) {
+                    dashcardsArray.add(dashCardsNode)
+                  } else {
+                    println("No 'dashCards' key found in the JSON.")
+                  }
+                }
               }
           }
         }
       }
+      Utils.appendDashCardToDashboard(metabaseUtil, dashcardsArray, dashboardId)
     }
 
     def cleanDashboardJson(jsonStr: String, newLevelDict: Map[String, String]): String = {
@@ -133,7 +150,7 @@ object UpdateStatusJsonFiles {
       if (jsonNode == null || jsonNode.isMissingNode) None else Some(jsonNode)
     }
 
-    def updateQuestionIdInDashCard(json: JsonNode, cardId: Int): Option[JsonNode] = {
+    def updateQuestionIdInDashCard(json: JsonNode, cardId: Int, dashboardId: Int, tabId: Int): Option[JsonNode] = {
       Try {
         val jsonObject = json.asInstanceOf[ObjectNode]
 
@@ -146,6 +163,8 @@ object UpdateStatusJsonFiles {
         }
 
         dashCardsNode.put("card_id", cardId)
+        dashCardsNode.put("dashboard_id", dashboardId)
+        dashCardsNode.put("dashboard_tab_id", tabId)
 
         if (dashCardsNode.has("parameter_mappings") && dashCardsNode.get("parameter_mappings").isArray) {
           dashCardsNode.get("parameter_mappings").elements().forEachRemaining { paramMappingNode =>
@@ -222,7 +241,7 @@ object UpdateStatusJsonFiles {
       }
     }
 
-    processJsonFiles(collectionId, databaseId, dashboardId, params, replacements, newLevelDict)
+    processJsonFiles(collectionId, databaseId, dashboardId, tabId, params, replacements, newLevelDict)
     println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardId
   }
