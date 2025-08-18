@@ -1,17 +1,21 @@
-# This handles both amd64 and arm64 automatically
-FROM maven:3.9.9-eclipse-temurin-11 AS build
+# ---- Base: Ubuntu + JDK + Maven + Scala ----
+FROM ubuntu:22.04
 
-# Set timezone
+# Set timezone & env
 ENV TZ=Etc/UTC
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install extra tools (Postgres client, jq, nano, git, etc.)
+# Install required packages
 RUN apt-get update && apt-get install -y \
-      postgresql-client \
-      jq \
-      nano \
-      git \
-      curl \
+    openjdk-11-jdk \
+    wget \
+    tar \
+    git \
+    curl \
+    maven \
+    jq \
+    nano \
+    postgresql-client \
  && rm -rf /var/lib/apt/lists/*
 
 # Install specific Scala version
@@ -21,12 +25,12 @@ RUN curl -sL https://downloads.lightbend.com/scala/2.12.11/scala-2.12.11.tgz | t
 ENV SCALA_HOME=/usr/local/scala
 ENV PATH="${SCALA_HOME}/bin:${PATH}"
 
-# Build stage
+# App setup
 WORKDIR /app
 COPY . /app
 
 # Optional diagnostics
-RUN java -version && javac -version && mvn -v
+RUN java -version && javac -version && mvn -v && scala -version
 
-# Build your project
+# Build project
 RUN mvn clean install -DskipTests
