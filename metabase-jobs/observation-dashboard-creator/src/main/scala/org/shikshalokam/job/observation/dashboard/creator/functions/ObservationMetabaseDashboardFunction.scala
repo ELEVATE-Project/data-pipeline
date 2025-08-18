@@ -123,7 +123,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
       /**
        * Logic to process and create Programs Collection and observation solution Dashboard for Admin
        */
-      if (targetedSolutionId.nonEmpty && solutionName.nonEmpty && targetedProgramId.nonEmpty && programName.nonEmpty) {
+      if (solutionName.nonEmpty && targetedProgramId.nonEmpty && programName.nonEmpty) {
         event.reportType match {
           case "Observation" =>
             println(s"===========> Started Processing Metabase Admin Dashboard For Observation \n")

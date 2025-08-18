@@ -117,7 +117,7 @@ object Utils {
     databaseId
   }
 
-  def createGroupForCollection(metabaseUtil: MetabaseUtil = null, groupName: String, collectionId: Int) {
+  def createGroupForCollection(metabaseUtil: MetabaseUtil = null, groupName: String, collectionId: Int): Unit = {
 
     val existingGroups = mapper.readTree(metabaseUtil.listGroups())
     val existingGroup = existingGroups.elements().asScala.find { node =>

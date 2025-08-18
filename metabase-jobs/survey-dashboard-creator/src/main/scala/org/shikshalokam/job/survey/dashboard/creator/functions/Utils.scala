@@ -91,7 +91,7 @@ object Utils {
     databaseId
   }
 
-  def createGroupToDashboard(metabaseUtil: MetabaseUtil = null, groupName: String, collectionId: Int) {
+  def createGroupToDashboard(metabaseUtil: MetabaseUtil = null, groupName: String, collectionId: Int): Unit = {
 
     val existingGroups = mapper.readTree(metabaseUtil.listGroups())
     val existingGroup = existingGroups.elements().asScala.find { node =>

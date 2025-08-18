@@ -609,9 +609,17 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
     }
   }
 
+  /**
+   * Method to sync a new table in Metabase
+   * @param dbId       ID of the database to sync the new table with
+   * @param tableName  Name of the new table to sync
+   * @param apiKey     API key for authentication
+   * @return JSON string representing the response from the sync operation
+   */
+
   def syncNewTable(dbId: Int, tableName: String, apiKey: String): ujson.Value = {
     val url = s"$metabaseUrl/notify/db/$dbId/new-table"
-    val data = ujson.Obj(
+    val payload = ujson.Obj(
       "schema_name" -> "public",
       "table_name" -> tableName
     ).render()
@@ -619,7 +627,7 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
       "Content-Type" -> "application/json",
       "X-METABASE-APIKEY" -> apiKey
     )
-    val response = requests.post(url, data = data, headers = headers)
+    val response = requests.post(url, data = payload, headers = headers)
     if (response.statusCode == 200) {
       ujson.read(response.text)
     } else {

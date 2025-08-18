@@ -112,7 +112,7 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
       println(s"Targeted Solution ID: $targetedSolutionId")
 
 
-      if (targetedSolutionId.nonEmpty && solutionName.nonEmpty && targetedProgramId.nonEmpty && programName.nonEmpty) {
+      if (solutionName.nonEmpty && targetedProgramId.nonEmpty && programName.nonEmpty) {
         event.reportType match {
           case "Survey" =>
 

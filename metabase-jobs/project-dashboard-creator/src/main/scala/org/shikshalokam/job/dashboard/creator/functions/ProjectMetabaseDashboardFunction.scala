@@ -415,9 +415,9 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
         val (compareDashboardName, compareDashboardDescription) = (s"Region Comparison Dashboard", s"Compare Micro Improvement progress across states and districts using key metrics.")
         val compareDashboardId: Int = Utils.createDashboard(mainCollectionId, compareDashboardName, compareDashboardDescription, metabaseUtil, "Yes")
         val compareReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mi-Dashboard' AND report_name = 'Compare-Details-Report';"
-        val statNameId: Int = getTheColumnId(databaseId, projects, "state_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
+        val stateNameId: Int = getTheColumnId(databaseId, projects, "state_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
         val districtNameId: Int = getTheColumnId(databaseId, projects, "district_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
-        val compareReportQuestionIdList = ComparePage.ProcessAndUpdateJsonFiles(compareReportConfigQuery, mainCollectionId, databaseId, compareDashboardId, statNameId, districtNameId, projects, solutions, metabaseUtil, postgresUtil)
+        val compareReportQuestionIdList = ComparePage.ProcessAndUpdateJsonFiles(compareReportConfigQuery, mainCollectionId, databaseId, compareDashboardId, stateNameId, districtNameId, projects, solutions, metabaseUtil, postgresUtil)
         val compareQuestionIdsString = "[" + compareReportQuestionIdList.mkString(",") + "]"
         val compareParametersQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Mi-Dashboard-Parameters' AND question_type = 'compare-dashboard-parameter'"
         ComparePage.UpdateParameterFunction(metabaseUtil, compareParametersQuery, compareDashboardId, postgresUtil)
