@@ -1,7 +1,10 @@
 package org.shikshalokam.job.user.dashboard.creator.functions
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
 import org.shikshalokam.job.util.JSONUtil.mapper
-import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
+import org.shikshalokam.job.util.MetabaseUtil
+
 import scala.collection.JavaConverters._
 
 object Utils {
@@ -44,7 +47,7 @@ object Utils {
 
   }
 
-  def createDashboard(collectionId: Int, dashboardName: String, dashboardDescription: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): Int = {
+  def createDashboard(collectionId: Int, dashboardName: String, dashboardDescription: String, metabaseUtil: MetabaseUtil): Int = {
     val dashboardRequestBody =
       s"""{
          |  "name": "$dashboardName",
@@ -70,10 +73,10 @@ object Utils {
     databaseId
   }
 
-  def createGroupForCollection(metabaseUtil: MetabaseUtil = null, groupName: String, collectionId: Int) {
+  def createGroupForCollection(metabaseUtil: MetabaseUtil = null, groupName: String, collectionId: Int): Unit = {
 
     val existingGroups = mapper.readTree(metabaseUtil.listGroups())
-    val existingGroup = existingGroups.elements().asScala.find { node => node.get("name").asText().equalsIgnoreCase(groupName)}
+    val existingGroup = existingGroups.elements().asScala.find { node => node.get("name").asText().equalsIgnoreCase(groupName) }
     existingGroup match {
       case Some(group) =>
         println(s"Group '$groupName' already exists with ID: ${group.get("id").asInt()}")
@@ -96,7 +99,7 @@ object Utils {
              |    "revision": $revisionId,
              |    "groups": {
              |        "$id": {
-             |            "$collectionId": "read"
+             |         "$collectionId": "read"
              |        }
              |    }
              |}
@@ -105,22 +108,36 @@ object Utils {
     }
   }
 
-  def getTableMetadataId(databaseId: Int, metabaseUtil: MetabaseUtil, tableName: String, columnName: String, postgresUtil: PostgresUtil, metaTableQuery: String): Int = {
-    val metadataJson = mapper.readTree(metabaseUtil.getDatabaseMetadata(databaseId))
-    metadataJson.path("tables").elements().asScala
-      .find(_.path("name").asText() == s"$tableName")
-      .flatMap(table => table.path("fields").elements().asScala
-        .find(_.path("name").asText() == s"$columnName"))
-      .map(field => {
-        val fieldId = field.path("id").asInt()
-        println(s"Field ID for $columnName: $fieldId")
-        fieldId
-      }).getOrElse {
-        val errorMessage = s"$columnName field not found"
-        val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'${errorMessage.replace("'", "''")}'")
-        postgresUtil.insertData(updateTableQuery)
-        throw new Exception(s"$columnName field not found")
+  val objectMapper = new ObjectMapper()
+
+  def appendDashCardToDashboard(metabaseUtil: MetabaseUtil, dashcardsArray: ArrayNode, dashboardId: Int): Unit = {
+
+    val dashboardResponse = objectMapper.readTree(
+      metabaseUtil.getDashboardDetailsById(dashboardId)
+    )
+
+    val existingDashcards = dashboardResponse.path("dashcards") match {
+      case array: ArrayNode => array
+      case _                => objectMapper.createArrayNode()
+    }
+
+    val maxExistingId = existingDashcards.elements().asScala
+      .flatMap(node => Option(node.path("id")).filter(_.isInt).map(_.asInt()))
+      .foldLeft(0)(Math.max)
+
+    dashcardsArray.elements().asScala.zipWithIndex.foreach { case (node, idx) =>
+      node match {
+        case obj: ObjectNode => obj.put("id", maxExistingId + idx + 1)
+        case _               => // skip non-object nodes
       }
+      existingDashcards.add(node)
+    }
+
+    dashboardResponse.asInstanceOf[ObjectNode]
+      .set("dashcards", existingDashcards)
+
+    val updatedDashboardStr = objectMapper.writeValueAsString(dashboardResponse)
+    metabaseUtil.addQuestionCardToDashboard(dashboardId, updatedDashboardStr)
   }
 
 }

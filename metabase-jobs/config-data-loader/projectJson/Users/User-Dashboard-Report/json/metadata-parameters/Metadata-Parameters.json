@@ -1,7 +1,7 @@
 [
   {
-    "name": "State Param",
-    "slug": "state_param",
+    "name": "Select State",
+    "slug": "select_state",
     "id": "2030c5fe",
     "type": "string/=",
     "sectionId": "location",
@@ -13,8 +13,8 @@
     ]
   },
   {
-    "name": "District Param",
-    "slug": "district_param",
+    "name": "Select District",
+    "slug": "select_district",
     "id": "3fa46e53",
     "type": "string/=",
     "sectionId": "location",
@@ -26,8 +26,8 @@
     ]
   },
   {
-    "name": "Block Param",
-    "slug": "block_param",
+    "name": "Select Block",
+    "slug": "select_block",
     "id": "ebefc30b",
     "type": "string/=",
     "sectionId": "string",
@@ -39,8 +39,8 @@
     ]
   },
   {
-    "name": "Cluster Param",
-    "slug": "cluster_param",
+    "name": "Select Cluster",
+    "slug": "select_cluster",
     "id": "a6683b09",
     "type": "string/=",
     "sectionId": "string",
@@ -52,43 +52,79 @@
     ]
   },
   {
-    "name": "Organizations Param",
-    "slug": "organizations_param",
+    "name": "Select Organizations",
+    "slug": "select_organizations",
     "id": "98262141",
     "type": "string/=",
     "sectionId": "string",
-    "filteringParameters": [
-      "2030c5fe",
-      "3fa46e53",
-      "ebefc30b",
-      "a6683b09"
-    ]
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 1519,
+      "value_field": [
+        "field",
+        "attribute_value",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    },
+    "values_query_type": "list"
   },
   {
-    "name": "Platform Role Param",
-    "slug": "platform_role_param",
+    "name": "Select Platform Role",
+    "slug": "select_platform_role",
     "id": "89753241",
     "type": "string/=",
     "sectionId": "string",
-    "filteringParameters": [
-    ]
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 1971,
+      "value_field": [
+        "field",
+        "attribute_value",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    },
+    "values_query_type": "list"
   },
   {
-    "name": "Professional Role Param",
-    "slug": "professional_role_param",
+    "name": "Select Professional Role",
+    "slug": "select_professional_role",
     "id": "89753242",
     "type": "string/=",
     "sectionId": "string",
-    "filteringParameters": [
-    ]
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 1521,
+      "value_field": [
+        "field",
+        "attribute_value",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    },
+    "values_query_type": "list"
   },
   {
-    "name": "Professional Subroles Param",
-    "slug": "professional_subroles_param",
+    "name": "Select Professional Subroles",
+    "slug": "select_professional_subroles",
     "id": "89753243",
     "type": "string/=",
     "sectionId": "string",
-    "filteringParameters": [
-    ]
+    "values_source_type": "card",
+    "values_source_config": {
+      "card_id": 1518,
+      "value_field": [
+        "field",
+        "attribute_value",
+        {
+          "base-type": "type/Text"
+        }
+      ]
+    },
+    "values_query_type": "list"
   }
 ]

@@ -9,8 +9,8 @@ import org.shikshalokam.job.util.JSONUtil
 class UserMetabaseEventSource extends SourceFunction[Event] {
 
   override def run(ctx: SourceContext[Event]): Unit = {
-    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAMPLE_EVENT1), 0, 0))
-    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.SAMPLE_EVENT), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.TENANT1), 0, 0))
+    ctx.collect(new Event(JSONUtil.deserialize[java.util.Map[String, Any]](EventsMock.TENANT2), 0, 0))
   }
 
   override def cancel(): Unit = {}

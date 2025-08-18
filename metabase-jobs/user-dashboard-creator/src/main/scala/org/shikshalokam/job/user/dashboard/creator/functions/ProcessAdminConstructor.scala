@@ -1,83 +1,172 @@
 package org.shikshalokam.job.user.dashboard.creator.functions
 
-import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
+import com.fasterxml.jackson.databind.node.{ArrayNode, JsonNodeFactory, ObjectNode, TextNode}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import org.postgresql.util.PGobject
+import org.shikshalokam.job.util.JSONUtil.mapper
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 
 import scala.collection.mutable.ListBuffer
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 
 object ProcessAdminConstructor {
-  def processAdminJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, userMetrics: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): ListBuffer[Int] = {
+  def processAdminJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tenantCodeId: Int, userMetrics: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): ListBuffer[Int] = {
     val questionCardIds = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    def processJson(): Unit = {
+    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tenantCodeId: Int): Unit = {
+      val dashcardsArray = objectMapper.createArrayNode()
       val queryResult = postgresUtil.fetchData(reportConfigQuery)
       queryResult.foreach { row =>
-        row.get("config") match {
-          case Some(pgObject: PGobject) =>
-            val configJson = objectMapper.readTree(pgObject.getValue)
-            if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
-              val originalQuestionCard = configJson.path("questionCard")
-              val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
-              val updatedCard = updateAdminQuestion(configJson, collectionId, databaseId, userMetrics)
-              val requestBody = updatedCard.asInstanceOf[ObjectNode]
-              val cardId = new ObjectMapper().readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
-              println(s"Successfully created question card with card_id: $cardId for $chartName")
-              questionCardIds += cardId
-              val updatedDashCard = updateCardId(configJson, cardId)
-              AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedDashCard, dashboardId)
-            } else {
-              AddQuestionCards.appendDashCardToDashboard(metabaseUtil, Some(configJson), dashboardId)
-            }
-          case _ => println("No config found in row.")
+        if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
+          row.get("config") match {
+            case Some(queryValue: PGobject) =>
+              val configJson = objectMapper.readTree(queryValue.getValue)
+              if (configJson != null) {
+                val originalQuestionCard = configJson.path("questionCard")
+                val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
+                val updatedQuestionCard = updateQuestionCardJsonValues(configJson, collectionId, tenantCodeId, databaseId)
+                val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, userMetrics)
+                val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
+                val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
+                println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
+                questionCardIds.append(cardId)
+                val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(configJson, dashboardId, cardId)
+                updatedQuestionIdInDashCard.foreach { node =>
+                  val dashCardsNode = node.path("dashCards")
+                  if (!dashCardsNode.isMissingNode && !dashCardsNode.isNull) {
+                    dashcardsArray.add(dashCardsNode)
+                  } else {
+                    println("No 'dashCards' key found in the JSON.")
+                  }
+                }
+              }
+            case None =>
+              println("Key 'config' not found in the result row.")
+          }
+        }
+        else {
+          row.get("config") match {
+            case Some(queryValue: PGobject) =>
+              val jsonString = queryValue.getValue
+              val rootNode = objectMapper.readTree(jsonString)
+              if (rootNode != null) {
+                val optJsonNode = toOption(rootNode)
+                optJsonNode.foreach { node =>
+                  val dashCardsNode = node.path("dashCards")
+                  if (!dashCardsNode.isMissingNode && !dashCardsNode.isNull) {
+                    dashcardsArray.add(dashCardsNode)
+                  } else {
+                    println("No 'dashCards' key found in the JSON.")
+                  }
+                }
+              }
+          }
         }
       }
+      Utils.appendDashCardToDashboard(metabaseUtil, dashcardsArray, dashboardId)
     }
 
-    def updateAdminQuestion(json: JsonNode, collectionId: Int, databaseId: Int, userMetrics: String): JsonNode = {
-      val copy = json.deepCopy().asInstanceOf[ObjectNode]
-      Option(copy.get("questionCard")).foreach { questionCard =>
-        questionCard.asInstanceOf[ObjectNode].put("collection_id", collectionId)
-        questionCard.at("/dataset_query").asInstanceOf[ObjectNode].put("database", databaseId)
-        val queryNode = questionCard.at("/dataset_query/native/query")
-        if (queryNode.isTextual) {
-          val updatedQuery = queryNode.asText()
-            .replace("${userMetrics}", s""""$userMetrics"""")
-          questionCard.at("/dataset_query/native").asInstanceOf[ObjectNode]
-            .put("query", updatedQuery)
-        }
-      }
-      copy.get("questionCard")
+    def toOption(jsonNode: JsonNode): Option[JsonNode] = {
+      if (jsonNode == null || jsonNode.isMissingNode) None else Some(jsonNode)
     }
 
-    def updateCardId(json: JsonNode, cardId: Int): Option[JsonNode] = {
+    def updateQuestionIdInDashCard(json: JsonNode, dashboardId: Int, cardId: Int): Option[JsonNode] = {
       Try {
-        val dashNode = json.deepCopy().asInstanceOf[ObjectNode]
+        val jsonObject = json.asInstanceOf[ObjectNode]
 
-        // Check if dashCards exists and is an object
-        if (dashNode.has("dashCards") && dashNode.get("dashCards").isObject) {
-          val dashCardsNode = dashNode.get("dashCards").asInstanceOf[ObjectNode]
-          dashCardsNode.put("card_id", cardId)
+        val dashCardsNode = if (jsonObject.has("dashCards") && jsonObject.get("dashCards").isObject) {
+          jsonObject.get("dashCards").asInstanceOf[ObjectNode]
+        } else {
+          val newDashCardsNode = JsonNodeFactory.instance.objectNode()
+          jsonObject.set("dashCards", newDashCardsNode)
+          newDashCardsNode
+        }
 
-          // If parameter_mappings exists, update card_id inside it
-          if (dashCardsNode.has("parameter_mappings") && dashCardsNode.get("parameter_mappings").isArray) {
-            val paramMappings = dashCardsNode.get("parameter_mappings").asInstanceOf[ArrayNode]
-            paramMappings.elements().forEachRemaining { param =>
-              if (param.isObject) {
-                param.asInstanceOf[ObjectNode].put("card_id", cardId)
+        dashCardsNode.put("card_id", cardId)
+        dashCardsNode.put("dashboard_id", dashboardId)
+
+        if (dashCardsNode.has("parameter_mappings") && dashCardsNode.get("parameter_mappings").isArray) {
+          dashCardsNode.get("parameter_mappings").elements().forEachRemaining { paramMappingNode =>
+            if (paramMappingNode.isObject) {
+              paramMappingNode.asInstanceOf[ObjectNode].put("card_id", cardId)
+            }
+          }
+        }
+        jsonObject
+      }.toOption
+    }
+
+    def updateQuestionCardJsonValues(configJson: JsonNode, collectionId: Int, tenantCodeId: Int, databaseId: Int): JsonNode = {
+      try {
+        val configObjectNode = configJson.deepCopy().asInstanceOf[ObjectNode]
+        Option(configObjectNode.get("questionCard")).foreach { questionCard =>
+          questionCard.asInstanceOf[ObjectNode].put("collection_id", collectionId)
+
+          Option(questionCard.get("dataset_query")).foreach { datasetQuery =>
+            datasetQuery.asInstanceOf[ObjectNode].put("database", databaseId)
+
+            Option(datasetQuery.get("native")).foreach { nativeNode =>
+              Option(nativeNode.get("template-tags")).foreach { templateTags =>
+                val params = Map(
+                  "tenant_param" -> tenantCodeId,
+                )
+                params.foreach { case (paramName, paramId) =>
+                  Option(templateTags.get(paramName)).foreach { paramNode =>
+                    updateDimension(paramNode.asInstanceOf[ObjectNode], paramId)
+                  }
+                }
               }
             }
           }
         }
-
-        dashNode
-      }.toOption
+        configObjectNode.get("questionCard")
+      } catch {
+        case e: Exception =>
+          println(s"Warning: JSON node could not be updated. Error: ${e.getMessage}")
+          configJson
+      }
     }
-    processJson()
+
+    def updateDimension(node: ObjectNode, newId: Int): Unit = {
+      if (node.has("dimension") && node.get("dimension").isArray) {
+        val dimensionNode = node.get("dimension").asInstanceOf[ArrayNode]
+        if (dimensionNode.size() >= 2) {
+          dimensionNode.set(1, dimensionNode.numberNode(newId))
+        } else {
+          println(s"Warning: 'dimension' array does not have enough elements to update.")
+        }
+      } else {
+        println(s"Warning: 'dimension' node is missing or not an array.")
+      }
+    }
+
+    def updatePostgresDatabaseQuery(json: JsonNode, userMetrics: String): JsonNode = {
+      Try {
+        val queryNode = json.at("/dataset_query/native/query")
+        if (queryNode.isMissingNode || !queryNode.isTextual) {
+          throw new IllegalArgumentException("Query node is missing or not a valid string.")
+        }
+
+        val updatedQuery = queryNode.asText()
+          .replace("${userMetrics}", s""""$userMetrics"""")
+
+        val updatedJson = json.deepCopy().asInstanceOf[ObjectNode]
+        updatedJson.at("/dataset_query/native")
+          .asInstanceOf[ObjectNode]
+          .set("query", TextNode.valueOf(updatedQuery))
+
+        updatedJson
+      } match {
+        case Success(updatedQueryJson) => updatedQueryJson
+        case Failure(exception) =>
+          throw new IllegalArgumentException("Failed to update query in JSON", exception)
+      }
+    }
+
+    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, tenantCodeId)
+    println(s"---------------processed ProcessAndUpdateJsonFiles function----------------")
     questionCardIds
   }
 }
