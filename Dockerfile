@@ -1,53 +1,32 @@
-# Use Ubuntu as base image
-FROM ubuntu:22.04
+# This handles both amd64 and arm64 automatically
+FROM maven:3.9.9-eclipse-temurin-11 AS build
 
-# Set non-interactive mode to avoid timezone prompts
+# Set timezone
+ENV TZ=Etc/UTC
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Update packages and install required dependencies
-RUN apt update && apt install -y \
-    openjdk-11-jdk \
-    wget \
-    tar \
-    git \
-    curl \
-    maven \
-    jq \
-    nano \
-    postgresql postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
+# Install extra tools (Postgres client, jq, nano, git, etc.)
+RUN apt-get update && apt-get install -y \
+      postgresql-client \
+      jq \
+      nano \
+      git \
+      curl \
+ && rm -rf /var/lib/apt/lists/*
 
-# Set Java environment variables
-ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-ENV PATH="$JAVA_HOME/bin:$PATH"
-
-# Download and install Scala
+# Install specific Scala version
 WORKDIR /usr/local
-RUN wget https://downloads.lightbend.com/scala/2.12.11/scala-2.12.11.tgz \
-    && tar -xzf scala-2.12.11.tgz \
-    && mv scala-2.12.11 scala \
-    && rm scala-2.12.11.tgz
-
-# Set Scala environment variables
+RUN curl -sL https://downloads.lightbend.com/scala/2.12.11/scala-2.12.11.tgz | tar -xz \
+ && mv scala-2.12.11 scala
 ENV SCALA_HOME=/usr/local/scala
-ENV PATH="$SCALA_HOME/bin:$PATH"
+ENV PATH="${SCALA_HOME}/bin:${PATH}"
 
-# Install Maven
-RUN MAVEN_VERSION=$(curl -s https://maven.apache.org/download.cgi | grep -oP 'apache-maven-\K[0-9.]+(?=-bin\.tar\.gz)' | head -1) && \
-    wget https://downloads.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz && \
-    tar -xzf apache-maven-${MAVEN_VERSION}-bin.tar.gz && \
-    mv apache-maven-${MAVEN_VERSION} /usr/local/maven && \
-    rm apache-maven-${MAVEN_VERSION}-bin.tar.gz
-
-ENV MAVEN_HOME=/usr/local/maven
-ENV PATH=$MAVEN_HOME/bin:$PATH
-
-
+# Build stage
 WORKDIR /app
-
 COPY . /app
 
-RUN mvn clean install -DskipTests
+# Optional diagnostics
+RUN java -version && javac -version && mvn -v
 
-# Set default command
-CMD ["tail", "-f", "/dev/null"]
+# Build your project
+RUN mvn clean install -DskipTests
