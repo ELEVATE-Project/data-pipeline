@@ -117,6 +117,7 @@ services:
       MB_DB_USER: ${POSTGRES_USER}
       MB_DB_PASS: ${POSTGRES_PASSWORD}
       MB_DB_HOST: ${POSTGRES_HOST}
+      MB_API_KEY: ${MB_API_KEY}
     ports:
       - "3000:3000"
     depends_on:
