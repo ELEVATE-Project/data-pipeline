@@ -38,11 +38,12 @@ class UserMetabaseDashboardConfig(override val config: Config) extends BaseJobCo
   val dashboardMetadata: String = config.getString("postgres.tables.dashboardMetadataTable")
   val userMetrics: String = config.getString("postgres.tables.userMetricsTable")
   val reportConfig: String = config.getString("postgres.tables.reportConfigTable")
+  val metabasePgDatabase: String = config.getString("postgres.metabaseDb")
 
   // Metabase connection config
   val metabaseUrl: String = config.getString("metabase.url")
   val metabaseUsername: String = config.getString("metabase.username")
   val metabasePassword: String = config.getString("metabase.password")
   val metabaseDatabase: String = config.getString("metabase.database")
-
+  val metabaseApiKey: String = config.getString("metabase.metabaseApiKey")
 }

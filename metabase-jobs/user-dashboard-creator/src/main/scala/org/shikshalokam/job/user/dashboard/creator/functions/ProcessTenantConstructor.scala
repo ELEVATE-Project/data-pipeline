@@ -17,6 +17,7 @@ object ProcessTenantConstructor {
     val objectMapper = new ObjectMapper()
 
     def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, statenameId: Int, districtnameId: Int, blocknameId: Int, clusternameId: Int, immutableSlugNameToFilterMap: Map[String, Int] = Map.empty): Unit = {
+      val dashcardsArray = objectMapper.createArrayNode()
       val queryResult = postgresUtil.fetchData(reportConfigQuery)
       queryResult.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -47,7 +48,14 @@ object ProcessTenantConstructor {
                 println(s">>>>>>>>> Successfully created question card with card_id: $cardId for $chartName")
                 questionCardId.append(cardId)
                 val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(configJson, cardId)
-                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, updatedQuestionIdInDashCard, dashboardId)
+                updatedQuestionIdInDashCard.foreach { node =>
+                  val dashCardsNode = node.path("dashCards")
+                  if (!dashCardsNode.isMissingNode && !dashCardsNode.isNull) {
+                    dashcardsArray.add(dashCardsNode)
+                  } else {
+                    println("No 'dashCards' key found in the JSON.")
+                  }
+                }
               }
             case None =>
               println("Key 'config' not found in the result row.")
@@ -60,11 +68,19 @@ object ProcessTenantConstructor {
               val rootNode = objectMapper.readTree(jsonString)
               if (rootNode != null) {
                 val optJsonNode = toOption(rootNode)
-                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, optJsonNode, dashboardId)
+                optJsonNode.foreach { node =>
+                  val dashCardsNode = node.path("dashCards")
+                  if (!dashCardsNode.isMissingNode && !dashCardsNode.isNull) {
+                    dashcardsArray.add(dashCardsNode)
+                  } else {
+                    println("No 'dashCards' key found in the JSON.")
+                  }
+                }
               }
           }
         }
       }
+      Utils.appendDashCardToDashboard(metabaseUtil, dashcardsArray, dashboardId)
     }
 
     def toOption(jsonNode: JsonNode): Option[JsonNode] = {
