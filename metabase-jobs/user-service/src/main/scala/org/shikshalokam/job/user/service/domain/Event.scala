@@ -12,6 +12,8 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def username: String = readOrDefault[String]("username", null)
 
+  def tenantCode: String = readOrDefault[String]("tenant_code", null)
+
   def email: String = readOrDefault[String]("email", null)
 
   def phone: String = readOrDefault[String]("phone", null)
