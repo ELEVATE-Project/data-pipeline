@@ -1,6 +1,6 @@
 [
   {
-    "name": "Tenant Param",
+    "name": "Select Tenant",
     "slug": "tenant_param",
     "id": "c32c8fc5",
     "type": "string/=",

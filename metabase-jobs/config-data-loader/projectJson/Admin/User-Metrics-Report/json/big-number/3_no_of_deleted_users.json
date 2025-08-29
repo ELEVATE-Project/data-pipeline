@@ -11,7 +11,7 @@
             "type": "dimension",
             "name": "tenant_param",
             "id": "d6e495eb-0dcd-46ce-9e55-ab0cdf775c37",
-            "display-name": "Tenant Param",
+            "display-name": "Select Tenant",
             "default": null,
             "dimension": [
               "field",
@@ -22,7 +22,7 @@
             "options": null
           }
         },
-        "query": "select deleted_users from ${userMetrics}\r\nwhere 1=1\r\n[[AND {{tenant_param}}]]"
+        "query": "select coalesce(sum(deleted_users), 0) from ${userMetrics}\r\nwhere 1=1\r\n[[AND {{tenant_param}}]]"
       }
     },
     "display": "scalar",
@@ -38,7 +38,7 @@
             "tenant_param"
           ]
         ],
-        "name": "Tenant Param",
+        "name": "Select Tenant",
         "slug": "tenant_param"
       }
     ]

@@ -11,7 +11,7 @@
             "type": "dimension",
             "name": "tenant_param",
             "id": "36cdb8de-3b79-40f6-817a-9e78d5a0b417",
-            "display-name": "Tenant Param",
+            "display-name": "Select Tenant",
             "default": null,
             "dimension": [
               "field",
@@ -38,7 +38,7 @@
             "tenant_param"
           ]
         ],
-        "name": "Tenant Param",
+        "name": "Select Tenant",
         "slug": "tenant_param"
       }
     ]
