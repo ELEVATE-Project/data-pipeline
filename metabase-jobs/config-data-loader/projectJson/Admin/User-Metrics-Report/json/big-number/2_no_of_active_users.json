@@ -22,7 +22,7 @@
             "options": null
           }
         },
-        "query": "select sum(active_users) from ${userMetrics}\r\nwhere 1=1\r\n[[AND {{tenant_param}}]]"
+        "query": "select coalesce(sum(active_users), 0) from ${userMetrics}\r\nwhere 1=1\r\n[[AND {{tenant_param}}]]"
       }
     },
     "display": "scalar",
