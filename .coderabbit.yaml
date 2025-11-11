@@ -1,0 +1,101 @@
+# yaml-language-server: $schema=https://storage.googleapis.com/coderabbit_public_assets/schema.v2.json
+
+language: en-US
+early_access: false
+enable_free_tier: true
+
+reviews:
+  profile: thorough
+  request_changes_workflow: true
+  high_level_summary: true
+  changed_files_summary: true
+  estimate_code_review_effort: true
+  sequence_diagrams: true
+  fail_commit_status: false
+
+  # Exclude non-source files
+  path_filters:
+    - "!deployment/**"
+    - "!**/*.md"
+    - "!**/logs/**"
+    - "!**/temp/**"
+
+  # Review focus instructions per folder
+  path_instructions:
+    # STREAM PIPELINE
+    - path: "stream-jobs/**"
+      instructions: >
+        This contains critical streaming pipeline logic (Scala, Kafka, Flink). 
+        Check:
+        - Kafka consumer safety (deserialization errors, dead-letter handling)
+        - At-least-once vs exactly-once guarantees
+        - State management & checkpointing
+        - Backpressure & failure retries
+        - JSON parsing into case classes
+        - Fault tolerance & logging of failed events
+        - Ensure no hard-coded tenant/state logic
+
+    # METABASE DATA PROCESSING
+    - path: "metabase-jobs/**"
+      instructions: >
+        This folder has ETL jobs and Metabase artifacts. Verify:
+        - Correct DB connections & cursor handling
+        - Idempotency of ETL runs
+        - SQL query performance and index usage
+        - No credential exposure
+        - Metabase cards/filters mapping consistency
+        - Avoid deleting historical logs without backups
+
+    # Check SQL file quality anywhere
+    - path: "**/*.sql"
+      instructions: >
+        Validate SQL syntax, performance, indexes, and joins. 
+        Ensure WHERE clauses use indexed fields and avoid SELECT * in production pipelines.
+
+  auto_review:
+    enabled: true
+    base_branches: ["*"]
+
+  pre_merge_checks:
+    docstrings:
+      mode: warning
+      threshold: 70
+    description:
+      mode: warning
+    issue_assessment:
+      mode: warning
+
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+
+tools:
+  semgrep:
+    enabled: true
+  gitleaks:
+    enabled: true
+  checkov:
+    enabled: true
+  sqlfluff:
+    enabled: true
+  shellcheck:
+    enabled: true
+  yamllint:
+    enabled: true
+  pythonflake8:
+    enabled: true
+  pylint:
+    enabled: true
+  biome:
+    enabled: false
+  ast-grep:
+    essential_rules: true
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  web_search:
+    enabled: true
