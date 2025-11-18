@@ -1,13 +1,18 @@
 import json
+import os
 import configparser
 from kafka import KafkaConsumer
 import psycopg2
 import psycopg2.extras
-from clean_metabase_dashboard import MetabaseUtil, load_metabase_config
+from dashboard_resource_helper import MetabaseUtil, load_metabase_config
+import logging
+from logging.handlers import RotatingFileHandler
 
 # ---------------------------------------------------
 # Load config
 # ---------------------------------------------------
+base_dir = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(base_dir, "config.ini")
 config = configparser.ConfigParser()
 config.read('config.ini')
 DB_HOST = config.get('Database', 'host')
@@ -20,6 +25,24 @@ GROUP_ID = config.get('Database', 'group_id')
 BROKER = config.get('Database', 'broker')
 url, user, pwd = load_metabase_config()
 mb = MetabaseUtil(url, user, pwd)
+
+LOG_FILE = "resource_delete.log"
+
+logger = logging.getLogger("resource_delete_logger")
+logger.setLevel(logging.INFO)
+
+handler = RotatingFileHandler(LOG_FILE, maxBytes=5*1024*1024, backupCount=5)
+formatter = logging.Formatter(
+    "%(asctime)s - %(levelname)s - %(message)s",
+    "%Y-%m-%d %H:%M:%S"
+)
+handler.setFormatter(formatter)
+
+console = logging.StreamHandler()
+console.setFormatter(formatter)
+
+logger.addHandler(handler)
+logger.addHandler(console)
 
 # ---------------------------------------------------
 # Shared DB connection (persistent)
@@ -41,9 +64,6 @@ def db_execute(sql, params=None):
     with conn.cursor() as cur:
         cur.execute(sql, params or ())
 
-# ---------------------------------------------------
-# Kafka consumer
-# ---------------------------------------------------
 consumer = KafkaConsumer(
     TOPIC,
     bootstrap_servers=[BROKER],
@@ -53,7 +73,7 @@ consumer = KafkaConsumer(
     value_deserializer=lambda m: json.loads(m.decode('utf-8'))
 )
 
-print(f"Listening for delete events on topic: {TOPIC}")
+logger.info(f"Listening for delete events on topic: {TOPIC}")
 
 def table_exists(table_name):
     rows = db_query("""
@@ -68,16 +88,16 @@ def table_exists(table_name):
 
 def drop_if_exists(table_name, sol_id):
     """Drop table if exists and delete solution + metadata."""
-    print(f"Checking table: {table_name}")
+    logger.info(f"Checking table: {table_name}")
 
     if table_exists(table_name):
-        print(f"Dropping table: {table_name}")
+        logger.info(f"Dropping table: {table_name}")
         db_execute(f'DROP TABLE IF EXISTS public."{table_name}" CASCADE;')
 
         db_execute(f"DELETE FROM {ENV}_solutions WHERE solution_id = %s", (sol_id,))
         db_execute(f"DELETE FROM {ENV}_dashboard_metadata WHERE entity_id = %s", (sol_id,))
     else:
-        print(f"{table_name} does not exist.")
+        logger.info(f"{table_name} does not exist.")
 
 # ---------------------------------------------------
 # Improvement Project Cleanup
@@ -91,23 +111,16 @@ def process_improvement_project(solution_id):
     project_ids = [row["project_id"] for row in project_rows]
 
     if not project_ids:
-        print(f"No project rows for {solution_id}")
-        return False, []  # return flags for fallback
+        logger.info(f"No project rows for {solution_id}")
+        return False, [] 
 
-    print(f"Found Improvement Project IDs: {project_ids}")
-
-    # Delete tasks first
+    logger.info(f"Found Improvement Project IDs: {project_ids}")
     for pid in project_ids:
-        print(f"Deleting tasks for project_id: {pid}")
+        logger.info(f"Deleting tasks for project_id: {pid}")
         db_execute(f"DELETE FROM {ENV}_tasks WHERE project_id = %s", (pid,))
 
-    # Delete project rows
     db_execute(f"DELETE FROM {ENV}_projects WHERE solution_id = %s", (solution_id,))
-
-    # Delete solution
     db_execute(f"DELETE FROM {ENV}_solutions WHERE solution_id = %s", (solution_id,))
-
-    # Delete metadata
     db_execute(f"DELETE FROM {ENV}_dashboard_metadata WHERE entity_id = %s", (solution_id,))
 
     return True, project_ids
@@ -124,7 +137,6 @@ def process_observation(solution_id):
     for tbl in tables:
         drop_if_exists(tbl, solution_id)
 
-
 def process_survey(solution_id):
     tables = [
         f"{solution_id}_survey_status",
@@ -133,16 +145,12 @@ def process_survey(solution_id):
     for tbl in tables:
         drop_if_exists(tbl, solution_id)
 
-# ---------------------------------------------------
-# MAIN Kafka Loop
-# ---------------------------------------------------
 for message in consumer:
     try:
         data = message.value
-        print("\nReceived message:", data)
-
+        
         if "type" not in data or "entityId" not in data:
-            print("Invalid message. Skipping.")
+            logger.error("Error: Invalid message. Skipping.")
             continue
 
         entity_type = data["type"]
@@ -153,7 +161,7 @@ for message in consumer:
         # ---------------------------------------------------
         if entity_type == "program":
             program_id = entity_id
-            print(f"Processing program delete: {program_id}")
+            logger.info(f"started deleting the program: {program_id}")
 
             rows = db_query(
                 f"SELECT DISTINCT solution_id FROM {ENV}_solutions WHERE program_id = %s",
@@ -161,24 +169,24 @@ for message in consumer:
             )
             solution_ids = [r["solution_id"] for r in rows]
 
-            print("Solution IDs under program:", solution_ids)
+            logger.info(f"Solution IDs under program: {solution_ids}")
 
             for sol in solution_ids:
-                print(f"\nProcessing solution: {sol}")
+                logger.info(f"\nProcessing solution: {sol}")
 
                 ok, project_ids = process_improvement_project(sol)
 
                 if not ok:
-                    print("No project → Checking survey & observation tables")
+                    logger.info("No project → Checking survey & observation tables")
                     process_survey(sol)
                     process_observation(sol)
 
-            print(f"Deleting dashboard metadata for program_id: {program_id}")
+            logger.info(f"Deleting dashboard metadata for program_id: {program_id}")
             db_execute(
                 f"DELETE FROM {ENV}_dashboard_metadata WHERE entity_id = %s",
                 (program_id,)
             )
-            print(f"Deleted dashboard metadata for program_id: {program_id}")
+            logger.info(f"Successfully deleted dashboard metadata for program_id: {program_id}")
             collection_id = mb.get_collection_id(program_id)
             mb.delete_collection(collection_id)
             list_of_groups = mb.get_permission_groups()
@@ -189,12 +197,12 @@ for message in consumer:
         # ---------------------------------------------------
         elif entity_type == "solution":
             solution_id = entity_id
-            print(f"Processing single solution delete: {solution_id}")
+            logger.info(f"Processing single solution delete: {solution_id}")
 
             ok, project_ids = process_improvement_project(solution_id)
 
             if not ok:
-                print("No project → Checking survey & observation tables")
+                logger.info("No project → Checking survey & observation tables")
                 process_survey(solution_id)
                 process_observation(solution_id)
 
@@ -205,7 +213,7 @@ for message in consumer:
             mb.delete_permission_group(group_id)   
 
         else:
-            print("Skipping unsupported event type.")
+            logger.info("Skipping unsupported event type.")
 
     except Exception as e:
-        print("Error:", str(e))
+        logger.error("Error:", str(e))

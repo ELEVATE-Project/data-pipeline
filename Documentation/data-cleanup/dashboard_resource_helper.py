@@ -1,7 +1,10 @@
 import requests
 import json
+import time
 import configparser
-
+import logging
+from logging.handlers import RotatingFileHandler
+logger = logging.getLogger("resource_delete_logger")
 
 def load_metabase_config():
     config = configparser.ConfigParser()
@@ -21,10 +24,10 @@ class MetabaseUtil:
         self.username = username
         self.password = password
         self.session_token = None
-
-    # ---------------------------------------------------------
-    # Get or refresh token
-    # ---------------------------------------------------------
+        self.collection_cache = None
+        self.last_cache_time = 0
+        self.cache_ttl = 1800
+        
     def get_session_token(self):
         if self.session_token:
             return self.session_token
@@ -40,10 +43,15 @@ class MetabaseUtil:
 
         raise Exception(f"Authentication failed: {resp.status_code} {resp.text}")
 
-    # ---------------------------------------------------------
-    # GET /api/dashboard
-    # ---------------------------------------------------------
-    def list_collections(self):
+    def list_collections(self, force_refresh=False):
+        now = time.time()
+
+        # Use cache if available
+        if (not force_refresh and 
+            self.collection_cache is not None and 
+            now - self.last_cache_time < self.cache_ttl):
+            return self.collection_cache
+
         url = f"{self.metabase_url}/collection"
         headers = {
             "Content-Type": "application/json",
@@ -51,40 +59,37 @@ class MetabaseUtil:
         }
 
         resp = requests.get(url, headers=headers)
-
         if resp.status_code == 200:
-            return resp.json()
+            self.collection_cache = resp.json()
+            self.last_cache_time = now
+            return self.collection_cache
         else:
-            print(f"[ERROR] Failed to delete collection ({resp.status_code}): {resp.text}")
-            return False
-
-    # ---------------------------------------------------------
-    # Validate + return dashboard ID
-    # ---------------------------------------------------------
-    def get_collection_id(self, target_id):
-        coll_id = []
-        collections = self.list_collections()
-        for col in collections:
-            if target_id in (col.get("description") or ""):
-                coll_id.append(col.get("id"))
-        if len(coll_id) > 0:
-            print(f"collection IDs to delete: {coll_id}")
-            return coll_id
-        else:
+            logger.error(f"[ERROR] Failed to list collection ({resp.status_code}): {resp.text}")
             return []
-    # ---------------------------------------------------------
-    # Delete a Collection (Dashboard Folder)
-    # ---------------------------------------------------------
+
+    def get_collection_id(self, target_id):
+        collections = self.list_collections()
+
+        coll_id = [
+            col.get("id")
+            for col in collections
+            if target_id in (col.get("description") or "")
+        ]
+
+        if coll_id:
+            logger.info(f"collection IDs to delete: {coll_id}")
+        return coll_id
+
     def delete_collection(self, collection_id):
-        print(f">>> Deleting Metabase collection ID: {collection_id}")
+        logger.info(f">>> Deleting Metabase collection ID: {collection_id}")
         
         if len(collection_id) == 0:
-            print(">>> Collection ID is None, skipping deletion.")
+            logger.info(">>> Collection ID is None, skipping deletion.")
             return False
         else:
             for cid in collection_id:
                 url = f"{self.metabase_url}/collection/{cid}"
-                print(f">>> PUT URL: {url}")
+                logger.info(f">>> PUT URL: {url}")
 
                 headers = {
                     "Content-Type": "application/json",
@@ -96,13 +101,10 @@ class MetabaseUtil:
                 }
                 resp = requests.put(url, headers=headers, json=payload)
                 if resp.status_code == 200:
-                    print(f">>> Successfully archived collection ID: {cid}")
+                    logger.info(f">>> Successfully archived collection ID: {cid}")
                 else:
-                    print(f"[ERROR] Failed to archive collection ({resp.status_code}): {resp.text}")
+                    logger.info(f"[ERROR] Failed to archive collection ({resp.status_code}): {resp.text}")
 
-    # ---------------------------------------------------------
-    # Get All Permission Groups
-    # ---------------------------------------------------------
     def get_permission_groups(self):
         url = f"{self.metabase_url}/permissions/group"
         headers = {
@@ -119,9 +121,6 @@ class MetabaseUtil:
             f"Failed to fetch permission groups ({resp.status_code}): {resp.text}"
         )
 
-    # ---------------------------------------------------------
-    # Delete Permission Group
-    # ---------------------------------------------------------
     def delete_permission_group(self, group_id: int):
         url = f"{self.metabase_url}/permissions/group/{group_id}"
         headers = {
@@ -132,18 +131,14 @@ class MetabaseUtil:
         resp = requests.delete(url, headers=headers)
 
         if resp.status_code == 204:
-            print(f"Group {group_id} deleted successfully.")
+            logger.info(f"Group {group_id} deleted successfully.")
             return True
 
-        print(
+        logger.error(
             f"[ERROR] Failed to delete group {group_id}: "
             f"{resp.status_code}, {resp.text}"
         )
         return False
-
-    # ---------------------------------------------------------
-    # Find Group ID for given Program
-    # ---------------------------------------------------------
     @staticmethod
     def get_permission_group_id(groups, program_id):
         for group in groups:
