@@ -71,27 +71,27 @@ reviews:
     unit_tests:
       enabled: true
 
-tools:
-  semgrep:
-    enabled: true
-  gitleaks:
-    enabled: true
-  checkov:
-    enabled: true
-  sqlfluff:
-    enabled: true
-  shellcheck:
-    enabled: true
-  yamllint:
-    enabled: true
-  pythonflake8:
-    enabled: true
-  pylint:
-    enabled: true
-  biome:
-    enabled: false
-  ast-grep:
-    essential_rules: true
+  tools:
+    semgrep:
+      enabled: true
+    gitleaks:
+      enabled: true
+    checkov:
+      enabled: true
+    sqlfluff:
+      enabled: true
+    shellcheck:
+      enabled: true
+    yamllint:
+      enabled: true
+    flake8:
+      enabled: true
+    pylint:
+      enabled: true
+    biome:
+      enabled: false
+    ast-grep:
+      essential_rules: true
 
 chat:
   auto_reply: true
