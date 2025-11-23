@@ -122,7 +122,12 @@ class MetabaseUtil:
         )
 
     def delete_permission_group(self, group_id: int):
+        if group_id is None:
+            logger.info("No matching permission group found; skipping deletion.")
+            return False
+        
         url = f"{self.metabase_url}/permissions/group/{group_id}"
+        
         headers = {
             "Content-Type": "application/json",
             "X-Metabase-Session": self.get_session_token(),
