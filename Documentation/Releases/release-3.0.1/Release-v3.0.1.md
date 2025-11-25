@@ -1,8 +1,8 @@
 # Release Notes – v3.0.1
 ## 1. Overview
 
-#### This release includes major improvements to the Mentoring Dashboards, enhancements in scheduled session metrics, updates in batch processing, and multiple fixes identified during the previous production rollout.
-#### It covers both UI and backend changes using Docker-based deployment.
+### This release includes major improvements to the Mentoring Dashboards, enhancements in scheduled session metrics, updates in batch processing, and multiple fixes identified during the previous production rollout.
+### It covers both UI and backend changes using Docker-based deployment.
 
 ## 2. Changes Since v2.1.3-hotfix
 ### (I) Mentoring Dashboards
@@ -37,7 +37,7 @@ created_by: ($created_by | tonumber)
 
 ### Perform these steps before deploying v3.0.1:
 
-#### Environment Readiness
+### Environment Readiness
 
 * Verify the correct branch is checked out and merged (release/v3.0.1 or equivalent).
 
@@ -45,7 +45,7 @@ created_by: ($created_by | tonumber)
 
 * Ensure .env or environment variables are updated (Kafka groupId, DB credentials, etc.).
 
-#### Database Backup & Validation
+### Database Backup & Validation
 
 * Take DB backup for safety (at minimum: user, mentoring, dashboard-related tables).
 
@@ -53,7 +53,7 @@ created_by: ($created_by | tonumber)
 
 * Confirm that start_date and end_date fields exist and are correct in the sessions table.
 
-#### Dashboard Preparation
+### Dashboard Preparation
 
 * Clean/remove existing Mentoring Dashboards if required (to avoid duplicate cards/collections).
 
@@ -61,7 +61,7 @@ created_by: ($created_by | tonumber)
 
 * Ensure Metabase credentials & API keys are active.
 
-#### Docker Readiness
+### Docker Readiness
 
 * Ensure Docker daemon is running and has enough disk space.
 
@@ -70,10 +70,10 @@ created_by: ($created_by | tonumber)
 * Test pushing and pulling images from registry.
 
 ## 4. Deployment Steps (Docker-Based Deployment)
-* Build the Docker Image
+### Build the Docker Image
    ```docker build -t elevate-data:3.0.1 .```
 
-* Tag & Push to Registry :
+### Tag & Push to Registry :
 ```
 docker tag elevate-data:3.0.1 <REGISTRY_URL>/elevate-data:3.0.1
 docker push <REGISTRY_URL>/elevate-data:3.0.1
@@ -133,25 +133,25 @@ docker push <REGISTRY_URL>/elevate-data:3.0.1
 
 ## 6. Rollback / Reversion Steps
 
-#### If deployment fails:
+### If deployment fails:
 
-##### Option A — Revert to Previous Docker Image
+### Option A — Revert to Previous Docker Image
 
 * Update tag back to v2.1.3-hotfix:
 
 ```image: <REGISTRY_URL>/elevate-data:2.1.3-hotfix```
 
-##### Apply:
+**Apply:**
 
 ```docker-compose up -d```
 
-##### Option B — Restore Backup
+### Option B — Restore Backup
 
-##### If DB changes were applied:
+**If DB changes were applied:**
 
 * Restore the latest DB backup taken in pre-deployment steps.
 
-##### Option C — Revert Dashboard State
+### Option C — Revert Dashboard State
 
 * Drop newly created Metabase collections/cards if needed.
 
