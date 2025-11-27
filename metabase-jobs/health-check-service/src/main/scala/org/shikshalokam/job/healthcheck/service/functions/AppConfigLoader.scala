@@ -1,7 +1,7 @@
 package org.shikshalokam.job.healthcheck.service.functions
 
 import com.typesafe.config.{ConfigFactory, Config => TConfig}
-import org.shikshalokam.job.healthcheck.service.models.{AppConfig, FlinkConfig, KafkaConfig, MetabaseConfig}
+import org.shikshalokam.job.healthcheck.service.models.{AppConfig, FlinkConfig, KafkaConfig, MetabaseConfig, SecurityConfig}
 
 object AppConfigLoader {
 
@@ -21,6 +21,10 @@ object AppConfigLoader {
       url = conf.getString("services.metabase.url")
     )
 
-    AppConfig(flink, kafka, metabase)
+    val security = SecurityConfig(
+      apiToken = conf.getString("security.api-token")
+    )
+
+    AppConfig(flink, kafka, metabase, security)
   }
 }
