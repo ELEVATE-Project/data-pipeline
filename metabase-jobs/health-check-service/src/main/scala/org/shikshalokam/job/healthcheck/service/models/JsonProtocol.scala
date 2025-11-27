@@ -1,4 +1,4 @@
-package org.shikshalokam.job.healthcheckservice
+package org.shikshalokam.job.healthcheck.service.models
 
 import spray.json._
 

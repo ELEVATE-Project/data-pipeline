@@ -10,12 +10,12 @@
         <version>1.0</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <artifactId>healthcheck-service</artifactId>
+    <artifactId>health-check-service</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
     <name>HealthCheckService</name>
     <description>
-        Job for health check service to monitor the status of various system components and services.
+        Job for performing health check of various services
     </description>
 
     <dependencies>
@@ -96,24 +96,6 @@
             <version>4.4.0</version>
             <scope>test</scope>
         </dependency>
-        <!-- Typesafe Config -->
-        <dependency>
-            <groupId>com.typesafe</groupId>
-            <artifactId>config</artifactId>
-            <version>1.4.3</version>
-        </dependency>
-        <!-- Kafka Client -->
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-clients</artifactId>
-            <version>3.6.0</version>
-        </dependency>
-        <!-- Scala converters for .asScala -->
-        <dependency>
-            <groupId>org.scala-lang.modules</groupId>
-            <artifactId>scala-collection-compat_2.12</artifactId>
-            <version>2.10.0</version>
-        </dependency>
 
     </dependencies>
 
@@ -163,7 +145,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <!-- change the main class -->
-                                    <mainClass>org.shikshalokam.job.healthcheckservice.Main</mainClass>
+                                    <mainClass>org.shikshalokam.job.healthcheck.service.Main</mainClass>
                                 </transformer>
                                 <!-- append default configs -->
                                 <transformer
@@ -179,7 +161,7 @@
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
-                <version>4.8.0</version>
+                <version>4.4.0</version>
                 <configuration>
                     <source>${java.target.runtime}</source>
                     <target>${java.target.runtime}</target>

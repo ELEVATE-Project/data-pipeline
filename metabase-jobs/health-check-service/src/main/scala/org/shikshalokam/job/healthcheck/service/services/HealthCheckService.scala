@@ -1,56 +1,42 @@
-package org.shikshalokam.job.healthcheckservice
+package org.shikshalokam.job.healthcheck.service.services
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.stream.Materializer
-import spray.json._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
-import scala.jdk.CollectionConverters._
-import org.apache.kafka.clients.consumer.{KafkaConsumer, ConsumerConfig}
+import org.apache.kafka.clients.consumer.{ConsumerConfig, KafkaConsumer}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
-import java.util.{Collections, Properties, UUID}
+import org.shikshalokam.job.healthcheck.service.functions.AppConfigLoader
+import org.shikshalokam.job.healthcheck.service.models.JsonProtocol._
+import org.shikshalokam.job.healthcheck.service.models._
+import spray.json._
+
 import java.time.Instant
-import JsonProtocol._
+import java.util.{Collections, Properties, UUID}
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
-case class FlinkJobStatus(name: String, status: String)
-case class FlinkClusterHealth(status: String, taskmanagers: Int, slotsTotal: Int, slotsAvailable: Int)
-case class FlinkHealth(cluster: FlinkClusterHealth, jobs: List[FlinkJobStatus])
+object HealthCheckService {
 
-case class KafkaHealth(status: String, broker: String)
-case class MetabaseHealth(status: String, url: String)
+  implicit val system: ActorSystem = ActorSystem("healthcheck-service-core")
+  implicit val mat: Materializer = Materializer(system)
+  implicit val ec: ExecutionContext = system.dispatcher
 
-case class FullHealthResponse(
-                               flink: FlinkHealth,
-                               kafka: KafkaHealth,
-                               metabase: MetabaseHealth,
-                               timestamp: String
-                             )
+  private val config = AppConfigLoader.load()
+  private val http = Http()
 
-class HealthCheckService(config: AppConfig)(
-  implicit system: ActorSystem,
-  mat: Materializer,
-  ec: ExecutionContext
-) {
-
-  private val http = Http(system)
-
-  // ---------------------------------------------
-  //                     FLINK
-  // ---------------------------------------------
   def checkFlink(): Future[FlinkHealth] = {
     val base = config.flink.restApiUrl
 
-    val overviewF = http.singleRequest(HttpRequest(uri = s"$base/overview"))
+    val overviewFlink = http.singleRequest(HttpRequest(uri = s"$base/overview"))
       .flatMap(_.entity.toStrict(5.seconds))
       .map(_.data.utf8String.parseJson)
       .map { json =>
         val obj = json.asJsObject
-        val tm  = obj.fields("taskmanagers").convertTo[Int]
-        val st  = obj.fields("slots-total").convertTo[Int]
-        val sa  = obj.fields("slots-available").convertTo[Int]
+        val tm = obj.fields("taskmanagers").convertTo[Int]
+        val st = obj.fields("slots-total").convertTo[Int]
+        val sa = obj.fields("slots-available").convertTo[Int]
         FlinkClusterHealth(
           status = if (sa <= st) "HEALTHY" else "UNHEALTHY",
           taskmanagers = tm,
@@ -59,7 +45,7 @@ class HealthCheckService(config: AppConfig)(
         )
       }
 
-    val jobsF = http.singleRequest(HttpRequest(uri = s"$base/jobs/overview"))
+    val jobsFlink = http.singleRequest(HttpRequest(uri = s"$base/jobs/overview"))
       .flatMap(_.entity.toStrict(5.seconds))
       .map(_.data.utf8String.parseJson)
       .flatMap { json =>
@@ -86,14 +72,11 @@ class HealthCheckService(config: AppConfig)(
       }
 
     for {
-      overview <- overviewF
-      jobs <- jobsF
+      overview <- overviewFlink
+      jobs <- jobsFlink
     } yield FlinkHealth(overview, jobs)
   }
 
-  // ---------------------------------------------
-  //                   METABASE
-  // ---------------------------------------------
   def checkMetabase(): Future[MetabaseHealth] = {
     val url = s"${config.metabase.url}/api/health"
 
@@ -104,19 +87,16 @@ class HealthCheckService(config: AppConfig)(
       ))
   }
 
-  // ---------------------------------------------
-  //                   KAFKA
-  // ---------------------------------------------
   def checkKafka(): Future[KafkaHealth] = Future {
+    val topic = "_healthcheck_test"
+    val uuid = UUID.randomUUID().toString
+
     val producerProps = new Properties()
     producerProps.put("bootstrap.servers", config.kafka.broker)
     producerProps.put("key.serializer", classOf[StringSerializer].getName)
     producerProps.put("value.serializer", classOf[StringSerializer].getName)
 
     val producer = new KafkaProducer[String, String](producerProps)
-    val topic = "_healthcheck_test"
-    val uuid = UUID.randomUUID().toString
-
     producer.send(new ProducerRecord(topic, uuid))
     producer.flush()
     producer.close()
@@ -127,26 +107,33 @@ class HealthCheckService(config: AppConfig)(
     consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer].getName)
     consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer].getName)
     consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+    consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
 
     val consumer = new KafkaConsumer[String, String](consumerProps)
     consumer.subscribe(Collections.singletonList(topic))
+    consumer.poll(java.time.Duration.ofMillis(100))
+    consumer.seekToEnd(Collections.emptyList())
 
-    val records = consumer.poll(java.time.Duration.ofSeconds(3))
+    var found = false
+    val deadline = System.currentTimeMillis() + 20000
+    while (!found && System.currentTimeMillis() < deadline) {
+      val records = consumer.poll(java.time.Duration.ofMillis(500))
+      val it = records.iterator()
+      while (it.hasNext) {
+        if (it.next().value() == uuid) {
+          found = true
+        }
+      }
+    }
     consumer.close()
-
-    val ok = records.iterator().asScala.exists(_.value() == uuid)
-
-    KafkaHealth(if (ok) "HEALTHY" else "UNHEALTHY", config.kafka.broker)
+    KafkaHealth(if (found) "HEALTHY" else "UNHEALTHY", config.kafka.broker)
   }
 
-  // ---------------------------------------------
-  //                FULL HEALTH RESPONSE
-  // ---------------------------------------------
   def fullHealth(): Future[FullHealthResponse] = {
     for {
       flink <- checkFlink()
       kafka <- checkKafka()
-      meta  <- checkMetabase()
+      meta <- checkMetabase()
     } yield FullHealthResponse(
       flink, kafka, meta, Instant.now.toString
     )

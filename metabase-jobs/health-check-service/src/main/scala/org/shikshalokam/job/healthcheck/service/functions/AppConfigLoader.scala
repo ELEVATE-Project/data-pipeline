@@ -1,16 +1,7 @@
-package org.shikshalokam.job.healthcheckservice
+package org.shikshalokam.job.healthcheck.service.functions
 
 import com.typesafe.config.{ConfigFactory, Config => TConfig}
-
-case class FlinkConfig(restApiUrl: String, jobs: List[String])
-case class KafkaConfig(broker: String)
-case class MetabaseConfig(url: String)
-
-case class AppConfig(
-                      flink: FlinkConfig,
-                      kafka: KafkaConfig,
-                      metabase: MetabaseConfig
-                    )
+import org.shikshalokam.job.healthcheck.service.models.{AppConfig, FlinkConfig, KafkaConfig, MetabaseConfig}
 
 object AppConfigLoader {
 
