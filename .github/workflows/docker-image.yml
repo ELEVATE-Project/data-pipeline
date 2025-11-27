@@ -14,7 +14,7 @@ env:
 
 jobs:
   docker-image-build-and-push:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/staging'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
@@ -51,10 +51,9 @@ jobs:
           VERSION=${{ steps.get-version.outputs.version }}
           RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "https://hub.docker.com/v2/namespaces/${{ env.DOCKER_NAMESPACE }}/repositories/${{ env.DOCKER_IMAGE_NAME }}/tags/$VERSION")
           if [ "$RESPONSE" -eq 200 ]; then
-            echo "Error: Tag $VERSION already exists on Docker Hub"
-            exit 1
+            echo "⚠️  Warning: Tag '$VERSION' already exists on Docker Hub. The workflow will continue and overwrite the existing tag."
           else
-            echo "Tag $VERSION does not exist, proceeding with build"
+            echo "✅ Tag '$VERSION' does not exist — proceeding with build."
           fi
 
       - name: Extract metadata
