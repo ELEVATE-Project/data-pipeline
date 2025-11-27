@@ -17,8 +17,14 @@ RUN apt update && apt install -y \
     postgresql postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Set Java environment variables
-ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+# Set Java environment variables dynamically (works on both amd64 and arm64)
+RUN apt update && apt install -y openjdk-11-jdk && \
+    JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac)))) && \
+    echo "export JAVA_HOME=$JAVA_HOME" >> /etc/profile && \
+    echo "export PATH=$JAVA_HOME/bin:$PATH" >> /etc/profile && \
+    ln -s $JAVA_HOME /usr/lib/jvm/default-java
+
+ENV JAVA_HOME=/usr/lib/jvm/default-java
 ENV PATH="$JAVA_HOME/bin:$PATH"
 
 # Download and install Scala
