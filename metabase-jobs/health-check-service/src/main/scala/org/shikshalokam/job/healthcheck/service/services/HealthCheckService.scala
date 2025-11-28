@@ -28,6 +28,7 @@ object HealthCheckService {
 
   def checkFlink(): Future[FlinkHealth] = {
     val base = config.flink.restApiUrl
+    val unhealthyCluster = FlinkClusterHealth("UNHEALTHY", 0, 0, 0)
 
     val overviewFlink = http.singleRequest(HttpRequest(uri = s"$base/overview"))
       .flatMap(_.entity.toStrict(5.seconds))
@@ -38,12 +39,13 @@ object HealthCheckService {
         val st = obj.fields("slots-total").convertTo[Int]
         val sa = obj.fields("slots-available").convertTo[Int]
         FlinkClusterHealth(
-          status = if (sa <= st) "HEALTHY" else "UNHEALTHY",
+          status = if (tm > 0 && sa >= 0) "HEALTHY" else "UNHEALTHY",
           taskmanagers = tm,
           slotsTotal = st,
           slotsAvailable = sa
         )
       }
+      .recover { case _ => unhealthyCluster }
 
     val jobsFlink = http.singleRequest(HttpRequest(uri = s"$base/jobs/overview"))
       .flatMap(_.entity.toStrict(5.seconds))
@@ -70,6 +72,7 @@ object HealthCheckService {
           }
         })
       }
+      .recover { case _ => config.flink.jobs.map(j => FlinkJobStatus(j, "UNREACHABLE")) }
 
     for {
       overview <- overviewFlink
@@ -81,59 +84,75 @@ object HealthCheckService {
     val url = s"${config.metabase.url}/api/health"
 
     http.singleRequest(HttpRequest(uri = url))
-      .map(resp => MetabaseHealth(
-        if (resp.status.isSuccess()) "HEALTHY" else "UNHEALTHY",
-        config.metabase.url
-      ))
+      .flatMap { resp =>
+        resp.entity.discardBytes()
+        Future.successful(MetabaseHealth(
+          if (resp.status.isSuccess()) "HEALTHY" else "UNHEALTHY",
+          config.metabase.url
+        ))
+      }
+      .recover { case _ => MetabaseHealth("UNHEALTHY", config.metabase.url) }
   }
 
   def checkKafka(): Future[KafkaHealth] = Future {
     val topic = "_healthcheck_test"
     val uuid = UUID.randomUUID().toString
+    var producer: KafkaProducer[String, String] = null
+    var consumer: KafkaConsumer[String, String] = null
 
-    val producerProps = new Properties()
-    producerProps.put("bootstrap.servers", config.kafka.broker)
-    producerProps.put("key.serializer", classOf[StringSerializer].getName)
-    producerProps.put("value.serializer", classOf[StringSerializer].getName)
+    try {
+      val producerProps = new Properties()
+      producerProps.put("bootstrap.servers", config.kafka.broker)
+      producerProps.put("key.serializer", classOf[StringSerializer].getName)
+      producerProps.put("value.serializer", classOf[StringSerializer].getName)
 
-    val producer = new KafkaProducer[String, String](producerProps)
-    producer.send(new ProducerRecord(topic, uuid))
-    producer.flush()
-    producer.close()
+      val producer = new KafkaProducer[String, String](producerProps)
+      producer.send(new ProducerRecord(topic, uuid))
+      producer.flush()
+      producer.close()
 
-    val consumerProps = new Properties()
-    consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, config.kafka.broker)
-    consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "hc-" + UUID.randomUUID())
-    consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer].getName)
-    consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer].getName)
-    consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-    consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
+      val consumerProps = new Properties()
+      consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, config.kafka.broker)
+      consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "hc-" + UUID.randomUUID())
+      consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer].getName)
+      consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer].getName)
+      consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+      consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
 
-    val consumer = new KafkaConsumer[String, String](consumerProps)
-    consumer.subscribe(Collections.singletonList(topic))
-    consumer.poll(java.time.Duration.ofMillis(100))
-    consumer.seekToEnd(Collections.emptyList())
+      val consumer = new KafkaConsumer[String, String](consumerProps)
+      consumer.subscribe(Collections.singletonList(topic))
+      consumer.poll(java.time.Duration.ofMillis(100))
 
-    var found = false
-    val deadline = System.currentTimeMillis() + 20000
-    while (!found && System.currentTimeMillis() < deadline) {
-      val records = consumer.poll(java.time.Duration.ofMillis(500))
-      val it = records.iterator()
-      while (it.hasNext) {
-        if (it.next().value() == uuid) {
-          found = true
+      var found = false
+      val deadline = System.currentTimeMillis() + 20000
+      while (!found && System.currentTimeMillis() < deadline) {
+        val records = consumer.poll(java.time.Duration.ofMillis(500))
+        val it = records.iterator()
+        while (it.hasNext) {
+          if (it.next().value() == uuid) {
+            found = true
+          }
         }
       }
+      consumer.close()
+      KafkaHealth(if (found) "HEALTHY" else "UNHEALTHY", config.kafka.broker)
+    } catch {
+      case _: Exception => KafkaHealth("UNHEALTHY", config.kafka.broker)
+    } finally {
+      if (producer != null) producer.close()
+      if (consumer != null) consumer.close()
     }
-    consumer.close()
-    KafkaHealth(if (found) "HEALTHY" else "UNHEALTHY", config.kafka.broker)
   }
 
   def fullHealth(): Future[FullHealthResponse] = {
+    val flinkF = checkFlink()
+    val kafkaF = checkKafka()
+    val metaF = checkMetabase()
+
     for {
-      flink <- checkFlink()
-      kafka <- checkKafka()
-      meta <- checkMetabase()
+      flink <- flinkF
+      kafka <- kafkaF
+      meta <- metaF
     } yield FullHealthResponse(
       flink, kafka, meta, Instant.now.toString
     )
