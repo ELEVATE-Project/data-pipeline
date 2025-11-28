@@ -19,7 +19,7 @@ object Main {
 
     val route = HealthCheckRoutes.route
 
-    Http().newServerAt("0.0.0.0", 8080).bind(route).onComplete {
+    Http().newServerAt(host, port).bind(route).onComplete {
       case scala.util.Success(binding) =>
         println(s"HealthCheck Service running at http://${host}:${port}/health")
         sys.addShutdownHook {

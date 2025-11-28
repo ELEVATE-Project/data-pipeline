@@ -106,10 +106,9 @@ object HealthCheckService {
       producerProps.put("key.serializer", classOf[StringSerializer].getName)
       producerProps.put("value.serializer", classOf[StringSerializer].getName)
 
-      val producer = new KafkaProducer[String, String](producerProps)
+      producer = new KafkaProducer[String, String](producerProps)
       producer.send(new ProducerRecord(topic, uuid))
       producer.flush()
-      producer.close()
 
       val consumerProps = new Properties()
       consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, config.kafka.broker)
@@ -119,7 +118,7 @@ object HealthCheckService {
       consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
       consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
 
-      val consumer = new KafkaConsumer[String, String](consumerProps)
+      consumer = new KafkaConsumer[String, String](consumerProps)
       consumer.subscribe(Collections.singletonList(topic))
       consumer.poll(java.time.Duration.ofMillis(100))
 
@@ -134,7 +133,6 @@ object HealthCheckService {
           }
         }
       }
-      consumer.close()
       KafkaHealth(if (found) "HEALTHY" else "UNHEALTHY", config.kafka.broker)
     } catch {
       case _: Exception => KafkaHealth("UNHEALTHY", config.kafka.broker)
