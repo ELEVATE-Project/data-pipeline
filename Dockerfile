@@ -17,7 +17,7 @@ RUN apt update && apt install -y \
     postgresql postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Set Java environment variables dynamically (works on both amd64 and arm64)
+# Set Java environment variables
 RUN apt update && apt install -y openjdk-11-jdk && \
     JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac)))) && \
     echo "export JAVA_HOME=$JAVA_HOME" >> /etc/profile && \
