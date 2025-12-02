@@ -9,7 +9,6 @@ from dashboard_resource_helper import MetabaseUtil, load_metabase_config
 import logging
 from logging.handlers import RotatingFileHandler
 
-
 # ---------------------------------------------------
 # Load config
 # ---------------------------------------------------
@@ -21,7 +20,7 @@ DB_HOST = config.get('Database', 'host')
 DB_USER = config.get('Database', 'user')
 DB_PASS = config.get('Database', 'password')
 DB_NAME = config.get('Database', 'dbname')
-ENV = config.get('Database', 'env')             
+ENV = config.get('Database', 'env')      # example: "local"
 TOPIC = config.get('Database', 'topic')
 GROUP_ID = config.get('Database', 'group_id')
 BROKER = config.get('Database', 'broker')
@@ -29,7 +28,7 @@ BROKER = config.get('Database', 'broker')
 url, user, pwd = load_metabase_config()
 mb = MetabaseUtil(url, user, pwd)
 
-LOG_FILE = "/home/user2/Documents/elevate-data-release-2.2.0/data-pipeline/Documentation/resource_delete.log"
+LOG_FILE = "resource_delete.log"
 
 logger = logging.getLogger("resource_delete_logger")
 logger.setLevel(logging.INFO)
@@ -62,7 +61,7 @@ def db_query(query, params=None):
 def db_execute(query, params=None):
     with conn.cursor() as cur:
         cur.execute(query, params or ())
-
+        
 consumer = KafkaConsumer(
     TOPIC,
     bootstrap_servers=[BROKER],
@@ -91,21 +90,25 @@ def drop_if_exists(table_name, sol_id):
     if table_exists(table_name):
         logger.info(f"Dropping table: {table_name}")
 
-        drop_q = sql.SQL("DROP TABLE IF EXISTS {}.{} CASCADE;").format(
+        drop_q = sql.SQL("DROP TABLE IF EXISTS {}.{} CASCADE").format(
             sql.Identifier("public"),
             sql.Identifier(table_name)
         )
         db_execute(drop_q)
 
-        # Delete from solutions
+        # Delete from solution table
         db_execute(
-            sql.SQL("DELETE FROM {}_solutions WHERE solution_id = %s").format(sql.Identifier(ENV)),
+            sql.SQL("DELETE FROM {} WHERE solution_id = %s").format(
+                sql.Identifier(f"{ENV}_solutions")
+            ),
             (sol_id,)
         )
 
         # Delete dashboard metadata
         db_execute(
-            sql.SQL("DELETE FROM {}_dashboard_metadata WHERE entity_id = %s").format(sql.Identifier(ENV)),
+            sql.SQL("DELETE FROM {} WHERE entity_id = %s").format(
+                sql.Identifier(f"{ENV}_dashboard_metadata")
+            ),
             (sol_id,)
         )
     else:
@@ -113,8 +116,8 @@ def drop_if_exists(table_name, sol_id):
 
 def process_improvement_project(solution_id):
 
-    q = sql.SQL("SELECT project_id FROM {}_projects WHERE solution_id = %s").format(
-        sql.Identifier(ENV)
+    q = sql.SQL("SELECT project_id FROM {} WHERE solution_id = %s").format(
+        sql.Identifier(f"{ENV}_projects")
     )
     project_rows = db_query(q, (solution_id,))
 
@@ -126,21 +129,27 @@ def process_improvement_project(solution_id):
     logger.info(f"Found Improvement Project IDs: {project_ids}")
 
     for pid in project_ids:
-        del_tasks = sql.SQL("DELETE FROM {}_tasks WHERE project_id = %s").format(
-            sql.Identifier(ENV)
+        del_tasks = sql.SQL("DELETE FROM {} WHERE project_id = %s").format(
+            sql.Identifier(f"{ENV}_tasks")
         )
         db_execute(del_tasks, (pid,))
 
     db_execute(
-        sql.SQL("DELETE FROM {}_projects WHERE solution_id = %s").format(sql.Identifier(ENV)),
+        sql.SQL("DELETE FROM {} WHERE solution_id = %s").format(
+            sql.Identifier(f"{ENV}_projects")
+        ),
         (solution_id,)
     )
     db_execute(
-        sql.SQL("DELETE FROM {}_solutions WHERE solution_id = %s").format(sql.Identifier(ENV)),
+        sql.SQL("DELETE FROM {} WHERE solution_id = %s").format(
+            sql.Identifier(f"{ENV}_solutions")
+        ),
         (solution_id,)
     )
     db_execute(
-        sql.SQL("DELETE FROM {}_dashboard_metadata WHERE entity_id = %s").format(sql.Identifier(ENV)),
+        sql.SQL("DELETE FROM {} WHERE entity_id = %s").format(
+            sql.Identifier(f"{ENV}_dashboard_metadata")
+        ),
         (solution_id,)
     )
 
@@ -158,10 +167,11 @@ def process_observation(solution_id):
 def process_survey(solution_id):
     tables = [
         f"{solution_id}_survey_status",
-        f"{solution_id}",
+        f"{solution_id}"
     ]
     for tbl in tables:
         drop_if_exists(tbl, solution_id)
+
 
 for message in consumer:
     try:
@@ -181,9 +191,11 @@ for message in consumer:
 
             sol_q = sql.SQL("""
                 SELECT DISTINCT solution_id
-                FROM {}_solutions
+                FROM {}
                 WHERE program_id = %s
-            """).format(sql.Identifier(ENV))
+            """).format(
+                sql.Identifier(f"{ENV}_solutions")
+            )
 
             rows = db_query(sol_q, (program_id,))
             solution_ids = [r["solution_id"] for r in rows]
@@ -194,11 +206,12 @@ for message in consumer:
                     process_survey(sol)
                     process_observation(sol)
 
-            del_meta = sql.SQL(
-                "DELETE FROM {}_dashboard_metadata WHERE entity_id = %s"
-            ).format(sql.Identifier(ENV))
-
-            db_execute(del_meta, (program_id,))
+            db_execute(
+                sql.SQL("DELETE FROM {} WHERE entity_id = %s").format(
+                    sql.Identifier(f"{ENV}_dashboard_metadata")
+                ),
+                (program_id,)
+            )
 
             collection_id = mb.get_collection_id(program_id)
             mb.delete_collection(collection_id)
