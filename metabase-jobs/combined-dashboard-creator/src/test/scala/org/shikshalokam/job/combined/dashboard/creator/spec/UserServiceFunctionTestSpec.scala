@@ -30,8 +30,9 @@ class UserServiceFunctionTestSpec extends BaseTestSpec {
     .withValue("kafka.input.observation.enabled", ConfigValueFactory.fromAnyRef(false))
     .withValue("kafka.input.survey.enabled", ConfigValueFactory.fromAnyRef(false))
     .withValue("kafka.input.project.enabled", ConfigValueFactory.fromAnyRef(false))
-    .withValue("kafka.input.userservice.enabled", ConfigValueFactory.fromAnyRef(false))
-    .withValue("kafka.input.programservice.enabled", ConfigValueFactory.fromAnyRef(false))
+    .withValue("kafka.input.user.enabled", ConfigValueFactory.fromAnyRef(false))
+    .withValue("kafka.input.userservice.enabled", ConfigValueFactory.fromAnyRef(true))
+    .withValue("kafka.input.programservice.enabled", ConfigValueFactory.fromAnyRef(true))
   val jobConfig: CombinedDashboardCreatorConfig = new CombinedDashboardCreatorConfig(config)
 
 
