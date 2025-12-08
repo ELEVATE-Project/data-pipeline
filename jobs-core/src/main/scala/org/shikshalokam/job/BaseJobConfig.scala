@@ -41,6 +41,12 @@ class BaseJobConfig(val config: Config, val jobName: String) extends Serializabl
     kafkaAutoOffsetReset.map {
       properties.setProperty("auto.offset.reset", _)
     }
+    if (config.hasPath("kafka.max.poll.interval.ms")) {
+      properties.setProperty(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, config.getString("kafka.max.poll.interval.ms"))
+    }
+    if (config.hasPath("kafka.max.poll.records")) {
+      properties.setProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, config.getString("kafka.max.poll.records"))
+    }
     properties
   }
 
