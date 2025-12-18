@@ -23,7 +23,7 @@ class DiscussionStreamFunction(config: MitraStreamConfig)
   // Configuration: How long before retrying stuck "processing" status (in seconds)
   private val PROCESSING_TIMEOUT_SECONDS = 3600 // 1 hour
 
-  @transient implicit lazy val executor: ExecutionContext = ExecutionContext.fromExecutor(java.util.concurrent.Executors.newFixedThreadPool(20))
+  @transient implicit lazy val executor: ExecutionContext = ExecutionContext.fromExecutor(java.util.concurrent.Executors.newFixedThreadPool(30))
   @transient var postgresUtil: PostgresUtil = _
 
   override def open(parameters: Configuration): Unit = {
