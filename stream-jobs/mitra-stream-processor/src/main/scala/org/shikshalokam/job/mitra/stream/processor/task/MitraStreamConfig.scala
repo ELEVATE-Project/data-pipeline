@@ -53,14 +53,38 @@ class MitraStreamConfig(override val config: Config) extends BaseJobConfig(confi
   val storySuccessCount = "story-success-message-count"
   val storyTotalEventsCount = "total-story-events-count"
 
-  //report-config
-  val reportsEnabled: Set[String] = config.getStringList("reports.enabled").asScala.toSet
-
   // PostgreSQL connection config
   val pgHost: String = config.getString("postgres.host")
   val pgPort: String = config.getString("postgres.port")
   val pgUsername: String = config.getString("postgres.username")
   val pgPassword: String = config.getString("postgres.password")
   val pgDataBase: String = config.getString("postgres.database")
+  val promptsTable: String = config.getString("postgres.tables.promptsTable")
+  val promptsVersionsTable: String = config.getString("postgres.tables.promptsVersionsTable")
+  val themesTable: String = config.getString("postgres.tables.themesTable")
+  val discussionsTable: String = config.getString("postgres.tables.discussionsTable")
+  val voicesTable: String = config.getString("postgres.tables.voicesTable")
+  val storiesTable: String = config.getString("postgres.tables.storiesTable")
+  val feedsTable: String = config.getString("postgres.tables.feedsTable")
+
+  //Ai model config
+  val modelProvider = config.getString("ai.model.provider")
+  val bedrockModelVesrion = config.getString("bedrock.model.version")
+  val bedrockModelId = config.getString("bedrock.model.id")
+  val bedrockModelTemperature = config.getDouble("bedrock.model.temperature")
+  val bedrockMaxTokens = config.getInt("bedrock.model.max.tokens")
+
+  val geminiApiKey = config.getString("gemini.api.key")
+  val geminiModelName = config.getString("gemini.model.name")
+  val geminiMaxTokens = config.getInt("gemini.model.max.tokens")
+  val geminiTemperature = config.getDouble("gemini.model.temperature")
+
+  // AWS Configuration
+  val awsRegion = config.getString("aws.region")
+  val awsAccessKey = config.getString("aws.access.key")
+  val awsSecretKey = config.getString("aws.secret.key")
+
+  // Sql queries
+  val thematicAnalyzerQuery: String = s"SELECT pv.content FROM $promptsTable p JOIN $promptsVersionsTable pv ON pv.id = p.current_version_id WHERE p.name = 'Thematic Analyzer' LIMIT 1;"
 
 }

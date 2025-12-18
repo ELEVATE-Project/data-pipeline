@@ -51,7 +51,7 @@ class DiscussionStreamFunctionTestSpec extends BaseTestSpec {
 
   "Discussion Stream Job " should "execute successfully " in {
     initialize()
-    MitraStreamTask.runJob(jobConfig, mockKafkaUtil, "discussion")
+    MitraStreamTask.runJob(jobConfig, mockKafkaUtil, Option("discussion"))
   }
 
 }

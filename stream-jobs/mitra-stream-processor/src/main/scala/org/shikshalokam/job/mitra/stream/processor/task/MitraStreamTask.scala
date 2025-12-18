@@ -6,9 +6,11 @@ import org.apache.flink.streaming.api.scala._
 import org.shikshalokam.job.connector.FlinkKafkaConnector
 import org.shikshalokam.job.mitra.stream.processor.domain.{DiscussionEvent, StoryEvent}
 import org.shikshalokam.job.mitra.stream.processor.functions.{DiscussionStreamFunction, StoryStreamFunction}
-import org.shikshalokam.job.util.FlinkUtil
-
+import org.shikshalokam.job.util.{FlinkUtil, ScalaJsonUtil}
+import org.apache.flink.streaming.api.functions.ProcessFunction
+import org.apache.flink.util.Collector
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 object MitraStreamTask {
 
@@ -23,83 +25,62 @@ object MitraStreamTask {
     val unifiedStreamConfig: MitraStreamConfig = new MitraStreamConfig(config)
     val kafkaConnector: FlinkKafkaConnector = new FlinkKafkaConnector(unifiedStreamConfig)
 
-    val streamType = params.get("streamType")
-    if (streamType != null && streamType.nonEmpty) {
-      runJob(unifiedStreamConfig, kafkaConnector, streamType)
-    } else {
-      runJob(unifiedStreamConfig, kafkaConnector)
-    }
+    val streamType = Option(params.get("streamType"))
+    runJob(unifiedStreamConfig, kafkaConnector, streamType)
   }
 
-  def runJob(config: MitraStreamConfig, kafkaConnector: FlinkKafkaConnector): Unit = {
+  def runJob(config: MitraStreamConfig, kafkaConnector: FlinkKafkaConnector, streamType: Option[String]): Unit = {
     val env = FlinkUtil.getExecutionContext(config)
 
-    if (config.isDiscussionStreamEnabled) {
+    if (streamType.contains("discussion") || (streamType.isEmpty && config.isDiscussionStreamEnabled)) {
       val discussionSource = kafkaConnector.kafkaJobRequestSource[DiscussionEvent](config.discussionInputTopic)
-      val discussionStream = env.addSource(discussionSource)
-        .name("discussion-consumer").uid("discussion-consumer")
-        .setParallelism(config.discussionConsumerParallelism).rebalance
-        .process(new DiscussionStreamFunction(config))
-        .name("discussion-processor").uid("discussion-processor")
-        .setParallelism(config.discussionProcessParallelism)
+      val parallelism = if (streamType.contains("discussion")) 1 else config.discussionConsumerParallelism
 
-      discussionStream.getSideOutput(config.discussionOutputTag)
+      val inputStream = env.addSource(discussionSource)
+        .name("discussion-consumer").uid("discussion-consumer")
+        .setParallelism(parallelism).rebalance
+
+      val processedStream = applyDiscussionAsync(inputStream, config)
+
+      processedStream.getSideOutput(config.discussionOutputTag)
         .addSink(kafkaConnector.kafkaStringSink(config.discussionOutputTopic))
-        .name("discussion-sink").setParallelism(1)
+        .name("discussion-sink").setParallelism(config.discussionSinkParallelism)
     }
 
-    if (config.isStoryStreamEnabled) {
+    if (streamType.contains("story") || (streamType.isEmpty && config.isStoryStreamEnabled)) {
       val storySource = kafkaConnector.kafkaJobRequestSource[StoryEvent](config.storyInputTopic)
-      val storyStream = env.addSource(storySource)
-        .name("story-consumer").uid("story-consumer")
-        .setParallelism(config.storyConsumerParallelism).rebalance
-        .process(new StoryStreamFunction(config))
-        .name("story-processor").uid("story-processor")
-        .setParallelism(config.storyProcessParallelism)
+      val parallelism = config.storyConsumerParallelism
 
-      storyStream.getSideOutput(config.storyOutputTag)
+      env.addSource(storySource)
+        .name("story-consumer").uid("story-consumer")
+        .setParallelism(parallelism).rebalance
+        .process(new StoryStreamFunction(config))
+        .getSideOutput(config.storyOutputTag)
         .addSink(kafkaConnector.kafkaStringSink(config.storyOutputTopic))
         .name("story-sink").setParallelism(config.storySinkParallelism)
     }
 
-
     env.execute("Stream Processor Job")
   }
 
-  def runJob(config: MitraStreamConfig, kafkaConnector: FlinkKafkaConnector, streamType: String): Unit = {
-    val env = FlinkUtil.getExecutionContext(config)
+  private def applyDiscussionAsync(inputStream: DataStream[DiscussionEvent], config: MitraStreamConfig): DataStream[DiscussionEvent] = {
+    val asyncStream = AsyncDataStream.unorderedWait(
+      inputStream,
+      new DiscussionStreamFunction(config),
+      30000L,
+      TimeUnit.MILLISECONDS,
+      100
+    ).name("discussion-async-processor").uid("discussion-async-processor")
 
-    streamType match {
-      case "discussion" =>
-        val discussionSource = kafkaConnector.kafkaJobRequestSource[DiscussionEvent](config.discussionInputTopic)
-        val discussionStream = env.addSource(discussionSource)
-          .name("discussion-consumer").uid("discussion-consumer")
-          .setParallelism(1).rebalance
-          .process(new DiscussionStreamFunction(config))
-          .name("discussion-processor").uid("discussion-processor")
-          .setParallelism(1)
-
-        discussionStream.getSideOutput(config.discussionOutputTag)
-          .addSink(kafkaConnector.kafkaStringSink(config.discussionOutputTopic))
-          .name("discussion-sink").setParallelism(1)
-
-      case "story" =>
-        val storySource = kafkaConnector.kafkaJobRequestSource[StoryEvent](config.storyInputTopic)
-        val storyStream = env.addSource(storySource)
-          .name("story-consumer").uid("story-consumer")
-          .setParallelism(config.storyConsumerParallelism).rebalance
-          .process(new StoryStreamFunction(config))
-          .name("story-processor").uid("story-processor")
-          .setParallelism(config.storyProcessParallelism)
-
-        storyStream.getSideOutput(config.storyOutputTag)
-          .addSink(kafkaConnector.kafkaStringSink(config.storyOutputTopic))
-          .name("test-story-sink").setParallelism(config.storySinkParallelism)
-
-      case _ =>
-        runJob(config, kafkaConnector)
-    }
-
-    env.execute("Stream Processor Job")
+    asyncStream.process(new ProcessFunction[DiscussionEvent, DiscussionEvent] {
+      override def processElement(value: DiscussionEvent, ctx: ProcessFunction[DiscussionEvent, DiscussionEvent]#Context, out: Collector[DiscussionEvent]): Unit = {
+        val outputData = Map(
+          "discussionId" -> value.id,
+          "thematic_analysis" -> value.thematicResult
+        )
+        ctx.output(config.discussionOutputTag, ScalaJsonUtil.serialize(outputData))
+        out.collect(value)
+      }
+    })
   }
 }

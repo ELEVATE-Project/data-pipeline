@@ -50,7 +50,7 @@ class StoryStreamFunctionTestSpec extends BaseTestSpec {
 
   "Story Stream Job " should "execute successfully " in {
     initialize()
-    MitraStreamTask.runJob(jobConfig, mockKafkaUtil, "story")
+    MitraStreamTask.runJob(jobConfig, mockKafkaUtil, Option("story"))
   }
 
 }

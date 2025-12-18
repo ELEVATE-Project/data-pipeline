@@ -1,4 +1,4 @@
--- Command to execute: psql -U your_username -d your_database -f data.sql
+-- Command to execute: psql -U postgres -d mitra -f data.sql
 
 /* ============= CREATE TABLES ============= */
 
@@ -38,8 +38,15 @@ CREATE TABLE discussions_meta (
     discussion_date TEXT,
     role TEXT,
     district TEXT,
-    state TEXT
+    state TEXT,
+    status VARCHAR(20) DEFAULT 'pending',
+    error_message TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Index for performance on status checking with timeout
+CREATE INDEX idx_discussions_status_updated ON discussions_meta(status, updated_at);
 
 -- Table: voices
 CREATE TABLE voices (
@@ -51,9 +58,15 @@ CREATE TABLE voices (
     confidence_score DECIMAL(10,2),
     justification TEXT,
     multi_theme_mapped BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
     FOREIGN KEY (discussion_id) REFERENCES discussions_meta(id) ON DELETE CASCADE,
     FOREIGN KEY (theme_id) REFERENCES themes(id) ON DELETE CASCADE
 );
+
+-- Index for better query performance on voices
+CREATE INDEX idx_voices_discussion_id ON voices(discussion_id);
+CREATE INDEX idx_voices_theme_id ON voices(theme_id);
 
 -- Table: stories
 CREATE TABLE stories (
@@ -119,9 +132,9 @@ CREATE TRIGGER update_current_version_on_insert
 -- Populating Prompts
 INSERT INTO prompts (name)
 VALUES
-('Theme Classification'),
-('Story Ranker'),
-('Sentiment Analyzer');
+('Thematic Analyzer'),
+('Story Analyzer'),
+('Semantic Analyzer');
 
 -- Populating Prompts Versions
 INSERT INTO prompt_version (prompt_id, version, content)
@@ -140,11 +153,11 @@ VALUES
 
          **Examples:**
          - Due to economic constraints, families force girls to engage in domestic work or labour, which hinders their education
-         -  Due to poor financial condition, the girl is not able to study
+         - Due to poor financial condition, the girl is not able to study
          - Poverty in the society is another challenge that affects education
-         -Financial constraints and poverty were major challenges for some families in educating their daughters
+         - Financial constraints and poverty were major challenges for some families in educating their daughters
          - Unemployment in the family is a significant problem that affects children's education
-         -  Financial difficulties greatly affect a child's education
+         - Financial difficulties greatly affect a child's education
 
          ---
 
@@ -155,7 +168,7 @@ VALUES
          **Examples:**
          - Aadhar cards of children have not been made, due to which they are not getting admission in school
          - Due to lack of Aadhar cards, schools in the community are facing challenges in enrolling children
-         -Children are not getting admission due to lack of Aadhaar card, which is affecting their education
+         - Children are not getting admission due to lack of Aadhaar card, which is affecting their education
 
          ---
 
@@ -174,12 +187,12 @@ VALUES
          **Definition:** Challenges that prevent children from attending school due to physical and environmental conditions. It includes long distances to school, poor road or transport infrastructure, and difficulties caused by weather or seasonal factors (such as heavy rains, heat, or floods). These conditions make daily travel to school inconvenient, unreliable, or physically demanding for children.
 
          **Examples:**
-         -  The school is very far from the village
+         - The school is very far from the village
          - If the school is far away, children cannot go there
-         -  The child is unable to reach school due to rain
+         - The child is unable to reach school due to rain
          - There is no school in the village, the school is very far from the village, due to this the girls leave their studies midway
          - The transportation system is a significant problem, making it difficult for children to reach school on time
-         -There is a lack of buses for children and teachers to come to class
+         - There is a lack of buses for children and teachers to come to class
          - Children are not able to go to school because the school is far away and the roads are bad so they cannot go to study
          - The child is unable to go to school because of the heat
          - Sun, heat, rain and rain create hindrance in studies
@@ -194,8 +207,8 @@ VALUES
          -  Cultural beliefs that girls do not need education because they will only get married and stay at home are a major challenge
          - Gender discrimination is a significant issue in the community, affecting the education and empowerment of girls
          - Purdah system is prevalent in Muslim community, due to which we do not send teenage girls out
-         -  The community believes that educating girls will increase the demand for dowry
-         -  Social discrimination based on caste or gender also leads to low participation
+         - The community believes that educating girls will increase the demand for dowry
+         - Social discrimination based on caste or gender also leads to low participation
          - Social pressure was identified as another challenge that can prevent girls from pursuing their education
          - Girls leave their studies and run away. Due to this fear, parents are unable to provide higher education to their daughters
          - Parents are afraid that their daughters might get exposed to foul language and hence do not allow them to go to school
@@ -209,20 +222,20 @@ VALUES
 
          **Examples:**
          - Our school children are not given books on time
-         -  The benefits of government schemes are not being received, due to which children are not going to school
+         - The benefits of government schemes are not being received, due to which children are not going to school
          - Children did not get uniforms
          - Sanitary pads are not provided in school
          - Mid day meals are not provided properly to the children in the school
          - Lack of toilets in schools
          - Girls face significant barriers to accessing education due to poor infrastructure and lack of resources
-         -  Lack of school infrastructure, including poor classrooms, sanitation facilities, water, and transportation, hinders the learning environment
-         -there is no water in the toilet
+         - Lack of school infrastructure, including poor classrooms, sanitation facilities, water, and transportation, hinders the learning environment
+         - there is no water in the toilet
          - There is no fan facility in my school
          - Drinking water is a challenge in schools
          - There are not enough playgrounds for sports children
          - There are not enough playgrounds for sports children
-         - - The environment around the school is not clean, which affects the health and well-being of children
-         -  The library lacks sufficient books for students
+         - The environment around the school is not clean, which affects the health and well-being of children
+         - The library lacks sufficient books for students
 
          ---
 
@@ -232,14 +245,14 @@ VALUES
 
          **Examples:**
          - There is a shortage of teachers in the school, due to which subject-wise studies are not done
-         -The work of the teacher is not being done properly in our school
-         -  Attendance of teachers is a problem
-         -  Teachers do not come to school on time
+         - The work of the teacher is not being done properly in our school
+         - Attendance of teachers is a problem
+         - Teachers do not come to school on time
          - Teachers do not pay attention to them
          - The quality of teachers is a major concern
-         -  The community lacks education, training and management of teachers, which affects the quality of teaching
+         - The community lacks education, training and management of teachers, which affects the quality of teaching
          - Lack of language-specific teachers in school
-         -  Children's learning progress is a challenge
+         - Children's learning progress is a challenge
          - There is a lack of English medium education in government schools
 
          ---
@@ -266,8 +279,8 @@ VALUES
 
          **Examples:**
          - Gambling addiction in children
-         -  Children's education is affected by alcohol
-          - Drug addiction is a significant challenge that is affecting the education of children in the community
+         - Children's education is affected by alcohol
+         - Drug addiction is a significant challenge that is affecting the education of children in the community
          - The father is an alcoholic, so the daughter is being forced to study
          - Alcohol addiction in a household member is a problem
          - Children use mobile phones more often
@@ -289,7 +302,16 @@ VALUES
 
          ### Theme 11: Unknown/Unclear
 
-         **Definition:** Statements that are incomplete, unclear, or insufficient. Use only when the challenge cannot be reasonably classified into any other category.
+         **Definition:** Use this theme ONLY when no reasonable interpretation is possible or when the text does not relate to an educational barrier in any way.
+
+         **Interpretation Guidelines:**
+         - If a challenge is short, vague, or ambiguous (1-3 words like "heat", "no books", "migration"), classify it into the closest reasonable theme based on educational context
+         - Only use Theme 11 when the text is meaningless, unrelated to education, or truly cannot be interpreted
+
+         **Examples:**
+         - "xyz abc pqr"
+         - "I like pizza"
+         - Blank or null entries
 
          ---
 
@@ -316,9 +338,13 @@ VALUES
          For each challenge statement provided:
 
          1. **Read carefully** to understand the core barrier being described
-         2. **Classify** into the most appropriate theme (1-6)
+         2. **Classify** into the most appropriate theme
          3. **Check for PII** using the guidelines above
-         4. **Output** in the specified JSON format
+         4. **Provide justification** - Explain in 1-2 sentences why this theme was chosen, citing specific words or phrases from the challenge
+         5. **Assign confidence score** - Rate your classification confidence from 0.0 to 1.0 (where 1.0 is most confident)
+         6. **Flag multi-theme mapping** - Set to `true` if the challenge contains multiple distinct barriers, `false` if it's a single barrier
+         7. **Output** in the specified JSON format
+
 
          ## Output Format
 
@@ -327,34 +353,63 @@ VALUES
          {
            "classified_data": [
              {
-               "theme_id": 1,
-               "theme_name": "Poverty and Economic Barriers",
-               "pii_flag": false
+               "challenge": "Teachers do not come to school on time",
+               "theme_id": 7,
+               "theme_name": "Teacher Capacity and Quality Issues",
+               "pii_flag": false,
+               "justification": "The sentence clearly states that teachers do not come to school",
+               "confidence_score": 0.7,
+               "multi_theme_mapped": false
+             },
+             {
+               "challenge": "Lack of toilets in schools",
+               "theme_id": 6,
+               "theme_name": "School Infrastructure and Facility Issues",
+               "pii_flag": false,
+               "justification": "The sentence mentions inadequate school facilities",
+               "confidence_score": 0.8,
+               "multi_theme_mapped": false
              }
            ]
          }
 
+         ```
+         Note: If multiple distinct barriers are mentioned in a single challenge, include multiple theme objects in the array. Also always return the output with 7 key-value JSON object [challenge, theme_id, theme_name, pii_flag, justification, confidence_score, multi_theme_mapped]
+         ```
+         ---
+         CRITICAL: Multi-Theme Classification Rules
+         READ THIS CAREFULLY - THIS IS THE MOST IMPORTANT INSTRUCTION:
+         When a SINGLE challenge statement contains MULTIPLE DISTINCT barriers:
+
+         You MUST create SEPARATE JSON objects for EACH distinct theme
+         Each object should have multi_theme_mapped: true
+         Each object should reference the SAME original challenge text
+         Each object should have a DIFFERENT theme_id and theme_name
+
+         Example:
+         Input: "There are no teachers in the school and there are no toilets in the school"
+
+         When multi_theme_mapped is true, you MUST have created multiple objects. If you set multi_theme_mapped: true but only create one object, this is a CRITICAL ERROR.
+
+         ---
+         ## Field Definitions
+
+         - **challenge**: The original challenge statement being classified
+         - **justification**: A brief explanation (1-2 sentences) citing specific words/phrases that led to this classification
+         - **confidence_score**: A decimal value between 0.0-1.0 indicating classification certainty
+         - **multi_theme_mapped**: Boolean - `true` if this challenge statement contains multiple distinct barriers requiring multiple theme classifications, `false` otherwise
+
+
          ## Classification Rules
 
-         - Assign ONE primary theme per challenge (the most dominant barrier)
-         - If a challenge mentions multiple barriers, classify by the PRIMARY/MAIN issue
+         - If a challenge mentions multiple distinct barriers, classify it into MULTIPLE themes (one for each barrier mentioned)
+         - Example: "There are no teachers in the school and there are no toilets in the school" should be mapped to both Theme 7 (Teacher Capacity and Quality Issues) AND Theme 6 (School Infrastructure and Facility Issues)
          - Be consistent in classification across similar statements
-         - When in doubt between two themes, choose the one most directly preventing school attendance
-
-         ## Examples
-
-         **Input Challenge:** "Due to economic constraints, families force girls to engage in domestic work"
-         **Output:** `{"theme_id": 1, "theme_name": "Poverty and Economic Barriers", "pii_flag": false}`
-
-         **Input Challenge:** "Raj Kumar's daughter from ward 3 cannot go to school due to lack of Aadhaar"
-         **Output:** `{"theme_id": 2, "theme_name": "Legal Document-linked Barriers", "pii_flag": true}`
-
-         **Input Challenge:** "The school is very far from the village and roads are in poor condition"
-         **Output:** `{"theme_id": 4, "theme_name": "Distance and Accessibility Issues", "pii_flag": false}`
+         - When in doubt between two themes, choose the one most strongly represented by the core issue described.
 
          ---
 
-         **Now classify the following challenges:**$$),
+         **Now classify the following challenges:** $$),
 (2, 1, $$# Story rating Prompt
 
          ## Overview
