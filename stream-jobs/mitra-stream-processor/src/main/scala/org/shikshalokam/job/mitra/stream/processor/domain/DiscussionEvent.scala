@@ -11,21 +11,21 @@ class DiscussionEvent(eventMap: java.util.Map[String, Any], partition: Int, offs
 
   var thematicResult: ClassificationResponse = _ // Stores the LLM result
 
-  def id: Int = readOrDefault[String]("id", null).toInt
+  def id: Int = readOrDefault[String]("id", null).replace(",", "").toInt
 
   def title: String = readOrDefault[String]("Title", null)
 
-  def discussionDate: Timestamp = parseStringToTimestamp(readOrDefault[String]("Date of Discussion", null))
+  def discussionDate: String = readOrDefault[String]("Date of Discussion", null)
 
-  def createdAt: Timestamp = parseStringToTimestamp(readOrDefault[String]("createdAt", ""))
+  def createdAt: Timestamp = parseStringToTimestamp(readOrDefault[String]("event_pushed_at", ""))
 
   def role: String = readOrDefault[String]("Role", "Women Leader")
 
   def state: String = readOrDefault[String]("state", null)
 
-  def district: String = readOrDefault[String]("district", null)
+  def district: String = readOrDefault[String]("District", null)
 
-  def challenges: String = readOrDefault[String]("challenges", null)
+  def challenges: String = readOrDefault[String]("Challenges", null)
 
   private def parseStringToTimestamp(dateString: String): Timestamp = {
     if (dateString.isEmpty) new Timestamp(System.currentTimeMillis())
