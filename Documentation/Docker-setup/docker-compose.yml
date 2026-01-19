@@ -78,13 +78,13 @@ services:
     restart: always
     container_name: postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: M3TabAse#321
+      POSTGRES_DB: metabase
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5533:5432"
     networks:
       - elevate_net
 
@@ -111,13 +111,14 @@ services:
     restart: always
     container_name: metabase
     environment:
-      MB_DB_TYPE: ${MB_DB_TYPE}
-      MB_DB_DBNAME: ${POSTGRES_DB}
-      MB_DB_PORT: ${POSTGRES_PORT}
-      MB_DB_USER: ${POSTGRES_USER}
-      MB_DB_PASS: ${POSTGRES_PASSWORD}
-      MB_DB_HOST: ${POSTGRES_HOST}
-      MB_API_KEY: ${MB_API_KEY}
+      MB_DB_TYPE: "postgres"
+      MB_DB_DBNAME: "metabase_elevate"
+      MB_DB_PORT: "5432"
+      MB_DB_USER: "postgres"
+#      MB_DB_PASS: "M3TabAse#321"
+      MB_DB_PASS: "1234"
+      MB_DB_HOST: "172.132.44.221"
+      MB_API_KEY: "9c2a8e4b-6f1d-3c5d-7e8f-1a2b3c4d5e6f"
     ports:
       - "3000:3000"
     depends_on:
@@ -129,7 +130,7 @@ services:
 
   # Elevate Data Service
   elevate-data:
-    image: shikshalokamqa/elevate-data:latest
+    image: shikshalokamqa/elevate-data:v3.0.2
     restart: always
     container_name: elevate-data
     ports:

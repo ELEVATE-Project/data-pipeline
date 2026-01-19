@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Database connection parameters
-DB_NAME="postgres"
+DB_NAME="elevate_data"
 DB_USER="postgres"
-DB_PASSWORD="postgres"
+DB_PASSWORD="1234"
 DB_HOST="localhost"
 DB_PORT="5432"
 TABLE_NAME="local_report_config"
@@ -75,7 +75,7 @@ process_folders() {
 }
 
 # Main folder path
-MAIN_FOLDER="/home/user2/Documents/elevate/data-pipeline/metabase-jobs/config-data-loader/projectJson"
+MAIN_FOLDER="/home/ttpl-rt-221/elevate/data-pipeline/metabase-jobs/config-data-loader/projectJson"
 
 # Create the table and process folders
 create_table
