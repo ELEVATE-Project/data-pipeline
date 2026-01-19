@@ -13,8 +13,7 @@ import scala.util.{Failure, Success}
 import scala.collection.immutable._
 import java.sql.SQLException
 
-class DiscussionStreamFunction(config: MitraStreamConfig)
-  extends RichAsyncFunction[DiscussionEvent, DiscussionEvent] {
+class DiscussionStreamFunction(config: MitraStreamConfig) extends RichAsyncFunction[DiscussionEvent, DiscussionEvent] {
 
   private[this] val logger = LoggerFactory.getLogger(classOf[DiscussionStreamFunction])
   private var thematicAnalyzer: ThematicAnalyzer = _
@@ -171,13 +170,31 @@ class DiscussionStreamFunction(config: MitraStreamConfig)
 
     future.onComplete {
       case Success(res) =>
-        resultFuture.complete(List(res))
+        try {
+          resultFuture.complete(List(res))
+        } catch {
+          case _: java.util.concurrent.RejectedExecutionException =>
+            println(s"$logPrefix Result delivered (mailbox closed during shutdown)")
+          case e: Exception =>
+            println(s"$logPrefix Error completing result: ${e.getMessage}")
+            e.printStackTrace()
+        }
+
       case Failure(ex) =>
-        println(s"$logPrefix Processing failed in onComplete: ${ex.getMessage}") //logger.error
+        println(s"$logPrefix Processing failed in onComplete: ${ex.getMessage}")
         ex.printStackTrace()
         updateDiscussionStatusWithVerification(id, "failed", Some(ex.getMessage))
-        resultFuture.completeExceptionally(ex)
+
+        try {
+          resultFuture.completeExceptionally(ex)
+        } catch {
+          case _: java.util.concurrent.RejectedExecutionException =>
+            println(s"$logPrefix Failed to report error (mailbox closed)")
+          case e: Exception =>
+            println(s"$logPrefix Error reporting failure: ${e.getMessage}")
+        }
     }
+
   }
 
   /**
@@ -345,147 +362,3 @@ class DiscussionStreamFunction(config: MitraStreamConfig)
     if (thematicAnalyzer != null) thematicAnalyzer.close()
   }
 }
-
-
-//package org.shikshalokam.job.mitra.stream.processor.functions
-//
-//import org.apache.flink.configuration.Configuration
-//import org.apache.flink.streaming.api.scala.async.{ResultFuture, RichAsyncFunction}
-//import org.shikshalokam.job.mitra.stream.processor.domain.DiscussionEvent
-//import org.shikshalokam.job.mitra.stream.processor.task.MitraStreamConfig
-//import org.shikshalokam.job.mitra.stream.processor.utils.{ClassifiedItem, ThematicAnalyzer}
-//import org.shikshalokam.job.util.PostgresUtil
-//import org.slf4j.LoggerFactory
-//
-//import scala.concurrent.{ExecutionContext, Future}
-//import scala.util.{Failure, Success}
-//import scala.collection.immutable._
-//
-//class DiscussionStreamFunction(config: MitraStreamConfig)
-//  extends RichAsyncFunction[DiscussionEvent, DiscussionEvent] {
-//
-//  private[this] val logger = LoggerFactory.getLogger(classOf[DiscussionStreamFunction])
-//  private var thematicAnalyzer: ThematicAnalyzer = _
-//  private var thematicPrompt: String = _
-//
-//  @transient implicit lazy val executor: ExecutionContext = ExecutionContext.fromExecutor(java.util.concurrent.Executors.newFixedThreadPool(20))
-//  @transient var postgresUtil: PostgresUtil = _
-//
-//  override def open(parameters: Configuration): Unit = {
-//    val connectionUrl = s"jdbc:postgresql://${config.pgHost}:${config.pgPort}/${config.pgDataBase}"
-//    postgresUtil = new PostgresUtil(connectionUrl, config.pgUsername, config.pgPassword)
-//    thematicAnalyzer = new ThematicAnalyzer(config)
-//    thematicPrompt = postgresUtil.fetchData(config.thematicAnalyzerQuery).collectFirst { case map: Map[_, _] => map.get("content").map(_.toString).orNull }.orNull
-//  }
-//
-//  override def asyncInvoke(event: DiscussionEvent, resultFuture: ResultFuture[DiscussionEvent]): Unit = {
-//
-//    val logPrefix = s"[DiscussionID: ${event.id}]"
-//    println(s"$logPrefix Starting asynchronous thematic analysis.") //logger.info
-//
-//    val id = event.id
-//    val title = event.title
-//    val discussionDate = event.discussionDate
-//    val role = event.role
-//    val district = event.district
-//    val state = event.state
-//
-//    val isDiscussionPresent = checkDiscussionExists(id)
-//
-//    if (isDiscussionPresent) {
-//      println(s"$logPrefix This discussion is already processed. Stopping.") //logger.warn
-//      resultFuture.complete(Iterable.empty)
-//      return
-//    }
-//
-//    if (event.challenges == null || event.challenges.trim.isEmpty) {
-//      println(s"$logPrefix Skipping: No challenges found.") //logger.warn
-//      resultFuture.complete(Iterable.empty)
-//      return
-//    }
-//
-//    val insertQuery =
-//      s"""INSERT INTO ${config.discussionsTable}
-//         |(id, title, discussion_date, role, district, state)
-//         |VALUES (?, ?, ?, ?, ?, ?)""".stripMargin
-//    val params = Seq(id, title, discussionDate, role, district, state)
-//    postgresUtil.executePreparedUpdate(insertQuery, params, config.discussionsTable, id.toString)
-//
-//    println(s"$logPrefix Data inserted into discussion table") //logger.info
-//
-//    val future: Future[DiscussionEvent] = Future {
-//      val challenges = cleanChallenges(event.challenges)
-//      println(s"$logPrefix Cleaned challenges count: ${challenges.size}") //logger.debug
-//      val modelResponse = thematicAnalyzer.analyzeThematicChallenge(challenges, thematicPrompt)
-//
-//      modelResponse match {
-//        case Right(response) =>
-//          println(s"$logPrefix LLM Call Success | Total Challenge Sentences: ${challenges.size}  | Total Classified Object: ${response.classified_data.size}") //logger.info
-//          println(s"$logPrefix LLM Classified Response: ${response}") //logger.debug
-//
-//          event.thematicResult = response
-//          insertVoicesData(id, response.classified_data, logPrefix)
-//          event
-//
-//        case Left(err) =>
-//          println(s"$logPrefix LLM Failure: ${err.error}") //logger.error
-//          event
-//      }
-//    }
-//
-//    future.onComplete {
-//      case Success(res) => resultFuture.complete(List(res))
-//      case Failure(ex) => resultFuture.completeExceptionally(ex)
-//    }
-//  }
-//
-//  private def checkDiscussionExists(discussionId: Int): Boolean = {
-//
-//    val result = postgresUtil.fetchData(s"SELECT EXISTS(SELECT 1 FROM ${config.discussionsTable} WHERE id = '$discussionId')")
-//    result.headOption match {
-//      case Some(map: Map[_, _]) =>
-//        map.get("exists").exists {
-//          case b: Boolean => b
-//          case s: String => s.equalsIgnoreCase("true") || s == "t"
-//          case _ => false
-//        }
-//      case _ => false
-//    }
-//  }
-//
-//  private def cleanChallenges(challenges: String): List[String] = {
-//    val withoutBrackets = challenges.trim.stripPrefix("[").stripSuffix("]")
-//    val sentences = withoutBrackets.split("\\|")
-//    sentences.flatMap { sentence =>
-//      val trimmed = sentence.trim
-//      val cleaned = trimmed.replaceAll("^\\d+\\.\\s*", "")
-//      if (cleaned.nonEmpty) Some(cleaned) else None
-//    }.toList
-//  }
-//
-//  private def insertVoicesData(discussionId: Int, classifiedData: List[ClassifiedItem], logPrefix: String): Unit = {
-//    try {
-//      classifiedData.foreach { item =>
-//        val insertVoiceQuery =
-//          s"""INSERT INTO ${config.voicesTable}
-//             |(discussion_id, theme_id, challenge, pii_flag, confidence_score, justification, multi_theme_mapped)
-//             |VALUES (?, ?, ?, ?, ?, ?, ?)""".stripMargin
-//
-//        val voiceParams = Seq(discussionId, item.theme_id, item.challenge, item.pii_flag, BigDecimal(item.confidence_score), item.justification, item.multi_theme_mapped)
-//
-//        postgresUtil.executePreparedUpdate(insertVoiceQuery, voiceParams, config.voicesTable, discussionId.toString)
-//      }
-//      println(s"$logPrefix Successfully inserted ${classifiedData.size} records into voices table")
-//    } catch {
-//      case e: Exception =>
-//        println(s"$logPrefix Error inserting voices data: ${e.getMessage}")
-//        e.printStackTrace()
-//        throw e
-//    }
-//  }
-//
-//  override def close(): Unit = {
-//    super.close()
-//    if (thematicAnalyzer != null) thematicAnalyzer.close()
-//  }
-//}

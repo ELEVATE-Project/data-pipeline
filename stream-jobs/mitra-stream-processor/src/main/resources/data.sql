@@ -68,13 +68,30 @@ CREATE TABLE voices (
 CREATE INDEX idx_voices_discussion_id ON voices(discussion_id);
 CREATE INDEX idx_voices_theme_id ON voices(theme_id);
 
+-- Table: stories_meta
+CREATE TABLE stories_meta (
+    id INTEGER PRIMARY KEY,
+    title TEXT,
+    role TEXT,
+    district TEXT,
+    state TEXT,
+    feed_status VARCHAR(20) DEFAULT 'pending',
+    feed_error_message TEXT,
+    story_status VARCHAR(20) DEFAULT 'pending',
+    story_error_message TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Index for performance on status checking with timeout
+CREATE INDEX idx_feed_status_updated ON stories_meta(feed_status, updated_at);
+CREATE INDEX idx_story_status_updated ON stories_meta(story_status, updated_at);
+
 -- Table: stories
 CREATE TABLE stories (
-    id INTEGER PRIMARY KEY,
-    story_id INTEGER,  -- Self-referencing or parent story
-    title TEXT NOT NULL,
+    story_id INTEGER PRIMARY KEY,
     content TEXT,
-    pii_flag BOOLEAN DEFAULT FALSE,
+    -- pii_flag BOOLEAN DEFAULT FALSE, -- This flag can be enabled later
     pdf_link TEXT,
     image_link TEXT,
     impact_and_outcome_score DECIMAL(10,2),
@@ -87,21 +104,25 @@ CREATE TABLE stories (
     document_language TEXT,
     tier TEXT,
     overall_summary TEXT,
-    role TEXT,
-    district TEXT,
-    state TEXT,
-    FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE SET NULL
+    FOREIGN KEY (story_id) REFERENCES stories_meta(id) ON DELETE CASCADE
 );
+
+-- Index for better query performance on stories
+CREATE INDEX idx_stories_id ON stories(story_id);
 
 -- Table: feeds
 CREATE TABLE feeds (
-    id INTEGER PRIMARY KEY,
-    story_id INTEGER NOT NULL,
+    story_id INTEGER PRIMARY KEY,
     action_steps TEXT,
     impact TEXT,
     pii_flag BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
+    justification TEXT,
+    confidence_score DECIMAL(10,2),
+    FOREIGN KEY (story_id) REFERENCES stories_meta(id) ON DELETE CASCADE
 );
+
+-- Index for better query performance on feeds
+CREATE INDEX idx_feeds_id ON feeds(story_id);
 
 
 /* ============= TRIGGER: Auto-update current_version_id ============= */
@@ -134,7 +155,7 @@ INSERT INTO prompts (name)
 VALUES
 ('Thematic Analyzer'),
 ('Story Analyzer'),
-('Semantic Analyzer');
+('Pii Analyzer');
 
 -- Populating Prompts Versions
 INSERT INTO prompt_version (prompt_id, version, content)
@@ -290,28 +311,46 @@ VALUES
 
          ### Theme 10: Other Factors
 
-         **Definition:** Responses that do not fit into any of the defined categories but still influence children's school attendance or learning. It captures unique, context-specific, or less common reasons mentioned by respondents that contribute to educational challenges.
+         **Definition:** Responses that do not fit into any of the defined categories but still influence children's school attendance or learning. For example, issues related to parents not being aware, the community not being aware, and lack of awareness in terms of education in general, as well as issues related to children/students migrating, parents migrating, and migration in general. It should capture unique, context-specific, or less common reasons mentioned by respondents that contribute to educational challenges only related to lack of awareness and migration.
 
          **Examples:**
          - Parents in the community lack awareness about the importance of education
          - Family migration for work causes problems for children
-         - Parents in villages prefer private schools over government schools
-         - An 18-year-old girl in the seventh class feels shy and does not attend school due to being older and larger than her classmates, fearing ridicule
 
          ---
 
          ### Theme 11: Unknown/Unclear
 
-         **Definition:** Use this theme ONLY when no reasonable interpretation is possible or when the text does not relate to an educational barrier in any way.
+         **Definition:** Use this theme ONLY when no reasonable interpretation is possible, or when the text does not relate to an educational barrier in any way, or does not align with any of the themes defined above. Any challenges which do not fit into any of the defined theme (Themes 1-10) will be put into this theme.
 
-         **Interpretation Guidelines:**
-         - If a challenge is short, vague, or ambiguous (1-3 words like "heat", "no books", "migration"), classify it into the closest reasonable theme based on educational context
-         - Only use Theme 11 when the text is meaningless, unrelated to education, or truly cannot be interpreted
+
+         **Classification Rules - Use Theme 11 when:**
+         - Challenge contains "various reasons" or similar non-specific phrases → Classify as Theme 11
+         - Challenge is ≤4 words→ Classify as Theme 11
+         - Challenge is a single word → Classify as Theme 11
+         - Challenge starts with "About the..." without specific barrier → Classify as Theme 11
+         - Challenge starts with vague phrases ("The problem of...", "Regarding...") → Classify as Theme 11
+         - Challenge mentions generic health/illness without specifics → Classify as Theme 11
+         - Challenge is aspirational/recommendation statement → Classify as Theme 11
+         - Challenge is phrased as question or unclear → Classify as Theme 11
+         - Challenge is meaningless or unrelated to education → Classify as Theme 11
+         - When in doubt: "Does this specifically mention awareness or migration?" If yes → Theme 10. If no → Theme 11.
+
 
          **Examples:**
-         - "xyz abc pqr"
-         - "I like pizza"
-         - Blank or null entries
+         - Children dropout from school due to various reasons → Unknown (explicitly non-specific)
+         - About the health of women and children at home → Unknown (vague fragment, no specific barrier)
+         - Uneducated parents → Unknown (2 words, lacks context)
+         - Due to illness → Unknown (generic health, no specifics about whose illness or how it affects)
+         - Education → Unknown (single word, no context)
+         - The problem of enrollment → Unknown (vague starter, doesn't specify what the problem is)
+         - Regarding education → Unknown (vague, says nothing specific)
+         - Efforts are being made to enroll more children → Unknown (aspirational, not a barrier)
+         - How children come home late  → Unknown (question, unclear phrasing)
+         - Poor health hinders education  → Unknown (generic statement, no actionable specifics)
+         - xyz abc pqr  → Unknown (meaningless)
+         - I like pizza  → Unknown (unrelated to education)
+         - Blank entry → Unknown
 
          ---
 
@@ -410,11 +449,11 @@ VALUES
          ---
 
          **Now classify the following challenges:** $$),
-(2, 1, $$# Story rating Prompt
+(2, 1, $$# Story Rating Prompt
 
          ## Overview
 
-         You are an expert story evaluator specializing in assessing educational and social impact narratives. Your task is to analyze the story from the PDF document and rank it based on three critical criteria: Impact/Outcome, Issue/Challenge clarity, and Action Steps taken.
+         You are an expert story evaluator specializing in assessing educational and social impact narratives. Your task is to analyze the complete story document and rank it based on three critical criteria: Impact/Outcome, Issue/Challenge clarity, and Action Steps taken.
 
          ## Evaluation Criteria
 
@@ -488,26 +527,78 @@ VALUES
          }}
 
          ## Task Instructions
-         1. Read and analyze the complete PDF text content provided below.
-         2. Identify the primary language of the document (e.g., "English", "Hindi", "Spanish").
-         3. Score EACH of the THREE criteria (Impact, Issue, Action) with values between 0.0 and 1.0.
-         4. Write detailed justifications for EACH of the three scores (analyze the story content carefully).
-         5. Calculate the composite_score = (impact × 0.4) + (issue × 0.3) + (action × 0.3)
-         6. Assign the tier based on the rules above.
-         7. Write a brief overall_summary (2-3 sentences).
-         8. Return ONLY the JSON object with ALL 10 FIELDS. No extra text, no markdown, no code blocks.
+         1. Read and analyze the complete story document provided below.
+         2. Identify the primary language of the document (e.g., "English", "Hindi", "Kannada", "Tamil").
+         3. Look for THREE key aspects in the story:
+            - **Issues/Challenges**: What problems or challenges are described?
+            - **Action Steps**: What actions were taken to address these challenges?
+            - **Impact/Outcomes**: What were the results or changes achieved?
+         4. Score EACH of the THREE criteria (Impact, Issue, Action) with values between 0.0 and 1.0.
+         5. Write detailed justifications for EACH of the three scores based on what you find in the story.
+         6. Calculate the composite_score = (impact × 0.4) + (issue × 0.3) + (action × 0.3)
+         7. Assign the tier based on the rules above.
+         8. Write a brief overall_summary (2-3 sentences).
+         9. Return ONLY the JSON object with ALL 10 FIELDS. No extra text, no markdown, no code blocks.
 
-         ## Story to Analyze
+         ## Story Document to Analyze
 
-         **Title:** {story_title}
+         {story_content}
 
-         **PDF Content:**
          ---
-         {pdf_content}
-         ---
 
-         Analyze the above PDF content and return the evaluation as a valid JSON object with all 10 required fields.$$),
-(3, 1, 'check and return the sentiment of the given text has any PII data');
+         Analyze the story document above and return the evaluation as a valid JSON object with all 10 required fields.$$),
+(3, 1, $$# PII Detection Prompt
+
+         You are a PII Detection Specialist tasked with analyzing educational content for personally identifiable information.
+
+         ## Task
+         Analyze the provided text and identify if it contains any personally identifiable information (PII). Return your findings in a structured JSON format.
+
+         ## Context
+         You will be analyzing educational barrier and solution content including action steps and impact statements from educational programs and initiatives.
+
+         ## PII Detection Guidelines
+
+         ### Flag as `true` if the text contains:
+
+         - Personal names (students, teachers, parents, community members)
+         - Specific addresses, house numbers, or exact locations
+         - Phone numbers, email addresses, or identification numbers
+         - Specific ages combined with identifying details
+         - Any information that could identify an individual
+
+         ### Flag as `false` if the text only contains:
+
+         - General locations (village names, district names without specific addresses)
+         - General demographic information (community, caste, gender without names)
+         - Age groups or grade levels without identifying details
+
+         ## Instructions
+         1. Carefully read and analyze the entire text
+         2. Identify any potential PII based on the criteria above
+         3. Determine confidence level (0.0 to 1.0 scale)
+         4. Provide clear justification for your decision
+         5. Return response in the exact JSON format specified
+
+         ## Output Format
+         Respond with this exact JSON structure:
+         ```json
+         {
+            "pii_flag": true/false,
+            "justification": "Brief explanation of why PII was or was not detected",
+            "confidence_score": 0.0
+         }
+         ```
+
+         ## Requirements
+         - Use boolean values (true/false) for pii_flag
+         - Keep justification concise and specific
+         - Confidence score must be between 0.0 and 1.0
+         - Focus only on clear, identifiable PII
+         - Do not flag indirect identifiers or unique demographic combinations
+
+         Analyse the following text:
+         {text} $$);
 
 -- Populating Themes
 INSERT INTO themes (id, name, definition, keywords, examples)

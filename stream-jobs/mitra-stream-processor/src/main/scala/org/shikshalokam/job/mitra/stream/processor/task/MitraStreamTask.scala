@@ -49,15 +49,23 @@ object MitraStreamTask {
 
     if (streamType.contains("story") || (streamType.isEmpty && config.isStoryStreamEnabled)) {
       val storySource = kafkaConnector.kafkaJobRequestSource[StoryEvent](config.storyInputTopic)
-      val parallelism = config.storyConsumerParallelism
+      val parallelism = if (streamType.contains("story")) 1 else config.storyConsumerParallelism
 
-      env.addSource(storySource)
+      val inputStream = env.addSource(storySource)
         .name("story-consumer").uid("story-consumer")
         .setParallelism(parallelism).rebalance
-        .process(new StoryStreamFunction(config))
-        .getSideOutput(config.storyOutputTag)
+
+      val processedStream = applyStoryAsync(inputStream, config)
+
+      // Sink for feed (PII) analysis output
+      processedStream.getSideOutput(config.feedOutputTag)
         .addSink(kafkaConnector.kafkaStringSink(config.storyOutputTopic))
-        .name("story-sink").setParallelism(config.storySinkParallelism)
+        .name("feed-pii-sink").setParallelism(config.storySinkParallelism)
+
+      // Sink for story ranking output
+      processedStream.getSideOutput(config.storyRankingOutputTag)
+        .addSink(kafkaConnector.kafkaStringSink(config.storyOutputTopic))
+        .name("story-ranking-sink").setParallelism(config.storySinkParallelism)
     }
 
     env.execute("Stream Processor Job")
@@ -67,7 +75,7 @@ object MitraStreamTask {
     val asyncStream = AsyncDataStream.unorderedWait(
       inputStream,
       new DiscussionStreamFunction(config),
-      30000L,
+      60000L,
       TimeUnit.MILLISECONDS,
       100
     ).name("discussion-async-processor").uid("discussion-async-processor")
@@ -83,4 +91,37 @@ object MitraStreamTask {
       }
     })
   }
+
+  private def applyStoryAsync(inputStream: DataStream[StoryEvent], config: MitraStreamConfig): DataStream[StoryEvent] = {
+
+    val asyncStream = AsyncDataStream.unorderedWait(
+      inputStream,
+      new StoryStreamFunction(config),
+      120000L, // 120 seconds timeout (increased for PDF download and processing)
+      TimeUnit.MILLISECONDS,
+      10
+    ).name("story-async-processor").uid("story-async-processor")
+
+    asyncStream.process(new ProcessFunction[StoryEvent, StoryEvent] {
+      override def processElement(value: StoryEvent, ctx: ProcessFunction[StoryEvent, StoryEvent]#Context, out: Collector[StoryEvent]): Unit = {
+        val feedOutputData = Map(
+          "storyId" -> value.id,
+          "title" -> value.title,
+          "pii_analysis_status" -> "completed",
+          "processing_type" -> "pii_analysis"
+        )
+        ctx.output(config.feedOutputTag, ScalaJsonUtil.serialize(feedOutputData))
+
+        val storyOutputData = Map(
+          "storyId" -> value.id,
+          "title" -> value.title,
+          "ranking_status" -> "completed",
+          "processing_type" -> "story_ranking"
+        )
+        ctx.output(config.storyRankingOutputTag, ScalaJsonUtil.serialize(storyOutputData))
+        out.collect(value)
+      }
+    }).name("story-output-processor").uid("story-output-processor")
+  }
+
 }

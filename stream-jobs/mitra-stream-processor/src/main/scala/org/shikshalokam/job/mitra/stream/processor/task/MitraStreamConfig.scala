@@ -31,6 +31,8 @@ class MitraStreamConfig(override val config: Config) extends BaseJobConfig(confi
   val storyProcessParallelism: Int = config.getInt("task.story.process.parallelism")
   val storySinkParallelism: Int = config.getInt("task.story.sink.parallelism")
   val storyOutputTag = new OutputTag[String]("story-dashboard-events")
+  val feedOutputTag = new OutputTag[String]("feed-output-events")
+  val storyRankingOutputTag = new OutputTag[String]("story-output-events")
   val isTestMode: Boolean = config.hasPath("test.mode") && config.getBoolean("test.mode")
   val isStoryStreamEnabled: Boolean = if (config.hasPath("kafka.input.story.enabled")) config.getBoolean("kafka.input.story.enabled") else false
 
@@ -64,6 +66,7 @@ class MitraStreamConfig(override val config: Config) extends BaseJobConfig(confi
   val themesTable: String = config.getString("postgres.tables.themesTable")
   val discussionsTable: String = config.getString("postgres.tables.discussionsTable")
   val voicesTable: String = config.getString("postgres.tables.voicesTable")
+  val storiesMetaTable: String = config.getString("postgres.tables.storiesMetaTable")
   val storiesTable: String = config.getString("postgres.tables.storiesTable")
   val feedsTable: String = config.getString("postgres.tables.feedsTable")
 
@@ -86,5 +89,32 @@ class MitraStreamConfig(override val config: Config) extends BaseJobConfig(confi
 
   // Sql queries
   val thematicAnalyzerQuery: String = s"SELECT pv.content FROM $promptsTable p JOIN $promptsVersionsTable pv ON pv.id = p.current_version_id WHERE p.name = 'Thematic Analyzer' LIMIT 1;"
+  val piiAnalyzerQuery: String = s"SELECT pv.content FROM $promptsTable p JOIN $promptsVersionsTable pv ON pv.id = p.current_version_id WHERE p.name = 'Pii Analyzer' LIMIT 1;"
+  val storyAnalyzerQuery: String = s"SELECT pv.content FROM $promptsTable p JOIN $promptsVersionsTable pv ON pv.id = p.current_version_id WHERE p.name = 'Story Analyzer' LIMIT 1;"
+
+  // === Cloud Storage Configuration ===
+  val cloudStorageProvider: String = config.getString("cloud.storage.provider") // "s3", "gcp", "oracle"
+  val cloudBucketName: String = config.getString("cloud.storage.bucket.name")
+  val cloudRegion: String = config.getString("cloud.storage.region")
+  val makePublic: Boolean = if (config.hasPath("cloud.storage.make.public")) {
+    config.getBoolean("cloud.storage.make.public")
+  } else true
+
+  // === GCP Specific Configuration ===
+  val gcpProjectId: String = if (config.hasPath("gcp.project.id")) {
+    config.getString("gcp.project.id")
+  } else ""
+
+  val gcpCredentialsPath: String = if (config.hasPath("gcp.credentials.path")) {
+    config.getString("gcp.credentials.path")
+  } else ""
+
+  // === S3 Specific Configuration (for backward compatibility) ===
+  val s3BucketName: String = cloudBucketName
+  val s3Region: String = cloudRegion
+
+  val baseUrl: String = config.getString("base.url")
+
+
 
 }

@@ -12,7 +12,6 @@ import org.shikshalokam.job.connector.FlinkKafkaConnector
 import org.shikshalokam.job.mitra.stream.processor.domain.DiscussionEvent
 import org.shikshalokam.job.mitra.stream.processor.task.{MitraStreamConfig, MitraStreamTask}
 
-
 class DiscussionStreamFunctionTestSpec extends BaseTestSpec {
 
   implicit val mapTypeInfo: TypeInformation[java.util.Map[String, AnyRef]] = TypeExtractor.getForClass(classOf[java.util.Map[String, AnyRef]])
