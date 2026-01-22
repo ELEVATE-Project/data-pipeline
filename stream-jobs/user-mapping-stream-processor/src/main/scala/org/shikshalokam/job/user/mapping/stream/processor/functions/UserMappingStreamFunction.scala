@@ -88,6 +88,11 @@ class UserMappingStreamFunction(config: UserMappingStreamConfig)(implicit val ma
           logger.info(s"[UserMappingStreamFunction] Successfully updated profile for studentId=$studentId")
           metrics.incCounter(config.successCount)
           
+        case Success(false) =>
+          println(s"[UserMappingStreamFunction] FAILED: API returned success=false for studentId=$studentId")
+          logger.warn(s"[UserMappingStreamFunction] API returned success=false for studentId=$studentId")
+          metrics.incCounter(config.skipCount)
+
         case Failure(exception) =>
           println(s"[UserMappingStreamFunction] FAILED: Could not update profile for studentId=$studentId: ${exception.getMessage}")
           logger.error(s"[UserMappingStreamFunction] Failed to update profile for studentId=$studentId", exception)

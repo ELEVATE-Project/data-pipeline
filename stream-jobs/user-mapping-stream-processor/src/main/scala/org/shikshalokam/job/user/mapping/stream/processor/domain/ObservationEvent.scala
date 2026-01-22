@@ -27,9 +27,10 @@ class ObservationEvent(eventMap: java.util.Map[String, Any], partition: Int, off
   def eventType: String = readOrDefault[String]("eventType", null)
   
   def studentId: String = {
-    // Support both "id" (numeric) and "studentId" (string) for backward compatibility
+    // Support "id", "studentId", and "createdBy"
     val idValue = readOrDefault[Any]("id", null)
     val studentIdValue = readOrDefault[String]("studentId", null)
+    val createdByValue = readOrDefault[String]("createdBy", null)
     
     if (idValue != null) {
       // Convert numeric ID to string
@@ -40,6 +41,8 @@ class ObservationEvent(eventMap: java.util.Map[String, Any], partition: Int, off
       }
     } else if (studentIdValue != null) {
       studentIdValue
+    } else if (createdByValue != null) {
+      createdByValue
     } else {
       null
     }
@@ -56,15 +59,15 @@ class ObservationEvent(eventMap: java.util.Map[String, Any], partition: Int, off
   }
   
   def observationData: util.Map[String, Any] = {
-    val data = readOrDefault[Any]("observationData", null)
-    if (data == null) {
-      new util.HashMap[String, Any]()
-    } else {
-      data match {
-        case javaMap: util.Map[String, Any] => javaMap
-        case scalaMap: scala.collection.Map[String, Any] => scalaMap.asJava
+    val userProfile = readOrDefault[Any]("userProfile", null)
+    if (userProfile != null) {
+      userProfile match {
+        case javaMap: util.Map[_, _] => javaMap.asInstanceOf[util.Map[String, Any]]
+        case scalaMap: scala.collection.Map[_, _] => scalaMap.asInstanceOf[scala.collection.Map[String, Any]].asJava
         case _ => new util.HashMap[String, Any]()
       }
+    } else {
+      new util.HashMap[String, Any]()
     }
   }
   

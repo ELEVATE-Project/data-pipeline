@@ -43,8 +43,9 @@ object FieldMapper {
       }
       
       val configMap = config.entrySet().asScala.map { entry =>
-        val key = entry.getKey
-        val value = config.getString(key)
+        val rawKey = entry.getKey
+        val key = rawKey.replaceAll("\"", "")
+        val value = config.getString(rawKey)
         (key, value)
       }.toMap
       
@@ -56,6 +57,25 @@ object FieldMapper {
         println(s"[FieldMapper] ERROR: Failed to load field-mappings.conf: ${e.getMessage}")
         e.printStackTrace()
         Map.empty[String, String]
+    }
+  }
+  
+  /**
+   * Check if a value is null or empty
+   * @param value The value to check
+   * @return true if value is null, empty string, or empty collection
+   */
+  private def isValueEmpty(value: Any): Boolean = {
+    if (value == null) {
+      return true
+    }
+    
+    value match {
+      case s: String => s.trim.isEmpty
+      case coll: java.util.Collection[_] => coll.isEmpty
+      case arr: Array[_] => arr.isEmpty
+      case map: java.util.Map[_, _] => map.isEmpty
+      case _ => false // Other types (numbers, booleans) are not considered empty
     }
   }
   
@@ -94,7 +114,10 @@ object FieldMapper {
           // Get value from observation data
           val value = observationData.get(sourceField)
           
-          if (value != null) {
+          // Check if value is null or empty, and skip if so
+          if (isValueEmpty(value)) {
+            println(s"[FieldMapper] Source field '$sourceField' is null or empty, skipping")
+          } else {
             // Parse target path (e.g., "profile.phone" -> ["profile", "phone"])
             val pathParts = targetPath.split("\\.")
             
@@ -125,8 +148,6 @@ object FieldMapper {
             } else {
               println(s"[FieldMapper] WARNING: Invalid target path format: $targetPath (expected format: 'profile.field')")
             }
-          } else {
-            println(s"[FieldMapper] Source field '$sourceField' not found in observation data, skipping")
           }
         } catch {
           case e: Exception =>
