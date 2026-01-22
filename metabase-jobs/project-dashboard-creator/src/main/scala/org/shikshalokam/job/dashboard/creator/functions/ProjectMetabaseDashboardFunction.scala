@@ -210,8 +210,8 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
          */
         println("\n-->> Process Admin Programs Collection and project solution Dashboard")
         if (targetedSolutionId.nonEmpty && solutionName.nonEmpty && targetedProgramId.nonEmpty && programName.nonEmpty) {
-          val programCollectionName = s"$programName [org : $orgId]"
-          val programCollectionDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $programExternalId\n\nCollection For: Admin\n\nProgram Description: $programDescription"
+          val programCollectionName = s"$programName"
+          val programCollectionDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $programExternalId\n\nCreator Organisation: $orgId\n\nCollection For: Admin\n\nProgram Description: $programDescription"
           val solutionCollectionName = s"$solutionName [Project]"
           val solutionCollectionDescription = s"Solution Id: $targetedSolutionId\n\nSolution External Id: $solutionExternalId\n\nCollection For: Admin\n\nSolution Description: $solutionDescription"
 
@@ -244,8 +244,8 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
          */
         println("\n-->> Process Program Manager Collection and project solution Dashboard")
         if (targetedSolutionId.nonEmpty && solutionName.nonEmpty && targetedProgramId.nonEmpty && programName.nonEmpty) {
-          val programCollectionName = s"$programName [org : $orgId]"
-          val programCollectionDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $programExternalId\n\nCollection For: Program Manager\n\nProgram Description: $programDescription"
+          val programCollectionName = s"$programName"
+          val programCollectionDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $programExternalId\n\nCreator Organisation: $orgId\n\nCollection For: Program Manager\n\nProgram Description: $programDescription"
           val solutionCollectionName = s"$solutionName [Project]"
           val solutionCollectionDescription = s"Solution Id: $targetedSolutionId\n\nSolution External Id: $solutionExternalId\n\nCollection For: Program Manager\n\nSolution Description: $solutionDescription"
 
