@@ -37,7 +37,7 @@ object UnifiedStreamTask {
     val env = FlinkUtil.getExecutionContext(config)
 
     if (config.isProjectStreamEnabled) {
-      val projectSource = kafkaConnector.kafkaJobRequestSource[ProjectEvent](config.projectInputTopic)
+      val projectSource = kafkaConnector.kafkaJobRequestSource[ProjectEvent](config.projectInputTopic, config.projectConsumerGroup)
       val projectStream = env.addSource(projectSource)
         .name("project-consumer").uid("project-consumer")
         .setParallelism(config.projectConsumerParallelism).rebalance
@@ -51,7 +51,7 @@ object UnifiedStreamTask {
     }
 
     if (config.isSurveyStreamEnabled) {
-      val surveySource = kafkaConnector.kafkaJobRequestSource[SurveyEvent](config.surveyInputTopic)
+      val surveySource = kafkaConnector.kafkaJobRequestSource[SurveyEvent](config.surveyInputTopic, config.surveyConsumerGroup)
       val surveyStream = env.addSource(surveySource)
         .name("survey-consumer").uid("survey-consumer")
         .setParallelism(config.surveyConsumerParallelism).rebalance
@@ -65,7 +65,7 @@ object UnifiedStreamTask {
     }
 
     if (config.isObservationStreamEnabled) {
-      val observationSource = kafkaConnector.kafkaJobRequestSource[ObservationEvent](config.observationInputTopic)
+      val observationSource = kafkaConnector.kafkaJobRequestSource[ObservationEvent](config.observationInputTopic, config.observationConsumerGroup)
       val observationStream = env.addSource(observationSource)
         .name("observation-consumer").uid("observation-consumer")
         .setParallelism(config.observationConsumerParallelism).rebalance
@@ -79,7 +79,7 @@ object UnifiedStreamTask {
     }
 
     if (config.isUserStreamEnabled) {
-      val userSource = kafkaConnector.kafkaJobRequestSource[UserEvent](config.userInputTopic)
+      val userSource = kafkaConnector.kafkaJobRequestSource[UserEvent](config.userInputTopic, config.userConsumerGroup)
       val userStream = env.addSource(userSource)
         .name("user-consumer").uid("user-consumer")
         .setParallelism(config.userConsumerParallelism).rebalance
@@ -93,7 +93,7 @@ object UnifiedStreamTask {
     }
 
     if (config.isMentoringStreamEnabled) {
-      val mentoringSource = kafkaConnector.kafkaJobRequestSource[MentoringEvent](config.mentoringInputTopic)
+      val mentoringSource = kafkaConnector.kafkaJobRequestSource[MentoringEvent](config.mentoringInputTopic, config.mentoringConsumerGroup)
       val mentoringStream = env.addSource(mentoringSource)
         .name("mentoring-consumer").uid("mentoring-consumer")
         .setParallelism(config.mentoringConsumerParallelism).rebalance
@@ -114,7 +114,7 @@ object UnifiedStreamTask {
 
     streamType match {
       case "project" =>
-        val projectSource = kafkaConnector.kafkaJobRequestSource[ProjectEvent](config.projectInputTopic)
+        val projectSource = kafkaConnector.kafkaJobRequestSource[ProjectEvent](config.projectInputTopic, config.projectConsumerGroup)
         val projectStream = env.addSource(projectSource)
           .name("project-consumer").uid("project-consumer")
           .setParallelism(1).rebalance
@@ -127,7 +127,7 @@ object UnifiedStreamTask {
           .name("project-sink").setParallelism(1)
 
       case "survey" =>
-        val surveySource = kafkaConnector.kafkaJobRequestSource[SurveyEvent](config.surveyInputTopic)
+        val surveySource = kafkaConnector.kafkaJobRequestSource[SurveyEvent](config.surveyInputTopic, config.surveyConsumerGroup)
         val surveyStream = env.addSource(surveySource)
           .name("survey-consumer").uid("survey-consumer")
           .setParallelism(config.surveyConsumerParallelism).rebalance
@@ -140,7 +140,7 @@ object UnifiedStreamTask {
           .name("test-survey-sink").setParallelism(config.surveySinkParallelism)
 
       case "observation" =>
-        val observationSource = kafkaConnector.kafkaJobRequestSource[ObservationEvent](config.observationInputTopic)
+        val observationSource = kafkaConnector.kafkaJobRequestSource[ObservationEvent](config.observationInputTopic, config.observationConsumerGroup)
         val observationStream = env.addSource(observationSource)
           .name("observation-consumer").uid("observation-consumer")
           .setParallelism(config.observationConsumerParallelism).rebalance
@@ -153,7 +153,7 @@ object UnifiedStreamTask {
           .name("test-observation-sink").setParallelism(config.observationSinkParallelism)
 
       case "user" =>
-        val userSource = kafkaConnector.kafkaJobRequestSource[UserEvent](config.userInputTopic)
+        val userSource = kafkaConnector.kafkaJobRequestSource[UserEvent](config.userInputTopic, config.userConsumerGroup)
         val userStream = env.addSource(userSource)
           .name("user-consumer").uid("user-consumer")
           .setParallelism(config.userConsumerParallelism).rebalance
@@ -166,7 +166,7 @@ object UnifiedStreamTask {
           .name("user-sink").setParallelism(config.userSinkParallelism)
 
       case "mentoring" =>
-        val mentoringSource = kafkaConnector.kafkaJobRequestSource[MentoringEvent](config.mentoringInputTopic)
+        val mentoringSource = kafkaConnector.kafkaJobRequestSource[MentoringEvent](config.mentoringInputTopic, config.mentoringConsumerGroup)
         val mentoringStream = env.addSource(mentoringSource)
           .name("mentoring-consumer").uid("mentoring-consumer")
           .setParallelism(config.mentoringConsumerParallelism).rebalance

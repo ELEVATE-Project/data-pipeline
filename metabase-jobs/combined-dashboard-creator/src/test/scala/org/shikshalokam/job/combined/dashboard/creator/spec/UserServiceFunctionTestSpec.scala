@@ -10,8 +10,9 @@ import org.mockito.Mockito.when
 import org.shikshalokam.BaseTestSpec
 import org.shikshalokam.job.connector.FlinkKafkaConnector
 import org.shikshalokam.job.combined.dashboard.creator.domain.UserMappingEvent
-import org.shikshalokam.job.combined.dashboard.creator.task.CombinedDashboardCreatorTask
 import org.shikshalokam.job.combined.dashboard.creator.task.{CombinedDashboardCreatorConfig, CombinedDashboardCreatorTask}
+import org.shikshalokam.job.util.MetabaseUtil
+
 class UserServiceFunctionTestSpec extends BaseTestSpec {
   implicit val mapTypeInfo: TypeInformation[java.util.Map[String, AnyRef]] = TypeExtractor.getForClass(classOf[java.util.Map[String, AnyRef]])
   implicit val eventTypeInfo: TypeInformation[UserMappingEvent] = TypeExtractor.getForClass(classOf[UserMappingEvent])
@@ -24,6 +25,7 @@ class UserServiceFunctionTestSpec extends BaseTestSpec {
     .build)
 
   val mockKafkaUtil: FlinkKafkaConnector = mock[FlinkKafkaConnector](Mockito.withSettings().serializable())
+  val mockMetabaseUtil: MetabaseUtil = mock[MetabaseUtil](Mockito.withSettings().serializable())
 
   val config: Config = ConfigFactory.load("test.conf")
     .withValue("kafka.input.mentoring.enabled", ConfigValueFactory.fromAnyRef(false))
@@ -47,16 +49,16 @@ class UserServiceFunctionTestSpec extends BaseTestSpec {
   }
 
   def initialize() {
-    when(mockKafkaUtil.kafkaJobRequestSource[UserMappingEvent](jobConfig.userServiceInputTopic))
+    when(mockKafkaUtil.kafkaJobRequestSource[UserMappingEvent](jobConfig.userServiceInputTopic, jobConfig.userServiceConsumerGroup))
       .thenReturn(new UserServiceEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.notificationOutputTopic))
       .thenReturn(new GenerateUserServiceSink)
-    when(mockKafkaUtil.kafkaJobRequestSource[UserMappingEvent](jobConfig.programServiceInputTopic))
+    when(mockKafkaUtil.kafkaJobRequestSource[UserMappingEvent](jobConfig.programServiceInputTopic, jobConfig.programServiceConsumerGroup))
       .thenReturn(new ProgramServiceEventSource)
   }
 
   "User Service Job " should "execute successfully " in {
     initialize()
-    CombinedDashboardCreatorTask.runJob(jobConfig, mockKafkaUtil)
+    CombinedDashboardCreatorTask.runJob(jobConfig, mockKafkaUtil, null, mockMetabaseUtil)
   }
 }

@@ -35,7 +35,9 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
     val metabasePassword: String = config.metabasePassword
     val connectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$pgDataBase"
     postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
-    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword)
+    if (metabaseUtil == null) {
+      metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword)
+    }
   }
 
   override def close(): Unit = {

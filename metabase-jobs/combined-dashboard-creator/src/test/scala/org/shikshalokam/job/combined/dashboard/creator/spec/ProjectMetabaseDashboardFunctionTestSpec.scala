@@ -48,7 +48,7 @@ class ProjectMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
   }
 
   def initialize() {
-    when(mockKafkaUtil.kafkaJobRequestSource[ProjectEvent](jobConfig.projectInputTopic))
+    when(mockKafkaUtil.kafkaJobRequestSource[ProjectEvent](jobConfig.projectInputTopic, jobConfig.projectConsumerGroup))
       .thenReturn(new ProjectMetabaseEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.projectInputTopic)).thenReturn(new GenerateProjectSink)
   }

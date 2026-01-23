@@ -30,7 +30,45 @@ class CombinedDashboardCreatorConfig(override val config: Config) extends BaseJo
   val userServiceOutputTag: OutputTag[String] = OutputTag[String]("user-service-output-event")
 
   // Parallelism
-  override val parallelism: Int = config.getInt("task.sl.metabase.dashboard.parallelism")
+  override val parallelism: Int = 1
+
+  // Mentoring
+  val mentoringConsumerParallelism: Int = config.getInt("task.mentoring.consumer.parallelism")
+  val mentoringProcessParallelism: Int = config.getInt("task.mentoring.process.parallelism")
+  val mentoringConsumerGroup: String = config.getString("kafka.consumer.mentoring.group")
+
+  // Observation
+  val observationConsumerParallelism: Int = config.getInt("task.observation.consumer.parallelism")
+  val observationProcessParallelism: Int = config.getInt("task.observation.process.parallelism")
+  val observationConsumerGroup: String = config.getString("kafka.consumer.observation.group")
+
+  // Project
+  val projectConsumerParallelism: Int = config.getInt("task.project.consumer.parallelism")
+  val projectProcessParallelism: Int = config.getInt("task.project.process.parallelism")
+  val projectConsumerGroup: String = config.getString("kafka.consumer.project.group")
+
+  // Survey
+  val surveyConsumerParallelism: Int = config.getInt("task.survey.consumer.parallelism")
+  val surveyProcessParallelism: Int = config.getInt("task.survey.process.parallelism")
+  val surveyConsumerGroup: String = config.getString("kafka.consumer.survey.group")
+
+  // User
+  val userConsumerParallelism: Int = config.getInt("task.user.consumer.parallelism")
+  val userProcessParallelism: Int = config.getInt("task.user.process.parallelism")
+  val userConsumerGroup: String = config.getString("kafka.consumer.user.group")
+
+  // User Service
+  val userServiceConsumerParallelism: Int = config.getInt("task.userservice.consumer.parallelism")
+  val userServiceProcessParallelism: Int = config.getInt("task.userservice.process.parallelism")
+  val userServiceConsumerGroup: String = config.getString("kafka.consumer.userservice.group")
+
+  // Program Service
+  val programServiceConsumerParallelism: Int = config.getInt("task.programservice.consumer.parallelism")
+  val programServiceProcessParallelism: Int = config.getInt("task.programservice.process.parallelism")
+  val programServiceConsumerGroup: String = config.getString("kafka.consumer.programservice.group")
+
+  // Notification
+  val notificationProducerParallelism: Int = config.getInt("task.notification.producer.parallelism")
 
   // Metrics
   val metabaseDashboardCleanupHit: String = "metabase-dashboard-cleanup-hit"

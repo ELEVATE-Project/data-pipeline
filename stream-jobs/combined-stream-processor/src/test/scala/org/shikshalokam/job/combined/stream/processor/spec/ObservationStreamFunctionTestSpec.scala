@@ -43,7 +43,7 @@ class ObservationStreamFunctionTestSpec extends BaseTestSpec {
   }
 
   def initialize(): Unit = {
-    when(mockKafkaUtil.kafkaJobRequestSource[ObservationEvent](jobConfig.observationInputTopic))
+    when(mockKafkaUtil.kafkaJobRequestSource[ObservationEvent](jobConfig.observationInputTopic, jobConfig.observationConsumerGroup))
       .thenReturn(new ObservationEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.observationOutputTopic))
       .thenReturn(new GenerateObservationSink)

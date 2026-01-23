@@ -46,7 +46,7 @@ class UserMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
   }
 
   def initialize(): Unit = {
-    when(mockKafkaUtil.kafkaJobRequestSource[UserEvent](jobConfig.userInputTopic))
+    when(mockKafkaUtil.kafkaJobRequestSource[UserEvent](jobConfig.userInputTopic, jobConfig.userConsumerGroup))
       .thenReturn(new UserMetabaseEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.userInputTopic)).thenReturn(new GenerateUserSink)
   }

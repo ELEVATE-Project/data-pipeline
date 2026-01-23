@@ -32,6 +32,12 @@ class FlinkKafkaConnector(config: BaseJobConfig) extends Serializable {
     new FlinkKafkaConsumer[T](kafkaTopic, new JobRequestDeserializationSchema[T], config.kafkaConsumerProperties)
   }
 
+  def kafkaJobRequestSource[T <: JobRequest](kafkaTopic: String, groupId: String)(implicit m: Manifest[T]): SourceFunction[T] = {
+    val properties = config.kafkaConsumerProperties
+    properties.setProperty("group.id", groupId)
+    new FlinkKafkaConsumer[T](kafkaTopic, new JobRequestDeserializationSchema[T], properties)
+  }
+
   def kafkaJobRequestSink[T <: JobRequest](kafkaTopic: String)(implicit m: Manifest[T]): SinkFunction[T] = {
     new FlinkKafkaProducer[T](kafkaTopic,
       new JobRequestSerializationSchema[T](kafkaTopic), config.kafkaProducerProperties, Semantic.AT_LEAST_ONCE)
