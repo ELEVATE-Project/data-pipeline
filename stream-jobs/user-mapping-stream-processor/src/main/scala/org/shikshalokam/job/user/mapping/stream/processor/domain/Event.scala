@@ -5,23 +5,24 @@ import org.shikshalokam.job.domain.reader.JobRequest
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.time.Instant
+import scala.collection.JavaConverters._
 import scala.language.postfixOps
 
 class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) extends JobRequest(eventMap, partition, offset) {
 
   def eventType: String = readOrDefault[String]("eventType", null)
 
-  def userId: Int = readOrDefault[Int]("entityId", -1)
+  def userId: Int = readOrDefault[Int]("id", -1)
 
   def tenantCode: String = extractValue[String]("tenant_code").orNull
 
-  def username: String = extractValue[String]("username").orNull
+//  def username: String = extractValue[String]("username").orNull
 
   def name: String = extractValue[String]("name").orNull
 
   def status: String = extractValue[String]("status").orNull
 
-  def isDeleted: Boolean = extractValue[Boolean]("deleted").getOrElse(false)
+//  def isDeleted: Boolean = extractValue[Boolean]("deleted").getOrElse(false)
 
   def createdBy: Int = extractValue[Int]("created_by").getOrElse(-1)
 
@@ -126,6 +127,25 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
           }
       }
     case _ => new Timestamp(System.currentTimeMillis())
+  }
+
+  /**
+   * Extract userProfile from observation event
+   * Used for observation-submission events from Kafka topic dev.observation-submission
+   * 
+   * @return Map containing userProfile data, or empty map if not found
+   */
+  def userProfile: java.util.Map[String, Any] = {
+    val userProfileValue = readOrDefault[Any]("userProfile", null)
+    if (userProfileValue != null) {
+      userProfileValue match {
+        case javaMap: java.util.Map[_, _] => javaMap.asInstanceOf[java.util.Map[String, Any]]
+        case scalaMap: scala.collection.Map[_, _] => scalaMap.asInstanceOf[scala.collection.Map[String, Any]].asJava
+        case _ => new java.util.HashMap[String, Any]()
+      }
+    } else {
+      new java.util.HashMap[String, Any]()
+    }
   }
 
 }

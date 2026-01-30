@@ -35,9 +35,16 @@ class BaseJobConfig(val config: Config, val jobName: String) extends Serializabl
 
   def kafkaConsumerProperties: Properties = {
     val properties = new Properties()
-    properties.setProperty("bootstrap.servers", kafkaBrokerServers)
+    properties.setProperty("bootstrap.servers", "kafka:29092")
     properties.setProperty("group.id", groupId)
     properties.setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed")
+    
+    // Add timeout configurations to handle connection issues better
+    // Default timeout is 30 seconds, increase to 60 seconds for better reliability
+    properties.setProperty(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, "60000")
+    properties.setProperty(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000")
+    properties.setProperty(ConsumerConfig.METADATA_MAX_AGE_CONFIG, "300000")
+    
     kafkaAutoOffsetReset.map {
       properties.setProperty("auto.offset.reset", _)
     }
@@ -50,6 +57,11 @@ class BaseJobConfig(val config: Config, val jobName: String) extends Serializabl
     properties.put(ProducerConfig.LINGER_MS_CONFIG, new Integer(10))
     properties.put(ProducerConfig.BATCH_SIZE_CONFIG, new Integer(16384 * 4))
     properties.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy")
+    
+    // Add timeout configurations for producer
+    properties.setProperty(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, "60000")
+    properties.setProperty(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, "120000")
+    
     properties
   }
 

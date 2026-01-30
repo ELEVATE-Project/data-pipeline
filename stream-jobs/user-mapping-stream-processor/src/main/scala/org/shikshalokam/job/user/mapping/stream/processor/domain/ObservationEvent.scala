@@ -26,25 +26,49 @@ class ObservationEvent(eventMap: java.util.Map[String, Any], partition: Int, off
 
   def eventType: String = readOrDefault[String]("eventType", null)
   
-  def studentId: String = {
-    // Support "id", "studentId", and "createdBy"
-    val idValue = readOrDefault[Any]("id", null)
-    val studentIdValue = readOrDefault[String]("studentId", null)
-    val createdByValue = readOrDefault[String]("createdBy", null)
+  def id: String = {
+    // Priority order: userProfile.id > entityId > id (root) > oldValues.id/newValues.id
     
+    // 1. Try userProfile.id first (highest priority)
+    val userProfileId = readOrDefault[Any]("userProfile.id", null)
+    if (userProfileId != null) {
+      return convertToString(userProfileId)
+    }
+    
+    // 2. Try entityId at root level
+    val entityIdValue = readOrDefault[Any]("entityId", null)
+    if (entityIdValue != null) {
+      return convertToString(entityIdValue)
+    }
+    
+    // 3. Try id at root level
+    val idValue = readOrDefault[Any]("id", null)
     if (idValue != null) {
-      // Convert numeric ID to string
-      idValue match {
-        case n: Number => n.toString
-        case s: String => s
-        case _ => idValue.toString
+      return convertToString(idValue)
+    }
+    
+    // 4. For update events, try oldValues.id or newValues.id
+    if (eventType == "update" || eventType == "bulk-update") {
+      val newValuesId = readOrDefault[Any]("newValues.id", null)
+      if (newValuesId != null) {
+        return convertToString(newValuesId)
       }
-    } else if (studentIdValue != null) {
-      studentIdValue
-    } else if (createdByValue != null) {
-      createdByValue
-    } else {
-      null
+      
+      val oldValuesId = readOrDefault[Any]("oldValues.id", null)
+      if (oldValuesId != null) {
+        return convertToString(oldValuesId)
+      }
+    }
+    
+    null
+  }
+  
+  private def convertToString(value: Any): String = {
+    if (value == null) return null
+    value match {
+      case n: Number => n.toString
+      case s: String => s
+      case _ => value.toString
     }
   }
   
@@ -72,6 +96,6 @@ class ObservationEvent(eventMap: java.util.Map[String, Any], partition: Int, off
   }
   
   override def toString: String = {
-    s"ObservationEvent(eventType=$eventType, studentId=$studentId, organizationId=$organizationId)"
+    s"ObservationEvent(eventType=$eventType, id=$id, organizationId=$organizationId)"
   }
 }
