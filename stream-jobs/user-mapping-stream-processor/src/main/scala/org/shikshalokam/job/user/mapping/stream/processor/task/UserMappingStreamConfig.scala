@@ -50,6 +50,10 @@ class UserMappingStreamConfig(override val config: Config) extends BaseJobConfig
   val userMetrics: String = config.getString("postgres.tables.userMetrics")
   val dashboardMetadata: String = config.getString("postgres.tables.dashboardMetadataTable")
 
+  // User Service API Configuration
+  val userServiceBaseUrl: String = config.getString("userService.baseUrl")
+  val userServiceAuthToken: String = config.getString("userService.authToken")
+
   val createTenantUserMetadataTable: String =
     s"""
        |CREATE TABLE IF NOT EXISTS @tenantTable (

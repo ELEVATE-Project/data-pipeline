@@ -154,7 +154,7 @@ class UserMappingStreamFunction(config: UserMappingStreamConfig)(implicit val ma
       // Call User Service API to patch the profile
       // Only non-empty fields will be included in the update request
       println(s"[UserMappingStreamFunction] Calling UserApiClient.patchProfile for id=$id...")
-      UserApiClient.patchProfile(id, profileData) match {
+      UserApiClient.patchProfile(id, profileData, config.userServiceBaseUrl, config.userServiceAuthToken) match {
         case Success(true) =>
           println(s"[UserMappingStreamFunction] SUCCESS: Profile updated for id=$id with ${profileFields.size} field(s)")
           logger.info(s"[UserMappingStreamFunction] Successfully updated profile for id=$id with fields: ${profileFields.keys.mkString(", ")}")

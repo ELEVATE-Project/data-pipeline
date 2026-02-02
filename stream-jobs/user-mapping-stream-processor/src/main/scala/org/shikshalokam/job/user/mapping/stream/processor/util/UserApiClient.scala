@@ -9,7 +9,7 @@ import scala.util.{Failure, Success, Try}
 /**
  * HTTP client for making PATCH requests to User Service API
  * 
- * Endpoint: PATCH http://localhost:7001/user/v1/user/update
+ * Endpoint: PATCH {baseUrl}/user/v1/user/update
  * Header: X-auth-token: {token}
  * Content-Type: application/json
  */
@@ -17,21 +17,16 @@ object UserApiClient {
   
   private val logger = LoggerFactory.getLogger(UserApiClient.getClass)
   
-  // User Service Configuration
-  private val BASE_URL = "http://172.132.44.221:7001"
-  private val AUTH_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjozMDg3LCJuYW1lIjoiZmFyYWJpIFVwZGF0ZWQgdHdvIiwic2Vzc2lvbl9pZCI6MjMwMjgsIm9yZ2FuaXphdGlvbl9pZHMiOlsiNjciXSwib3JnYW5pemF0aW9uX2NvZGVzIjpbImJyYWNfZ2JsIl0sInRlbmFudF9jb2RlIjoiYnJhYyIsIm9yZ2FuaXphdGlvbnMiOlt7ImlkIjo2NywibmFtZSI6IkJSQUMgR0JMIG9yZyIsImNvZGUiOiJicmFjX2dibCIsImRlc2NyaXB0aW9uIjoiQlJBQyBHQkwgb3JnIiwic3RhdHVzIjoiQUNUSVZFIiwicmVsYXRlZF9vcmdzIjpudWxsLCJ0ZW5hbnRfY29kZSI6ImJyYWMiLCJtZXRhIjpudWxsLCJjcmVhdGVkX2J5IjpudWxsLCJ1cGRhdGVkX2J5IjoxLCJyb2xlcyI6W3siaWQiOjIxMywidGl0bGUiOiJzZXNzaW9uX21hbmFnZXIiLCJsYWJlbCI6IkxpbmthZ2UgQ2hhbXBpb24iLCJ1c2VyX3R5cGUiOjAsInN0YXR1cyI6IkFDVElWRSIsIm9yZ2FuaXphdGlvbl9pZCI6NjcsInZpc2liaWxpdHkiOiJQVUJMSUMiLCJ0ZW5hbnRfY29kZSI6ImJyYWMiLCJ0cmFuc2xhdGlvbnMiOm51bGx9XX1dfSwiaWF0IjoxNzY5NzUxNjcxLCJleHAiOjE3Njk4MzgwNzF9.wJpLStvXoU81vGQtIijs867BC7QJWO2F1w5F8W1X8-8"
-  
-  println(s"[UserApiClient] Initialized with BASE_URL: $BASE_URL")
-  println(s"[UserApiClient] AUTH_TOKEN configured: ${if (AUTH_TOKEN.nonEmpty) "***" else "NOT SET"}")
-  
   /**
    * Patch user profile data for a user
    * 
    * @param id The user ID to update
    * @param profileData JSON object containing profile data (e.g., {"profile": {"phone": "...", "gender": "..."}})
+   * @param baseUrl The base URL for the User Service API
+   * @param authToken The authentication token for the User Service API
    * @return Success(true) if update successful, Failure(exception) otherwise
    */
-  def patchProfile(id: String, profileData: Js.Obj): Try[Boolean] = {
+  def patchProfile(id: String, profileData: Js.Obj, baseUrl: String, authToken: String): Try[Boolean] = {
     if (id == null || id.trim.isEmpty) {
       val error = new IllegalArgumentException("id cannot be null or empty")
       logger.error("[UserApiClient] id is null or empty", error)
@@ -40,7 +35,10 @@ object UserApiClient {
     }
     
     try {
-      val url = s"$BASE_URL/user/v1/user/update"
+      val url = s"$baseUrl/user/v1/user/update"
+      
+      println(s"[UserApiClient] Initialized with BASE_URL: $baseUrl")
+      println(s"[UserApiClient] AUTH_TOKEN configured: ${if (authToken.nonEmpty) "***" else "NOT SET"}")
       
       // Merge id with profileData into a single payload
       // The API expects the payload directly, so we'll include id and merge profile fields
@@ -69,7 +67,7 @@ object UserApiClient {
       println(s"[UserApiClient] Request payload: $jsonPayload")
       
       val headers = Map(
-        "X-auth-token" -> AUTH_TOKEN,
+        "X-auth-token" -> authToken,
         "Content-Type" -> "application/json"
       )
       
@@ -109,10 +107,12 @@ object UserApiClient {
   
   /**
    * Test connection to user service (for debugging)
+   * 
+   * @param baseUrl The base URL for the User Service API
    */
-  def testConnection(): Try[Boolean] = {
+  def testConnection(baseUrl: String): Try[Boolean] = {
     try {
-      val url = s"$BASE_URL/api/users/health"
+      val url = s"$baseUrl/api/users/health"
       println(s"[UserApiClient] Testing connection to: $url")
       
       val response = requests.get(url)
