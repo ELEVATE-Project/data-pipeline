@@ -23,7 +23,6 @@ object FieldMapper {
   // Load field mappings from config file
   private val mappings: Map[String, String] = loadMappings()
   
-  println(s"[FieldMapper] Loaded ${mappings.size} field mappings")
   mappings.foreach { case (source, target) =>
     println(s"[FieldMapper] Mapping: $source -> $target")
   }
@@ -38,7 +37,6 @@ object FieldMapper {
       val config = ConfigFactory.parseResources("field-mappings.conf")
       if (config.isEmpty) {
         logger.warn("[FieldMapper] field-mappings.conf is empty or not found")
-        println("[FieldMapper] WARNING: field-mappings.conf is empty or not found")
         return Map.empty[String, String]
       }
       
@@ -49,12 +47,10 @@ object FieldMapper {
         (key, value)
       }.toMap
       
-      println(s"[FieldMapper] Successfully loaded ${configMap.size} mappings from field-mappings.conf")
       configMap
     } catch {
       case e: Exception =>
         logger.error(s"[FieldMapper] Failed to load field-mappings.conf: ${e.getMessage}", e)
-        println(s"[FieldMapper] ERROR: Failed to load field-mappings.conf: ${e.getMessage}")
         e.printStackTrace()
         Map.empty[String, String]
     }
@@ -177,7 +173,6 @@ object FieldMapper {
   def transform(observationData: util.Map[String, Any]): Js.Obj = {
     try {
       println(s"[FieldMapper] Starting transformation of userProfile data")
-      println(s"[FieldMapper] Input userProfile keys: ${observationData.keySet().asScala.mkString(", ")}")
       
       val profileObj = Obj()
       var mappedFieldsCount = 0
@@ -247,19 +242,17 @@ object FieldMapper {
         } catch {
           case e: Exception =>
             logger.error(s"[FieldMapper] Error mapping field $sourceField: ${e.getMessage}", e)
-            println(s"[FieldMapper] ERROR mapping field $sourceField: ${e.getMessage}")
         }
       }
       
       // Return the result with "profile" as root
       val result = Obj("profile" -> profileObj)
-      println(s"[FieldMapper] Transformation complete. Mapped $mappedFieldsCount non-empty fields. Result: ${result.render()}")
+      // println(s"[FieldMapper] Transformation complete. Mapped $mappedFieldsCount non-empty fields. Result: ${result.render()}")
       result
       
     } catch {
       case e: Exception =>
         logger.error(s"[FieldMapper] Error during transformation: ${e.getMessage}", e)
-        println(s"[FieldMapper] ERROR during transformation: ${e.getMessage}")
         e.printStackTrace()
         Obj("profile" -> Obj()) // Return empty profile on error
     }
