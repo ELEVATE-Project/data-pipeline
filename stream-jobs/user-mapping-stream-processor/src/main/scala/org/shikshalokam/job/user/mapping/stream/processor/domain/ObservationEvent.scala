@@ -9,17 +9,6 @@ import scala.collection.JavaConverters._
 /**
  * Case class to represent observation submission events from Kafka
  * 
- * Sample event structure:
- * {
- *   "eventType": "observation-submitted",
- *   "id": 3088,
- *   "organizationId": 1,
- *   "observationData": {
- *     "name": "Carol Miranda Updated Two",
- *     "about": "admin Update",
- *     "dob": "22-12-1990"
- *   }
- * }
  */
 class ObservationEvent(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
   extends JobRequest(eventMap, partition, offset) {
