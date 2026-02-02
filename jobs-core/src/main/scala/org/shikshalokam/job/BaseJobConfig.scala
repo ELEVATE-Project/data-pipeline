@@ -35,7 +35,7 @@ class BaseJobConfig(val config: Config, val jobName: String) extends Serializabl
 
   def kafkaConsumerProperties: Properties = {
     val properties = new Properties()
-    properties.setProperty("bootstrap.servers", "kafka:29092")
+    properties.setProperty("bootstrap.servers", "kafkaBrokerServers")
     properties.setProperty("group.id", groupId)
     properties.setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed")
     
