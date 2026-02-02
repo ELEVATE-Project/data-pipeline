@@ -65,13 +65,13 @@ object UserMappingStreamTask {
     
     // Log Kafka configuration for debugging
     val brokerServers = userMappingStreamConfig.kafkaBrokerServers
-    println(s"[UserMappingStreamTask] ========================================")
-    println(s"[UserMappingStreamTask] Kafka Configuration:")
-    println(s"[UserMappingStreamTask]   Broker Servers: $brokerServers")
-    println(s"[UserMappingStreamTask]   Group ID: ${userMappingStreamConfig.groupId}")
-    println(s"[UserMappingStreamTask]   Input Topic: ${userMappingStreamConfig.inputTopic}")
-    println(s"[UserMappingStreamTask]   Output Topic: ${userMappingStreamConfig.outputTopic}")
-    println(s"[UserMappingStreamTask] ========================================")
+    // println(s"[UserMappingStreamTask] ========================================")
+    // println(s"[UserMappingStreamTask] Kafka Configuration:")
+    // println(s"[UserMappingStreamTask]   Broker Servers: $brokerServers")
+    // println(s"[UserMappingStreamTask]   Group ID: ${userMappingStreamConfig.groupId}")
+    // println(s"[UserMappingStreamTask]   Input Topic: ${userMappingStreamConfig.inputTopic}")
+    // println(s"[UserMappingStreamTask]   Output Topic: ${userMappingStreamConfig.outputTopic}")
+    // println(s"[UserMappingStreamTask] ========================================")
     
     // Validate Kafka broker servers configuration
     if (brokerServers == null || brokerServers.trim.isEmpty) {
@@ -88,14 +88,14 @@ object UserMappingStreamTask {
     }
     
     // Provide troubleshooting information
-    println(s"[UserMappingStreamTask] Troubleshooting:")
-    println(s"[UserMappingStreamTask]   If you see 'TimeoutException: Timeout expired while fetching topic metadata':")
-    println(s"[UserMappingStreamTask]   1. Verify Kafka is running: Check if Kafka broker is accessible at $brokerServers")
-    println(s"[UserMappingStreamTask]   2. Test connection: Try 'telnet <host> <port>' or 'nc -zv <host> <port>'")
-    println(s"[UserMappingStreamTask]   3. Check firewall: Ensure port is not blocked")
-    println(s"[UserMappingStreamTask]   4. Verify address: Confirm the broker address is correct in your config")
-    println(s"[UserMappingStreamTask]   5. Check topics exist: Verify topics '${userMappingStreamConfig.inputTopic}' and '${userMappingStreamConfig.outputTopic}' exist")
-    println(s"[UserMappingStreamTask]")
+    // println(s"[UserMappingStreamTask] Troubleshooting:")
+    // println(s"[UserMappingStreamTask]   If you see 'TimeoutException: Timeout expired while fetching topic metadata':")
+    // println(s"[UserMappingStreamTask]   1. Verify Kafka is running: Check if Kafka broker is accessible at $brokerServers")
+    // println(s"[UserMappingStreamTask]   2. Test connection: Try 'telnet <host> <port>' or 'nc -zv <host> <port>'")
+    // println(s"[UserMappingStreamTask]   3. Check firewall: Ensure port is not blocked")
+    // println(s"[UserMappingStreamTask]   4. Verify address: Confirm the broker address is correct in your config")
+    // println(s"[UserMappingStreamTask]   5. Check topics exist: Verify topics '${userMappingStreamConfig.inputTopic}' and '${userMappingStreamConfig.outputTopic}' exist")
+    // println(s"[UserMappingStreamTask]")
     
     val kafkaUtil = new FlinkKafkaConnector(userMappingStreamConfig)
     val task = new UserMappingStreamTask(userMappingStreamConfig, kafkaUtil)
