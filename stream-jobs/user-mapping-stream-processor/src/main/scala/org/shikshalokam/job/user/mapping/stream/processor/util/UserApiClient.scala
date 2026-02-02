@@ -30,7 +30,6 @@ object UserApiClient {
     if (id == null || id.trim.isEmpty) {
       val error = new IllegalArgumentException("id cannot be null or empty")
       logger.error("[UserApiClient] id is null or empty", error)
-      println(s"[UserApiClient] ERROR: id is null or empty")
       return Failure(error)
     }
     
@@ -63,15 +62,15 @@ object UserApiClient {
       
       val jsonPayload = payloadObj.render()
       
-      println(s"[UserApiClient] PATCH Request to: $url")
-      println(s"[UserApiClient] Request payload: $jsonPayload")
+      // println(s"[UserApiClient] PATCH Request to: $url")
+      // println(s"[UserApiClient] Request payload: $jsonPayload")
       
       val headers = Map(
         "X-auth-token" -> authToken,
         "Content-Type" -> "application/json"
       )
       
-      println(s"[UserApiClient] Request headers: X-auth-token=***, Content-Type=application/json")
+      // println(s"[UserApiClient] Request headers: X-auth-token=***, Content-Type=application/json")
       
       // Use check = false to prevent RequestFailedException from being thrown for non-2xx status codes
       // This allows us to handle error responses gracefully
@@ -82,24 +81,21 @@ object UserApiClient {
         check = false
       )
       
-      println(s"[UserApiClient] Response status code: ${response.statusCode}")
-      println(s"[UserApiClient] Response body: ${response.text}")
+      // println(s"[UserApiClient] Response status code: ${response.statusCode}")
+      // println(s"[UserApiClient] Response body: ${response.text}")
       
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        println(s"[UserApiClient] SUCCESS: Profile updated for id=$id")
         logger.info(s"[UserApiClient] Successfully updated profile for id=$id")
         Success(true)
       } else {
         val error = new Exception(s"User Service API returned status ${response.statusCode}: ${response.text}")
         logger.error(s"[UserApiClient] API error for id=$id: ${error.getMessage}", error)
-        println(s"[UserApiClient] ERROR: API returned status ${response.statusCode}: ${response.text}")
         Failure(error)
       }
       
     } catch {
       case e: Exception =>
         logger.error(s"[UserApiClient] Exception while patching profile for id=$id: ${e.getMessage}", e)
-        println(s"[UserApiClient] EXCEPTION: ${e.getMessage}")
         e.printStackTrace()
         Failure(e)
     }
