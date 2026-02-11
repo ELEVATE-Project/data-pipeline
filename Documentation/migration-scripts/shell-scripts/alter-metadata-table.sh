@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# This script alters the dashboard metadata table by adding missing columns,
+# fetches solution entity IDs, retrieves metadata from Survey/Project APIs,
+# and updates the table while logging all operations.
+
 # === PostgreSQL connection details ===
 PGHOST="localhost"
 PGPORT="5432"
