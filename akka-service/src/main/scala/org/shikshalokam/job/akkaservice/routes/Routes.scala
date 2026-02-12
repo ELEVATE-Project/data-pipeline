@@ -19,13 +19,13 @@ object Routes {
    *  - /api/csv (Requires Authorization header)
    *  - /api/health (Requires X-API-KEY header)
    */
-  def route(implicit ec: scala.concurrent.ExecutionContext): Route =
+  def route(implicit system: akka.actor.ActorSystem, mat: akka.stream.Materializer, ec: scala.concurrent.ExecutionContext): Route =
     pathPrefix("api") {
       concat(
         // CSV Routes
         pathPrefix("csv") {
           headerValueByName("Authorization") { token =>
-            if (token == apiToken) {
+            if (secureEquals(token, apiToken)) {
               concat(
                 path("upload") {
                   post(AppController.uploadCsvFile)
@@ -52,7 +52,7 @@ object Routes {
                   entity = "Invalid or missing API token"
                 ))
               } else {
-                AppController.healthCheck(ec)
+                AppController.healthCheck
               }
             }
           }

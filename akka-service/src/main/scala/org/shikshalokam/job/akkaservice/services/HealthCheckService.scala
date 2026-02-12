@@ -4,29 +4,24 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.stream.Materializer
-import org.apache.kafka.clients.consumer.{ConsumerConfig, KafkaConsumer}
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
-import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
+import org.apache.kafka.clients.admin.{AdminClient, AdminClientConfig}
 import org.shikshalokam.job.akkaservice.functions.Functions
 import org.shikshalokam.job.akkaservice.models.JsonProtocol._
 import org.shikshalokam.job.akkaservice.models._
 import spray.json._
 
 import java.time.Instant
-import java.util.{Collections, Properties, UUID}
+import java.util.Properties
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 object HealthCheckService {
 
-  implicit val system: ActorSystem = ActorSystem("healthcheck-service-core")
-  implicit val mat: Materializer = Materializer(system)
-  implicit val ec: ExecutionContext = system.dispatcher
-
   private val config = Functions.load()
-  private val http = Http()
 
-  def checkFlink(): Future[FlinkHealth] = {
+  def checkFlink()(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext): Future[FlinkHealth] = {
+    val http = Http()
     val base = config.flink.restApiUrl
     val unhealthyCluster = FlinkClusterHealth("UNHEALTHY", 0, 0, 0)
 
@@ -80,7 +75,8 @@ object HealthCheckService {
     } yield FlinkHealth(overview, jobs)
   }
 
-  def checkMetabase(): Future[MetabaseHealth] = {
+  def checkMetabase()(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext): Future[MetabaseHealth] = {
+    val http = Http()
     val url = s"${config.metabase.url}/api/health"
 
     http.singleRequest(HttpRequest(uri = url))
@@ -94,55 +90,38 @@ object HealthCheckService {
       .recover { case _ => MetabaseHealth("UNHEALTHY", config.metabase.url) }
   }
 
-  def checkKafka(): Future[KafkaHealth] = Future {
-    val topic = "_healthcheck_test"
-    val uuid = UUID.randomUUID().toString
-    var producer: KafkaProducer[String, String] = null
-    var consumer: KafkaConsumer[String, String] = null
-
-    try {
-      val producerProps = new Properties()
-      producerProps.put("bootstrap.servers", config.kafka.broker)
-      producerProps.put("key.serializer", classOf[StringSerializer].getName)
-      producerProps.put("value.serializer", classOf[StringSerializer].getName)
-
-      producer = new KafkaProducer[String, String](producerProps)
-      producer.send(new ProducerRecord(topic, uuid))
-      producer.flush()
-
-      val consumerProps = new Properties()
-      consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, config.kafka.broker)
-      consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "hc-" + UUID.randomUUID())
-      consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer].getName)
-      consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer].getName)
-      consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-      consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
-
-      consumer = new KafkaConsumer[String, String](consumerProps)
-      consumer.subscribe(Collections.singletonList(topic))
-      consumer.poll(java.time.Duration.ofMillis(100))
-
-      var found = false
-      val deadline = System.currentTimeMillis() + 20000
-      while (!found && System.currentTimeMillis() < deadline) {
-        val records = consumer.poll(java.time.Duration.ofMillis(500))
-        val it = records.iterator()
-        while (it.hasNext) {
-          if (it.next().value() == uuid) {
-            found = true
+  def checkKafka()(implicit system: ActorSystem, ec: ExecutionContext): Future[KafkaHealth] = {
+    val blockingEc = system.dispatchers.lookup("blocking-io-dispatcher")
+    
+    Future {
+      var adminClient: AdminClient = null
+      try {
+        val props = new Properties()
+        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.kafka.broker)
+        props.put(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, "5000")
+        
+        adminClient = AdminClient.create(props)
+        
+        // Simple connectivity check - describe cluster
+        val result = adminClient.describeCluster()
+        val clusterId = result.clusterId().get(10, TimeUnit.SECONDS)
+        
+        KafkaHealth("HEALTHY", config.kafka.broker)
+      } catch {
+        case _: Exception => KafkaHealth("UNHEALTHY", config.kafka.broker)
+      } finally {
+        if (adminClient != null) {
+          try {
+            adminClient.close(java.time.Duration.ofSeconds(5))
+          } catch {
+            case _: Exception => // Ignore close errors
           }
         }
       }
-      KafkaHealth(if (found) "HEALTHY" else "UNHEALTHY", config.kafka.broker)
-    } catch {
-      case _: Exception => KafkaHealth("UNHEALTHY", config.kafka.broker)
-    } finally {
-      if (producer != null) producer.close()
-      if (consumer != null) consumer.close()
-    }
+    }(blockingEc) // Run on dedicated blocking dispatcher
   }
 
-  def fullHealth(): Future[FullHealthResponse] = {
+  def fullHealth()(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext): Future[FullHealthResponse] = {
     val flinkF = checkFlink()
     val kafkaF = checkKafka()
     val metaF = checkMetabase()

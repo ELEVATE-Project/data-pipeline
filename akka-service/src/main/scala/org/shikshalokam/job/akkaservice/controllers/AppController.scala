@@ -1,6 +1,6 @@
 package org.shikshalokam.job.akkaservice.controllers
 
-import akka.actor.ActorRef
+import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.{HttpResponse, Multipart, StatusCodes, HttpEntity, ContentTypes}
 import akka.http.scaladsl.server.Directives._
@@ -44,7 +44,7 @@ object AppController extends CsvJsonProtocol {
   }
 
   // Health Check Logic
-  def healthCheck(implicit ec: ExecutionContext): Route = {
+  def healthCheck(implicit system: ActorSystem, mat: akka.stream.Materializer, ec: ExecutionContext): Route = {
     onSuccess(HealthCheckService.fullHealth()) { data =>
       complete(HttpEntity(ContentTypes.`application/json`, data.toJson.prettyPrint))
     }
