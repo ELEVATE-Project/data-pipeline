@@ -23,6 +23,7 @@
         <module>jobs-core</module>
         <module>stream-jobs</module>
         <module>metabase-jobs</module>
+        <module>akka-service</module>
     </modules>
 
     <properties>
