@@ -24,14 +24,25 @@ logging.getLogger().addHandler(console_handler)
 
 logger = logging.getLogger(__name__)
 
+import configparser
+
+# ----------------------------
+# Load Configuration
+# ----------------------------
+config = configparser.ConfigParser()
+config_path = os.path.join(os.path.dirname(__file__), 'config.ini')
+config.read(config_path)
+
+program_deletion_config = config['ProgramDeletion']
+
 # ----------------------------
 # API Endpoints
 # ----------------------------
-LOGIN_URL = "https://qa.elevate-apis.shikshalokam.org/user/v1/admin/login"
-DB_FIND_URL = "https://qa.elevate-apis.shikshalokam.org/project/v1/admin/dbFind/programs"
+LOGIN_URL = program_deletion_config['login_url']
+DB_FIND_URL = program_deletion_config['db_find_url']
 
-USERNAME = "nevil@shikshalokam.com"
-PASSWORD = "Password@1234"
+USERNAME = program_deletion_config['username']
+PASSWORD = program_deletion_config['password']
 
 
 def get_access_token():
@@ -126,11 +137,7 @@ def delete_required_program_ids(all_program_ids, list_of_required_program_ids):
 
 if __name__ == "__main__":
 
-    list_of_required_program_ids = ['692818e8b1b253ba1c3862de','6927ddbeee1c0bba1263db5d','6927f73eee1c0bba1263ddfa',
-    '68cbd82038aee0086ee6188b','690cc46eec717c3ae4e8f972','690c4ad1aea85109330b201b','690cd3d65b1be23aee52f87b',
-    '690ccd98ec717c3ae4e8f989','690df6f77971adc4844b9c31','690dcab25b1be23aee52fa8a','690e006cb257590836ae5236',
-    '6914303d94074e090e6d49c8','6914640d94074e090e6d4c6b','68b5a39f76b398093509dcca','692810b3b1b253ba1c386126',
-    '6927d95db1b253ba1c385bae','692e8970b31c7009215df5a1','692eabe8b31c7009215df7be']
+    list_of_required_program_ids = program_deletion_config['list_of_required_program_ids'].split(',')
 
     logger.info("Starting program ID extraction script...")
 
