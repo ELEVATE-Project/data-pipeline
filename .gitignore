@@ -17,3 +17,5 @@ kubernetes/config
 bin/
 .settings/
 .vscode/
+.bloop/
+.metals/

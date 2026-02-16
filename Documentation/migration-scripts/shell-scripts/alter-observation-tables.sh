@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# This script standardizes observation reporting tables by adding missing columns,
+# normalizing entity_type fields, enriching tables with entity metadata from the API,
+# and updating status, domain, and question tables with logging.
+
 # === Logging Setup ===
 LOG_FILE="alter_observation_log_$(date +'%Y%m%d_%H%M%S').log"
 exec > >(tee -a "$LOG_FILE") 2>&1
