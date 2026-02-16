@@ -28,7 +28,8 @@ BROKER = config.get('Database', 'broker')
 url, user, pwd = load_metabase_config()
 mb = MetabaseUtil(url, user, pwd)
 
-LOG_FILE = "resource_delete.log"
+LOG_FILE_PATH = config.get('common', 'log_path')
+LOG_FILE = os.path.join(LOG_FILE_PATH, "resource_delete.log")
 
 logger = logging.getLogger("resource_delete_logger")
 logger.setLevel(logging.INFO)
