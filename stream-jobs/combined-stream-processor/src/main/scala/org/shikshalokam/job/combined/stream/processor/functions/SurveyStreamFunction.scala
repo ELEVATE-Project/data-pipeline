@@ -39,6 +39,7 @@ class SurveyStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo
   }
 
   override def processElement(SurveyEvent: SurveyEvent, context: ProcessFunction[SurveyEvent, SurveyEvent]#Context, metrics: Metrics): Unit = {
+    try {
     if (SurveyEvent.status.toLowerCase() == "started" || SurveyEvent.status.toLowerCase() == "inprogress" || SurveyEvent.status.toLowerCase() == "submitted" || SurveyEvent.status.toLowerCase() == "completed") {
       logger.info(s"***************** Start of Processing the Survey SurveyEvent with Id = ${SurveyEvent._id} *****************")
       val surveyQuestionTable = SurveyEvent.solutionId
@@ -474,6 +475,10 @@ class SurveyStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo
       }
     } else {
       logger.info(s"Skipping the survey SurveyEvent with Id = ${SurveyEvent._id} and status = ${SurveyEvent.status} as it is not in a valid status.")
+    }
+    } catch {
+      case e: Exception =>
+        logger.error(s"Error processing survey event: ${SurveyEvent._id}", e)
     }
   }
 

@@ -39,6 +39,7 @@ class ObservationStreamFunction(config: UnifiedStreamConfig)(implicit val mapTyp
   }
 
   override def processElement(event: ObservationEvent, context: ProcessFunction[ObservationEvent, ObservationEvent]#Context, metrics: Metrics): Unit = {
+    try {
     if (event.status.toLowerCase() == "started" || event.status.toLowerCase() == "inprogress" || event.status.toLowerCase() == "submitted" || event.status.toLowerCase() == "completed") {
       logger.info(s"***************** Start of Processing the Observation Event with Id = ${event._id} *****************")
       var userRoleIds: String = ""
@@ -687,6 +688,10 @@ class ObservationStreamFunction(config: UnifiedStreamConfig)(implicit val mapTyp
       }
     } else {
       logger.info(s"Skipping the observation event with Id = ${event._id} and status = ${event.status} as it is not in a valid status.")
+    }
+    } catch {
+      case e: Exception =>
+        logger.error(s"Error processing observation event: ${event._id}", e)
     }
   }
 }

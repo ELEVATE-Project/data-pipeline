@@ -193,10 +193,7 @@
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <junitxml>.</junitxml>
                     <filereports>project-jobs-testsuite.txt</filereports>
-                    <argLine>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED
-                        --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED
-                        --add-opens java.desktop/java.awt.font=ALL-UNNAMED
-                    </argLine>
+                    <argLine>-Dlog4j2.configurationFile=src/test/resources/log4j2.properties</argLine>
                 </configuration>
                 <executions>
                     <execution>

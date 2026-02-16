@@ -39,8 +39,9 @@ class ProjectStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInf
   }
 
   override def processElement(event: ProjectEvent, context: ProcessFunction[ProjectEvent, ProjectEvent]#Context, metrics: Metrics): Unit = {
-    if (event.projectStatus.toLowerCase() == "started" || event.projectStatus.toLowerCase() == "inprogress" || event.projectStatus.toLowerCase() == "submitted" || event.projectStatus.toLowerCase() == "completed") {
-      logger.info(s"***************** Start of Processing the Project Event with Id = ${event._id} *****************")
+    try {
+      if (event.projectStatus.toLowerCase() == "started" || event.projectStatus.toLowerCase() == "inprogress" || event.projectStatus.toLowerCase() == "submitted" || event.projectStatus.toLowerCase() == "completed") {
+        logger.info(s"***************** Start of Processing the Project Event with Id = ${event._id} *****************")
 
       //TODO: TO be removed later
       val (projectEvidences, projectEvidencesCount) = extractEvidenceData(event.projectAttachments)
@@ -467,6 +468,10 @@ class ProjectStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInf
       objects
     }
 
+    } catch {
+      case e: Exception =>
+        logger.error(s"Error processing project stream event with id: ${event._id}", e)
+    }
   }
 
   def extractEvidenceData(attachments: List[Map[String, Any]]): (String, Int) = {
