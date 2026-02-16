@@ -279,6 +279,8 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
             }
             logger.info("Successfully updated the filters values")
           }
+        case other => 
+          logger.warn(s"Unknown reportType: $other for event ${event._id}, skipping.") 
       }
 
       def extractTableId(response: String): Int = {

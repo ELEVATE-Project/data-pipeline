@@ -65,6 +65,10 @@ object StatePage {
                 val optJsonNode = toOption(rootNode)
                 appendDashCardToDashboard(metabaseUtil, optJsonNode, dashboardId)
               }
+            case Some(_) =>  
+              logger.warn("Unexpected type for 'config' in heading row.")  
+            case None =>  
+              logger.warn("Key 'config' not found in heading row.")   
           }
         }
       }
@@ -356,7 +360,10 @@ object StatePage {
     }
     val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
     val dashboardJson = objectMapper.readTree(dashboardResponse)
-    val currentParametersJson = dashboardJson.path("parameters").asInstanceOf[ArrayNode]
+    val currentParametersJson = dashboardJson.path("parameters") match {  
+      case array: ArrayNode => array  
+      case _ => objectMapper.createArrayNode()  
+    }  
 
     val finalParametersJson = (currentParametersJson.elements().asScala.filterNot { param =>
       val slug = param.path("slug").asText()

@@ -133,7 +133,7 @@ class MentoringMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)
           val reportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mentoring-Reports' AND report_name = 'Tenant-Overview' AND question_type IN ('big-number', 'graph');"
           val questionCardIdList = ProcessTenantConstructor.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, 0, orgNameId, 0, tenantUserTable,
             tenantSessionTable, tenantSessionAttendanceTable, tenantConnectionsTable, tenantOrgMentorRatingTable,
-            tenantOrgRolesTable, Map.empty, orgId.toInt, tabId, metabaseUtil, postgresUtil)
+            tenantOrgRolesTable, Map.empty, if (orgId.nonEmpty) orgId.toInt else , tabId, metabaseUtil, postgresUtil)
           val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
           val parametersQuery = s"SELECT config FROM $reportConfig WHERE report_name='Tenant-Overview' AND question_type='overview-parameter'"
           UpdateParameters.updateAdminParameterFunction(metabaseUtil, parametersQuery, dashboardId, postgresUtil)

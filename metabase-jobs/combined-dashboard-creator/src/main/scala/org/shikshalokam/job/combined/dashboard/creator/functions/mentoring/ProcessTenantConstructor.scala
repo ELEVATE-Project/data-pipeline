@@ -67,6 +67,8 @@ object ProcessTenantConstructor {
                   }
                 }
               }
+            case _ =>  
+              logger.warn("Key 'config' not found or unexpected type in the heading result row.") 
           }
         }
       }

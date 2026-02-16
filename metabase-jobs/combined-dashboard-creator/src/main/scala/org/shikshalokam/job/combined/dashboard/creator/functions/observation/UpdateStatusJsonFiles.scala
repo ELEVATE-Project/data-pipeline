@@ -75,6 +75,8 @@ object UpdateStatusJsonFiles {
                   }
                 }
               }
+            case None => 
+              logger.info("Key 'config' not found in heading row.") 
           }
         }
       }

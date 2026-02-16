@@ -179,7 +179,9 @@ object UnifiedStreamTask {
           .name("mentoring-sink").setParallelism(config.mentoringSinkParallelism)
 
       case _ =>
-        runJob(config, kafkaConnector)
+        logger.warn(s"Unknown streamType '$streamType', falling back to all-streams mode.")  
+        runJob(config, kafkaConnector)  
+        return  // runJob already calls env.execute
     }
 
     env.execute("Stream Processor Job")

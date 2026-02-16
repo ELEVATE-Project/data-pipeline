@@ -65,6 +65,8 @@ object ProcessAdminConstructor {
                   }
                 }
               }
+            case _ =>  
+              logger.warn("Heading row has missing or unexpected config type. Skipping.")
           }
         }
       }

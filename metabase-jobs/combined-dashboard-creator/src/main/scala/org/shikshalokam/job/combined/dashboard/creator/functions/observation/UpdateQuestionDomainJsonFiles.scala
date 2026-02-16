@@ -197,7 +197,10 @@ object UpdateQuestionDomainJsonFiles {
             }
           }
         }
-        configObjectNode.get("questionCard")
+        Option(configObjectNode.get("questionCard")).getOrElse {  
+          logger.warn("Warning: 'questionCard' key not found in config JSON.")  
+          configJson  
+        }  
       } catch {
         case e: Exception =>
           logger.warn(s"Warning: JSON node could not be updated. Error: ${e.getMessage}")

@@ -285,9 +285,8 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
           }
           catch {
             case e: Exception =>
-              postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}' WHERE entity_id = '$targetedSolutionId';")
-              logger.error(s"An error occurred: ${e.getMessage}")
-              e.printStackTrace()
+              val escapedMsg = Option(e.getMessage).getOrElse("Unknown error").replace("'", "''")
+              postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '$escapedMsg' WHERE entity_id = '$targetedSolutionId';")
               -1
           }
         }

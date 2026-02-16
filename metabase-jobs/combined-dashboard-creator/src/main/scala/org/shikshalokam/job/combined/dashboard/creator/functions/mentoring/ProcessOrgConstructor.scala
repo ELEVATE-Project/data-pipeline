@@ -68,6 +68,8 @@ object ProcessOrgConstructor {
                   }
                 }
               }
+            case _ =>  
+              logger.warn("Key 'config' not found or unexpected type in the heading result row.")
           }
         }
       }
@@ -131,11 +133,13 @@ object ProcessOrgConstructor {
             }
           }
         }
-        configObjectNode.get("questionCard")
+        Option(configObjectNode.get("questionCard")).getOrElse {  
+          throw new IllegalStateException("'questionCard' missing after update")  
+        }  
       } catch {
         case e: Exception =>
           logger.warn(s"Warning: JSON node could not be updated. Error: ${e.getMessage}")
-          configJson
+          throw e
       }
     }
 

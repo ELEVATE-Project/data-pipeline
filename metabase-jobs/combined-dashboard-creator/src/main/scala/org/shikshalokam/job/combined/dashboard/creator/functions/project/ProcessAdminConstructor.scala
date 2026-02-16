@@ -64,6 +64,8 @@ object ProcessAdminConstructor {
                   }
                 }
               }
+            case _ =>  
+              logger.warn("Heading row has missing or unexpected config type. Skipping.")   
           }
         }
       }
@@ -102,7 +104,10 @@ object ProcessAdminConstructor {
             }
           }
         }
-        configObjectNode.get("questionCard")
+        Option(configObjectNode.get("questionCard")).getOrElse {  
+          logger.warn("'questionCard' key not found in config JSON.")  
+          configJson  
+        }  
       } catch {
         case e: Exception =>
           logger.info(s"Warning: JSON node could not be updated. Error: ${e.getMessage}")
