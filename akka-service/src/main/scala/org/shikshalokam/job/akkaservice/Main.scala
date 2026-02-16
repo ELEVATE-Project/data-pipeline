@@ -19,9 +19,7 @@ object Main extends App {
   private val host = config.getString("akka.http.host")
   private val port = config.getInt("akka.http.port")
 
-  // Routes.route now includes both CSV and Health checks under /api
   val routes: Route = Routes.route
-
   val bindingFuture = Http().newServerAt(host, port).bind(routes)
 
   println(s"Server online at http://${host}:${port}/")

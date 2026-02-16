@@ -13,13 +13,7 @@ object Routes {
   private val config = ConfigFactory.load()
   private val apiToken = config.getString("security.api-token")
 
-  /*
-   * Unified route definition for /api
-   * Includes:
-   *  - /api/csv (Requires Authorization header)
-   *  - /api/health (Requires X-API-KEY header)
-   */
-  def route(implicit system: akka.actor.ActorSystem, mat: akka.stream.Materializer, ec: scala.concurrent.ExecutionContext): Route =
+  def route: Route =
     pathPrefix("api") {
       concat(
         // CSV Routes
@@ -43,16 +37,16 @@ object Routes {
         path("health") {
           get {
             extractRequest { req =>
-              val tokenOpt = req.getHeader("X-API-KEY")
+              val tokenOpt = req.getHeader("Authorization")
               val providedToken = if (tokenOpt.isPresent) tokenOpt.get.value() else ""
 
-              if (!secureEquals(providedToken, apiToken)) {
+              if (secureEquals(providedToken, apiToken)) {
+                AppController.healthCheck
+              } else {
                 complete(HttpResponse(
                   status = StatusCodes.Unauthorized,
                   entity = "Invalid or missing API token"
                 ))
-              } else {
-                AppController.healthCheck
               }
             }
           }

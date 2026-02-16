@@ -1,16 +1,17 @@
 package org.shikshalokam.job.akkaservice.controllers
 
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.ActorRef
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.{HttpResponse, Multipart, StatusCodes, HttpEntity, ContentTypes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import org.shikshalokam.job.akkaservice.models.FileNames
 import org.shikshalokam.job.akkaservice.services.Service.materializer.system
-import org.shikshalokam.job.akkaservice.services.{CsvProcessingActor, Service, HealthCheckService}
+import org.shikshalokam.job.akkaservice.services.{CsvProcessingActor, Service}
 import org.shikshalokam.job.akkaservice.models.JsonProtocol._
 import spray.json._
-import scala.concurrent.ExecutionContext
+import scala.util.{Success, Failure}
+
 
 trait CsvJsonProtocol extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val fileNamesFormat = jsonFormat1(FileNames)
@@ -20,7 +21,7 @@ object AppController extends CsvJsonProtocol {
 
   private val csvProcessingActor: ActorRef = system.actorOf(CsvProcessingActor.props, "csvProcessingActor")
 
-  // CSV Routes Logic
+  // CSV Routes Controller
   def uploadCsvFile: Route =
     entity(as[Multipart.FormData]) { formData =>
       onComplete(Service.processCsvUpload(formData)) {
@@ -43,10 +44,16 @@ object AppController extends CsvJsonProtocol {
     }
   }
 
-  // Health Check Logic
-  def healthCheck(implicit system: ActorSystem, mat: akka.stream.Materializer, ec: ExecutionContext): Route = {
-    onSuccess(HealthCheckService.fullHealth()) { data =>
-      complete(HttpEntity(ContentTypes.`application/json`, data.toJson.prettyPrint))
+
+  // Health Check Controller
+  def healthCheck: Route = {
+    try {
+      onSuccess(Service.fullHealth()) { data =>
+        complete(HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentTypes.`application/json`, data.toJson.prettyPrint)))
+      }
+    } catch {
+      case e: Exception =>
+        complete(HttpResponse(StatusCodes.InternalServerError, entity = e.getMessage))
     }
   }
 }

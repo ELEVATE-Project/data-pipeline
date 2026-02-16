@@ -1,7 +1,7 @@
 package org.shikshalokam.job.akkaservice.functions
 
-import com.typesafe.config.{ConfigFactory, Config => TConfig}
-import org.shikshalokam.job.akkaservice.models.{AppConfig, FlinkConfig, KafkaConfig, MetabaseConfig, SecurityConfig, CsvSchema}
+import org.shikshalokam.job.akkaservice.models.CsvSchema
+import com.typesafe.config.ConfigFactory
 import org.shikshalokam.job.util.JSONUtil.mapper
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 
@@ -11,31 +11,6 @@ import scala.io.Source
 import scala.util.matching.Regex
 
 object Functions {
-
-  // --- From AppConfigLoader ---
-  def load(): AppConfig = {
-    val conf: TConfig = ConfigFactory.load()
-
-    val flink = FlinkConfig(
-      restApiUrl = conf.getString("services.flink.rest-api-url"),
-      jobs = conf.getStringList("services.flink.jobs").toArray.map(_.toString).toList
-    )
-
-    val kafka = KafkaConfig(
-      broker = conf.getString("services.kafka.broker-list")
-    )
-
-    val metabase = MetabaseConfig(
-      url = conf.getString("services.metabase.url")
-    )
-
-    val security = SecurityConfig(
-      apiToken = conf.getString("security.api-token")
-    )
-
-    AppConfig(flink, kafka, metabase, security)
-  }
-
   // --- From MetabaseUserManagementFunction ---
 
   private val config = ConfigFactory.load()
