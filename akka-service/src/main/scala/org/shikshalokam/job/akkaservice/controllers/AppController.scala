@@ -2,16 +2,14 @@ package org.shikshalokam.job.akkaservice.controllers
 
 import akka.actor.ActorRef
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.{HttpResponse, Multipart, StatusCodes, HttpEntity, ContentTypes}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import org.shikshalokam.job.akkaservice.models.FileNames
+import org.shikshalokam.job.akkaservice.models.JsonProtocol._
 import org.shikshalokam.job.akkaservice.services.Service.materializer.system
 import org.shikshalokam.job.akkaservice.services.{CsvProcessingActor, Service}
-import org.shikshalokam.job.akkaservice.models.JsonProtocol._
 import spray.json._
-import scala.util.{Success, Failure}
-
 
 trait CsvJsonProtocol extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val fileNamesFormat = jsonFormat1(FileNames)
@@ -43,7 +41,6 @@ object AppController extends CsvJsonProtocol {
         complete(HttpResponse(StatusCodes.InternalServerError, entity = e.getMessage))
     }
   }
-
 
   // Health Check Controller
   def healthCheck: Route = {

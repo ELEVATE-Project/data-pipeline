@@ -5,7 +5,6 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.typesafe.config.ConfigFactory
 import org.shikshalokam.job.akkaservice.controllers.AppController
-import akka.http.scaladsl.model._
 import java.security.MessageDigest
 
 object Routes {

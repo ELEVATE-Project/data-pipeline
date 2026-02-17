@@ -4,7 +4,6 @@ import org.shikshalokam.job.akkaservice.models.CsvSchema
 import com.typesafe.config.ConfigFactory
 import org.shikshalokam.job.util.JSONUtil.mapper
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
-
 import java.nio.file.{Files, Paths}
 import scala.collection.JavaConverters._
 import scala.io.Source

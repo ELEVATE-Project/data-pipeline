@@ -11,7 +11,6 @@ import org.shikshalokam.job.akkaservice.models._
 import org.shikshalokam.job.akkaservice.services.Service.materializer.executionContext
 import spray.json.DefaultJsonProtocol._
 import spray.json._
-
 import java.nio.file.{Files, Path, Paths}
 import java.time.{Instant, LocalDateTime}
 import java.time.format.DateTimeFormatter
@@ -258,7 +257,6 @@ object Service {
           }
         }
 
-
         if (!messageReceived) {
           if (debugMode) {
             println("[Kafka Health Check] Message not received in time ❌")
@@ -290,10 +288,8 @@ object Service {
                 println(s"[Kafka Health Check] Failed to delete topic: ${ex.getMessage}")
               }
           }
-
           KafkaHealth("HEALTHY", broker)
         }
-
 
       } catch {
         case ex: Exception =>
@@ -352,6 +348,5 @@ object Service {
       flink, kafka, meta, Instant.now.toString
     )
   }
-
 }
 
