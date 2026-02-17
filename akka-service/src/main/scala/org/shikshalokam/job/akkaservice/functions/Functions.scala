@@ -1,16 +1,16 @@
-package org.shikshalokam.job.users.via.csv.functions
+package org.shikshalokam.job.akkaservice.functions
 
+import org.shikshalokam.job.akkaservice.models.CsvSchema
 import com.typesafe.config.ConfigFactory
-import org.shikshalokam.job.users.via.csv.models.CsvSchema
 import org.shikshalokam.job.util.JSONUtil.mapper
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
-
 import java.nio.file.{Files, Paths}
 import scala.collection.JavaConverters._
 import scala.io.Source
 import scala.util.matching.Regex
 
-object MetabaseUserManagementFunction {
+object Functions {
+  // --- From MetabaseUserManagementFunction ---
 
   private val config = ConfigFactory.load()
   private val sinkDirectory = config.getString("file.sinkDirectory")
@@ -203,6 +203,3 @@ object MetabaseUserManagementFunction {
   }
 
 }
-
-
-

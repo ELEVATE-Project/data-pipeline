@@ -1,4 +1,4 @@
-package org.shikshalokam.job.users.via.csv.models
+package org.shikshalokam.job.akkaservice.models
 
 case class FileNames(files: List[String])
 

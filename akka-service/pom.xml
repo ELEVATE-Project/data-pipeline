@@ -8,12 +8,12 @@
         <groupId>org.shikshalokam</groupId>
         <artifactId>data-pipeline</artifactId>
         <version>1.0</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>users-via-csv</artifactId>
+    <artifactId>akka-service</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
-    <name>UsersViaCsv</name>
+    <name>AkkaService</name>
     <description>
         Job for populating users in metabase and mapping the dashboard
     </description>
@@ -101,7 +101,6 @@
 
     <build>
         <sourceDirectory>src/main/scala</sourceDirectory>
-        <testSourceDirectory>src/test/scala</testSourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -145,7 +144,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <!-- change the main class -->
-                                    <mainClass>org.shikshalokam.job.users.via.csv.Main</mainClass>
+                                    <mainClass>org.shikshalokam.job.akkaservice.Main</mainClass>
                                 </transformer>
                                 <!-- append default configs -->
                                 <transformer
