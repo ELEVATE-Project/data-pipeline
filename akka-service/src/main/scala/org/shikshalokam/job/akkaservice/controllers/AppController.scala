@@ -56,4 +56,23 @@ object AppController extends CsvJsonProtocol {
         complete(HttpResponse(StatusCodes.InternalServerError, entity = e.getMessage))
     }
   }
+
+  def serviceHealthCheck(service: String): Route = {
+    service.toLowerCase match {
+      case "flink" =>
+        onSuccess(Service.checkFlink()) { health =>
+          complete(HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentTypes.`application/json`, health.toJson.prettyPrint)))
+        }
+      case "kafka" =>
+        onSuccess(Service.checkKafka()) { health =>
+          complete(HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentTypes.`application/json`, health.toJson.prettyPrint)))
+        }
+      case "metabase" =>
+        onSuccess(Service.checkMetabase()) { health =>
+          complete(HttpResponse(StatusCodes.OK, entity = HttpEntity(ContentTypes.`application/json`, health.toJson.prettyPrint)))
+        }
+      case _ =>
+        complete(StatusCodes.NotFound, s"Unknown service: $service")
+    }
+  }
 }

@@ -97,7 +97,7 @@ object Service {
     }
   }
 
-  private def checkFlink(): Future[FlinkHealth] = {
+  def checkFlink(): Future[FlinkHealth] = {
 
     val unhealthyCluster = FlinkClusterHealth("UNHEALTHY", 0, 0, 0, 0, 0, 0, 0, "")
 
@@ -157,7 +157,7 @@ object Service {
     } yield FlinkHealth(overview, jobs)
   }
 
-  private def checkMetabase(): Future[MetabaseHealth] = {
+  def checkMetabase(): Future[MetabaseHealth] = {
 
     http.singleRequest(HttpRequest(uri = metaUrl))
       .flatMap { resp =>
@@ -170,34 +170,34 @@ object Service {
       .recover { case _ => MetabaseHealth("UNHEALTHY", metaUrl) }
   }
 
-  private def checkKafka(): Future[KafkaHealth] = {
+  def checkKafka(): Future[KafkaHealth] = {
     val blockingEc = system.dispatchers.lookup("blocking-io-dispatcher")
-    
+
     Future {
       val pid = java.lang.management.ManagementFactory.getRuntimeMXBean.getName.split("@")(0)
       val uniqueTopicName = s"health-check-$pid"
       val uniqueGroupId = s"health-check-group-$pid"
-      
+
       var adminClient: AdminClient = null
       var producer: org.apache.kafka.clients.producer.KafkaProducer[String, String] = null
       var consumer: org.apache.kafka.clients.consumer.KafkaConsumer[String, String] = null
-      
+
       try {
         if (debugMode) {
           println(s"[Kafka Health Check] Connecting to Kafka at ${broker}")
         }
-        
+
         // Step 1: Create AdminClient and check connectivity
         val adminProps = new Properties()
         adminProps.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, broker)
         adminProps.put(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, "5000")
         adminClient = AdminClient.create(adminProps)
-        
+
         val clusterId = adminClient.describeCluster().clusterId().get(10, TimeUnit.SECONDS)
         if (debugMode) {
           println(s"[Kafka Health Check] Connected to cluster: $clusterId ✅")
         }
-        
+
         // Step 2: Ensure topic exists or create it
         val existingTopics = adminClient.listTopics().names().get(5, TimeUnit.SECONDS)
         if (!existingTopics.contains(uniqueTopicName)) {
@@ -212,7 +212,7 @@ object Service {
             println(s"[Kafka Health Check] Topic created ✅")
           }
         }
-        
+
         // Step 3: Create producer and send message
         val producerProps = new Properties()
         producerProps.put(org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, broker)
@@ -221,14 +221,14 @@ object Service {
         producerProps.put(org.apache.kafka.clients.producer.ProducerConfig.ACKS_CONFIG, "all")
         producerProps.put(org.apache.kafka.clients.producer.ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, "5000")
         producer = new org.apache.kafka.clients.producer.KafkaProducer[String, String](producerProps)
-        
+
         val messageId = s"health-check-${java.util.UUID.randomUUID()}"
         val record = new org.apache.kafka.clients.producer.ProducerRecord[String, String](uniqueTopicName, messageId)
         producer.send(record).get(5, TimeUnit.SECONDS)
         if (debugMode) {
           println(s"[Kafka Health Check] Sent message: $messageId ✅")
         }
-        
+
         // Step 4: Create consumer and receive message
         val consumerProps = new Properties()
         consumerProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, broker)
@@ -239,13 +239,13 @@ object Service {
         consumerProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
         consumerProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "10000")
         consumer = new org.apache.kafka.clients.consumer.KafkaConsumer[String, String](consumerProps)
-        
+
         consumer.subscribe(java.util.Collections.singletonList(uniqueTopicName))
-        
+
         val startTime = System.currentTimeMillis()
         val timeout = 5000 // 5 seconds
         var messageReceived = false
-        
+
         while (!messageReceived && (System.currentTimeMillis() - startTime) < timeout) {
           val records = consumer.poll(java.time.Duration.ofMillis(1000))
           records.asScala.foreach { record =>
@@ -257,8 +257,8 @@ object Service {
             }
           }
         }
-        
-        
+
+
         if (!messageReceived) {
           if (debugMode) {
             println("[Kafka Health Check] Message not received in time ❌")
@@ -290,11 +290,11 @@ object Service {
                 println(s"[Kafka Health Check] Failed to delete topic: ${ex.getMessage}")
               }
           }
-          
+
           KafkaHealth("HEALTHY", broker)
         }
 
-        
+
       } catch {
         case ex: Exception =>
           if (debugMode) {
@@ -315,13 +315,25 @@ object Service {
       } finally {
         // Cleanup resources
         if (consumer != null) {
-          try { consumer.close() } catch { case _: Exception => }
+          try {
+            consumer.close()
+          } catch {
+            case _: Exception =>
+          }
         }
         if (producer != null) {
-          try { producer.close() } catch { case _: Exception => }
+          try {
+            producer.close()
+          } catch {
+            case _: Exception =>
+          }
         }
         if (adminClient != null) {
-          try { adminClient.close(java.time.Duration.ofSeconds(5)) } catch { case _: Exception => }
+          try {
+            adminClient.close(java.time.Duration.ofSeconds(5))
+          } catch {
+            case _: Exception =>
+          }
         }
       }
     }(blockingEc) // Run on dedicated blocking dispatcher

@@ -34,10 +34,17 @@ object Routes {
           }
         },
         // Health Check Routes
-        path("health") {
+        pathPrefix("health") {
           headerValueByName("Authorization") { token =>
             if (secureEquals(token, apiToken)) {
-              get(AppController.healthCheck)
+              concat(
+                pathEndOrSingleSlash {
+                  get(AppController.healthCheck)
+                },
+                path(Segment) { service =>
+                  get(AppController.serviceHealthCheck(service))
+                }
+              )
             } else {
               complete((StatusCodes.Unauthorized, "Invalid or missing token"))
             }
