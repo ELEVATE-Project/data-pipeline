@@ -35,19 +35,11 @@ object Routes {
         },
         // Health Check Routes
         path("health") {
-          get {
-            extractRequest { req =>
-              val tokenOpt = req.getHeader("Authorization")
-              val providedToken = if (tokenOpt.isPresent) tokenOpt.get.value() else ""
-
-              if (secureEquals(providedToken, apiToken)) {
-                AppController.healthCheck
-              } else {
-                complete(HttpResponse(
-                  status = StatusCodes.Unauthorized,
-                  entity = "Invalid or missing API token"
-                ))
-              }
+          headerValueByName("Authorization") { token =>
+            if (secureEquals(token, apiToken)) {
+              get(AppController.healthCheck)
+            } else {
+              complete((StatusCodes.Unauthorized, "Invalid or missing token"))
             }
           }
         }
