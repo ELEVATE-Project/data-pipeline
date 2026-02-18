@@ -14,26 +14,35 @@ fi
 update_schema() {
     echo "Waiting for Metabase to initialize and create tables..."
     # Wait for a bit to ensure Postgres is up and Metabase has started migration
-    sleep 30 
+    sleep 30
 
-    MAX_RETRIES=30
+    MAX_RETRIES=5
     COUNTER=0
 
     while [ $COUNTER -lt $MAX_RETRIES ]; do
         # check if collection table exists
-        if PGPASSWORD=$MB_DB_PASS psql -h $MB_DB_HOST -U $MB_DB_USER -d $MB_DB_DBNAME -c "\dt collection" | grep -q "collection"; then
-            echo "Collection table found. Updating schema..."
-            PGPASSWORD=$MB_DB_PASS psql -h $MB_DB_HOST -U $MB_DB_USER -d $MB_DB_DBNAME -c "ALTER TABLE collection ALTER COLUMN slug TYPE TEXT;"
-            if [ $? -eq 0 ]; then
-                echo "Schema update successful: 'slug' column in 'collection' table changed to TEXT."
+        if PGPASSWORD="$MB_DB_PASS" psql -h "$MB_DB_HOST" -U "$MB_DB_USER" -d "$MB_DB_DBNAME" -c "\dt collection" | grep -q "collection"; then
+            echo "Collection table found. Checking 'slug' column type..."
+            
+            # Check current data type of slug column
+            CURRENT_TYPE=$(PGPASSWORD="$MB_DB_PASS" psql -h "$MB_DB_HOST" -U "$MB_DB_USER" -d "$MB_DB_DBNAME" -t -c "SELECT data_type FROM information_schema.columns WHERE table_name = 'collection' AND column_name = 'slug';" | tr -d '[:space:]')
+
+            if [ "$CURRENT_TYPE" = "text" ]; then
+                echo "'slug' column is already TEXT. Skipping update."
                 break
             else
-                echo "Schema update failed. Retrying..."
+                echo "Current type is '$CURRENT_TYPE'. Updating to TEXT..."
+                PGPASSWORD="$MB_DB_PASS" psql -h "$MB_DB_HOST" -U "$MB_DB_USER" -d "$MB_DB_DBNAME" -c "ALTER TABLE collection ALTER COLUMN slug TYPE TEXT;"
+                if [ $? -eq 0 ]; then
+                    echo "Schema update successful: 'slug' column in 'collection' table changed to TEXT."
+                    break
+                else
+                    echo "Schema update failed. Retrying..."
+                fi
             fi
         else
             echo "Collection table not found yet. Waiting..."
         fi
-        sleep 10
         let COUNTER=COUNTER+1
     done
 

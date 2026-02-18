@@ -1,6 +1,6 @@
 # Resource Deletion Script Documentation
 
-Referred Script: `Documentation/data-cleanup/resource_delete.py`
+Referred Script: `Documentation/data-cleanup/python-script/resource_delete.py`
 
 ## Overview
 This script is a Kafka consumer that listens for deletion events on a specific topic (`RESOURCE_DELETION_TOPIC`) and performs cleanup operations in the database and Metabase dashboards and GroupIds. It handles cleanup for both **Programs** and **Solutions**.
@@ -154,7 +154,7 @@ Now you are inside the tmux session.
 ### Step 3: Run Your Python Script
 Use full python path (recommended):
 ```bash
-python3 /app/Documentation/data-cleanup/resource_delete.py
+python3 /app/Documentation/data-cleanup/python-script/resource_delete.py
 ```
 
 ### Step 4: Detach from tmux (Leave It Running)

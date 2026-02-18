@@ -53,7 +53,7 @@ def get_access_token():
         "password": PASSWORD
     }
     headers = {
-        "origin": "default-qa.tekdinext.com",
+        "origin": program_deletion_config.get('origin', ''),
         "Content-Type": "application/json"
     }
 
@@ -88,7 +88,7 @@ def fetch_all_program_ids(access_token):
         "sort": {"createdAt": "-1"},
         "projection": ["_id", "tenantId", "orgId"],
         "mongoIdKeys": ["_id"],
-        "limit": 10000
+        "limit": 100000
     }
 
     try:

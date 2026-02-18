@@ -74,22 +74,43 @@ export SOLUTION_TABLE="{{ENV}}_solutions"
 ```json
 ./Documentation/migration-scripts/alter-solution-table.sh
 ```
-### 2. Metabase column data type changes 
+### 3. Metabase column data type changes 
 
 When programs with non-English names are created, Metabase generates the slug based on the collection name in an encoded format, which exceeds the column’s data storage limit. Therefore, we need to update the slug column in the Metabase database collection table.
 
-- Run this query in postgres for the metabase db 
+Note : please make sure that Documentation/Docker-setup/update_metabase_schema.sh script has attached in metabase docker container.
+```
+  metabase:
+    image: metabase/metabase:v0.50.25
+    restart: always
+    container_name: metabase
+    environment:
+      MB_DB_TYPE: ${MB_DB_TYPE}
+      MB_DB_DBNAME: ${POSTGRES_DB}
+      MB_DB_PORT: ${POSTGRES_PORT}
+      MB_DB_USER: ${POSTGRES_USER}
+      MB_DB_PASS: ${POSTGRES_PASSWORD}
+      MB_DB_HOST: ${POSTGRES_HOST}
+      MB_API_KEY: ${MB_API_KEY}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    networks:
+      - elevate_net
+    volumes:
+      - metabase_data:/dev/random:ro
+      - ./update_metabase_schema.sh:/app/update_metabase_schema.sh
+    user: root
+    entrypoint: ["/bin/bash", "/app/update_metabase_schema.sh"]
+```
 
-```
-ALTER TABLE collection
-ALTER COLUMN slug TYPE TEXT;
-```
-### 3. Update the dashboard report config
+### 4. Update the dashboard report config
 - **First delete all the rows from the {ENV}_report_config table**
 ```
 delete from {ENV}_report_config;
 ```
-- **Reload all the configs by running the data-loader.sh script but first make the necessary config chnages**
+- **Reload all the configs by running the data-loader.sh script but first make the necessary config changes**
 ```json
 # Database connection parameters
 DB_NAME="{{PGDBNAME}}"
@@ -99,11 +120,11 @@ DB_HOST="{{PGHOST}}"
 DB_PORT="{{PGPORT}}"
 TABLE_NAME="{{ENV}}_report_config"
         
-# Json file directory path from inside contianer
+# Json file directory path from inside container
 MAIN_FOLDER="/app/data-pipeline/metabase-jobs/config-data-loader/projectJson"
 ```
 
-### 4. Data clean up (If required)
+### 5. Data clean up (If required)
 - To setup the data cleanup script follow this doc : Documentation/data-cleanup/python-script/resource_delete.md
 - Once setup is completed update the config in the config.ini and run the Documentation/data-cleanup/python-script/program_deletion.py script.
 
