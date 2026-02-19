@@ -19,7 +19,7 @@ config.read(config_path)
 # === PostgreSQL connection details ===
 PGHOST = config['POSTGRES_DB']['HOST']
 PGPORT = config['POSTGRES_DB']['PORT']
-PGDBNAME = config['POSTGRES_DB']['DBNAME']
+PGDBNAME = config['POSTGRES_DB']['ELEVATE_DBNAME']
 PGUSER = config['POSTGRES_DB']['USER']
 PGPASSWORD = config['POSTGRES_DB']['PASSWORD']
 
@@ -276,16 +276,21 @@ def main():
         if producer:
             producer.flush()
 
-        cursor.close()
-        conn.close()
+
 
     except Exception as e:
         log(f"❌ Script Error: {e}")
-        try:
-            if conn: conn.close()
-            if producer: producer.close()
-        except:
-            pass
+    finally:
+        if producer:
+            try:
+                producer.close()
+            except Exception:
+                pass
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
 
     log("🏁 Script completed")
 

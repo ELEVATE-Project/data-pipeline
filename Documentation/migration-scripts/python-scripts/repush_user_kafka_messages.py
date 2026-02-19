@@ -1,5 +1,6 @@
 import psycopg2
 import psycopg2.extras
+from psycopg2 import sql
 import json
 import logging
 import datetime
@@ -35,7 +36,7 @@ def log(message):
 # === PostgreSQL connection details ===
 PGHOST = config['POSTGRES_DB']['HOST']
 PGPORT = config['POSTGRES_DB']['PORT']
-PGDBNAME = config['POSTGRES_DB']['DBNAME']
+PGDBNAME = config['POSTGRES_DB']['USERS_DBNAME']
 PGUSER = config['POSTGRES_DB']['USER']
 PGPASSWORD = config['POSTGRES_DB']['PASSWORD']
 USERS_TABLE = config['POSTGRES_DB']['USERS_TABLE']
@@ -81,13 +82,13 @@ def main():
         # === Metadata Stats ===
         log(f"📊 Fetching user metadata from '{USERS_TABLE}'...")
 
-        cursor.execute(f"SELECT COUNT(*) as count FROM {USERS_TABLE};")
+        cursor.execute(sql.SQL("SELECT COUNT(*) as count FROM {};").format(sql.Identifier(USERS_TABLE)))
         total_rows = cursor.fetchone()['count']
 
-        cursor.execute(f"SELECT COUNT(*) as count FROM {USERS_TABLE} WHERE status = 'ACTIVE';")
+        cursor.execute(sql.SQL("SELECT COUNT(*) as count FROM {} WHERE status = 'ACTIVE';").format(sql.Identifier(USERS_TABLE)))
         active_users = cursor.fetchone()['count']
 
-        cursor.execute(f"SELECT COUNT(*) as count FROM {USERS_TABLE} WHERE deleted_at IS NOT NULL;")
+        cursor.execute(sql.SQL("SELECT COUNT(*) as count FROM {} WHERE deleted_at IS NOT NULL;").format(sql.Identifier(USERS_TABLE)))
         deleted_users = cursor.fetchone()['count']
 
         log("------------------------------------")
@@ -101,11 +102,12 @@ def main():
         log("------------------------------------")
 
         # Fetch main user data
-        cursor.execute(f"""
+        query = sql.SQL("""
             SELECT id, name, username, tenant_code, created_at, updated_at, status, meta 
-            FROM {USERS_TABLE} 
+            FROM {} 
             ORDER BY created_at;
-        """)
+        """).format(sql.Identifier(USERS_TABLE))
+        cursor.execute(query)
         
         # We need a separate cursor for the nested loop logic
         # Using RealDictCursor for inner loop as well
@@ -134,7 +136,7 @@ def main():
             log(f"🔎 Processing User ID: {user_id} | Name: {name}")
 
             # ## ORG LOGIC (merged orgs + roles query)
-            org_query = f"""
+            org_query = """
                 SELECT json_build_object(
                 'created_by', COALESCE(inv.created_by, uo.user_id),
                 'organizations', (
@@ -161,17 +163,17 @@ def main():
                     FROM user_organizations uo
                     JOIN organizations o
                         ON o.code = uo.organization_code AND o.tenant_code = uo.tenant_code
-                    WHERE uo.user_id = {user_id}
+                    WHERE uo.user_id = %s
                     ) org_with_roles
                 )
                 ) as merged
                 FROM user_organizations uo
-                LEFT JOIN organization_user_invites oui ON oui.username = '{username}'
+                LEFT JOIN organization_user_invites oui ON oui.username = %s
                 LEFT JOIN invitations inv ON inv.id = oui.invitation_id
-                WHERE uo.user_id = {user_id}
+                WHERE uo.user_id = %s
                 LIMIT 1;
             """
-            inner_cursor.execute(org_query)
+            inner_cursor.execute(org_query, (user_id, username, user_id))
             merged_orgs_row = inner_cursor.fetchone()
             merged_orgs = merged_orgs_row['merged'] if merged_orgs_row else {}
 
@@ -306,16 +308,21 @@ def main():
         if producer:
             producer.flush()
 
-        inner_cursor.close()
-        cursor.close()
-        conn.close()
-
     except Exception as e:
         log(f"❌ Script Error: {e}")
-        try:
-            if conn: conn.close()
-            if producer: producer.close()
-        except: pass
+    finally:
+        if session:
+            session.close()
+        if producer:
+            try:
+                producer.close()
+            except Exception:
+                pass
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
 
 if __name__ == "__main__":
     main()
