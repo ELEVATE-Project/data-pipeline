@@ -126,6 +126,9 @@ services:
       - elevate_net
     volumes:
       - metabase_data:/dev/random:ro
+      - ./update_metabase_schema.sh:/app/update_metabase_schema.sh
+    user: root
+    entrypoint: ["/bin/bash", "/app/update_metabase_schema.sh"]
 
   # Elevate Data Service
   elevate-data:
