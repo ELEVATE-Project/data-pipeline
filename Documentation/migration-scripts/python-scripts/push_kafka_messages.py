@@ -248,7 +248,7 @@ def main():
             random_id = f"{uuid.uuid4()}_{today}"
 
             # Logic for isRubric
-            is_rubric_bool = True if is_rubrics == "t" or is_rubrics is True else False
+            is_rubric_str = "true" if is_rubrics == "t" or is_rubrics is True else "false"
 
             observation_json = {
                 "_id": random_id,
@@ -257,7 +257,7 @@ def main():
                 "dashboardData": {
                     "targetedProgram": linked_to,
                     "targetedSolution": entity_id,
-                    "isRubric": is_rubric_bool,
+                    "isRubric": is_rubric_str,
                     "entityType": parent_name
                 }
             }
