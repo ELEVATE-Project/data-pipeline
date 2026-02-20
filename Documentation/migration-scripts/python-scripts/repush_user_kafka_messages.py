@@ -177,8 +177,6 @@ def main():
             merged_orgs_row = inner_cursor.fetchone()
             merged_orgs = merged_orgs_row['merged'] if merged_orgs_row else {}
 
-            if not user_id:
-                continue
 
             deleted = "true" if status == "DELETED" else "false"
 

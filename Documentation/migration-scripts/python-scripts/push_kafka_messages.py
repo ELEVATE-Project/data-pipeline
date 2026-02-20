@@ -1,9 +1,9 @@
 import psycopg2
 import psycopg2.extras
+from psycopg2 import sql
 import json
 import uuid
 import datetime
-import time
 import logging
 import sys
 from kafka import KafkaProducer
@@ -74,14 +74,14 @@ def main():
 
         # === Fetch and Process project-linked dashboard ===
         log("=== Fetch and Process project-linked dashboard ===")
-        cursor.execute(f"""
+        cursor.execute(sql.SQL("""
             SELECT linked_to, entity_id
-            FROM {TABLE_NAME}
+            FROM {}
             WHERE entity_type = 'solution'
               AND report_type = 'improvementProject'
               AND linked_to IS NOT NULL AND linked_to <> 'null'
               AND entity_id IS NOT NULL AND entity_id <> 'null';
-        """)
+        """).format(sql.Identifier(TABLE_NAME)))
         project_rows = cursor.fetchall()
         log(f"PROJECT QUERY RESULT COUNT = {len(project_rows)}")
 
@@ -101,12 +101,12 @@ def main():
                 }
             }
 
-            try:
-                producer.send(TOPIC_1, value=project_json)
-                log(f"✅ Project event pushed to Kafka: {random_id}")
-                log(f"🚀 Event pushed for solution: {entity_id} -> program: {linked_to}")
-            except Exception as k_err:
-                log(f"❌ Failed to push Project event to Kafka: {k_err}")
+            def _on_error(exc, rid=random_id):
+                log(f"❌ Failed to deliver Project event {rid}: {exc}")
+
+            producer.send(TOPIC_1, value=project_json).add_errback(_on_error)
+            log(f"🚀 Project event enqueued: {random_id}")
+            log(f"🚀 Event enqueued for solution: {entity_id} -> program: {linked_to}")
         
         
         log("=== Completed Processing project-linked dashboard ===")
@@ -114,12 +114,12 @@ def main():
 
         # === Fetch and Process state-linked dashboards ===
         log("=== Fetch and Process state-linked dashboards ===")
-        cursor.execute(f"""
+        cursor.execute(sql.SQL("""
             SELECT DISTINCT entity_id
-            FROM {TABLE_NAME}
+            FROM {}
             WHERE entity_type = 'state'
               AND entity_id IS NOT NULL AND entity_id <> 'null';
-        """)
+        """).format(sql.Identifier(TABLE_NAME)))
         state_rows = cursor.fetchall()
         log(f"STATE QUERY RESULT COUNT = {len(state_rows)}")
 
@@ -137,12 +137,12 @@ def main():
                 }
             }
 
-            try:
-                producer.send(TOPIC_1, value=state_json)
-                log(f"✅ State event pushed to Kafka: {random_id}")
-                log(f"🚀 Event pushed for state: {entity_id}")
-            except Exception as k_err:
-                log(f"❌ Failed to push State event to Kafka: {k_err}")
+            def _on_error_state(exc, rid=random_id):
+                log(f"❌ Failed to deliver State event {rid}: {exc}")
+
+            producer.send(TOPIC_1, value=state_json).add_errback(_on_error_state)
+            log(f"🚀 State event enqueued: {random_id}")
+            log(f"🚀 Event enqueued for state: {entity_id}")
             
 
         log("=== Completed Processing state-linked dashboards ===")
@@ -150,12 +150,12 @@ def main():
 
         # === Fetch and Process district-linked dashboards ===
         log("=== Fetch and Process district-linked dashboards ===")
-        cursor.execute(f"""
+        cursor.execute(sql.SQL("""
             SELECT DISTINCT entity_id
-            FROM {TABLE_NAME}
+            FROM {}
             WHERE entity_type = 'district'
               AND entity_id IS NOT NULL AND entity_id <> 'null';
-        """)
+        """).format(sql.Identifier(TABLE_NAME)))
         district_rows = cursor.fetchall()
         log(f"DISTRICT QUERY RESULT COUNT = {len(district_rows)}")
 
@@ -173,12 +173,12 @@ def main():
                 }
             }
 
-            try:
-                producer.send(TOPIC_1, value=district_json)
-                log(f"✅ District event pushed to Kafka: {random_id}")
-                log(f"🚀 Event pushed for district: {entity_id}")
-            except Exception as k_err:
-                log(f"❌ Failed to push District event to Kafka: {k_err}")
+            def _on_error_district(exc, rid=random_id):
+                log(f"❌ Failed to deliver District event {rid}: {exc}")
+
+            producer.send(TOPIC_1, value=district_json).add_errback(_on_error_district)
+            log(f"🚀 District event enqueued: {random_id}")
+            log(f"🚀 Event enqueued for district: {entity_id}")
         
 
         log("=== Completed Processing district-linked dashboards ===")
@@ -186,14 +186,14 @@ def main():
 
         # === Fetch and Process survey-linked dashboard ===
         log("=== Fetch and Process survey-linked dashboard ===")
-        cursor.execute(f"""
+        cursor.execute(sql.SQL("""
             SELECT linked_to, entity_id
-            FROM {TABLE_NAME}
+            FROM {}
             WHERE entity_type = 'solution'
               AND report_type = 'survey'
               AND linked_to IS NOT NULL AND linked_to <> 'null'
               AND entity_id IS NOT NULL AND entity_id <> 'null';
-        """)
+        """).format(sql.Identifier(TABLE_NAME)))
         survey_rows = cursor.fetchall()
         log(f"SURVEY QUERY RESULT COUNT = {len(survey_rows)}")
 
@@ -213,12 +213,12 @@ def main():
                 }
             }
 
-            try:
-                producer.send(TOPIC_2, value=survey_json)
-                log(f"✅ Survey event pushed to Kafka: {random_id}")
-                log(f"🚀 Event pushed for solution: {entity_id} -> program: {linked_to}")
-            except Exception as k_err:
-                log(f"❌ Failed to push Survey event to Kafka: {k_err}")
+            def _on_error_survey(exc, rid=random_id):
+                log(f"❌ Failed to deliver Survey event {rid}: {exc}")
+
+            producer.send(TOPIC_2, value=survey_json).add_errback(_on_error_survey)
+            log(f"🚀 Survey event enqueued: {random_id}")
+            log(f"🚀 Event enqueued for solution: {entity_id} -> program: {linked_to}")
             
 
         log("=== Completed Processing survey-linked dashboard ===")
@@ -226,15 +226,15 @@ def main():
 
         # === Fetch and Process observation-linked dashboard ===
         log("=== Fetch and Process observation-linked dashboard ===")
-        cursor.execute(f"""
+        cursor.execute(sql.SQL("""
             SELECT linked_to, entity_id, is_rubrics, parent_name
-            FROM {TABLE_NAME}
+            FROM {}
             WHERE entity_type = 'solution'
               AND report_type = 'observation'
               AND linked_to IS NOT NULL AND linked_to <> 'null'
               AND entity_id IS NOT NULL AND entity_id <> 'null'
               AND parent_name IS NOT NULL AND parent_name <> 'null';
-        """)
+        """).format(sql.Identifier(TABLE_NAME)))
         observation_rows = cursor.fetchall()
         log(f"OBSERVATION QUERY RESULT COUNT = {len(observation_rows)}")
 
@@ -262,19 +262,19 @@ def main():
                 }
             }
 
-            try:
-                producer.send(TOPIC_3, value=observation_json)
-                log(f"✅ Observation event pushed to Kafka: {random_id}")
-                log(f"🚀 Event pushed for solution: {entity_id} -> program: {linked_to}")
-            except Exception as k_err:
-                log(f"❌ Failed to push Observation event to Kafka: {k_err}")
+            def _on_error_observation(exc, rid=random_id):
+                log(f"❌ Failed to deliver Observation event {rid}: {exc}")
+
+            producer.send(TOPIC_3, value=observation_json).add_errback(_on_error_observation)
+            log(f"🚀 Observation event enqueued: {random_id}")
+            log(f"🚀 Event enqueued for solution: {entity_id} -> program: {linked_to}")
             
 
         log("=== Completed Processing observation-linked dashboard ===")
         
         # Flush producer to ensure all messages are sent
         if producer:
-            producer.flush()
+            producer.flush(timeout=60)
 
 
 
