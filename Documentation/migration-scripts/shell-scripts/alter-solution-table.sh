@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# This script ensures the org_id column exists in the solutions table,
+# fetches distinct program_ids, retrieves orgId via API,
+# and updates org_id while logging all operations.
+
 # --- Load Configuration ---
 CONFIG_FILE="/app/Documentation/migration-scripts/common-config.env"
 if [ -f "$CONFIG_FILE" ]; then
