@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# This script performs a multi-tenant database migration by detecting tenant tables,
+# creating tenant-specific org_roles tables, and inserting user organization and
+# platform role mappings while preventing duplicate entries. This script is specifically for mentoring.
+
 # Load environment variables from migration.env
 if [ -f "./migration.env" ]; then
     export $(grep -v '^#' ./migration.env | xargs)

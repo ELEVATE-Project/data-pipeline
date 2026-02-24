@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# This script standardizes the projects table by adding missing columns,
+# updating program_name from the solutions table, and logging all operations.
+
 # === Logging Setup ===
 LOG_FILE="project_observation_log_$(date +'%Y%m%d_%H%M%S').log"
 exec > >(tee -a "$LOG_FILE") 2>&1

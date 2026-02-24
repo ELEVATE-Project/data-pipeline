@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# This script standardizes survey tables by adding a report_type column,
+# populating it with default values, and logging all operations.
+
 # === Logging Setup ===
 LOG_FILE="alter_survey_log_$(date +'%Y%m%d_%H%M%S').log"
 exec > >(tee -a "$LOG_FILE") 2>&1
