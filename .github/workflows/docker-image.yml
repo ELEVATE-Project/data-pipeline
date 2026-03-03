@@ -63,6 +63,7 @@ jobs:
           images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/${{ env.DOCKER_IMAGE_NAME }}
           tags: |
             type=raw,value=${{ steps.get-version.outputs.version }}
+            type=raw,value=latest
 
       - name: Build and push Docker image
         id: build
