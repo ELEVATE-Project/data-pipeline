@@ -138,4 +138,7 @@ list_of_required_program_ids = "{{PASTE_HERE_COMMA_SEPARATED_LIST_OF_PROGRAM_IDS
 ```
 python3 Documentation/data-cleanup/python-script/program_deletion.py
 ```
+### 6. Recreation of All Dashboards
+- To reflect the updated tables and charts in the dashboards, all dashboards need to be recreated. 
+- Please follow the documentation: ./Documentation/migration-scripts/python-scripts/dashboard_recreation.md
 ---
