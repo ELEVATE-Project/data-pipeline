@@ -38,7 +38,9 @@ Before running the `push_kafka_messages.py` script, please follow the steps outl
 ## Running the Script
 
 1. **Set Configuration Details:**
-   Once all steps from the Metabase UI are completed, configure the `config.ini` file located in the script's directory (`Documentation/migration-scripts/python-scripts/config.ini`).
+   Once all steps from the Metabase UI are completed, configure the `config.ini` file located in the script's directory (`Documentation/migration-scripts/python-scripts/`).
+   Note : please refer the sample.ini file for setting up the config.ini file.
+
 2. **Execute the Script:**
    After the configuration file is set, trigger the script by running the following command from the root directory:
 
