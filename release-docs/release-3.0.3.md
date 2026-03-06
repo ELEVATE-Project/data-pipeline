@@ -123,8 +123,20 @@ TABLE_NAME="{{ENV}}_report_config"
 # Json file directory path from inside container
 MAIN_FOLDER="/app/data-pipeline/metabase-jobs/config-data-loader/projectJson"
 ```
+### 5. Normalize org_code in all the tables 
+- To maintain consistency across all tables, we need to normalize the organization codes by converting them to lowercase and replacing any spaces with underscores. This will ensure that the org_code is uniform across all tables and can be easily referenced in queries and dashboards.
+- Update the common-config.env and trigger the update-org-code.sh script.
+- Dry run the below command to update the org_code in all the tables:
+```shell 
+  ./Documentation/migration-scripts/update-org-code.sh --dry-run  
+```
+- If the dry run looks good, run the below command to update the org_code in all the tables:
+```shell
+  ./Documentation/migration-scripts/update-org-code.sh
+```
 
-### 5. Data clean up (If required)
+
+### 6. Data clean up (If required)
 - To setup the data cleanup script follow this doc : Documentation/data-cleanup/python-script/resource_delete.md
 - Once setup is completed update the config in the config.ini and run the Documentation/data-cleanup/python-script/program_deletion.py script.
 
@@ -138,7 +150,7 @@ list_of_required_program_ids = "{{PASTE_HERE_COMMA_SEPARATED_LIST_OF_PROGRAM_IDS
 ```
 python3 Documentation/data-cleanup/python-script/program_deletion.py
 ```
-### 6. Recreation of All Dashboards
+### 7. Recreation of All Dashboards
 - To reflect the updated tables and charts in the dashboards, all dashboards need to be recreated. 
 - Please follow the documentation: ./Documentation/migration-scripts/python-scripts/dashboard_recreation.md
 ---
