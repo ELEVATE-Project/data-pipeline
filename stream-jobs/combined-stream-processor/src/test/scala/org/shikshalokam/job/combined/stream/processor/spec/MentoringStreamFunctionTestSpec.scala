@@ -27,7 +27,11 @@ class MentoringStreamFunctionTestSpec extends BaseTestSpec {
 
   val mockKafkaUtil: FlinkKafkaConnector = mock[FlinkKafkaConnector](Mockito.withSettings().serializable())
 
-  val config: Config = ConfigFactory.load("test.conf")
+  val config: Config = {
+    val confPath = if (new java.io.File("unified-test.conf").exists()) "unified-test.conf" else "../../unified-test.conf"
+    val parsed = com.typesafe.config.ConfigFactory.parseFile(new java.io.File(confPath)).resolve()
+    parsed.getConfig("stream").withFallback(parsed)
+  }
   val jobConfig: UnifiedStreamConfig = new UnifiedStreamConfig(config)
 
 
@@ -42,7 +46,7 @@ class MentoringStreamFunctionTestSpec extends BaseTestSpec {
   }
 
   def initialize(): Unit = {
-    when(mockKafkaUtil.kafkaJobRequestSource[MentoringEvent](jobConfig.mentoringInputTopic, jobConfig.mentoringConsumerGroup))
+    when(mockKafkaUtil.kafkaJobRequestSource[MentoringEvent](jobConfig.mentoringInputTopic))
       .thenReturn(new MentoringEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.mentoringOutputTopic))
       .thenReturn(new GenerateMentoringSink)

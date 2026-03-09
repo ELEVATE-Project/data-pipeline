@@ -43,9 +43,9 @@ services:
     image: flink:1.13.2-scala_2.12-java11
     restart: always
     container_name: jobmanager
+    command: jobmanager
     ports:
       - "8081:8081"
-    command: jobmanager
     environment:
       - |
         FLINK_PROPERTIES=
@@ -132,33 +132,21 @@ services:
     image: shikshalokamqa/elevate-data:latest
     restart: always
     container_name: elevate-data
+    command: /jobmanager-entrypoint.sh
     ports:
-      - "8080:8080"
+      - "8083:8083"
     depends_on:
       - kafka
       - postgres
       - jobmanager
       - taskmanager
       - metabase
+    volumes:
+      - /home/user2/Documents/elevate-data-optimised/data-pipeline/Documentation/Docker-setup/jobmanager-entrypoint.sh:/jobmanager-entrypoint.sh
+      - /home/user2/Documents/elevate-data-optimised/data-pipeline/Documentation/Docker-setup/config.env:/job-configs/config.env
+      - /home/user2/Documents/elevate-data-optimised/data-pipeline/unified-pipeline.conf:/job-configs/unified-pipeline.conf
     networks:
       - elevate_net
-    volumes:
-      - ./config_files/base-config.conf:/app/jobs-core/src/main/resources/base-config.conf
-      - ./config_files/application.conf:/app/metabase-jobs/users-via-csv/src/main/resources/application.conf
-      - ./config_files/metabase-observation-dashboard.conf:/app/metabase-jobs/observation-dashboard-creator/src/main/resources/metabase-observation-dashboard.conf
-      - ./config_files/metabase-project-dashboard.conf:/app/metabase-jobs/project-dashboard-creator/src/main/resources/metabase-project-dashboard.conf
-      - ./config_files/metabase-survey-dashboard.conf:/app/metabase-jobs/survey-dashboard-creator/src/main/resources/metabase-survey-dashboard.conf
-      - ./config_files/observation-stream.conf:/app/stream-jobs/observation-stream-processor/src/main/resources/observation-stream.conf
-      - ./config_files/project-stream.conf:/app/stream-jobs/project-stream-processor/src/main/resources/project-stream.conf
-      - ./config_files/survey-stream.conf:/app/stream-jobs/survey-stream-processor/src/main/resources/survey-stream.conf
-      - ./config_files/user-service.conf:/app/metabase-jobs/user-service/src/main/resources/user-service.conf
-      - ./config_files/user-stream.conf:/app/stream-jobs/user-stream-processor/src/main/resources/user-stream.conf
-      - ./config_files/metabase-user-dashboard.conf:/app/metabase-jobs/user-dashboard-creator/src/main/resources/metabase-user-dashboard.conf
-      - ./config_files/mentoring-stream.conf:/app/stream-jobs/mentoring-stream-processor/src/main/resources/mentoring-stream.conf
-      - ./config_files/metabase-mentoring-dashboard.conf:/app/metabase-jobs/mentoring-dashboard-creator/src/main/resources/metabase-mentoring-dashboard.conf
-      - ./config_files/config.ini:/app/Documentation/batch-scripts/config.ini
-      - ./logs:/app/logs
-    entrypoint: ["/bin/bash", "-c", "/app/Documentation/Docker-setup/submit-jobs.sh jobmanager && sleep infinity"]
 # Networks
 networks:
   elevate_net:

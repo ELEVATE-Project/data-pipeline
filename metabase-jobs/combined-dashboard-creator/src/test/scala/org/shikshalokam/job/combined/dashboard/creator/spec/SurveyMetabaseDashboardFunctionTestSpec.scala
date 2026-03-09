@@ -48,7 +48,7 @@ class SurveyMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
   }
 
   def initialize(): Unit = {
-    when(mockKafkaUtil.kafkaJobRequestSource[SurveyEvent](jobConfig.surveyInputTopic, jobConfig.surveyConsumerGroup))
+    when(mockKafkaUtil.kafkaJobRequestSource[SurveyEvent](jobConfig.surveyInputTopic))
       .thenReturn(new SurveyMetabaseEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.surveyInputTopic)).thenReturn(new GenerateSurveySink)
   }

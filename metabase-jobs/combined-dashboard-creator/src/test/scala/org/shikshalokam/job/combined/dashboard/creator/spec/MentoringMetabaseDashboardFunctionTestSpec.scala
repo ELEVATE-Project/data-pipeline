@@ -46,7 +46,7 @@ class MentoringMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
   }
 
   def initialize(): Unit = {
-    when(mockKafkaUtil.kafkaJobRequestSource[MentoringEvent](jobConfig.mentoringInputTopic, jobConfig.mentoringConsumerGroup))
+    when(mockKafkaUtil.kafkaJobRequestSource[MentoringEvent](jobConfig.mentoringInputTopic))
       .thenReturn(new MentoringMetabaseEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.mentoringInputTopic)).thenReturn(new GenerateMentoringSink)
   }

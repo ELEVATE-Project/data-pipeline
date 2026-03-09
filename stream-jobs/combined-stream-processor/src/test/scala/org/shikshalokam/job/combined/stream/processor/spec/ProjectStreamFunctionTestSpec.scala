@@ -27,7 +27,11 @@ class ProjectStreamFunctionTestSpec extends BaseTestSpec {
 
   val mockKafkaUtil: FlinkKafkaConnector = mock[FlinkKafkaConnector](Mockito.withSettings().serializable())
 
-  val config: Config = ConfigFactory.load("test.conf")
+  val config: Config = {
+    val confPath = if (new java.io.File("unified-test.conf").exists()) "unified-test.conf" else "../../unified-test.conf"
+    val parsed = com.typesafe.config.ConfigFactory.parseFile(new java.io.File(confPath)).resolve()
+    parsed.getConfig("stream").withFallback(parsed)
+  }
   val jobConfig: UnifiedStreamConfig = new UnifiedStreamConfig(config)
 
 
@@ -43,7 +47,7 @@ class ProjectStreamFunctionTestSpec extends BaseTestSpec {
   }
 
   def initialize(): Unit = {
-    when(mockKafkaUtil.kafkaJobRequestSource[ProjectEvent](jobConfig.projectInputTopic, jobConfig.projectConsumerGroup))
+    when(mockKafkaUtil.kafkaJobRequestSource[ProjectEvent](jobConfig.projectInputTopic))
       .thenReturn(new ProjectEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.projectOutputTopic))
       .thenReturn(new GenerateProjectSink)

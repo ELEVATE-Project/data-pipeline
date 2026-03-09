@@ -21,5 +21,4 @@ class ProjectEventSource extends SourceFunction[ProjectEvent] {
   }
 
   override def cancel(): Unit = {}
-
 }

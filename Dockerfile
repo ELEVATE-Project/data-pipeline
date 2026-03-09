@@ -11,6 +11,7 @@ RUN apt update && apt install -y \
     tar \
     git \
     curl \
+    unzip \
     maven \
     jq \
     nano \

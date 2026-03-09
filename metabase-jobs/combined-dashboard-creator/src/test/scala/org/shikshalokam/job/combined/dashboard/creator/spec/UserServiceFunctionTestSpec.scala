@@ -49,11 +49,11 @@ class UserServiceFunctionTestSpec extends BaseTestSpec {
   }
 
   def initialize() {
-    when(mockKafkaUtil.kafkaJobRequestSource[UserMappingEvent](jobConfig.userServiceInputTopic, jobConfig.userServiceConsumerGroup))
+    when(mockKafkaUtil.kafkaJobRequestSource[UserMappingEvent](jobConfig.userServiceInputTopic))
       .thenReturn(new UserServiceEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.notificationOutputTopic))
       .thenReturn(new GenerateUserServiceSink)
-    when(mockKafkaUtil.kafkaJobRequestSource[UserMappingEvent](jobConfig.programServiceInputTopic, jobConfig.programServiceConsumerGroup))
+    when(mockKafkaUtil.kafkaJobRequestSource[UserMappingEvent](jobConfig.programServiceInputTopic))
       .thenReturn(new ProgramServiceEventSource)
   }
 

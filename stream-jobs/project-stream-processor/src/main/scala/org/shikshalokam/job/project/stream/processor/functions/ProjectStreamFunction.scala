@@ -119,8 +119,6 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
       println("organisationName = " + orgName)
       println("organisationCode = " + orgCode)
       println("parentOrgId = " + event.parentOrgId)
-      println("\n==> Tasks data")
-      println(tasksData)
 
       // Uncomment the bellow lines to create table schema for the first time.
       postgresUtil.createTable(config.createSolutionsTable, config.solutions)

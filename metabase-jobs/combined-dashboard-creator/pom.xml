@@ -178,9 +178,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <!-- change the main class -->
-                                    <mainClass>
-                                        org.shikshalokam.job.combined.dashboard.creator.task.CombinedDashboardCreatorTask
-                                    </mainClass>
+                                    <mainClass>org.shikshalokam.job.combined.dashboard.creator.task.CombinedDashboardCreatorTask</mainClass>
                                 </transformer>
                                 <!-- append default configs -->
                                 <transformer
@@ -238,7 +236,7 @@
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <junitxml>.</junitxml>
                     <filereports>metabase-jobs-testsuite.txt</filereports>
-                    <argLine>-Dlog4j2.configurationFile=src/test/resources/log4j2.properties</argLine>
+                    <argLine>-Dlog4j2.configurationFile=src/test/resources/log4j2.properties --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.math=ALL-UNNAMED</argLine>
                 </configuration>
                 <executions>
                     <execution>

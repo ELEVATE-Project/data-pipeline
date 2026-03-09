@@ -21,9 +21,11 @@ object CombinedDashboardCreatorTask {
   def main(args: Array[String]): Unit = {
     val params = ParameterTool.fromArgs(args)
     val config: Config = if (params.has("config.file.path")) {
-      ConfigFactory.parseFile(new File(params.get("config.file.path"))).resolve()
+      val raw = ConfigFactory.parseFile(new File(params.get("config.file.path")))
+      raw.getConfig("dashboard").withFallback(raw).resolve()
     } else {
-      ConfigFactory.load("combined-dashboard-creator.conf").resolve()
+      val raw = ConfigFactory.load("unified-pipeline.conf")
+      raw.getConfig("dashboard").withFallback(raw).resolve()
     }
 
     val dashboardConfig: CombinedDashboardCreatorConfig = new CombinedDashboardCreatorConfig(config)
@@ -39,7 +41,7 @@ object CombinedDashboardCreatorTask {
 
     // Mentoring
     if (config.config.hasPath("kafka.input.mentoring.enabled") && config.config.getBoolean("kafka.input.mentoring.enabled")) {
-      val mentoringSource = kafkaConnector.kafkaJobRequestSource[MentoringEvent](config.mentoringInputTopic, config.mentoringConsumerGroup)
+      val mentoringSource = kafkaConnector.kafkaJobRequestSource[MentoringEvent](config.mentoringInputTopic)
       env.addSource(mentoringSource)
         .name("mentoring-dashboard-consumer").uid("mentoring-dashboard-consumer")
         .setParallelism(config.mentoringConsumerParallelism).rebalance
@@ -50,7 +52,7 @@ object CombinedDashboardCreatorTask {
 
     // Observation
     if (config.config.hasPath("kafka.input.observation.enabled") && config.config.getBoolean("kafka.input.observation.enabled")) {
-      val observationSource = kafkaConnector.kafkaJobRequestSource[ObservationEvent](config.observationInputTopic, config.observationConsumerGroup)
+      val observationSource = kafkaConnector.kafkaJobRequestSource[ObservationEvent](config.observationInputTopic)
       env.addSource(observationSource)
         .name("observation-dashboard-consumer").uid("observation-dashboard-consumer")
         .setParallelism(config.observationConsumerParallelism).rebalance
@@ -61,7 +63,7 @@ object CombinedDashboardCreatorTask {
 
     // Project
     if (config.config.hasPath("kafka.input.project.enabled") && config.config.getBoolean("kafka.input.project.enabled")) {
-      val projectSource = kafkaConnector.kafkaJobRequestSource[ProjectEvent](config.projectInputTopic, config.projectConsumerGroup)
+      val projectSource = kafkaConnector.kafkaJobRequestSource[ProjectEvent](config.projectInputTopic)
       env.addSource(projectSource)
         .name("project-dashboard-consumer").uid("project-dashboard-consumer")
         .setParallelism(config.projectConsumerParallelism).rebalance
@@ -72,7 +74,7 @@ object CombinedDashboardCreatorTask {
 
     // Survey
     if (config.config.hasPath("kafka.input.survey.enabled") && config.config.getBoolean("kafka.input.survey.enabled")) {
-      val surveySource = kafkaConnector.kafkaJobRequestSource[SurveyEvent](config.surveyInputTopic, config.surveyConsumerGroup)
+      val surveySource = kafkaConnector.kafkaJobRequestSource[SurveyEvent](config.surveyInputTopic)
       env.addSource(surveySource)
         .name("survey-dashboard-consumer").uid("survey-dashboard-consumer")
         .setParallelism(config.surveyConsumerParallelism).rebalance
@@ -83,7 +85,7 @@ object CombinedDashboardCreatorTask {
 
     // User
     if (config.config.hasPath("kafka.input.user.enabled") && config.config.getBoolean("kafka.input.user.enabled")) {
-      val userSource = kafkaConnector.kafkaJobRequestSource[UserEvent](config.userInputTopic, config.userConsumerGroup)
+      val userSource = kafkaConnector.kafkaJobRequestSource[UserEvent](config.userInputTopic)
       env.addSource(userSource)
         .name("user-dashboard-consumer").uid("user-dashboard-consumer")
         .setParallelism(config.userConsumerParallelism).rebalance
@@ -95,7 +97,7 @@ object CombinedDashboardCreatorTask {
     // User Service
     if (config.config.hasPath("kafka.input.userservice.enabled") && config.config.getBoolean("kafka.input.userservice.enabled")) {
       // Create a UserServiceConfig wrapper for compatibility
-      val userServiceSource = kafkaConnector.kafkaJobRequestSource[UserMappingEvent](config.userServiceInputTopic, config.userServiceConsumerGroup)
+      val userServiceSource = kafkaConnector.kafkaJobRequestSource[UserMappingEvent](config.userServiceInputTopic)
       val userServiceStream = env.addSource(userServiceSource)
         .name("user-service-consumer").uid("user-service-consumer")
         .setParallelism(config.userServiceConsumerParallelism).rebalance
@@ -113,7 +115,7 @@ object CombinedDashboardCreatorTask {
 
     // Program Service
     if (config.config.hasPath("kafka.input.programservice.enabled") && config.config.getBoolean("kafka.input.programservice.enabled")) {
-      val programServiceSource = kafkaConnector.kafkaJobRequestSource[UserMappingEvent](config.programServiceInputTopic, config.programServiceConsumerGroup)
+      val programServiceSource = kafkaConnector.kafkaJobRequestSource[UserMappingEvent](config.programServiceInputTopic)
       env.addSource(programServiceSource)
         .name("program-service-consumer").uid("program-service-consumer")
         .setParallelism(config.programServiceConsumerParallelism).rebalance
