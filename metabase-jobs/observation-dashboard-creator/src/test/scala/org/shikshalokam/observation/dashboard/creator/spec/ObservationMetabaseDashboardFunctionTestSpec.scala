@@ -11,6 +11,7 @@ import org.shikshalokam.BaseTestSpec
 import org.shikshalokam.job.connector.FlinkKafkaConnector
 import org.shikshalokam.job.observation.dashboard.creator.domain.Event
 import org.shikshalokam.job.observation.dashboard.creator.task.{ObservationMetabaseDashboardConfig, ObservationMetabaseDashboardTask}
+import java.io.File
 
 
 class ObservationMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
@@ -26,7 +27,7 @@ class ObservationMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
 
   val mockKafkaUtil: FlinkKafkaConnector = mock[FlinkKafkaConnector](Mockito.withSettings().serializable())
 
-  val config: Config = ConfigFactory.load("test.conf")
+  val config: Config = ConfigFactory.parseFile(new File("unified-test.conf")).resolve().withFallback(ConfigFactory.systemEnvironment())
   val jobConfig: ObservationMetabaseDashboardConfig = new ObservationMetabaseDashboardConfig(config)
 
 

@@ -11,6 +11,7 @@ import org.shikshalokam.BaseTestSpec
 import org.shikshalokam.job.connector.FlinkKafkaConnector
 import org.shikshalokam.job.survey.dashboard.creator.domain.Event
 import org.shikshalokam.job.survey.dashboard.creator.task.{SurveyMetabaseDashboardConfig, MetabaseDashboardTask}
+import java.io.File
 
 class SurveyMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
   implicit val mapTypeInfo: TypeInformation[java.util.Map[String, AnyRef]] = TypeExtractor.getForClass(classOf[java.util.Map[String, AnyRef]])
@@ -25,7 +26,7 @@ class SurveyMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
 
   val mockKafkaUtil: FlinkKafkaConnector = mock[FlinkKafkaConnector](Mockito.withSettings().serializable())
 
-  val config: Config = ConfigFactory.load("test.conf")
+  val config: Config = ConfigFactory.parseFile(new File("unified-test.conf")).resolve().withFallback(ConfigFactory.systemEnvironment())
   val jobConfig: SurveyMetabaseDashboardConfig = new SurveyMetabaseDashboardConfig(config)
 
 
