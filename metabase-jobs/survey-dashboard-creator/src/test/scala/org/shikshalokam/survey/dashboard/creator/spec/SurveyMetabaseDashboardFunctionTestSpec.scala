@@ -1,6 +1,7 @@
 package org.shikshalokam.survey.dashboard.creator.spec
 
 import com.typesafe.config.{Config, ConfigFactory}
+import java.io.File
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.TypeExtractor
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration
@@ -11,7 +12,6 @@ import org.shikshalokam.BaseTestSpec
 import org.shikshalokam.job.connector.FlinkKafkaConnector
 import org.shikshalokam.job.survey.dashboard.creator.domain.Event
 import org.shikshalokam.job.survey.dashboard.creator.task.{SurveyMetabaseDashboardConfig, MetabaseDashboardTask}
-import java.io.File
 
 class SurveyMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
   implicit val mapTypeInfo: TypeInformation[java.util.Map[String, AnyRef]] = TypeExtractor.getForClass(classOf[java.util.Map[String, AnyRef]])

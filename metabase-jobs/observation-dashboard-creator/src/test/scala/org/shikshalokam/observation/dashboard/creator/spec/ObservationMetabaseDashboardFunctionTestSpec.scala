@@ -1,6 +1,7 @@
 package org.shikshalokam.observation.dashboard.creator.spec
 
 import com.typesafe.config.{Config, ConfigFactory}
+import java.io.File
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.TypeExtractor
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration
@@ -11,7 +12,6 @@ import org.shikshalokam.BaseTestSpec
 import org.shikshalokam.job.connector.FlinkKafkaConnector
 import org.shikshalokam.job.observation.dashboard.creator.domain.Event
 import org.shikshalokam.job.observation.dashboard.creator.task.{ObservationMetabaseDashboardConfig, ObservationMetabaseDashboardTask}
-import java.io.File
 
 
 class ObservationMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
