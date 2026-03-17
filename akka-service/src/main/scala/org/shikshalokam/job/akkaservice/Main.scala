@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import org.shikshalokam.job.akkaservice.routes.Routes
-import com.typesafe.config.ConfigFactory
+import org.shikshalokam.job.akkaservice.config.AppConfig
 import akka.http.scaladsl.server.Route
 
 import scala.concurrent.duration.Duration
@@ -15,7 +15,7 @@ object Main extends App {
   implicit val materializer = ActorMaterializer()
   implicit val executionContext = system.dispatcher
 
-  private val config = ConfigFactory.load()
+  private val config = AppConfig.config
   private val host = config.getString("akka.http.host")
   private val port = config.getInt("akka.http.port")
 

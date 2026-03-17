@@ -3,14 +3,14 @@ package org.shikshalokam.job.akkaservice.routes
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import com.typesafe.config.ConfigFactory
 import org.shikshalokam.job.akkaservice.controllers.AppController
+import org.shikshalokam.job.akkaservice.config.AppConfig
 import java.security.MessageDigest
 
 object Routes {
 
-  private val config = ConfigFactory.load()
-  private val apiToken = config.getString("security.api-token")
+  private val config = AppConfig.config
+  private val apiToken = config.getString("akka.security.api.token")
 
   def route: Route =
     pathPrefix("api") {
