@@ -44,7 +44,7 @@ object ObservationStreamTask {
     val configFilePath = Option(ParameterTool.fromArgs(args).get("config.file.path"))
     val config = configFilePath.map {
       path => ConfigFactory.parseFile(new File(path)).resolve()
-    }.getOrElse(ConfigFactory.load("observation-stream.conf").withFallback(ConfigFactory.systemEnvironment()))
+    }.getOrElse(ConfigFactory.load("unified-common.conf").withFallback(ConfigFactory.systemEnvironment()))
     val observationStreamConfig = new ObservationStreamConfig(config)
     val kafkaUtil = new FlinkKafkaConnector(observationStreamConfig)
     val task = new ObservationStreamTask(observationStreamConfig, kafkaUtil)

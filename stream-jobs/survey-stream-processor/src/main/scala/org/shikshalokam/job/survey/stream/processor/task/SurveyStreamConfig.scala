@@ -13,16 +13,16 @@ class SurveyStreamConfig(override val config: Config) extends BaseJobConfig(conf
   implicit val mapTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
 
   // Kafka Topics Configuration
-  val inputTopic: String = config.getString("kafka.input.topic")
-  val outputTopic: String = config.getString("kafka.output.topic")
+  val inputTopic: String = config.getString("kafka.survey.stream.input.topic")
+  val outputTopic: String = config.getString("kafka.survey.stream.output.topic")
 
   // Output Tags
   val eventOutputTag: OutputTag[String] = OutputTag[String]("survey-dashboard-output-event")
 
   // Parallelism
-  override val kafkaConsumerParallelism: Int = config.getInt("task.consumer.parallelism")
-  val surveysStreamParallelism: Int = config.getInt("task.sl.surveys.stream.parallelism")
-  val metabaseDashboardParallelism: Int = config.getInt("task.sl.metabase.dashboard.parallelism")
+  override val kafkaConsumerParallelism: Int = config.getInt("task.survey.stream.consumer.parallelism")
+  val surveysStreamParallelism: Int = config.getInt("task.survey.stream.parallelism")
+  val metabaseDashboardParallelism: Int = config.getInt("task.survey.dashboard.parallelism")
 
   // Consumers
   val surveysStreamConsumer: String = "survey-stream-consumer"
@@ -38,7 +38,7 @@ class SurveyStreamConfig(override val config: Config) extends BaseJobConfig(conf
   val totalEventsCount = "total-survey-events-count"
 
   //report-config
-  val reportsEnabled: Set[String] = config.getStringList("reports.enabled").asScala.toSet
+  val reportsEnabled: Set[String] = config.getStringList("survey.reports.enabled").asScala.toSet
 
   // PostgreSQL connection config
   val pgHost: String = config.getString("postgres.host")
