@@ -56,7 +56,7 @@ object UserServiceTask {
     val configFilePath = Option(ParameterTool.fromArgs(args).get("config.file.path"))
     val config = configFilePath.map {
       path => ConfigFactory.parseFile(new File(path)).resolve()
-    }.getOrElse(ConfigFactory.load("user-service.conf").withFallback(ConfigFactory.systemEnvironment()))
+    }.getOrElse(ConfigFactory.load("unified-common.conf").withFallback(ConfigFactory.systemEnvironment()))
     val userServiceConfig = new UserServiceConfig(config)
     val kafkaUtil = new FlinkKafkaConnector(userServiceConfig)
     val task = new UserServiceTask(userServiceConfig, kafkaUtil)

@@ -12,17 +12,17 @@ class UserServiceConfig(override val config: Config) extends BaseJobConfig(confi
   implicit val mapTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
 
   // Kafka Topics Configuration
-  val inputTopicOne: String = config.getString("kafka.input.topic.one")
-  val inputTopicTwo: String = config.getString("kafka.input.topic.two")
-  val outputTopic: String = config.getString("kafka.output.topic")
+  val inputTopicOne: String = config.getString("kafka.user.map.input.topic.one")
+  val inputTopicTwo: String = config.getString("kafka.user.map.input.topic.two")
+  val outputTopic: String = config.getString("kafka.user.map.output.topic")
 
   // Output Tags
   val eventOutputTag: OutputTag[String] = OutputTag[String]("user-service-output-event")
 
   // Parallelism
-  val userServiceParallelism: Int = config.getInt("task.sl.user.service.parallelism")
-  val programServiceParallelism: Int = config.getInt("task.sl.program.service.parallelism")
-  val notificationServiceParallelism: Int = config.getInt("task.sl.notification.parallelism")
+  val userServiceParallelism: Int = config.getInt("task.user.map.user.service.parallelism")
+  val programServiceParallelism: Int = config.getInt("task.user.map.program.service.parallelism")
+  val notificationServiceParallelism: Int = config.getInt("task.user.map.notification.parallelism")
 
   // Consumers
   val userServiceConsumer: String = "user-service-consumer"
@@ -54,12 +54,12 @@ class UserServiceConfig(override val config: Config) extends BaseJobConfig(confi
   val metabaseDomainName: String = config.getString("metabase.domainName")
 
   // Domain static name
-  val domainName: String = config.getString("domain.name")
+  val domainName: String = config.getString("user.map.domain.name")
 
   // Notification config
-  val notificationType = config.getString("notify.type")
-  val notificationApiUrl = config.getString("notify.api.url")
-  val notificationEmailTemplate = config.getString("notify.email.template")
-  val notificationSmsTemplate = config.getString("notify.sms.template")
+  val notificationType = config.getString("user.map.notify.type")
+  val notificationApiUrl = config.getString("user.map.notify.api.url")
+  val notificationEmailTemplate = config.getString("user.map.notify.email.template")
+  val notificationSmsTemplate = config.getString("user.map.notify.sms.template")
 
 }
