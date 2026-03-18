@@ -72,41 +72,27 @@ export APP_NAME="{{APP_NAME}}"
 export SOLUTION_TABLE="{{ENV}}_solutions"
 ```
 ```json
-./Documentation/migration-scripts/alter-solution-table.sh
+./Documentation/migration-scripts/shell-scripts/alter-solution-table.sh
 ```
 ### 3. Metabase column data type changes 
 
-When programs with non-English names are created, Metabase generates the slug based on the collection name in an encoded format, which exceeds the column’s data storage limit. Therefore, we need to update the slug column in the Metabase database collection table.
+When programs with non-English names are created, Metabase generates the slug based on the collection name in an encoded format, which exceeds the column’s data storage limit. Therefore, we need to update the slug column in the Metabase database collection table. Once the matabase container is up and running export the folloing keys-values and run the bellow command in elevate-data container. 
 
-Note : please make sure that Documentation/Docker-setup/update_metabase_schema.sh script has attached in metabase docker container.
 ```
-  metabase:
-    image: metabase/metabase:v0.50.25
-    restart: always
-    container_name: metabase
-    environment:
-      MB_DB_TYPE: ${MB_DB_TYPE}
-      MB_DB_DBNAME: ${POSTGRES_DB}
-      MB_DB_PORT: ${POSTGRES_PORT}
-      MB_DB_USER: ${POSTGRES_USER}
-      MB_DB_PASS: ${POSTGRES_PASSWORD}
-      MB_DB_HOST: ${POSTGRES_HOST}
-      MB_API_KEY: ${MB_API_KEY}
-    ports:
-      - "3000:3000"
-    depends_on:
-      - postgres
-    networks:
-      - elevate_net
-    volumes:
-      - metabase_data:/dev/random:ro
-      - ./update_metabase_schema.sh:/app/update_metabase_schema.sh
-    user: root
-    entrypoint: ["/bin/bash", "/app/update_metabase_schema.sh"]
+export MB_DB_HOST={postgres_host}
+export MB_DB_USER={postgres_user}
+export MB_DB_PASS={postgres_password}
+export MB_DB_DBNAME={database-name-used-for-metabase}
+```
+Note : Please export the above keys and values before you run the bellow command. Run this command in the elevate-data container
+```
+PGPASSWORD="$MB_DB_PASS" psql -h "$MB_DB_HOST" -U "$MB_DB_USER" -d "$MB_DB_DBNAME" -c \
+"ALTER TABLE collection ALTER COLUMN slug TYPE TEXT USING slug::TEXT;"
 ```
 
 ### 4. Update the dashboard report config
 - **First delete all the rows from the {ENV}_report_config table**
+- {ENV} example local, dev, qa and prod
 ```
 delete from {ENV}_report_config;
 ```
@@ -123,6 +109,7 @@ TABLE_NAME="{{ENV}}_report_config"
 # Json file directory path from inside container
 MAIN_FOLDER="/app/data-pipeline/metabase-jobs/config-data-loader/projectJson"
 ```
+
 ### 5. Normalize org_code in all the tables 
 - To maintain consistency across all tables, we need to normalize the organization codes by converting them to lowercase and replacing any spaces with underscores. This will ensure that the org_code is uniform across all tables and can be easily referenced in queries and dashboards.
 - Update the common-config.env and trigger the update-org-code.sh script.
