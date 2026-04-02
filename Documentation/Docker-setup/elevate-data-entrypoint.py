@@ -154,16 +154,20 @@ class ElevateSupervisor:
             return self.logger.error(f"Failed to upload jar {jar_name}")
 
         # 3. Submit
-        try:
-            with open(UNIFIED_CONF, "rb") as f:
-                args = f"--config.content {base64.b64encode(f.read()).decode()}"
-        except Exception as e:
-            return self.logger.error(f"Failed to read config for submission: {e}")
+        # We pass the mounted config file path to Flink
+        args = "--config.file.path /opt/flink/conf/unified-common.conf"
             
-        r = self.safe_req("post", f"{self.flink_url}/jars/{jar_id}/run", 
-                          json={"entryClass": entry_class, "programArgs": args})
-                          
-        self.logger.info(f"Submitted {jar_name}: " + (f"{r.status_code} - {r.text}" if r else "Failed"))
+        try:
+            self.logger.info(f"Attempting to run jar_id: {jar_id} for {jar_name} with entry class {entry_class}...")
+            r = self.session.post(f"{self.flink_url}/jars/{jar_id}/run", 
+                                  json={"entryClass": entry_class, "programArgs": args},
+                                  timeout=30)
+            if r.status_code == 200:
+                self.logger.info(f"Successfully submitted {jar_name}: {r.status_code} - {r.text}")
+            else:
+                self.logger.error(f"Failed to submit {jar_name}. Flink API returned Status: {r.status_code}, Response: {r.text}")
+        except Exception as e:
+            self.logger.error(f"Exception occurred while submitting {jar_name}: {e}")
 
     def check_jobs_running(self):
         """Ping the API to get all currently running Flink jobs."""
@@ -181,6 +185,7 @@ class ElevateSupervisor:
 
             # Re-verify and maintain Flink jobs
             running_jobs = self.check_jobs_running()
+            self.logger.info(f"Running jobs: {running_jobs}")
             for name, jar in self.job_jars.items():
                 if running_jobs.get(name) is True:
                     self.logger.info(f"Job '{name}' is RUNNING.")
