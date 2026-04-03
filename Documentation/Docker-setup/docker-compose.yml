@@ -13,8 +13,7 @@ services:
       - ZOOKEEPER_TICK_TIME=2000
     networks:
       - elevate_net
-    logging:
-      driver: none
+  
   kafka:
     image: confluentinc/cp-kafka:7.3.0
     restart: always
@@ -32,20 +31,19 @@ services:
       - zookeeper
     networks:
       - elevate_net
-    logging:
-        driver: none
     volumes:
       - kafka_data:/var/lib/kafka/
-
 
   # Flink Job Manager
   jobmanager:
     image: flink:1.13.2-scala_2.12-java11
+    platform: linux/amd64
     restart: always
     container_name: jobmanager
     ports:
       - "8081:8081"
     command: jobmanager
+    user: root
     environment:
       - |
         FLINK_PROPERTIES=
@@ -53,17 +51,19 @@ services:
     networks:
       - elevate_net
     volumes:
-      - /home/user2/viveks-elevate-data2/data-pipeline/unified-common.conf:/opt/flink/conf/unified-common.conf
+      - ../../unified-common.conf:/opt/flink/conf/unified-common.conf
 
   # Flink Task Manager
   taskmanager:
     image: flink:1.13.2-scala_2.12-java11
+    platform: linux/amd64
     restart: always
     container_name: taskmanager
     depends_on:
       - jobmanager
     command: taskmanager
     scale: 1
+    user: root
     environment:
       - |
         FLINK_PROPERTIES=
@@ -129,7 +129,7 @@ services:
 
   # Elevate Data Service
   elevate-data:
-    image: shikshalokamqa/elevate-data:latest
+    image: data-pipeline:latest
     restart: always
     container_name: elevate-data
     command: python3 /app/Documentation/Docker-setup/elevate-data-entrypoint.py
@@ -144,8 +144,9 @@ services:
     networks:
       - elevate_net
     volumes:
-      - /home/user2/vivek-elevate-data/viveks-data-pipeline/unified-common.conf:/app/unified-common.conf
-      - /home/user2/vivek-elevate-data/viveks-data-pipeline/logs:/app/logs
+      - ../../unified-common.conf:/app/unified-common.conf
+      - ../../logs:/app/logs
+
 # Networks
 networks:
   elevate_net:

@@ -66,23 +66,32 @@ class ElevateSupervisor:
     def safe_req(self, method, url, **kwargs):
         """Wrapper for safe requests without breaking supervisor loop."""
         try:
-            return getattr(self.session, method)(url, timeout=5, **kwargs)
+            return getattr(self.session, method)(url, timeout=60, **kwargs)
+        except requests.exceptions.Timeout:
+            self.logger.error(f"Timeout (60s) occurred during {method.upper()} request to {url}")
+            return None
+        except requests.exceptions.ConnectionError:
+            self.logger.error(f"Connection error during {method.upper()} request to {url}. Is the service up?")
+            return None
         except Exception as e:
-            self.logger.debug(f"Request failed: {method} {url} - {e}")
+            self.logger.error(f"Unexpected error during {method.upper()} request to {url}: {str(e)}")
             return None
 
     def manage_akka(self):
         try:
             r = requests.get(self.akka_health_url, timeout=5)
         except Exception as e:
-            self.logger.debug(f"Akka health check failed: {e}")
+            self.logger.warning(f"Akka health check connection failed: {str(e)}")
             r = None
             
         if r and r.status_code == 200 and r.json().get("status") == "UP":
             return
             
+        if r and r.status_code != 200:
+            self.logger.warning(f"Akka health check returned non-200 status: {r.status_code} - {r.text}")
+            
         if not self.akka_jar or not os.path.exists(self.akka_jar):
-            return self.logger.error(f"Akka JAR not found: {self.akka_jar}")
+            return self.logger.error(f"Akka JAR not found on disk: {self.akka_jar}. Path might be misconfigured.")
 
         self.logger.info(f"Starting akka-service from {self.akka_jar}...")
         try:
@@ -147,11 +156,22 @@ class ElevateSupervisor:
 
         if not jar_id:
             with open(jar_path, "rb") as f:
+                self.logger.info(f"Uploading jar {jar_name} to Flink API...")
+                start_time = time.time()
                 r = self.safe_req("post", f"{self.flink_url}/jars/upload", files={"jarfile": f})
-                jar_id = r.json().get("filename", "").split("/")[-1] if (r and r.status_code == 200) else None
+                if r:
+                    elapsed = round(time.time() - start_time, 2)
+                    if r.status_code == 200:
+                        jar_id = r.json().get("filename", "").split("/")[-1]
+                        self.logger.info(f"Successfully uploaded {jar_name} in {elapsed}s. Jar ID: {jar_id}")
+                    else:
+                        self.logger.error(f"Failed to upload {jar_name}. Status: {r.status_code}, Response: {r.text}")
+                else:
+                    self.logger.error(f"Failed to upload {jar_name} due to network or timeout error.")
+                    jar_id = None
 
         if not jar_id: 
-            return self.logger.error(f"Failed to upload jar {jar_name}")
+            return self.logger.error(f"Aborting job submission for {jar_name}; valid jar_id could not be established.")
 
         # 3. Submit
         # We pass the mounted config file path to Flink
@@ -172,7 +192,12 @@ class ElevateSupervisor:
     def check_jobs_running(self):
         """Ping the API to get all currently running Flink jobs."""
         r = self.safe_req("get", self.flink_health_api)
-        if not r or r.status_code != 200: return {}
+        if not r:
+            self.logger.warning(f"Failed to reach Flink health API at {self.flink_health_api}. Assuming no jobs are running.")
+            return {}
+        if r.status_code != 200:
+            self.logger.warning(f"Flink health API returned Status: {r.status_code}, Response: {r.text}")
+            return {}
         return {j.get("name"): j.get("status") == "RUNNING" for j in r.json().get("jobs", [])}
 
     def start(self):
