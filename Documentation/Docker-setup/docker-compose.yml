@@ -129,7 +129,7 @@ services:
 
   # Elevate Data Service
   elevate-data:
-    image: data-pipeline:latest
+    image: shikshalokamqa/elevate-data:latest
     restart: always
     container_name: elevate-data
     command: python3 /app/Documentation/Docker-setup/elevate-data-entrypoint.py
