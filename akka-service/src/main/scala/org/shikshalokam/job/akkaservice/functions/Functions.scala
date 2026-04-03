@@ -1,19 +1,18 @@
 package org.shikshalokam.job.akkaservice.functions
 
 import org.shikshalokam.job.akkaservice.models.CsvSchema
-import com.typesafe.config.ConfigFactory
 import org.shikshalokam.job.util.JSONUtil.mapper
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
+import org.shikshalokam.job.akkaservice.config.AppConfig
 import java.nio.file.{Files, Paths}
 import scala.collection.JavaConverters._
 import scala.io.Source
 import scala.util.matching.Regex
 
 object Functions {
-  // --- From MetabaseUserManagementFunction ---
 
-  private val config = ConfigFactory.load()
-  private val sinkDirectory = config.getString("file.sinkDirectory")
+  private val config = AppConfig.config
+  private val sinkDirectory = config.getString("akka.file.sinkDirectory")
   private val pgHost = config.getString("postgres.host")
   private val pgPort = config.getString("postgres.port")
   private val pgUsername = config.getString("postgres.username")

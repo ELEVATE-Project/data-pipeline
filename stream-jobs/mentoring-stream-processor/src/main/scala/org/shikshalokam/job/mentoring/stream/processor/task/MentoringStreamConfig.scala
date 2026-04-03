@@ -12,16 +12,16 @@ class MentoringStreamConfig(override val config: Config) extends BaseJobConfig(c
   implicit val mapTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
 
   // Kafka Topics Configuration
-  val inputTopic: String = config.getString("kafka.input.topic")
-  val outputTopic: String = config.getString("kafka.output.topic")
+  val inputTopic: String = config.getString("kafka.mentoring.stream.input.topic")
+  val outputTopic: String = config.getString("kafka.mentoring.stream.output.topic")
 
   // Output Tags
   val eventOutputTag: OutputTag[String] = OutputTag[String]("mentoring-dashboard-output-event")
 
   // Parallelism
-  override val kafkaConsumerParallelism: Int = config.getInt("task.consumer.parallelism")
-  val mentoringStreamParallelism: Int = config.getInt("task.sl.mentoring.stream.parallelism")
-  val metabaseDashboardParallelism: Int = config.getInt("task.sl.metabase.dashboard.parallelism")
+  override val kafkaConsumerParallelism: Int = config.getInt("task.mentoring.stream.consumer.parallelism")
+  val mentoringStreamParallelism: Int = config.getInt("task.mentoring.stream.parallelism")
+  val metabaseDashboardParallelism: Int = config.getInt("task.mentoring.dashboard.parallelism")
 
   // Consumers
   val mentoringStreamConsumer: String = "mentoring-stream-consumer"

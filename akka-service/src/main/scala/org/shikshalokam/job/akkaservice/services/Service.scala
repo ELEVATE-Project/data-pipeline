@@ -19,22 +19,24 @@ import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import java.util.concurrent.Executors
+import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
-import com.typesafe.config.ConfigFactory
+import org.shikshalokam.job.akkaservice.config.AppConfig
 
 object Service {
 
   implicit val system: ActorSystem = ActorSystem("user-upload-system")
   implicit val materializer: Materializer = Materializer(system)
 
-  private val config = ConfigFactory.load()
-  private val sinkDirectory = config.getString("file.sinkDirectory")
-  private val flinkBase = config.getString("services.flink.url")
-  private val metaUrl = s"${config.getString("metabase.url")}/api/health"
-  private val broker = config.getString("services.kafka.broker-list")
-  private val configuredJobs = config.getStringList("services.flink.jobs").asScala.toList
+  private val config = AppConfig.config
+  private val sinkDirectory = config.getString("akka.file.sinkDirectory")
+  private val flinkBase = config.getString("flink.url")
+  private val metaUrl = s"${config.getString("metabase.url")}/health"
+  private val broker = config.getString("kafka.broker.servers")
+  private val configuredJobs = config.getStringList("flink.jobs").asScala.toList
   private val http = Http()
-  private val debugMode = config.getString("services.kafka.DEBUG_MODE").contains("true")
+  private val debugMode = config.getString("akka.debug.logs").contains("true")
 
   def processCsvUpload(formData: Multipart.FormData): Future[String] = {
     val filePartFuture: Future[Option[Multipart.FormData.BodyPart]] = formData.parts
@@ -170,7 +172,7 @@ object Service {
   }
 
   def checkKafka(): Future[KafkaHealth] = {
-    val blockingEc = system.dispatchers.lookup("blocking-io-dispatcher")
+    val blockingEc = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
     Future {
       val pid = java.lang.management.ManagementFactory.getRuntimeMXBean.getName.split("@")(0)

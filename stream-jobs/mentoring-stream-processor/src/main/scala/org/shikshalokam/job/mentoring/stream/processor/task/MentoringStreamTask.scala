@@ -46,7 +46,7 @@ object MentoringStreamTask {
     val configFilePath = Option(parameterTool.get("config.file.path"))
     val baseConfig = configFilePath
       .map(path => ConfigFactory.parseFile(new File(path)))
-      .getOrElse(ConfigFactory.load("mentoring-stream.conf"))
+      .getOrElse(ConfigFactory.load("unified-common.conf"))
     val config = ConfigFactory.systemEnvironment().withFallback(baseConfig).resolve()
     val mentoringStreamConfig = new MentoringStreamConfig(config)
     val kafkaUtil = new FlinkKafkaConnector(mentoringStreamConfig)

@@ -1,6 +1,6 @@
 import json
 import os
-import configparser
+from pyhocon import ConfigFactory
 from kafka import KafkaConsumer
 import psycopg2
 from psycopg2 import sql
@@ -13,23 +13,26 @@ from logging.handlers import RotatingFileHandler
 # Load config
 # ---------------------------------------------------
 base_dir = os.path.dirname(os.path.abspath(__file__))
-config = configparser.ConfigParser()
-config.read('config.ini')
 
-DB_HOST = config.get('Database', 'host')
-DB_USER = config.get('Database', 'user')
-DB_PASS = config.get('Database', 'password')
-DB_NAME = config.get('Database', 'dbname')
-ENV = config.get('Database', 'env')      # example: "local"
-TOPIC = config.get('Database', 'topic')
-GROUP_ID = config.get('Database', 'group_id')
-BROKER = config.get('Database', 'broker')
+# The script expects the conf file path in an env variable, or falls back to the repository root
+UNIFIED_CONF = os.environ.get("UNIFIED_PIPELINE_CONF", os.path.abspath(os.path.join(base_dir, "../../..", 'unified-common.conf')))
+config = ConfigFactory.parse_file(UNIFIED_CONF)
+
+DB_HOST = config.get_string('postgres.host', 'host')
+DB_USER = config.get_string('postgres.username', 'user')
+DB_PASS = config.get_string('postgres.password', 'password')
+DB_NAME = config.get_string('postgres.database', 'dbname')
+ENV = config.get_string('job.env', 'env')      # example: "local"
+TOPIC = config.get_string('kafka.resource.delete.topic', 'topic')
+GROUP_ID = config.get_string('kafka.resource.delete.groupId', 'group_id')
+BROKER = config.get_string('kafka.broker.servers', 'broker')
 
 url, user, pwd = load_metabase_config()
 mb = MetabaseUtil(url, user, pwd)
 
-LOG_FILE_PATH = config.get('common', 'log_path')
-LOG_FILE = os.path.join(LOG_FILE_PATH, "resource_delete.log")
+LOG_FILE_PATH = config.get_string('data.cleanup.log.path', '/tmp')
+os.makedirs(LOG_FILE_PATH, exist_ok=True)
+LOG_FILE = os.path.join(LOG_FILE_PATH, "resource-delete.log")
 
 logger = logging.getLogger("resource_delete_logger")
 logger.setLevel(logging.INFO)
@@ -44,14 +47,18 @@ console.setFormatter(formatter)
 logger.addHandler(handler)
 logger.addHandler(console)
 
-conn = psycopg2.connect(
-    host=DB_HOST,
-    user=DB_USER,
-    password=DB_PASS,
-    dbname=DB_NAME
-)
-conn.autocommit = True
-
+try:
+    conn = psycopg2.connect(
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASS,
+        dbname=DB_NAME
+    )
+    conn.autocommit = True
+    logger.info("Successfully connected to Postgres database.")
+except Exception as e:
+    logger.error(f"Failed to connect to Postgres database: {e}")
+    exit(1)
 
 def db_query(query, params=None):
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -63,14 +70,19 @@ def db_execute(query, params=None):
     with conn.cursor() as cur:
         cur.execute(query, params or ())
         
-consumer = KafkaConsumer(
-    TOPIC,
-    bootstrap_servers=[BROKER],
-    auto_offset_reset='latest',
-    enable_auto_commit=True,
-    group_id=GROUP_ID,
-    value_deserializer=lambda m: json.loads(m.decode('utf-8'))
-)
+try:
+    consumer = KafkaConsumer(
+        TOPIC,
+        bootstrap_servers=[BROKER],
+        auto_offset_reset='latest',
+        enable_auto_commit=True,
+        group_id=GROUP_ID,
+        value_deserializer=lambda m: json.loads(m.decode('utf-8'))
+    )
+    logger.info("Successfully connected to Kafka broker.")
+except Exception as e:
+    logger.error(f"Failed to connect to Kafka: {e}")
+    exit(1)
 
 logger.info(f"Listening for delete events on topic: {TOPIC}")
 

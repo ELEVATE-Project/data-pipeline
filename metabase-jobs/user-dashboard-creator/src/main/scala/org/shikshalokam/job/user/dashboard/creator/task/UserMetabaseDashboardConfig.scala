@@ -12,10 +12,10 @@ class UserMetabaseDashboardConfig(override val config: Config) extends BaseJobCo
   implicit val mapTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
 
   // Kafka Topics Configuration
-  val inputTopic: String = config.getString("kafka.input.topic")
+  val inputTopic: String = config.getString("kafka.user.dashboard.input.topic")
 
   // Parallelism
-  val mlMetabaseParallelism: Int = config.getInt("task.sl.metabase.dashboard.parallelism")
+  val mlMetabaseParallelism: Int = config.getInt("task.user.metabase.dashboard.parallelism")
 
   // Consumers
   val metabaseDashboardProducer: String = "metabase-dashboard-consumer"
@@ -36,7 +36,7 @@ class UserMetabaseDashboardConfig(override val config: Config) extends BaseJobCo
   val pgPassword: String = config.getString("postgres.password")
   val pgDataBase: String = config.getString("postgres.database")
   val dashboardMetadata: String = config.getString("postgres.tables.dashboardMetadataTable")
-  val userMetrics: String = config.getString("postgres.tables.userMetricsTable")
+  val userMetrics: String = config.getString("postgres.tables.userMetrics")
   val reportConfig: String = config.getString("postgres.tables.reportConfigTable")
   val metabasePgDatabase: String = config.getString("postgres.metabaseDb")
 
@@ -45,5 +45,5 @@ class UserMetabaseDashboardConfig(override val config: Config) extends BaseJobCo
   val metabaseUsername: String = config.getString("metabase.username")
   val metabasePassword: String = config.getString("metabase.password")
   val metabaseDatabase: String = config.getString("metabase.database")
-  val metabaseApiKey: String = config.getString("metabase.metabaseApiKey")
+  val metabaseApiKey: String = config.getString("metabase.api.key")
 }

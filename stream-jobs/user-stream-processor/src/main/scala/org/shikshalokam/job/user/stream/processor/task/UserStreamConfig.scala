@@ -13,18 +13,18 @@ class UserStreamConfig(override val config: Config) extends BaseJobConfig(config
   implicit val mapTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
 
   // Kafka Topics Configuration
-  val inputTopic: String = config.getString("kafka.input.topic")
-  val outputTopic: String = config.getString("kafka.output.topic")
-  val mentoringOutputTopic: String = config.getString("kafka.output.mentoring.topic")
+  val inputTopic: String = config.getString("kafka.user.stream.input.topic")
+  val outputTopic: String = config.getString("kafka.user.stream.output.topic")
+  val mentoringOutputTopic: String = config.getString("kafka.user.stream.output.mentoring.topic")
 
   // Output Tags
   val eventOutputTag: OutputTag[String] = OutputTag[String]("user-dashboard-output-event")
   val mentoringEventOutputTag: OutputTag[String] = OutputTag[String]("user-mentoring-output-event")
   
   // Parallelism
-  override val kafkaConsumerParallelism: Int = config.getInt("task.consumer.parallelism")
-  val usersStreamParallelism: Int = config.getInt("task.sl.users.stream.parallelism")
-  val metabaseDashboardParallelism: Int = config.getInt("task.sl.metabase.dashboard.parallelism")
+  override val kafkaConsumerParallelism: Int = config.getInt("task.user.stream.consumer.parallelism")
+  val usersStreamParallelism: Int = config.getInt("task.user.stream.parallelism")
+  val metabaseDashboardParallelism: Int = config.getInt("task.user.dashboard.parallelism")
 
   // Consumers
   val usersStreamConsumer: String = "user-stream-consumer"

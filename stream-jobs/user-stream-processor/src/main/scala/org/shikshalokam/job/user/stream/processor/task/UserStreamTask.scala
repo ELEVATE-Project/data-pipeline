@@ -51,7 +51,7 @@ object UserStreamTask {
     val configFilePath = Option(ParameterTool.fromArgs(args).get("config.file.path"))
     val config = configFilePath.map {
       path => ConfigFactory.parseFile(new File(path)).resolve()
-    }.getOrElse(ConfigFactory.load("user-stream.conf").withFallback(ConfigFactory.systemEnvironment()))
+    }.getOrElse(ConfigFactory.load("unified-common.conf").withFallback(ConfigFactory.systemEnvironment()))
     val userStreamConfig = new UserStreamConfig(config)
     val kafkaUtil = new FlinkKafkaConnector(userStreamConfig)
     val task = new UserStreamTask(userStreamConfig, kafkaUtil)
