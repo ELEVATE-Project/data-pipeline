@@ -21,6 +21,7 @@
         <module>observation-stream-processor</module>
         <module>user-stream-processor</module>
         <module>mentoring-stream-processor</module>
+        <module>combined-stream-processor</module>
     </modules>
 
     <build>
