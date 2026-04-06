@@ -18,4 +18,8 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def targetedSolution: String = readOrDefault("dashboardData.targetedSolution", "")
 
+  def filterSync: String = readOrDefault("dashboardData.filterSync", "")
+
+  def filterTable: String = readOrDefault("dashboardData.filterTable", "")
+
 }

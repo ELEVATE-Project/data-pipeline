@@ -3,7 +3,6 @@ package org.shikshalokam.job.dashboard.creator.functions
 import com.fasterxml.jackson.databind.node.{ArrayNode, JsonNodeFactory, ObjectNode, TextNode}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import org.postgresql.util.PGobject
-import org.shikshalokam.job.dashboard.creator.functions.AddQuestionCards.readJsonFile
 import org.shikshalokam.job.util.JSONUtil.mapper
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 
@@ -18,6 +17,7 @@ object ProcessAdminConstructor {
     val objectMapper = new ObjectMapper()
 
     def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, stateNameId: Int, districtNameId: Int, programNameId: Int, blockNameId: Int, clusterNameId: Int, orgNameId: Int): Unit = {
+      val dashcardsArray = objectMapper.createArrayNode()
       val queryResult = postgresUtil.fetchData(reportConfigQuery)
       queryResult.foreach { row =>
         if (row.get("question_type").map(_.toString).getOrElse("") != "heading") {
@@ -34,7 +34,14 @@ object ProcessAdminConstructor {
                 println(s">>> Successfully created question card with card_id: $cardId for $chartName")
                 questionCardId.append(cardId)
                 val updatedQuestionIdInDashCard = updateQuestionIdInDashCard(configJson, cardId, tabId, dashboardId)
-                appendDashCardToDashboard(metabaseUtil, updatedQuestionIdInDashCard, dashboardId)
+                updatedQuestionIdInDashCard.foreach { node =>
+                  val dashCardsNode = node.path("dashCards")
+                  if (!dashCardsNode.isMissingNode && !dashCardsNode.isNull) {
+                    dashcardsArray.add(dashCardsNode)
+                  } else {
+                    println("No 'dashCards' key found in the JSON.")
+                  }
+                }
               }
             case None =>
               println("Key 'config' not found in the result row.")
@@ -47,11 +54,19 @@ object ProcessAdminConstructor {
               val rootNode = objectMapper.readTree(jsonString)
               if (rootNode != null) {
                 val optJsonNode = toOption(rootNode)
-                AddQuestionCards.appendDashCardToDashboard(metabaseUtil, optJsonNode, dashboardId)
+                optJsonNode.foreach { node =>
+                  val dashCardsNode = node.path("dashCards")
+                  if (!dashCardsNode.isMissingNode && !dashCardsNode.isNull) {
+                    dashcardsArray.add(dashCardsNode)
+                  } else {
+                    println("No 'dashCards' key found in the JSON.")
+                  }
+                }
               }
           }
         }
       }
+      Utils.appendDashCardToDashboard(metabaseUtil, dashcardsArray, dashboardId)
     }
 
     def toOption(jsonNode: JsonNode): Option[JsonNode] = {
@@ -153,26 +168,6 @@ object ProcessAdminConstructor {
         }
         jsonObject
       }.toOption
-    }
-
-    def appendDashCardToDashboard(metabaseUtil: MetabaseUtil, jsonFile: Option[JsonNode], dashboardId: Int): Unit = {
-      val dashboardResponse = objectMapper.readTree(metabaseUtil.getDashboardDetailsById(dashboardId))
-      val existingDashCards = dashboardResponse.path("dashcards") match {
-        case array: ArrayNode => array
-        case _ => objectMapper.createArrayNode()
-      }
-      val dashCardsNode = readJsonFile(jsonFile)
-      dashCardsNode.foreach { value =>
-        existingDashCards.add(value)
-      }
-      val finalDashboardJson = objectMapper.createObjectNode()
-      finalDashboardJson.set("dashcards", existingDashCards)
-      val dashCardsString = objectMapper.writeValueAsString(finalDashboardJson)
-      val updatedDashCardsNode = objectMapper.readTree(dashCardsString).get("dashcards")
-      val dashboardResponseObject = dashboardResponse.deepCopy().asInstanceOf[ObjectNode]
-      dashboardResponseObject.set("dashcards", updatedDashCardsNode)
-      val dashboardResponseString = objectMapper.writeValueAsString(dashboardResponseObject)
-      metabaseUtil.addQuestionCardToDashboard(dashboardId, dashboardResponseString)
     }
 
     processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId)

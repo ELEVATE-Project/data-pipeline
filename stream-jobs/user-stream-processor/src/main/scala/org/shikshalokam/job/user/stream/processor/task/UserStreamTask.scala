@@ -34,6 +34,13 @@ class UserStreamTask(config: UserStreamConfig, kafkaConnector: FlinkKafkaConnect
       .uid(config.metabaseDashboardProducer)
       .setParallelism(config.metabaseDashboardParallelism)
 
+    // sink for mentoring dashboard events (new)
+    progressStream.getSideOutput(config.mentoringEventOutputTag)
+      .addSink(kafkaConnector.kafkaStringSink(config.mentoringOutputTopic))
+      .name(config.mentoringDashboardProducer)
+      .uid(config.mentoringDashboardProducer)
+      .setParallelism(config.metabaseDashboardParallelism)
+
     env.execute(config.jobName)
   }
 }

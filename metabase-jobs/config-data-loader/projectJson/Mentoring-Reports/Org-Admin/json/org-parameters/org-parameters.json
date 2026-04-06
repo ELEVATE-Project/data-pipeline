@@ -1,0 +1,72 @@
+[
+  {
+    "name": "Select State",
+    "slug": "select_state",
+    "id": "89753241",
+    "type": "string/=",
+    "sectionId": "location",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "89753242",
+      "89753243",
+      "89753244",
+      "89753245"
+    ]
+  },
+  {
+    "name": "Select District",
+    "slug": "select_district",
+    "id": "89753242",
+    "type": "string/=",
+    "sectionId": "location",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "89753241",
+      "89753243",
+      "89753244",
+      "89753245"
+    ]
+  },
+  {
+    "name": "Select Block",
+    "slug": "select_block",
+    "id": "89753243",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "89753241",
+      "89753242",
+      "89753244",
+      "89753245"
+    ]
+  },
+  {
+    "name": "Select Cluster",
+    "slug": "select_cluster",
+    "id": "89753244",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "89753241",
+      "89753242",
+      "89753243",
+      "89753245"
+    ]
+  },
+  {
+    "name": "Select School",
+    "slug": "select_school",
+    "id": "89753245",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": [
+      "89753241",
+      "89753242",
+      "89753243",
+      "89753244"
+    ]
+  }
+]

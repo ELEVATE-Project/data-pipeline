@@ -1,0 +1,76 @@
+{
+  "questionCard": {
+    "name": "Users by Platform Roles",
+    "collection_id": 24,
+    "dataset_query": {
+      "database": 3,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "select_organization": {
+            "type": "dimension",
+            "name": "select_organization",
+            "id": "ea91be83-5265-49ae-8e8f-c96c2743ddde",
+            "display-name": "Select Organization",
+            "default": null,
+            "dimension": [
+              "field",
+              590,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          }
+        },
+        "query": "SELECT\r\n  r.role_name AS \"Platform Roles Name\",\r\n  COUNT(DISTINCT u.user_id) AS \"Users Count\"\r\nFROM\r\n  \"${tenantOrgRolesTable}\" r\r\nJOIN\r\n  \"${tenantUserTable}\" u \r\n  ON u.user_id = r.user_id\r\nWHERE\r\n  u.status = 'ACTIVE'\r\n\r\n [[AND org_name = (\r\n    SELECT org_name\r\n    FROM \"${tenantOrgRolesTable}\"\r\n    WHERE {{select_organization}}\r\n    LIMIT 1)]]\r\n      \r\nGROUP BY\r\n  r.role_name\r\nORDER BY\r\n  \"Users Count\" DESC;\r\n"
+      }
+    },
+    "display": "bar",
+    "visualization_settings": {
+      "graph.dimensions": [
+        "Platform Roles Name"
+      ],
+      "graph.metrics": [
+        "Users Count"
+      ]
+    },
+    "parameters": [
+      {
+        "id": "e0ed2805-7614-45e5-9564-5421e1aefc81",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_organization"
+          ]
+        ],
+        "name": "Select Organization",
+        "slug": "select_organization"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 140,
+    "dashboard_tab_id": 5,
+    "id": 130,
+    "parameter_mappings": [
+      {
+        "parameter_id": "98262141",
+        "card_id": 140,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_organization"
+          ]
+        ]
+      }
+    ],
+    "col": 0,
+    "row": 11,
+    "size_x": 24,
+    "size_y": 7,
+    "visualization_settings": {}
+  }
+}

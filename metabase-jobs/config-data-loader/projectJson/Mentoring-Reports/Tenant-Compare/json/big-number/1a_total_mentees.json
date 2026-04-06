@@ -1,0 +1,69 @@
+{
+  "questionCard": {
+    "name": "Total Mentees",
+    "collection_id": 24,
+    "dataset_query": {
+      "database": 3,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "select_org_a": {
+            "type": "dimension",
+            "name": "select_org_a",
+            "id": "d56aa1e7-02cd-486f-b891-0f426a40baae",
+            "display-name": "Select Org A",
+            "default": null,
+            "dimension": [
+              "field",
+              590,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          }
+        },
+        "query": "SELECT COUNT(DISTINCT r.user_id) AS \"Total Mentees\"\r\nFROM ${tenantOrgRolesTable} r\r\nJOIN ${tenantUserTable} u\r\n    ON r.user_id = u.user_id\r\nWHERE r.role_name = 'mentee'\r\nAND u.status = 'ACTIVE'\r\n[[AND org_name = (\r\n    SELECT org_name\r\n    FROM ${tenantOrgRolesTable}\r\n    WHERE {{select_org_a}}\r\n    LIMIT 1)]]"
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {},
+    "parameters": [
+      {
+        "id": "b40c6891-1b81-4f0d-93de-51c034e0e77c",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_org_a"
+          ]
+        ],
+        "name": "Select Org A",
+        "slug": "select_org_a"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 111,
+    "dashboard_tab_id": 4,
+    "id": 99,
+    "parameter_mappings": [
+      {
+        "parameter_id": "99214756",
+        "card_id": 111,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_org_a"
+          ]
+        ]
+      }
+    ],
+    "col": 1,
+    "row": 0,
+    "size_x": 7,
+    "size_y": 3,
+    "visualization_settings": {}
+  }
+}

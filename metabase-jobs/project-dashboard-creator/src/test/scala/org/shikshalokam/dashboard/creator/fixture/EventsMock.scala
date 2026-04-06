@@ -14,4 +14,9 @@ object EventsMock {
 
   val SAAS_QA_DASHBOARD_EVENT_S5: String = """{"reportType":"Project","publishedAt":"2025-07-27 12:04:39","dashboardData":{"targetedSolution":"688281e6ab139a00141de727"},"_id":"e4883620-bcbd-4ab0-b530-9eb7c2f4e4ab"}"""
 
+  val MULTISOLUTION_EVENT_1: String = """{"reportType":"Project","publishedAt":"2025-09-11 12:32:43","dashboardData":{"targetedProgram":"68b14cfdab139a00141e2e6c","targetedSolution":"68b7ec7dcd4236001401c5d5","targetedDistrict":"6863aa5f1d52e30014093b42","targetedState":"6863a9941d52e30014093ad9"},"_id":"17a4a3ff-8028-4f9e-82ae-72eee6a08048"}"""
+
+  val TEST_EVENT_1: String = """{"reportType":"Project","publishedAt":"2025-09-23 22:50:27","dashboardData":{"targetedSolution":"68b7ec7dcd4236001401c5d9"},"_id":"f46d6318-5f10-4209-8be5-931037e78ca5"}"""
+
+  val UPDATE_FILTER_DATA_EVENT: String = """{"reportType":"Project","publishedAt":"2025-09-25 16:26:35","dashboardData":{"targetedSolution":"68b7ec7dcd4236001401c5d9","filterTable":"local_projects","filterSync":"Yes"},"_id":"831c2c21-88a6-4d41-bc2c-24ed12000a2a"}"""
 }

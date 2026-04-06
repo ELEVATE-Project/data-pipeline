@@ -1,0 +1,76 @@
+{
+  "questionCard": {
+    "name": "Weekly Mentors Trend",
+    "collection_id": 24,
+    "dataset_query": {
+      "database": 3,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "select_org_a": {
+            "type": "dimension",
+            "name": "select_org_a",
+            "id": "60fc1ba1-1b80-445a-a016-317970c7455a",
+            "display-name": "Select Org A",
+            "default": null,
+            "dimension": [
+              "field",
+              600,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          }
+        },
+        "query": "SELECT\r\n    DATE_TRUNC('week', rating_updated_at) AS \"Weeks\",\r\n    AVG(rating) AS \"Avg Rating\"\r\nFROM ${tenantOrgMentorRatingTable}\r\nWHERE 1 = 1\r\n[[AND {{select_org_a}}]]\r\n  AND rating_updated_at >= DATE_TRUNC('week', CURRENT_DATE) - INTERVAL '6 months'\r\nGROUP BY DATE_TRUNC('week', rating_updated_at)\r\nORDER BY \"Weeks\";"
+      }
+    },
+    "display": "line",
+    "visualization_settings": {
+      "graph.dimensions": [
+        "Week Start"
+      ],
+      "graph.metrics": [
+        "Avg Rating"
+      ]
+    },
+    "parameters": [
+      {
+        "id": "b40c6891-1b81-4f0d-93de-51c034e0e77c",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_org_a"
+          ]
+        ],
+        "name": "Select Org A",
+        "slug": "select_org_a"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 130,
+    "dashboard_tab_id": 4,
+    "id": 118,
+    "parameter_mappings": [
+      {
+        "parameter_id": "99214756",
+        "card_id": 130,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_org_a"
+          ]
+        ]
+      }
+    ],
+    "col": 1,
+    "row": 26,
+    "size_x": 10,
+    "size_y": 6,
+    "visualization_settings": {}
+  }
+}

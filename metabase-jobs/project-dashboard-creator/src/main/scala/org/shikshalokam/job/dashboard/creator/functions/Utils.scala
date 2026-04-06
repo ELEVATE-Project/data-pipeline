@@ -1,6 +1,7 @@
 package org.shikshalokam.job.dashboard.creator.functions
 
-import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
 import org.shikshalokam.job.util.JSONUtil.mapper
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 
@@ -176,23 +177,6 @@ object Utils {
     databaseId
   }
 
-  def getTableMetadataId(databaseId: Int, metabaseUtil: MetabaseUtil, tableName: String, columnName: String, postgresUtil: PostgresUtil, metaTableQuery: String): Int = {
-    val metadataJson = mapper.readTree(metabaseUtil.getDatabaseMetadata(databaseId))
-    metadataJson.path("tables").elements().asScala
-      .find(_.path("name").asText() == s"$tableName")
-      .flatMap(table => table.path("fields").elements().asScala
-        .find(_.path("name").asText() == s"$columnName"))
-      .map(field => {
-        val fieldId = field.path("id").asInt()
-        println(s"Field ID for $columnName: $fieldId")
-        fieldId
-      }).getOrElse {
-        val errorMessage = s"$columnName field not found"
-        val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'${errorMessage.replace("'", "''")}'")
-        postgresUtil.insertData(updateTableQuery)
-        throw new Exception(s"$columnName field not found")
-      }
-  }
 
   def createGroupForCollection(metabaseUtil: MetabaseUtil = null, groupName: String, collectionId: Int): Unit = {
     val existingGroups = mapper.readTree(metabaseUtil.listGroups())
@@ -226,6 +210,36 @@ object Utils {
              |""".stripMargin
         metabaseUtil.addCollectionToGroup(addCollectionToUserRequestBody)
     }
+  }
+
+  val objectMapper = new ObjectMapper()
+
+  def appendDashCardToDashboard(metabaseUtil: MetabaseUtil, dashcardsArray: ArrayNode, dashboardId: Int): Unit = {
+
+    val dashboardResponse = objectMapper.readTree(metabaseUtil.getDashboardDetailsById(dashboardId))
+
+    val existingDashcards = dashboardResponse.path("dashcards") match {
+      case array: ArrayNode => array
+      case _                => objectMapper.createArrayNode()
+    }
+
+    val maxExistingId = existingDashcards.elements().asScala
+      .flatMap(node => Option(node.path("id")).filter(_.isInt).map(_.asInt()))
+      .foldLeft(0)(Math.max)
+
+    dashcardsArray.elements().asScala.zipWithIndex.foreach { case (node, idx) =>
+      node match {
+        case obj: ObjectNode => obj.put("id", maxExistingId + idx + 1)
+        case _               => // skip non-object nodes
+      }
+      existingDashcards.add(node)
+    }
+
+    dashboardResponse.asInstanceOf[ObjectNode]
+      .set("dashcards", existingDashcards)
+
+    val updatedDashboardStr = objectMapper.writeValueAsString(dashboardResponse)
+    metabaseUtil.addQuestionCardToDashboard(dashboardId, updatedDashboardStr)
   }
 
 }

@@ -6,7 +6,7 @@
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT \n    UNNEST(STRING_TO_ARRAY(labels, '|')) AS distinct_answer, \n    COUNT(DISTINCT user_id) AS user_count\nFROM ${questionTable}\nWHERE 1 = 1 \n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{block_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{org_param}}]]\nAND question_id = ${questionId}\nGROUP BY distinct_answer\nORDER BY user_count DESC;",
+        "query": "SELECT \n    UNNEST(STRING_TO_ARRAY(labels, '|')) AS \"Answers\", \n    COUNT(DISTINCT user_id) AS \"User Count\"\nFROM ${questionTable}\nWHERE 1 = 1 \n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{block_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{org_param}}]]\nAND question_id = ${questionId}\nGROUP BY \"Answers\"\nORDER BY \"User Count\" DESC;",
         "template-tags": {
           "state_param": {
             "type": "dimension",

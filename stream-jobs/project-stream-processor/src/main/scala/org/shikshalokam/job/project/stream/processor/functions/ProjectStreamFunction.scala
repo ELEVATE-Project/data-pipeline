@@ -118,7 +118,7 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
       println("organisationId = " + event.organisationId)
       println("organisationName = " + orgName)
       println("organisationCode = " + orgCode)
-
+      println("parentOrgId = " + event.parentOrgId)
       println("\n==> Tasks data")
       println(tasksData)
 
@@ -144,10 +144,11 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
       val programExternalId = event.programExternalId
       val programDescription = event.programDescription
       val privateProgram = event.privateProgram
+      val parentOrgId = event.parentOrgId
 
       val upsertSolutionQuery =
-        s"""INSERT INTO ${config.solutions} (solution_id, external_id, name, description, duration, categories, program_id, program_name, program_external_id, program_description, private_program)
-           |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        s"""INSERT INTO ${config.solutions} (solution_id, external_id, name, description, duration, categories, program_id, program_name, program_external_id, program_description, private_program, org_id)
+           |VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            |ON CONFLICT (solution_id) DO UPDATE SET
            |    external_id = ?,
            |    name = ?,
@@ -158,17 +159,17 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
            |    program_name = ?,
            |    program_external_id = ?,
            |    program_description = ?,
-           |    private_program = ?;
+           |    private_program = ?,
+           |    org_id = ?;
            |""".stripMargin
 
       val solutionParams = Seq(
         // Insert parameters
-        solutionId, solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram,
+        solutionId, solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram, parentOrgId,
 
         // Update parameters (matching columns in the ON CONFLICT clause)
-        solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram
+        solutionExternalId, solutionName, solutionDescription, projectDuration, projectCategories, programId, programName, programExternalId, programDescription, privateProgram, parentOrgId
       )
-
       postgresUtil.executePreparedUpdate(upsertSolutionQuery, solutionParams, config.solutions, solutionId)
 
       /**
@@ -211,6 +212,19 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
         certificateStatus = "In-Progress"
       }
 
+      val projectsDashboardFilters: List[Map[String, String]] = List(
+        Map(
+          "state_name" -> stateName,
+          "district_name" -> districtName,
+          "block_name" -> blockName,
+          "cluster_name" -> clusterName,
+          "school_name" -> schoolName,
+          "program_name" -> programName,
+          "org_name" -> orgName,
+          "table_name" -> config.projects
+        )
+      )
+
       val upsertProjectQuery =
         s"""INSERT INTO ${config.projects} (
            |    project_id, solution_id, created_by, created_date, completed_date, last_sync, updated_date, status, remarks,
@@ -240,7 +254,7 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
         districtId, districtName, blockId, blockName, clusterId, clusterName, schoolId, schoolName,
         certificateTemplateId, certificateTemplateUrl, certificateIssuedOn, certificateStatus, certificatePdfPath
       )
-
+      checkExistenceOfFilterData(projectsDashboardFilters, context, solutionId)
       postgresUtil.executePreparedUpdate(upsertProjectQuery, projectParams, config.projects, projectId)
 
       /**
@@ -383,6 +397,55 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
                 dashboardData.put(dashboardKey, targetedId)
               }
             }
+        }
+      }
+    }
+
+    def checkExistenceOfFilterData(filterList: List[Map[String, String]], context: ProcessFunction[Event, Event]#Context, solutionId: String): Unit = {
+      println(">>>>>>>>>>>>>>>>>>Checking existence of filter data...")
+
+      filterList.foreach { filter =>
+        val tableName = filter.getOrElse("table_name", "")
+        val columnValuePairs = filter.filterKeys(_ != "table_name").filter { case (_, v) => v != null && v.nonEmpty }
+
+        if (tableName.nonEmpty && columnValuePairs.nonEmpty) {
+          // Step 1: Check if table exists
+          val tableExistsQuery =
+            s"SELECT to_regclass('$tableName') IS NOT NULL AS table_exists"
+          val tableExists = postgresUtil.executeQuery(tableExistsQuery) { rs =>
+            if (rs.next()) rs.getBoolean("table_exists") else false
+          }
+
+          if (tableExists) {
+            // Step 2: Check if data exists
+            val whereClause = columnValuePairs.map { case (col, _) => s"""$col = ?""" }.mkString(" AND ")
+            val params = columnValuePairs.values.toSeq
+            val queryWithParams = params.foldLeft(
+              s"SELECT EXISTS (SELECT 1 FROM $tableName WHERE $whereClause) AS data_exists"
+            ) {
+              case (q, v) => q.replaceFirst("\\?", s"'${v.replace("'", "''")}'")
+            }
+
+            val dataExists = postgresUtil.executeQuery(queryWithParams) { rs =>
+              if (rs.next()) rs.getBoolean("data_exists") else false
+            }
+            val rowCountQuery = s"SELECT COUNT(*) AS row_count FROM $tableName"
+            val rowCount = postgresUtil.executeQuery(rowCountQuery) { rs =>
+              if (rs.next()) rs.getLong("row_count") else 0
+            }
+            if (!dataExists && rowCount > 0) {
+              val eventData = new java.util.HashMap[String, String]()
+              eventData.put("filterTable", tableName.stripPrefix("\"").stripSuffix("\""))
+              eventData.put("filterSync", "Yes")
+              eventData.put("targetedSolution", solutionId)
+              println(s"As DataExists = $dataExists & rowCount = $rowCount hence pushing event")
+              pushProjectDashboardEvents(eventData, context)
+            } else {
+              println(s"As DataExists = $dataExists & rowCount = $rowCount hence no event is pushed")
+            }
+          } else {
+            println(s"Table $tableName does not exist in Postgres")
+          }
         }
       }
     }

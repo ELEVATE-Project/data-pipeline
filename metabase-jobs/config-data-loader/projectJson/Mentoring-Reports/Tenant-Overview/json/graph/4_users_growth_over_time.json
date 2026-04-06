@@ -1,0 +1,75 @@
+{
+  "questionCard": {
+    "name": "Users Growth Over Time",
+    "collection_id": 24,
+    "dataset_query": {
+      "database": 3,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "select_organization": {
+            "type": "dimension",
+            "name": "select_organization",
+            "id": "1956269d-81c8-4747-8074-c58ab884ca7c",
+            "display-name": "Select Organization",
+            "dimension": [
+              "field",
+              590,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          }
+        },
+        "query": "SELECT\r\n DATE_TRUNC('month', u.created_at) AS \"Months\",\r\n  COUNT(DISTINCT u.user_id) AS \"Users Created\",\r\n  SUM(COUNT(DISTINCT u.user_id)) OVER (ORDER BY DATE_TRUNC('month', u.created_at)) AS \"Overall Users\"\r\nFROM\r\n  ${tenantUserTable} u\r\nJOIN\r\n    ${tenantOrgRolesTable} roles\r\nON u.user_id = roles.user_id\r\nWHERE\r\n  status = 'ACTIVE'\r\n    AND u.created_at >= DATE_TRUNC('week', CURRENT_DATE) - INTERVAL '12 months'\r\n  [[AND org_name = (\r\n    SELECT org_name\r\n    FROM \"${tenantOrgRolesTable}\"\r\n    WHERE {{select_organization}}\r\n    LIMIT 1)]]\r\nGROUP BY\r\n    DATE_TRUNC('month', u.created_at)\r\nORDER BY\r\n  \"Months\";"
+      }
+    },
+    "display": "line",
+    "visualization_settings": {
+      "graph.dimensions": [
+        "Months"
+      ],
+      "graph.metrics": [
+        "Users Created"
+      ]
+    },
+    "parameters": [
+      {
+        "id": "e0ed2805-7614-45e5-9564-5421e1aefc81",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_organization"
+          ]
+        ],
+        "name": "Select Organization",
+        "slug": "select_organization"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 141,
+    "dashboard_tab_id": 5,
+    "id": 131,
+    "parameter_mappings": [
+      {
+        "parameter_id": "98262141",
+        "card_id": 141,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_organization"
+          ]
+        ]
+      }
+    ],
+    "col": 0,
+    "row": 18,
+    "size_x": 24,
+    "size_y": 6,
+    "visualization_settings": {}
+  }
+}

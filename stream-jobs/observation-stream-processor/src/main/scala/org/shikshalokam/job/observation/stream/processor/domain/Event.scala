@@ -56,6 +56,8 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def organisationId: String = readOrDefault[Int]("orgId", 0).toString
 
+  def parentOrgId: String = readOrDefault[String]("programInformation.orgId", "")
+
   def tenantId: String = readOrDefault[String]("tenantId", "")
 
   def organisation: List[Map[String, Any]] = readOrDefault[List[Map[String, Any]]]("userProfile.organizations", List.empty)

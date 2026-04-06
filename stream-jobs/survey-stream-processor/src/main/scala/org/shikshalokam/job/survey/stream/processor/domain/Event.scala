@@ -34,6 +34,8 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def organisationId: String = readOrDefault[Int]("orgId", 0).toString
 
+  def parentOrgId: String = readOrDefault[String]("programInformation.orgId", "")
+
   def status: String = readOrDefault[String]("status", "")
 
   def stateId: String = readOrDefault[String]("userProfile.state.value", "")

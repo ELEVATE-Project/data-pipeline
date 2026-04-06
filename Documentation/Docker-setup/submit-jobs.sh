@@ -82,6 +82,9 @@ upload_and_run_jar "/app/metabase-jobs/project-dashboard-creator/target/project-
 upload_and_run_jar "/app/metabase-jobs/observation-dashboard-creator/target/observation-dashboard-creator-1.0.0.jar"
 upload_and_run_jar "/app/metabase-jobs/survey-dashboard-creator/target/survey-dashboard-creator-1.0.0.jar"
 upload_and_run_jar "/app/metabase-jobs/user-service/target/user-service-1.0.0.jar"
+upload_and_run_jar "/app/metabase-jobs/user-dashboard-creator/target/user-dashboard-creator-1.0.0.jar"
+upload_and_run_jar "/app/stream-jobs/mentoring-stream-processor/target/mentoring-stream-processor-1.0.0.jar"
+upload_and_run_jar "/app/metabase-jobs/mentoring-dashboard-creator/target/mentoring-dashboard-creator-1.0.0.jar"
 
 # submitting the jar file to AKKA service
 mkdir -p /app/logs

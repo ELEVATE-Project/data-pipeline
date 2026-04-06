@@ -1,0 +1,240 @@
+{
+  "questionCard": {
+    "name": "Sessions Attended ",
+    "collection_id": 22,
+    "dataset_query": {
+      "database": 3,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "select_state": {
+            "type": "dimension",
+            "name": "select_state",
+            "id": "dae4ef06-8545-49b9-b3ea-fc5d75e57cca",
+            "display-name": "Select State",
+            "default": null,
+            "dimension": [
+              "field",
+              447,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "select_district": {
+            "type": "dimension",
+            "name": "select_district",
+            "id": "a1d48474-d42f-4d96-9f9e-547cdbabba56",
+            "display-name": "Select District",
+            "default": null,
+            "dimension": [
+              "field",
+              458,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "select_block": {
+            "type": "dimension",
+            "name": "select_block",
+            "id": "afb2b518-b934-4dd2-a250-80b5a5c8ef52",
+            "display-name": "Select Block",
+            "default": null,
+            "dimension": [
+              "field",
+              450,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "select_cluster": {
+            "type": "dimension",
+            "name": "select_cluster",
+            "id": "2b8f1cd3-084f-4e6b-8371-3cd34f3d9bdb",
+            "display-name": "Select Cluster",
+            "default": null,
+            "dimension": [
+              "field",
+              466,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "select_school": {
+            "type": "dimension",
+            "name": "select_school",
+            "id": "5c8f587f-8787-4a7e-acd3-c90de71d674e",
+            "display-name": "Select School",
+            "default": null,
+            "dimension": [
+              "field",
+              460,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          }
+        },
+        "query": "SELECT \r\n    s.type AS \"Session Type\",\r\n    CASE \r\n        WHEN s.mentor_id != s.created_by THEN 'Created by Session Manager'\r\n        ELSE 'Created by Mentor'\r\n    END AS \"Session Ownership\",\r\n    COUNT(DISTINCT sa.session_id) AS \"Total Attended Sessions\"\r\nFROM ${tenantSessionTable} s\r\nJOIN ${tenantSessionAttendanceTable} sa \r\n    ON s.session_id = sa.session_id\r\nJOIN ${tenantUserTable} u\r\n    ON s.mentor_id = u.user_id\r\nWHERE s.status IN ('COMPLETED')\r\n  AND s.org_id = ${orgId}\r\n  AND s.deleted_at IS NULL\r\n  AND sa.deleted_at IS NULL\r\n\r\n  [[AND user_profile_one_name = (\r\n    SELECT user_profile_one_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{select_state}}\r\n    LIMIT 1\r\n  )]]\r\n\r\n  [[AND user_profile_two_name = (\r\n    SELECT user_profile_two_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{select_district}}\r\n      AND user_profile_two_name IS NOT NULL\r\n      AND TRIM(user_profile_two_name) <> ''\r\n    LIMIT 1\r\n  )]]\r\n\r\n  [[AND user_profile_three_name = (\r\n    SELECT user_profile_three_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{select_block}}\r\n    LIMIT 1\r\n  )]]\r\n\r\n  [[AND user_profile_four_name = (\r\n    SELECT user_profile_four_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{select_cluster}}\r\n    LIMIT 1\r\n  )]]\r\n\r\n  [[AND user_profile_five_name = (\r\n    SELECT user_profile_five_name\r\n    FROM ${tenantUserTable}\r\n    WHERE {{select_school}}\r\n    LIMIT 1\r\n  )]]\r\n\r\nGROUP BY s.type, 2\r\nORDER BY s.type, 2;\r\n"
+      }
+    },
+    "display": "bar",
+    "visualization_settings": {
+      "series_settings": {
+        "Assigned": {
+          "color": "#FBE499"
+        },
+        "Created by Mentor": {
+          "color": "#C7EAEA"
+        },
+        "Created by Session Manager": {
+          "color": "#FBE499"
+        }
+      },
+      "graph.dimensions": [
+        "Session Type",
+        "Session Ownership"
+      ],
+      "graph.metrics": [
+        "Total Attended Sessions"
+      ]
+    },
+    "parameters": [
+      {
+        "id": "793e1394-53d2-4578-9e80-7a3ae4eba3a1",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_state"
+          ]
+        ],
+        "name": "Select State",
+        "slug": "select_state"
+      },
+      {
+        "id": "05c4660f-3589-4791-bba4-2cb7d2bd0ba1",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_district"
+          ]
+        ],
+        "name": "Select District",
+        "slug": "select_district"
+      },
+      {
+        "id": "7595dcf0-6008-46e6-b5e3-403a657e8e6b",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_block"
+          ]
+        ],
+        "name": "Select Block",
+        "slug": "select_block"
+      },
+      {
+        "id": "2d82abc8-dcb3-489e-84cf-275d3b4f6967",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_cluster"
+          ]
+        ],
+        "name": "Select Cluster",
+        "slug": "select_cluster"
+      },
+      {
+        "id": "53aa7106-3a58-4bc6-9fd8-288afb9cf522",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_school"
+          ]
+        ],
+        "name": "Select School",
+        "slug": "select_school"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 3168,
+    "dashboard_tab_id": null,
+    "id": 1634,
+    "parameter_mappings": [
+      {
+        "parameter_id": "89753241",
+        "card_id": 3168,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_state"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753242",
+        "card_id": 3168,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_district"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753243",
+        "card_id": 3168,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_block"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753244",
+        "card_id": 3168,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_cluster"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753245",
+        "card_id": 3168,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_school"
+          ]
+        ]
+      }
+    ],
+    "col": 12,
+    "row": 12,
+    "size_x": 12,
+    "size_y": 7,
+    "visualization_settings": {}
+  }
+}

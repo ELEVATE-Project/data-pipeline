@@ -6,7 +6,7 @@
       "database": 2,
       "type": "native",
       "native": {
-        "query": "SELECT domain_level,domain as \"Domain\",count(distinct ${entityColumnId}) AS \"Percentage wise distribution of count of ${entityType}\"\nFROM ${domainTable}\nWHERE 1 = 1\n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{block_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{org_param}}]]\n[[AND {{domain_param}}]]\n[[AND {{criteria_param}}]]\nGROUP BY domain_level,domain\norder by domain",
+        "query": "SELECT domain_level,domain as \"Domain\",count(distinct ${entityColumnId}) AS \"Percentage wise distribution of count of ${entityType}\"\nFROM ${domainTable}\nWHERE 1 = 1\n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{block_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{org_param}}]]\n[[AND {{domain_param}}]]\n[[AND {{criteria_param}}]]\n[[AND {{entity_param}}]]\nGROUP BY domain_level,domain\norder by domain",
         "template-tags": {
           "state_param": {
             "type": "dimension",
@@ -113,6 +113,20 @@
             "dimension": [
               "field",
               1506,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "entity_param": {
+            "type": "dimension",
+            "name": "entity_param",
+            "id": "ae72528d-cca1-4f18-8d62-bc10b0ae3431",
+            "display-name": "Entity Param",
+            "default": null,
+            "dimension": [
+              "field",
+              1507,
               null
             ],
             "widget-type": "string/=",
@@ -237,6 +251,19 @@
         ],
         "name": "Criteria Param",
         "slug": "criteria_param"
+      },
+      {
+        "id": "be72528d-cca1-4f18-8d62-bc10b0ae5431",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "entity_param"
+          ]
+        ],
+        "name": "Entity Param",
+        "slug": "entity_param"
       }
     ]
   },
@@ -330,6 +357,17 @@
           [
             "template-tag",
             "criteria_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "ffbf9c98",
+        "card_id": 1876,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "entity_param"
           ]
         ]
       }

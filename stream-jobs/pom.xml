@@ -20,6 +20,7 @@
         <module>survey-stream-processor</module>
         <module>observation-stream-processor</module>
         <module>user-stream-processor</module>
+        <module>mentoring-stream-processor</module>
     </modules>
 
     <build>

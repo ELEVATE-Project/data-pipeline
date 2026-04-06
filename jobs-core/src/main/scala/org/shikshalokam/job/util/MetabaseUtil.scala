@@ -484,6 +484,79 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
   }
 
   /**
+   * Method to rescan values in Metabase
+   * @param tableId
+   * @return JSON string representing the status of the rescan values
+   */
+
+  def rescanValues(tableId: Int): String = {
+    val url = s"$metabaseUrl/table/$tableId/rescan_values"
+
+    val response = requests.post(
+      url,
+      headers = Map(
+        "Content-Type" -> "application/json",
+        "X-Metabase-Session" -> getSessionToken
+      )
+    )
+
+    if (response.statusCode == 200) {
+      val responseBody = ujson.read(response.text).render()
+      responseBody
+    } else {
+      throw new Exception(s"Failed to rescan the table: ${response.statusCode}, message: ${response.text}")
+    }
+  }
+
+  /**
+   * Method to discard values in Metabase
+   * @param tableId
+   * @return JSON string representing the status of the discard values
+   */
+
+
+  def discardValues(tableId: Int): String = {
+    val url = s"$metabaseUrl/table/$tableId/discard_values"
+
+    val response = requests.post(
+      url,
+      headers = Map(
+        "Content-Type" -> "application/json",
+        "X-Metabase-Session" -> getSessionToken
+      )
+    )
+
+    if (response.statusCode == 200) {
+      val responseBody = ujson.read(response.text).render()
+      responseBody
+    } else {
+      throw new Exception(s"Failed to discard filter values from the table: ${response.statusCode}, message: ${response.text}")
+    }
+  }
+
+  /**
+   * Method to search a table in Metabase
+    * @param tableName
+   * @param tableDbId
+   * @return JSON string representing the status of the search table
+   */
+
+  def searchTable(tableName: String, tableDbId: Int): String = {
+    val url = s"$metabaseUrl/search"
+    val params = Map(
+      "q" -> tableName,
+      "models" -> "table",
+      "table_db_id" -> tableDbId.toString
+    )
+    val headers = Map(
+      "X-Metabase-Session" -> getSessionToken
+    )
+    val response = requests.get(url, params = params, headers = headers)
+    if (response.statusCode == 200) response.text
+    else throw new Exception(s"Search failed: ${response.statusCode}, ${response.text}")
+  }
+
+  /**
    * Method to update a user's password in Metabase
    *
    * @param userId      ID of the user to update the password for
@@ -610,31 +683,28 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
   }
 
   /**
-   * Method to sync database schema and rescan field values in Metabase
-   *
-   * @param databaseId ID of the database to sync and rescan
+   * Method to sync a new table in Metabase
+   * @param dbId       ID of the database to sync the new table with
+   * @param tableName  Name of the new table to sync
+   * @param apiKey     API key for authentication
+   * @return JSON string representing the response from the sync operation
    */
-  def syncDatabaseAndRescanValues(databaseId: Int): Unit = {
-    val syncSchemaUrl = s"$metabaseUrl/database/$databaseId/sync_schema"
-    val rescanValuesUrl = s"$metabaseUrl/database/$databaseId/rescan_values"
 
+  def syncNewTable(dbId: Int, tableName: String, apiKey: String): ujson.Value = {
+    val url = s"$metabaseUrl/notify/db/$dbId/new-table"
+    val payload = ujson.Obj(
+      "schema_name" -> "public",
+      "table_name" -> tableName
+    ).render()
     val headers = Map(
       "Content-Type" -> "application/json",
-      "X-Metabase-Session" -> getSessionToken
+      "X-METABASE-APIKEY" -> apiKey
     )
-
-    val syncSchemaResponse = requests.post(syncSchemaUrl, headers = headers, data = "{}")
-    if (syncSchemaResponse.statusCode == 200) {
-      println(s"Successfully synced schema for database ID: $databaseId")
+    val response = requests.post(url, data = payload, headers = headers)
+    if (response.statusCode == 200) {
+      ujson.read(response.text)
     } else {
-      throw new Exception(s"Failed to sync schema: ${syncSchemaResponse.text()}")
-    }
-
-    val rescanValuesResponse = requests.post(rescanValuesUrl, headers = headers, data = "{}")
-    if (rescanValuesResponse.statusCode == 200) {
-      println(s"Successfully rescanned field values for database ID: $databaseId")
-    } else {
-      throw new Exception(s"Failed to rescan field values: ${rescanValuesResponse.text()}")
+      throw new Exception(s"Failed to retrieve database metadata with status code: ${response.statusCode}, message: ${response.text}")
     }
   }
 }

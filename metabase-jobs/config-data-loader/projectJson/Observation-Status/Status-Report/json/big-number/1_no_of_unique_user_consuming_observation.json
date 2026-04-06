@@ -6,7 +6,7 @@
       "database": 2,
       "type": "native",
       "native": {
-        "query": "select count(distinct(user_id)) \nfrom ${statusTable}\nWHERE 1 = 1\n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{block_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{org_param}}]]",
+        "query": "select count(distinct(user_id)) \nfrom ${statusTable}\nWHERE 1 = 1\n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{block_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{org_param}}]]\n[[AND {{entity_param}}]]",
         "template-tags": {
           "state_param": {
             "type": "dimension",
@@ -85,6 +85,20 @@
             "dimension": [
               "field",
               485,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "entity_param": {
+            "type": "dimension",
+            "name": "entity_param",
+            "id": "ae72528d-cca1-4f18-8d62-bc10b0ae3430",
+            "display-name": "Entity Param",
+            "default": null,
+            "dimension": [
+              "field",
+              1506,
               null
             ],
             "widget-type": "string/=",
@@ -173,6 +187,19 @@
         ],
         "name": "Org Param",
         "slug": "org_param"
+      },
+      {
+        "id": "be72528d-cca1-4f18-8d62-bc10b0ae5430",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "entity_param"
+          ]
+        ],
+        "name": "Entity Param",
+        "slug": "entity_param"
       }
     ]
   },
@@ -244,6 +271,17 @@
           [
             "template-tag",
             "org_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "ffbf9c98",
+        "card_id": 1876,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "entity_param"
           ]
         ]
       }

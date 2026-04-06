@@ -18,7 +18,13 @@ RUN apt update && apt install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Java environment variables
-ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+RUN apt update && apt install -y openjdk-11-jdk && \
+    JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac)))) && \
+    echo "export JAVA_HOME=$JAVA_HOME" >> /etc/profile && \
+    echo "export PATH=$JAVA_HOME/bin:$PATH" >> /etc/profile && \
+    ln -s $JAVA_HOME /usr/lib/jvm/default-java
+
+ENV JAVA_HOME=/usr/lib/jvm/default-java
 ENV PATH="$JAVA_HOME/bin:$PATH"
 
 # Download and install Scala
@@ -42,10 +48,21 @@ RUN MAVEN_VERSION=$(curl -s https://maven.apache.org/download.cgi | grep -oP 'ap
 ENV MAVEN_HOME=/usr/local/maven
 ENV PATH=$MAVEN_HOME/bin:$PATH
 
+# Install Python 3.12.6
+RUN apt update && apt install -y software-properties-common curl \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt update \
+    && apt install -y python3.12 python3.12-venv \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 2 \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3
+
+ENV PATH="/usr/local/bin:$PATH"
 
 WORKDIR /app
 
 COPY . /app
+
+RUN pip install --no-cache-dir -r /app/Documentation/batch-scripts/requirements.txt
 
 RUN mvn clean install -DskipTests
 

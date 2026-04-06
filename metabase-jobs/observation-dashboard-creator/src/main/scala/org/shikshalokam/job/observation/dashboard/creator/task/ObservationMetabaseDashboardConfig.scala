@@ -38,6 +38,7 @@ class ObservationMetabaseDashboardConfig(override val config: Config) extends Ba
   val solutions: String = config.getString("postgres.tables.solutionsTable")
   val dashboard_metadata: String = config.getString("postgres.tables.dashboardMetadataTable")
   val report_config: String = config.getString("postgres.tables.reportConfigTable")
+  val metabasePgDatabase: String = config.getString("postgres.metabaseDb")
 
   // Metabase connection config
   val metabaseUrl: String = config.getString("metabase.url")
@@ -45,5 +46,5 @@ class ObservationMetabaseDashboardConfig(override val config: Config) extends Ba
   val metabasePassword: String = config.getString("metabase.password")
   val metabaseDatabase: String = config.getString("metabase.database")
   val evidenceBaseUrl: String = config.getString("metabase.evidenceBaseUrl")
-
+  val metabaseKey: String = config.getString("metabase.metabaseApiKey")
 }

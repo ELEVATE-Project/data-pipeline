@@ -1,0 +1,76 @@
+{
+  "questionCard": {
+    "name": "Monthly Sessions",
+    "collection_id": 24,
+    "dataset_query": {
+      "database": 3,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "select_org_b": {
+            "type": "dimension",
+            "name": "select_org_b",
+            "id": "ce14cd61-2a70-469b-93f7-6130035b7f36",
+            "display-name": "Select Org B",
+            "default": null,
+            "dimension": [
+              "field",
+              430,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          }
+        },
+        "query": "SELECT \r\n    DATE_TRUNC('month', created_at) AS \"Months\",\r\n    COUNT(*) AS \"Total Sessions\"\r\nFROM ${tenantSessionTable}\r\nWHERE 1 = 1\r\nAND deleted_at IS NULL\r\n[[AND {{select_org_b}}]]\r\nAND created_at >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '12 months'\r\nGROUP BY DATE_TRUNC('month', created_at)\r\nORDER BY \"Months\";\r\n"
+      }
+    },
+    "display": "line",
+    "visualization_settings": {
+      "graph.dimensions": [
+        "Months"
+      ],
+      "graph.metrics": [
+        "Total Sessions"
+      ]
+    },
+    "parameters": [
+      {
+        "id": "5dfcff8e-e07a-42f2-a47b-7c398c4350b6",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_org_b"
+          ]
+        ],
+        "name": "Select Org B",
+        "slug": "select_org_b"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 120,
+    "dashboard_tab_id": 4,
+    "id": 108,
+    "parameter_mappings": [
+      {
+        "parameter_id": "99214757",
+        "card_id": 120,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_org_b"
+          ]
+        ]
+      }
+    ],
+    "col": 13,
+    "row": 15,
+    "size_x": 10,
+    "size_y": 5,
+    "visualization_settings": {}
+  }
+}

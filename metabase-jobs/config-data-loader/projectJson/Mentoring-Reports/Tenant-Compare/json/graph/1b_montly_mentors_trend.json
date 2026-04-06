@@ -1,0 +1,82 @@
+{
+  "questionCard": {
+    "name": "Monthly Mentors Trend",
+    "collection_id": 24,
+    "dataset_query": {
+      "database": 3,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "select_org_b": {
+            "type": "dimension",
+            "name": "select_org_b",
+            "id": "2f05f53f-9dfa-420a-9f8d-a7d33815d6db",
+            "display-name": "Select Org B",
+            "dimension": [
+              "field",
+              600,
+              null
+            ],
+            "widget-type": "string/="
+          }
+        },
+        "query": "SELECT\r\n    DATE_TRUNC('month', rating_updated_at) AS \"Months\",\r\n    AVG(rating) AS \"Avg Rating\"\r\nFROM ${tenantOrgMentorRatingTable}\r\nWHERE 1 = 1\r\n[[AND {{select_org_b}}]]\r\n  AND rating_updated_at >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '12 months'\r\nGROUP BY DATE_TRUNC('month', rating_updated_at)\r\nORDER BY \"Months\";"
+      }
+    },
+    "display": "line",
+    "visualization_settings": {
+      "series_settings": {
+        "avg_previous_rating": {
+          "color": "#E75454"
+        },
+        "avg_present_rating": {
+          "color": "#88BF4D"
+        }
+      },
+      "graph.dimensions": [
+        "Month Start"
+      ],
+      "graph.metrics": [
+        "Avg Rating"
+      ]
+    },
+    "parameters": [
+      {
+        "id": "5dfcff8e-e07a-42f2-a47b-7c398c4350b6",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_org_b"
+          ]
+        ],
+        "name": "Select Org B",
+        "slug": "select_org_b"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 124,
+    "dashboard_tab_id": 4,
+    "id": 112,
+    "parameter_mappings": [
+      {
+        "parameter_id": "99214757",
+        "card_id": 124,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_org_b"
+          ]
+        ]
+      }
+    ],
+    "col": 13,
+    "row": 32,
+    "size_x": 10,
+    "size_y": 6,
+    "visualization_settings": {}
+  }
+}

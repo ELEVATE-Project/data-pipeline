@@ -1,0 +1,221 @@
+{
+  "questionCard": {
+    "name": "Meeting Platform",
+    "collection_id": 22,
+    "dataset_query": {
+      "database": 3,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "select_state": {
+            "type": "dimension",
+            "name": "select_state",
+            "id": "d9c2be9c-9340-42dc-8b12-7b07dac30c18",
+            "display-name": "Select State",
+            "default": null,
+            "dimension": [
+              "field",
+              447,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "select_district": {
+            "type": "dimension",
+            "name": "select_district",
+            "id": "fa3522f8-9e4c-4778-a151-ebe8694af5cb",
+            "display-name": "Select District",
+            "default": null,
+            "dimension": [
+              "field",
+              458,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "select_block": {
+            "type": "dimension",
+            "name": "select_block",
+            "id": "2fa49462-c17f-43eb-a77e-e3487e151258",
+            "display-name": "Select Block",
+            "default": null,
+            "dimension": [
+              "field",
+              450,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "select_cluster": {
+            "type": "dimension",
+            "name": "select_cluster",
+            "id": "0dd23e32-1654-41c3-9710-7087678ae9bb",
+            "display-name": "Select Cluster",
+            "default": null,
+            "dimension": [
+              "field",
+              466,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "select_school": {
+            "type": "dimension",
+            "name": "select_school",
+            "id": "f1bf148c-a6ba-44dc-880d-1ecb7325feac",
+            "display-name": "Select School",
+            "default": null,
+            "dimension": [
+              "field",
+              460,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          }
+        },
+        "query": "SELECT \r\n    s.platform,\r\n    COUNT(*) AS \"Total Sessions\"\r\nFROM ${tenantSessionTable} s\r\nJOIN ${tenantUserTable} u\r\n    ON s.mentor_id = u.user_id \r\nWHERE \r\n    s.org_id = ${orgId}\r\nAND s.deleted_at IS NULL\r\n    [[AND user_profile_one_name = (\r\n    SELECT user_profile_one_name\r\n    FROM \"${tenantUserTable}\"\r\n    WHERE {{select_state}}\r\n    LIMIT 1)]]\r\n\r\n    [[AND user_profile_two_name = (\r\n    SELECT user_profile_two_name\r\n    FROM \"${tenantUserTable}\"\r\n    WHERE {{select_district}}\r\n    AND user_profile_two_name IS NOT NULL AND TRIM(user_profile_two_name) <> ''\r\n    LIMIT 1)]]\r\n    \r\n    [[AND user_profile_three_name = (\r\n    SELECT user_profile_three_name\r\n    FROM \"${tenantUserTable}\"\r\n    WHERE {{select_block}}\r\n    LIMIT 1)]]\r\n    \r\n    [[AND user_profile_four_name = (\r\n    SELECT user_profile_four_name\r\n    FROM \"${tenantUserTable}\"\r\n    WHERE {{select_cluster}}\r\n    LIMIT 1)]]\r\n    \r\n    [[AND user_profile_five_name = (\r\n    SELECT user_profile_five_name\r\n    FROM \"${tenantUserTable}\"\r\n    WHERE {{select_school}}\r\n    LIMIT 1)]]\r\nGROUP BY s.platform\r\nORDER BY \"Total Sessions\" DESC;"
+      }
+    },
+    "display": "pie",
+    "visualization_settings": {},
+    "parameters": [
+      {
+        "id": "793e1394-53d2-4578-9e80-7a3ae4eba3a1",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_state"
+          ]
+        ],
+        "name": "Select State",
+        "slug": "select_state"
+      },
+      {
+        "id": "05c4660f-3589-4791-bba4-2cb7d2bd0ba1",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_district"
+          ]
+        ],
+        "name": "Select District",
+        "slug": "select_district"
+      },
+      {
+        "id": "7595dcf0-6008-46e6-b5e3-403a657e8e6b",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_block"
+          ]
+        ],
+        "name": "Select Block",
+        "slug": "select_block"
+      },
+      {
+        "id": "2d82abc8-dcb3-489e-84cf-275d3b4f6967",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_cluster"
+          ]
+        ],
+        "name": "Select Cluster",
+        "slug": "select_cluster"
+      },
+      {
+        "id": "53aa7106-3a58-4bc6-9fd8-288afb9cf522",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_school"
+          ]
+        ],
+        "name": "Select School",
+        "slug": "select_school"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 97,
+    "dashboard_tab_id": null,
+    "id": 88,
+    "parameter_mappings": [
+      {
+        "parameter_id": "89753241",
+        "card_id": 97,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_state"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753242",
+        "card_id": 97,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_district"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753243",
+        "card_id": 97,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_block"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753244",
+        "card_id": 97,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_cluster"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753245",
+        "card_id": 97,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_school"
+          ]
+        ]
+      }
+    ],
+    "col": 12,
+    "row": 4,
+    "size_x": 12,
+    "size_y": 8,
+    "visualization_settings": {}
+  }
+}

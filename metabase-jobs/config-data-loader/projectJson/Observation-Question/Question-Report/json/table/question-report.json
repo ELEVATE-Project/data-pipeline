@@ -6,7 +6,7 @@
       "database": 2,
       "type": "native",
       "native": {
-        "query": "select user_id as \"UUID\",\nuser_roles as \"User Type\",\nparent_one_name as \"State\",\nparent_two_name as \"District\",\nparent_three_name as \"Block\",\nparent_four_name as \"Cluster\",\nparent_five_name as \"School\",\nparent_five_id as \"School Id\",\norg_name as \"Organisation\",\nprogram_name as \"Program\",\nprogram_id as \"Program Id\",\nobservation_name  as \"Observation\",\nobservation_id as \"Observation Id\",\nsubmission_id as \"Observation Submission Id\",\nsubmitted_at as \"Submission Date\",\ndomain_name as \"Domain\",\ncriteria_name as \"Criteria\",\nquestion_id as \"Question Id\",\nquestion_text as \"Question\",\nlabels as \"Question Response Lable\",\nscore as \"Question Score\",\n  (\n    SELECT string_agg(\n      ${evidenceBaseUrl} || trim(value),\n      ', '\n    )\n    FROM unnest(string_to_array(evidence, ',')) AS value\n  ) AS \"Evidences\",\nremarks as \"Remarks\"\nfrom ${questionTable}\nWHERE 1 = 1 \n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{block_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{domain_param}}]]\n[[AND {{criteria_param}}]];",
+        "query": "select user_id as \"UUID\",\nuser_roles as \"User Type\",\nparent_one_name as \"State\",\nparent_two_name as \"District\",\nparent_three_name as \"Block\",\nparent_four_name as \"Cluster\",\nparent_five_name as \"School\",\nparent_five_id as \"School Id\",\norg_name as \"Organisation\",\nprogram_name as \"Program\",\nprogram_id as \"Program Id\",\nobservation_name  as \"Observation\",\nobservation_id as \"Observation Id\",\nsubmission_id as \"Observation Submission Id\",\nsubmitted_at as \"Submission Date\",\ndomain_name as \"Domain\",\ncriteria_name as \"Criteria\",\nquestion_id as \"Question Id\",\nquestion_text as \"Question\",\nlabels as \"Question Response Label\",\nscore as \"Question Score\",\n  (\n    SELECT string_agg(\n      ${evidenceBaseUrl} || trim(value),\n      ', '\n    )\n    FROM unnest(string_to_array(evidence, ',')) AS value\n  ) AS \"Evidences\",\nremarks as \"Remarks\"\nfrom ${questionTable}\nWHERE 1 = 1 \n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{block_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{domain_param}}]]\n[[AND {{criteria_param}}]]\n[[AND {{entity_param}}]];",
         "template-tags": {
           "state_param": {
             "type": "dimension",
@@ -99,6 +99,20 @@
             "dimension": [
               "field",
               1506,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "entity_param": {
+            "type": "dimension",
+            "name": "entity_param",
+            "id": "ae72528d-cca1-4f18-8d62-bc10b0ae3431",
+            "display-name": "Entity Param",
+            "default": null,
+            "dimension": [
+              "field",
+              1507,
               null
             ],
             "widget-type": "string/=",
@@ -200,6 +214,19 @@
         ],
         "name": "Criteria Param",
         "slug": "criteria_param"
+      },
+      {
+        "id": "be72528d-cca1-4f18-8d62-bc10b0ae5431",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "entity_param"
+          ]
+        ],
+        "name": "Entity Param",
+        "slug": "entity_param"
       }
     ]
   },
@@ -282,6 +309,17 @@
           [
             "template-tag",
             "criteria_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "ffbf9c98",
+        "card_id": 1876,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "entity_param"
           ]
         ]
       }

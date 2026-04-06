@@ -1,0 +1,371 @@
+{
+  "questionCard": {
+    "name": "Question Report",
+    "collection_id": 644,
+    "dataset_query": {
+      "database": 2,
+      "type": "native",
+      "native": {
+        "query": "select user_id as \"UUID\",\nuser_roles as \"User Type\",\nuser_one_profile_name as \"State\",\nuser_two_profile_name as \"District\",\nuser_three_profile_name as \"Block\",\nuser_four_profile_name as \"Cluster\",\nuser_five_profile_name as \"School\",\nuser_five_profile_id as \"School Id\",\norg_name as \"Organisation\",\nprogram_name as \"Program\",\nprogram_id as \"Program Id\",\nobservation_name  as \"Observation\",\nobservation_id as \"Observation Id\",\nsubmission_id as \"Observation Submission Id\",\nsubmitted_at as \"Submission Date\",\ndomain_name as \"Domain\",\ncriteria_name as \"Criteria\",\nquestion_id as \"Question Id\",\nquestion_text as \"Question\",\nlabels as \"Question Response Label\",\nscore as \"Question Score\",\n  (\n    SELECT string_agg(\n      ${evidenceBaseUrl} || trim(value),\n      ', '\n    )\n    FROM unnest(string_to_array(evidence, ',')) AS value\n  ) AS \"Evidences\",\nremarks as \"Remarks\"\nfrom ${questionTable}\nWHERE 1 = 1 \n[[AND {{state_param}}]]\n[[AND {{district_param}}]]\n[[AND {{block_param}}]]\n[[AND {{cluster_param}}]]\n[[AND {{school_param}}]]\n[[AND {{domain_param}}]]\n[[AND {{criteria_param}}]]\n[[AND {{org_param}}]]\n[[AND {{entity_param}}]];",
+        "template-tags": {
+          "state_param": {
+            "type": "dimension",
+            "name": "state_param",
+            "id": "77ce5c53-d414-432f-bfa0-ef83fe4d1981",
+            "display-name": "State Param",
+            "default": null,
+            "dimension": [
+              "field",
+              1491,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "district_param": {
+            "type": "dimension",
+            "name": "district_param",
+            "id": "b338bd73-7852-4ead-91af-5ef366d16a06",
+            "display-name": "District Param",
+            "default": null,
+            "dimension": [
+              "field",
+              1494,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "block_param": {
+            "type": "dimension",
+            "name": "block_param",
+            "id": "bee6b62d-7188-4612-8a4e-d4395d31fcfe",
+            "display-name": "Block Param",
+            "dimension": [
+              "field",
+              478,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "cluster_param": {
+            "type": "dimension",
+            "name": "cluster_param",
+            "id": "5da8fb12-910e-4763-a44a-8c1f976b22af",
+            "display-name": "Cluster Param",
+            "default": null,
+            "dimension": [
+              "field",
+              1495,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "school_param": {
+            "type": "dimension",
+            "name": "school_param",
+            "id": "428eb582-a80c-4bac-8430-bdb6187e016b",
+            "display-name": "School Param",
+            "default": null,
+            "dimension": [
+              "field",
+              1496,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "domain_param": {
+            "type": "dimension",
+            "name": "domain_param",
+            "id": "3616e34d-373c-471d-ac8b-9442f6553360",
+            "display-name": "Domain Param",
+            "default": null,
+            "dimension": [
+              "field",
+              1502,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "criteria_param": {
+            "type": "dimension",
+            "name": "criteria_param",
+            "id": "ae72528d-cca1-4f18-8d62-bc10b0ae3430",
+            "display-name": "Criteria Param",
+            "default": null,
+            "dimension": [
+              "field",
+              1506,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "org_param": {
+            "type": "dimension",
+            "name": "org_param",
+            "id": "a45783ee-540b-486d-891a-460a97901692",
+            "display-name": "Org Param",
+            "default": null,
+            "dimension": [
+              "field",
+              485,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          },
+          "entity_param": {
+            "type": "dimension",
+            "name": "entity_param",
+            "id": "ae72528d-cca1-4f18-8d62-bc10b0ae3431",
+            "display-name": "Entity Param",
+            "default": null,
+            "dimension": [
+              "field",
+              1507,
+              null
+            ],
+            "widget-type": "string/=",
+            "options": null
+          }
+        }
+      }
+    },
+    "display": "table",
+    "visualization_settings": {},
+    "parameters": [
+      {
+        "id": "77ce5c53-d414-432f-bfa0-ef83fe4d1981",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "state_param"
+          ]
+        ],
+        "name": "State Param",
+        "slug": "state_param"
+      },
+      {
+        "id": "b338bd73-7852-4ead-91af-5ef366d16a06",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "district_param"
+          ]
+        ],
+        "name": "District Param",
+        "slug": "district_param"
+      },
+      {
+        "id": "bee6b62d-7188-4612-8a4e-d4395d31fcfe",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "block_param"
+          ]
+        ],
+        "name": "Block Param",
+        "slug": "block_param"
+      },
+      {
+        "id": "5da8fb12-910e-4763-a44a-8c1f976b22af",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "cluster_param"
+          ]
+        ],
+        "name": "Cluster Param",
+        "slug": "cluster_param"
+      },
+      {
+        "id": "428eb582-a80c-4bac-8430-bdb6187e016b",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "school_param"
+          ]
+        ],
+        "name": "School Param",
+        "slug": "school_param"
+      },
+      {
+        "id": "3616e34d-373c-471d-ac8b-9442f6553360",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "domain_param"
+          ]
+        ],
+        "name": "Domain Param",
+        "slug": "domain_param"
+      },
+      {
+        "id": "ae72528d-cca1-4f18-8d62-bc10b0ae3430",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "criteria_param"
+          ]
+        ],
+        "name": "Criteria Param",
+        "slug": "criteria_param"
+      },
+      {
+        "id": "a45783ee-540b-486d-891a-460a97901692",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "org_param"
+          ]
+        ],
+        "name": "Org Param",
+        "slug": "org_param"
+      },
+      {
+        "id": "be72528d-cca1-4f18-8d62-bc10b0ae5431",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "entity_param"
+          ]
+        ],
+        "name": "Entity Param",
+        "slug": "entity_param"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 6948,
+    "dashboard_tab_id": null,
+    "id": 22,
+    "parameter_mappings": [
+      {
+        "parameter_id": "c32c8fc5",
+        "card_id": 1876,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "state_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "74a10335",
+        "card_id": 1876,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "district_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "9e5a09bh",
+        "card_id": 8985,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "block_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "cc7a4cd7",
+        "card_id": 1876,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "cluster_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "6e5c08dc",
+        "card_id": 1876,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "school_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "fbca1e77",
+        "card_id": 1876,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "domain_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "ffbf9c99",
+        "card_id": 1876,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "criteria_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "5088d3e5",
+        "card_id": 8985,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "org_param"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "ffbf9c98",
+        "card_id": 1876,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "entity_param"
+          ]
+        ]
+      }
+    ],
+    "col": 0,
+    "row": 0,
+    "size_x": 24,
+    "size_y": 8,
+    "visualization_settings": {}
+  }
+}

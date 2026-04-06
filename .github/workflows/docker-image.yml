@@ -14,7 +14,7 @@ env:
 
 jobs:
   docker-image-build-and-push:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/staging'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
@@ -51,19 +51,10 @@ jobs:
           VERSION=${{ steps.get-version.outputs.version }}
           RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "https://hub.docker.com/v2/namespaces/${{ env.DOCKER_NAMESPACE }}/repositories/${{ env.DOCKER_IMAGE_NAME }}/tags/$VERSION")
           if [ "$RESPONSE" -eq 200 ]; then
-            echo "Error: Tag $VERSION already exists on Docker Hub"
-            exit 1
+            echo "⚠️  Warning: Tag '$VERSION' already exists on Docker Hub. The workflow will continue and overwrite the existing tag."
           else
-            echo "Tag $VERSION does not exist, proceeding with build"
+            echo "✅ Tag '$VERSION' does not exist — proceeding with build."
           fi
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/${{ env.DOCKER_IMAGE_NAME }}
-          tags: |
-            type=raw,value=${{ steps.get-version.outputs.version }}
 
       - name: Build and push Docker image
         id: build
@@ -72,16 +63,48 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            docker.io/${{ env.DOCKER_NAMESPACE }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.get-version.outputs.version }}
+            docker.io/${{ env.DOCKER_NAMESPACE }}/${{ env.DOCKER_IMAGE_NAME }}:latest
           platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
+      
       - name: Image digest
-        run: echo "Image pushed with digest  ${{ steps.build.outputs.digest }}"
-
+        run: echo "Image pushed with digest ${{ steps.build.outputs.digest }}"
+      
       - name: Print pushed tags
         run: |
           echo "Pushed tags:"
-          echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n'
+          echo "docker.io/${{ env.DOCKER_NAMESPACE }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.get-version.outputs.version }}"
+          echo "docker.io/${{ env.DOCKER_NAMESPACE }}/${{ env.DOCKER_IMAGE_NAME }}:latest"
+
+      # - name: Extract metadata
+      #   id: meta
+      #   uses: docker/metadata-action@v5
+      #   with:
+      #     images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/${{ env.DOCKER_IMAGE_NAME }}
+      #     tags: |
+      #       type=raw,value=${{ steps.get-version.outputs.version }}
+      #       type=raw,value=latest
+
+      # - name: Build and push Docker image
+      #   id: build
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: .
+      #     file: ./Dockerfile
+      #     push: true
+      #     tags: ${{ steps.meta.outputs.tags }}
+      #     labels: ${{ steps.meta.outputs.labels }}
+      #     platforms: linux/amd64,linux/arm64
+      #     cache-from: type=gha
+      #     cache-to: type=gha,mode=max
+
+      # - name: Image digest
+      #   run: echo "Image pushed with digest  ${{ steps.build.outputs.digest }}"
+
+      # - name: Print pushed tags
+      #   run: |
+      #     echo "Pushed tags:"
+      #     echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n'

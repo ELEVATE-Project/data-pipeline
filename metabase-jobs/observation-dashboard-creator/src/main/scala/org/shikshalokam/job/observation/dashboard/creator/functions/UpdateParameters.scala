@@ -78,7 +78,7 @@ object UpdateParameters {
     println(s"----------------Successfully updated State dashboard parameter----------------")
   }
 
-  def UpdateAdminParameterFunction(metabaseUtil: MetabaseUtil, parametersQuery: String, dashboardId: Int, postgresUtil: PostgresUtil, diffLevelDict: Map[String, String]): Unit = {
+  def UpdateAdminParameterFunction(metabaseUtil: MetabaseUtil, parametersQuery: String, dashboardId: Int, postgresUtil: PostgresUtil, diffLevelDict: Map[String, String], entityType: String, isEntityTypeMatched: Boolean): Unit = {
     println(s"-----------Started Processing Admin dashboard parameter ------------")
 
     val objectMapper = new ObjectMapper()
@@ -106,6 +106,12 @@ object UpdateParameters {
     // Step 3: Remove specified keys from each dict
     sortedParams.foreach { obj =>
       keysToRemove.foreach(obj.remove)
+      if (!isEntityTypeMatched) {
+        val name = obj.path("name").asText()
+        if (name.contains("$entity_type")) {
+          obj.put("name", name.replace("$entity_type", entityType))
+        }
+      }
     }
     val resultArray = objectMapper.createArrayNode()
     sortedParams.foreach(resultArray.add)

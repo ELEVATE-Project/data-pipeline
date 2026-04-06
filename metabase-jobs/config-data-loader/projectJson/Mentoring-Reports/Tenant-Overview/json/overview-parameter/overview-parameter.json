@@ -1,0 +1,11 @@
+[
+  {
+    "name": "Select Organization",
+    "slug": "select_organization",
+    "id": "98262141",
+    "type": "string/=",
+    "sectionId": "string",
+    "isMultiSelect": false,
+    "filteringParameters": []
+  }
+]

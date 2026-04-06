@@ -63,7 +63,8 @@ class ProjectStreamConfig(override val config: Config) extends BaseJobConfig(con
        |    program_name TEXT,
        |    program_external_id TEXT,
        |    program_description TEXT,
-       |    private_program BOOLEAN
+       |    private_program BOOLEAN,
+       |    org_id TEXT
        |);""".stripMargin
 
   val createProjectTable: String =

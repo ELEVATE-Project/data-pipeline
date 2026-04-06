@@ -1,0 +1,211 @@
+{
+  "questionCard": {
+    "name": "Current Month Avg Mentor Rating",
+    "collection_id": 22,
+    "dataset_query": {
+      "database": 3,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "select_state": {
+            "type": "dimension",
+            "name": "select_state",
+            "id": "2e778697-1f75-41c8-b8ca-1107b1bc2ae7",
+            "display-name": "Select State",
+            "dimension": [
+              "field",
+              447,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "select_district": {
+            "type": "dimension",
+            "name": "select_district",
+            "id": "2a0298da-cd00-4835-bc16-a1e7e2fb4a70",
+            "display-name": "Select District",
+            "dimension": [
+              "field",
+              458,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "select_block": {
+            "type": "dimension",
+            "name": "select_block",
+            "id": "a9f6b49e-a6a2-4c81-98a0-06f224dfeeb0",
+            "display-name": "Select Block",
+            "dimension": [
+              "field",
+              450,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "select_cluster": {
+            "type": "dimension",
+            "name": "select_cluster",
+            "id": "db9291c5-388f-436c-9d58-b92d816514af",
+            "display-name": "Select Cluster",
+            "dimension": [
+              "field",
+              466,
+              null
+            ],
+            "widget-type": "string/="
+          },
+          "select_school": {
+            "type": "dimension",
+            "name": "select_school",
+            "id": "dfdbaa4b-882d-4115-a3ea-c096919bde9f",
+            "display-name": "Select School",
+            "dimension": [
+              "field",
+              460,
+              null
+            ],
+            "widget-type": "string/="
+          }
+        },
+        "query": "SELECT \r\n    AVG(mr.rating) AS \"Avg Mentor Rating\"\r\nFROM ${tenantOrgMentorRatingTable} mr\r\nJOIN ${tenantUserTable} u\r\n    ON mr.mentor_id = u.user_id\r\nWHERE mr.org_id = ${orgId}\r\nAND u.status = 'ACTIVE'\r\nAND mr.rating_updated_at >= DATE_TRUNC('month', CURRENT_DATE)\r\n  AND mr.rating_updated_at < DATE_TRUNC('month', CURRENT_DATE + INTERVAL '1 month')\r\n  [[AND user_profile_one_name = (\r\n    SELECT user_profile_one_name\r\n    FROM \"${tenantUserTable}\"\r\n    WHERE {{select_state}}\r\n    LIMIT 1)]]\r\n\r\n    [[AND user_profile_two_name = (\r\n    SELECT user_profile_two_name\r\n    FROM \"${tenantUserTable}\"\r\n    WHERE {{select_district}}\r\n    AND user_profile_two_name IS NOT NULL AND TRIM(user_profile_two_name) <> ''\r\n    LIMIT 1)]]\r\n    \r\n    [[AND user_profile_three_name = (\r\n    SELECT user_profile_three_name\r\n    FROM \"${tenantUserTable}\"\r\n    WHERE {{select_block}}\r\n    LIMIT 1)]]\r\n    \r\n    [[AND user_profile_four_name = (\r\n    SELECT user_profile_four_name\r\n    FROM \"${tenantUserTable}\"\r\n    WHERE {{select_cluster}}\r\n    LIMIT 1)]]\r\n    \r\n    [[AND user_profile_five_name = (\r\n    SELECT user_profile_five_name\r\n    FROM \"${tenantUserTable}\"\r\n    WHERE {{select_school}}\r\n    LIMIT 1)]]\r\n"
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {},
+    "parameters": [
+      {
+        "id": "793e1394-53d2-4578-9e80-7a3ae4eba3a1",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_state"
+          ]
+        ],
+        "name": "Select State",
+        "slug": "select_state"
+      },
+      {
+        "id": "05c4660f-3589-4791-bba4-2cb7d2bd0ba1",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_district"
+          ]
+        ],
+        "name": "Select District",
+        "slug": "select_district"
+      },
+      {
+        "id": "7595dcf0-6008-46e6-b5e3-403a657e8e6b",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_block"
+          ]
+        ],
+        "name": "Select Block",
+        "slug": "select_block"
+      },
+      {
+        "id": "2d82abc8-dcb3-489e-84cf-275d3b4f6967",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_cluster"
+          ]
+        ],
+        "name": "Select Cluster",
+        "slug": "select_cluster"
+      },
+      {
+        "id": "53aa7106-3a58-4bc6-9fd8-288afb9cf522",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_school"
+          ]
+        ],
+        "name": "Select School",
+        "slug": "select_school"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 104,
+    "dashboard_tab_id": null,
+    "id": 96,
+    "parameter_mappings": [
+      {
+        "parameter_id": "89753241",
+        "card_id": 104,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_state"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753242",
+        "card_id": 104,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_district"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753243",
+        "card_id": 104,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_block"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753244",
+        "card_id": 104,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_cluster"
+          ]
+        ]
+      },
+      {
+        "parameter_id": "89753245",
+        "card_id": 104,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_school"
+          ]
+        ]
+      }
+    ],
+    "col": 0,
+    "row": 66,
+    "size_x": 6,
+    "size_y": 6,
+    "visualization_settings": {}
+  }
+}

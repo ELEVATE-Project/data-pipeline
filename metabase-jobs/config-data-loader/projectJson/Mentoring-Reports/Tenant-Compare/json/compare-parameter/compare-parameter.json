@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Select Org A",
+    "slug": "select_org_a",
+    "id": "99214756",
+    "type": "string/=",
+    "sectionId": "location",
+    "isMultiSelect": false,
+    "filteringParameters": []
+  },
+  {
+    "name": "Select Org B",
+    "slug": "select_org_b",
+    "id": "99214757",
+    "type": "string/=",
+    "sectionId": "location",
+    "isMultiSelect": false,
+    "filteringParameters": []
+  }
+]

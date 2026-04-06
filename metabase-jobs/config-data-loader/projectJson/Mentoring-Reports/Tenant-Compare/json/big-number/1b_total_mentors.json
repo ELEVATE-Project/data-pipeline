@@ -1,0 +1,67 @@
+{
+  "questionCard": {
+    "name": "Total Mentors",
+    "collection_id": 24,
+    "dataset_query": {
+      "database": 3,
+      "type": "native",
+      "native": {
+        "template-tags": {
+          "select_org_b": {
+            "type": "dimension",
+            "name": "select_org_b",
+            "id": "d709add5-df7c-44b0-bff3-29eb7eb352a3",
+            "display-name": "Select Org B",
+            "dimension": [
+              "field",
+              590,
+              null
+            ],
+            "widget-type": "string/="
+          }
+        },
+        "query": "SELECT COUNT(DISTINCT r.user_id) AS \"Total Mentors\"\r\nFROM ${tenantOrgRolesTable} r\r\nJOIN ${tenantUserTable} u\r\n    ON r.user_id = u.user_id\r\nWHERE r.role_name = 'mentor'\r\nAND u.status = 'ACTIVE'\r\n[[AND org_name = (\r\n    SELECT org_name\r\n    FROM ${tenantOrgRolesTable}\r\n    WHERE {{select_org_b}}\r\n    LIMIT 1)]]"
+      }
+    },
+    "display": "scalar",
+    "visualization_settings": {},
+    "parameters": [
+      {
+        "id": "5dfcff8e-e07a-42f2-a47b-7c398c4350b6",
+        "type": "string/=",
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_org_b"
+          ]
+        ],
+        "name": "Select Org B",
+        "slug": "select_org_b"
+      }
+    ]
+  },
+  "dashCards": {
+    "card_id": 115,
+    "dashboard_tab_id": 4,
+    "id": 102,
+    "parameter_mappings": [
+      {
+        "parameter_id": "99214757",
+        "card_id": 115,
+        "target": [
+          "dimension",
+          [
+            "template-tag",
+            "select_org_b"
+          ]
+        ]
+      }
+    ],
+    "col": 13,
+    "row": 3,
+    "size_x": 5,
+    "size_y": 3,
+    "visualization_settings": {}
+  }
+}

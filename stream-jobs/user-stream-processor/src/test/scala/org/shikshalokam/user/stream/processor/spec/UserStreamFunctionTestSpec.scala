@@ -47,9 +47,7 @@ class UserStreamFunctionTestSpec extends BaseTestSpec {
       .thenReturn(new UserEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.outputTopic))
       .thenReturn(new GenerateUserSink)
-    when(mockKafkaUtil.kafkaJobRequestSource[Event](jobConfig.inputTopic))
-      .thenReturn(new UserEventSource)
-    when(mockKafkaUtil.kafkaStringSink(jobConfig.outputTopic))
+    when(mockKafkaUtil.kafkaStringSink(jobConfig.mentoringOutputTopic))
       .thenReturn(new GenerateUserSink)
   }
 
