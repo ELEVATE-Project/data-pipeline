@@ -41,7 +41,7 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
 
   override def processElement(event: MentoringEvent, context: ProcessFunction[MentoringEvent, MentoringEvent]#Context, metrics: Metrics): Unit = {
 
-    println(s"***************** Start of Processing Entity = ${event.entity} of Type = ${event.eventType} *****************")
+    logger.info(s"***************** Start of Processing Entity = ${event.entity} of Type = ${event.eventType} *****************")
 
     val tenantCode = event.tenantCode
     val eventType = event.eventType
@@ -93,50 +93,50 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
     val tenantConnectionsTable: String = s""""${tenantCode}_connections""""
     val tenantOrgMentorRatingTable: String = s""""${tenantCode}_org_mentor_rating""""
 
-    println(s"tenantCode: $tenantCode")
-    println(s"eventType: $eventType")
-    println(s"entity: $entity")
-    println(s"name: $name")
-    println(s"status: $status")
-    println(s"createdBy: $createdBy")
-    println(s"updatedBy: $updatedBy")
+    logger.info(s"tenantCode: $tenantCode")
+    logger.info(s"eventType: $eventType")
+    logger.info(s"entity: $entity")
+    logger.info(s"name: $name")
+    logger.info(s"status: $status")
+    logger.info(s"createdBy: $createdBy")
+    logger.info(s"updatedBy: $updatedBy")
 
-    println(s"createdAt: $createdAt")
-    println(s"updatedAt: $updatedAt")
-    println(s"deletedAt: $deletedAt")
-    println(s"isDeleted: $isDeleted")
+    logger.info(s"createdAt: $createdAt")
+    logger.info(s"updatedAt: $updatedAt")
+    logger.info(s"deletedAt: $deletedAt")
+    logger.info(s"isDeleted: $isDeleted")
 
-    println(s"sessionId: $sessionId")
-    println(s"mentorId: $mentorId")
-    println(s"sessionName: $sessionName")
-    println(s"description: $sessionDesc")
-    println(s"sessionType: $sessionType")
-    println(s"sessionStatus: $sessionStatus")
-    println(s"platform: $platform")
-    println(s"startedAt: $startedAt")
-    println(s"completedAt: $completedAt")
-    println(s"startDate: $startDate")
-    println(s"endDate: $endDate")
-    println(s"recommendedFor: $recommendedFor")
-    println(s"categories: $categories")
-    println(s"medium: $medium")
+    logger.info(s"sessionId: $sessionId")
+    logger.info(s"mentorId: $mentorId")
+    logger.info(s"sessionName: $sessionName")
+    logger.info(s"description: $sessionDesc")
+    logger.info(s"sessionType: $sessionType")
+    logger.info(s"sessionStatus: $sessionStatus")
+    logger.info(s"platform: $platform")
+    logger.info(s"startedAt: $startedAt")
+    logger.info(s"completedAt: $completedAt")
+    logger.info(s"startDate: $startDate")
+    logger.info(s"endDate: $endDate")
+    logger.info(s"recommendedFor: $recommendedFor")
+    logger.info(s"categories: $categories")
+    logger.info(s"medium: $medium")
 
-    println(s"attendanceId: $attendanceId")
-    println(s"attendanceSessionId: $attendanceSessionId")
-    println(s"menteeId: $menteeId")
-    println(s"joinedAt: $joinedAt")
-    println(s"leftAt: $leftAt")
-    println(s"isFeedbackSkipped: $isFeedbackSkipped")
+    logger.info(s"attendanceId: $attendanceId")
+    logger.info(s"attendanceSessionId: $attendanceSessionId")
+    logger.info(s"menteeId: $menteeId")
+    logger.info(s"joinedAt: $joinedAt")
+    logger.info(s"leftAt: $leftAt")
+    logger.info(s"isFeedbackSkipped: $isFeedbackSkipped")
 
-    println(s"connectionId: $connectionId")
-    println(s"userId: $userId")
-    println(s"friendId: $friendId")
-    println(s"orgId: $orgId")
-    println(s"orgCode: $orgCode")
-    println(s"orgName: $orgName")
+    logger.info(s"connectionId: $connectionId")
+    logger.info(s"userId: $userId")
+    logger.info(s"friendId: $friendId")
+    logger.info(s"orgId: $orgId")
+    logger.info(s"orgCode: $orgCode")
+    logger.info(s"orgName: $orgName")
 
-    println(s"rating: $rating")
-    println(s"ratingUpdatedAt: $ratingUpdatedAt")
+    logger.info(s"rating: $rating")
+    logger.info(s"ratingUpdatedAt: $ratingUpdatedAt")
 
     val compareDashboardSessionTableFilters: List[Map[String, String]] = List(
       Map(
@@ -248,7 +248,7 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
           postgresUtil.executePreparedUpdate(insertConnectionsQuery, connectionsParams, tenantConnectionsTable, connectionId.toString)
         }
       } else if (eventType == "delete") {
-        println(s"Processing delete event for entity: $entity")
+        logger.info(s"Processing delete event for entity: $entity")
         if (entity == "session") {
           deleteSessionAndAttendance(tenantSessionTable, tenantSessionAttendanceTable, sessionId, deletedAt)
         } else if (entity == "connections") {
@@ -258,12 +258,12 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
                |SET deleted_at = ?, status = 'DELETED'
                |WHERE connection_id = ?
          """.stripMargin
-          println(s"Connection record for connectionId: $connectionId is Deleted for table $tenantConnectionsTable")
+          logger.info(s"Connection record for connectionId: $connectionId is Deleted for table $tenantConnectionsTable")
           postgresUtil.executePreparedUpdate(deleteConnectionsQuery, Seq(deletedAt, connectionId), tenantConnectionsTable, connectionId.toString)
         }
       }
     } else {
-      println("Tenant code is empty, skipping processing.")
+      logger.info("Tenant code is empty, skipping processing.")
     }
 
     def deleteSessionAndAttendance(tenantSessionTable: String, tenantSessionAttendanceTable: String, sessionId: Int, deletedAt: java.sql.Timestamp): Unit = {
@@ -275,7 +275,7 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
              |WHERE session_id = ?
         """.stripMargin
         postgresUtil.executePreparedUpdate(deleteSessionQuery, Seq(deletedAt, sessionId), tenantSessionTable, sessionId.toString)
-        println(s"Session $sessionId marked as deleted in table: $tenantSessionTable")
+        logger.info(s"Session $sessionId marked as deleted in table: $tenantSessionTable")
 
         val attendanceTable = tenantSessionAttendanceTable.replaceAll("\"", "")
         val checkAttendanceTableExistsQuery =
@@ -298,14 +298,14 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
         """.stripMargin
 
           postgresUtil.executePreparedUpdate(deleteAttendanceQuery, Seq(deletedAt, sessionId), tenantSessionAttendanceTable, sessionId.toString)
-          println(s"Attendance records for session $sessionId marked as deleted in table: $tenantSessionAttendanceTable")
+          logger.info(s"Attendance records for session $sessionId marked as deleted in table: $tenantSessionAttendanceTable")
         } else {
-          println(s"Table $tenantSessionAttendanceTable does not exist — skipping attendance delete.")
+          logger.info(s"Table $tenantSessionAttendanceTable does not exist — skipping attendance delete.")
         }
 
       } catch {
         case ex: Exception =>
-          println(s"Error while deleting sessionId $sessionId: ${ex.getMessage}")
+          logger.error(s"Error while deleting sessionId $sessionId: ${ex.getMessage}")
       }
     }
 
@@ -328,11 +328,11 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
       pushMentoringDashboardEvents(dashboardData, context)
     }
 
-    println(s"***************** Completed Processing Entity = ${event.entity} of Type = ${event.eventType}  *****************")
+    logger.info(s"***************** Completed Processing Entity = ${event.entity} of Type = ${event.eventType}  *****************")
 
     def checkAndInsert(entityType: String, entityName: String, entityId: String, dashboardData: java.util.HashMap[String, String]): Unit = {
       if (tenantCode.isEmpty || orgId == null) {
-        println(s"Tenant code or Org Id is empty, skipping insertion.")
+        logger.info(s"Tenant code or Org Id is empty, skipping insertion.")
         return
       }
       val query = s"SELECT EXISTS (SELECT 1 FROM ${config.dashboard_metadata} WHERE entity_type = '$entityType' AND entity_id = '$entityId') AS is_present"
@@ -341,12 +341,12 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
       result.foreach { row =>
         row.get(s"is_present") match {
           case Some(isPresent: Boolean) if isPresent =>
-            println(s"$entityType details already exist.")
+            logger.info(s"$entityType details already exist.")
           case _ =>
             if (entityType == "Mentoring") {
               val insertQuery = s"INSERT INTO ${config.dashboard_metadata} (entity_type, entity_name, entity_id) VALUES ('$entityType', '$entityName', '$entityId')"
               val affectedRows = postgresUtil.insertData(insertQuery)
-              println(s"Inserted mentoringDashboard details. Affected rows: $affectedRows")
+              logger.info(s"Inserted mentoringDashboard details. Affected rows: $affectedRows")
               dashboardData.put("tenantCode", event.tenantCode)
               dashboardData.put("orgId", event.orgId)
               dashboardData.put("orgName", event.orgName)
@@ -366,7 +366,7 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
       if (rs.next()) rs.getLong("row_count") else 0
     }
     if (rowCount == 0) {
-      println(s"Table $tableName has no rows → first time inserting data.")
+      logger.info(s"Table $tableName has no rows → first time inserting data.")
       ""
     } else {
       val safeValue = value.replace("'", "''")
@@ -399,9 +399,9 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
       eventData.put("filterTable", tableName.stripPrefix("\"").stripSuffix("\""))
       eventData.put("filterSync", "Yes")
       pushMentoringDashboardEvents(eventData, context)
-      println(s"eventData: $eventData")
+      logger.info(s"eventData: $eventData")
     } else {
-      println(s"Data already Exists in $tableName → not sending Kafka message for $tableName")
+      logger.info(s"Data already Exists in $tableName → not sending Kafka message for $tableName")
     }
   }
 
@@ -418,8 +418,8 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
 
     val serializedEvent = ScalaJsonUtil.serialize(objects)
     context.output(config.mentoringEventOutputTag, serializedEvent)
-    println(s"----> Pushed new Kafka message to ${config.mentoringOutputTopic} topic")
-    println(objects)
+    logger.info(s"----> Pushed new Kafka message to ${config.mentoringOutputTopic} topic")
+    logger.info(s"objects : ${objects}")
     objects
   }
 }

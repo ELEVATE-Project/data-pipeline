@@ -42,8 +42,8 @@ class ProgramServiceFunction(config: CombinedDashboardCreatorConfig)(implicit va
   }
 
   override def processElement(event: UserMappingEvent, context: ProcessFunction[UserMappingEvent, UserMappingEvent]#Context, metrics: Metrics): Unit = {
-
-      println(s"***************** Start of Processing the Program Service Event *****************")
+    try {
+      logger.info("Start of Processing the Program Service Event")
 
       val (entity, eventType) = (event.entity, event.eventType)
 
@@ -59,21 +59,24 @@ class ProgramServiceFunction(config: CombinedDashboardCreatorConfig)(implicit va
       val uniqueUserName = getValue("username", event.username)
       val programId = event.programId
 
-      println(s"Entity = $entity")
-      println(s"EntityType = $eventType")
-      println(s"Unique User Name = $uniqueUserName")
-      println(s"Program Id = $programId")
+      logger.info(s"Entity = $entity")
+      logger.info(s"EntityType = $eventType")
+      logger.info(s"Unique User Name = $uniqueUserName")
+      logger.info(s"Program Id = $programId")
 
       if (entity == "program" && eventType == "create") {
         val userId = getUserId(uniqueUserName)
-        if (userId != -1) addUserToGroup("program_manager", programId, userId) else println("User Not Found. Stopped processing")
+        if (userId != -1) addUserToGroup("program_manager", programId, userId) else logger.info("User Not Found. Stopped processing")
       } else if (entity == "program" && eventType == "delete") {
         val userId = getUserId(uniqueUserName)
-        if (userId != -1) removeUserFromGroup("program_manager", programId, userId) else println("User Not Found. Stopped processing")
+        if (userId != -1) removeUserFromGroup("program_manager", programId, userId) else logger.info("User Not Found. Stopped processing")
       }
 
-      println(s"***************** End of Processing the Program Service Event *****************")
-
+      logger.info("End of Processing the Program Service Event")
+    } catch {
+      case e: Exception =>
+        logger.error(s"Error processing Program Service Event: ${e.getMessage}", e)
+    }
   }
 
   private def getUserId(uniqueUserName: String): Int = {
@@ -87,14 +90,14 @@ class ProgramServiceFunction(config: CombinedDashboardCreatorConfig)(implicit va
         val id = user.get("id").asInt()
         val email = user.get("email")
         if (user.get("is_active").asBoolean()) {
-          println(s"User already exists and is active: $uniqueUserName with id: $id and email: $email")
+          logger.info(s"User already exists and is active: $uniqueUserName with id: $id and email: $email")
           id
         } else {
-          println(s"User with userName: $uniqueUserName exists but has been deactivated (id: $id)")
+          logger.info(s"User with userName: $uniqueUserName exists but has been deactivated (id: $id)")
           id
         }
       case None =>
-        println(s"No user found with userName: $uniqueUserName")
+        logger.info(s"No user found with userName: $uniqueUserName")
         -1
     }
   }
@@ -110,9 +113,9 @@ class ProgramServiceFunction(config: CombinedDashboardCreatorConfig)(implicit va
     val groupId = findGroupId(existingUserGroups, groupName)
     groupId match {
       case Some(id) =>
-        println(s"Found group id as $id for group name $groupName")
+        logger.info(s"Found group id as $id for group name $groupName")
         validateUserInGroup(userId, id)
-      case None => println(s"No group found for $groupName. Ask Super Admin to create the group")
+      case None => logger.info(s"No group found for $groupName. Ask Super Admin to create the group")
     }
 
   }
@@ -128,10 +131,10 @@ class ProgramServiceFunction(config: CombinedDashboardCreatorConfig)(implicit va
     val groupIdOpt = findGroupId(existingUserGroups, groupName)
     groupIdOpt match {
       case Some(groupId) =>
-        println(s"Found group id as $groupId for group name $groupName")
+        logger.info(s"Found group id as $groupId for group name $groupName")
         validateUserRemoval(userId, groupId)
       case None =>
-        println(s"No group found for $groupName. Skipping removal.")
+        logger.info(s"No group found for $groupName. Skipping removal.")
     }
   }
 
@@ -148,7 +151,7 @@ class ProgramServiceFunction(config: CombinedDashboardCreatorConfig)(implicit va
       .elements()
       .asScala
       .exists(_.get("user_id").asInt() == userId)
-    if (!isUserInGroup) addToGroup(userId, groupId) else println("User is already a member of the group")
+    if (!isUserInGroup) addToGroup(userId, groupId) else logger.info("User is already a member of the group")
   }
 
   private def validateUserRemoval(userId: Int, groupId: Int): Unit = {
@@ -156,10 +159,10 @@ class ProgramServiceFunction(config: CombinedDashboardCreatorConfig)(implicit va
     val isUserInGroup = groupDetails.get("members").elements().asScala.exists(_.get("user_id").asInt() == userId)
     val membershipId = groupDetails.get("members").elements().asScala.find(_.get("user_id").asInt() == userId).get.get("membership_id").asInt()
     if (isUserInGroup) {
-      println(s"User with Id $userId is member of the group $groupId")
-      println(s"Removing user from the group with membership Id $membershipId")
+      logger.info(s"User with Id $userId is member of the group $groupId")
+      logger.info(s"Removing user from the group with membership Id $membershipId")
       metabaseUtil.removeFromGroup(membershipId)
-    } else println("User is not a member of the group")
+    } else logger.info("User is not a member of the group")
   }
 
   private def addToGroup(userId: Int, groupId: Int): Unit = {
@@ -171,7 +174,7 @@ class ProgramServiceFunction(config: CombinedDashboardCreatorConfig)(implicit va
          |}
          |""".stripMargin
     metabaseUtil.addUserToGroup(addToGroupRequestBody)
-    println("User added to group")
+    logger.info("User added to group")
   }
 
 }

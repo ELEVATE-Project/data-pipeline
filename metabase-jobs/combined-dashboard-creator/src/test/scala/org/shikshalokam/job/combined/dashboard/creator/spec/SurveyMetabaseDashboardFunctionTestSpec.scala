@@ -12,6 +12,8 @@ import org.shikshalokam.job.combined.dashboard.creator.domain.SurveyEvent
 import org.shikshalokam.job.combined.dashboard.creator.task.{CombinedDashboardCreatorConfig, CombinedDashboardCreatorTask}
 import org.shikshalokam.job.connector.FlinkKafkaConnector
 
+import java.io.File
+
 class SurveyMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
   implicit val mapTypeInfo: TypeInformation[java.util.Map[String, AnyRef]] = TypeExtractor.getForClass(classOf[java.util.Map[String, AnyRef]])
   implicit val eventTypeInfo: TypeInformation[SurveyEvent] = TypeExtractor.getForClass(classOf[SurveyEvent])
@@ -25,7 +27,7 @@ class SurveyMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
 
   val mockKafkaUtil: FlinkKafkaConnector = mock[FlinkKafkaConnector](Mockito.withSettings().serializable())
 
-  val config: Config = ConfigFactory.load("unified-test.conf")
+  val config: Config = ConfigFactory.parseFile(new File("unified-test.conf")).resolve().withFallback(ConfigFactory.systemEnvironment())
     .withValue("combined.mentoring.dashboard.job.enabled", ConfigValueFactory.fromAnyRef(false))
     .withValue("combined.observation.dashboard.job.enabled", ConfigValueFactory.fromAnyRef(false))
     .withValue("combined.project.dashboard.job.enabled", ConfigValueFactory.fromAnyRef(false))

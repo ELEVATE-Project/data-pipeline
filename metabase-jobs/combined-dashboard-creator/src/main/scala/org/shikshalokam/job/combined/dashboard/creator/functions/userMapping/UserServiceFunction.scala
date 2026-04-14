@@ -35,9 +35,7 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
     val metabasePassword: String = config.metabasePassword
     val connectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$pgDataBase"
     postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
-    if (metabaseUtil == null) {
-      metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword)
-    }
+    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword)
   }
 
   override def close(): Unit = {
@@ -45,10 +43,10 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
   }
 
   override def processElement(event: UserMappingEvent, context: ProcessFunction[UserMappingEvent, UserMappingEvent]#Context, metrics: Metrics): Unit = {
+    try {
+      logger.info("Start of Processing the User Service Event")
 
-    println(s"***************** Start of Processing the User Service Event *****************")
-
-    val (entity, eventType) = (event.entity, event.eventType)
+      val (entity, eventType) = (event.entity, event.eventType)
 
     val isUpdateEvent = (eventType == "update" || eventType == "bulk-update") &&
       Option(event.oldValues).exists(_.nonEmpty) &&
@@ -96,22 +94,21 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
         }.getOrElse(Nil))
     }
 
-    println(s"Entity = $entity")
-    println(s"EntityType = $eventType")
-    println(s"User Name = $name")
-    println(s"Unique User Name = $uniqueUserName")
-    println(s"Tenant Code = $tenantCode")
-    println(s"Org Id = ${orgIdOpt.getOrElse(-1)}")
-    println(s"Email = $email")
-    println(s"Password = $password")
-    println(s"Phone = $phone")
-    println(s"State Id = $stateId")
-    println(s"District ID = $districtId")
-    println(s"Status = $status")
-    println(s"Is User Deleted = $isUserDeleted")
-    println(s"User Organizations = $orgDetails")
-    println(s"User Role = $userRoles")
-    println("\n")
+    logger.info(s"Entity = $entity")
+    logger.info(s"EntityType = $eventType")
+    logger.info(s"User Name = $name")
+    logger.info(s"Unique User Name = $uniqueUserName")
+    logger.info(s"Tenant Code = $tenantCode")
+    logger.info(s"Org Id = ${orgIdOpt.getOrElse(-1)}")
+    logger.info(s"Email = $email")
+    logger.info(s"Password = $password")
+    logger.info(s"Phone = $phone")
+    logger.info(s"State Id = $stateId")
+    logger.info(s"District ID = $districtId")
+    logger.info(s"Status = $status")
+    logger.info(s"Is User Deleted = $isUserDeleted")
+    logger.info(s"User Organizations = $orgDetails")
+    logger.info(s"User Role = $userRoles")
 
     if (entity == "user" && eventType == "delete") {
       val userId = checkUserId(email)
@@ -133,14 +130,14 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
         case Some("program_manager") =>
           handleProgramUser(entity, eventType, name, email, password, uniqueUserName)
         case Some(unknownRole) =>
-          println(s"Unknown Metabase Platform Role: $unknownRole")
+          logger.info(s"Unknown Metabase Platform Role: $unknownRole")
         case None =>
-          println("Role not found in map")
+          logger.info("Role not found in map")
       }
     }
 
     def handleReportAdmin(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String): Unit = {
-      println("<<<======== Processing for the role report_admin ========>>>")
+      logger.info("<<<======== Processing for the role report_admin ========>>>")
       if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
         val userId = checkUserId(email)
         if (userId == -1) {
@@ -148,7 +145,7 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
           addUserToGroup("report_admin", None, None, newUserId)
           pushNotification(name, email, password, phone, context)
         } else {
-          println("Stopped processing")
+          logger.info("Stopped processing")
         }
       }
       else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
@@ -158,7 +155,7 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
         val hasReportAdmin = newRoles.contains("report_admin")
         (hadReportAdmin, hasReportAdmin) match {
           case (false, true) =>
-            println("Trying to add user to report_admin role")
+            logger.info("Trying to add user to report_admin role")
             val userId = checkUserId(email)
             if (userId == -1) {
               val newUserId = createUser(name, email, password, uniqueUserName)
@@ -168,12 +165,11 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
               addUserToGroup("report_admin", None, None, userId)
             }
           case (true, false) =>
-            println("Trying to remove user from report_admin role")
+            logger.info("Trying to remove user from report_admin role")
             val userId = checkUserId(email)
             if (userId != -1) removeUserFromGroup("report_admin", None, None, userId)
           case (true, true) =>
-            //This is a edge case scenario
-            println("User already had and still has report_admin role")
+            logger.info("User already had and still has report_admin role")
           case _ => // No action needed
         }
       }
@@ -182,11 +178,11 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
     def handleTenantAdmin(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, tenantCodeOpt: Option[String]): Unit = {
       val tcOpt = tenantCodeOpt.map(_.trim).filter(_.nonEmpty)
       if (tcOpt.isEmpty) {
-        println("Missing tenant_code for tenant_admin; skipping.");
+        logger.info("Missing tenant_code for tenant_admin; skipping.")
         return
       }
       val tc = tcOpt.get
-      println(s"<<<======== Processing for the role Tenant_Admin_$tc ========>>>")
+      logger.info(s"<<<======== Processing for the role Tenant_Admin_$tc ========>>>")
       if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
         val userId = checkUserId(email)
         if (userId == -1) {
@@ -194,7 +190,7 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
           addUserToGroup("tenant_admin", None, None, newUserId, Some(tc))
           pushNotification(name, email, password, phone, context)
         } else {
-          println("Stopped processing")
+          logger.info("Stopped processing")
         }
       }
       else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
@@ -204,7 +200,7 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
         val hasTenantAdmin = newRoles.contains("tenant_admin")
         (hadTenantAdmin, hasTenantAdmin) match {
           case (false, true) =>
-            println("Trying to add user to tenant_admin role")
+            logger.info("Trying to add user to tenant_admin role")
             val userId = checkUserId(email)
             if (userId == -1) {
               val newUserId = createUser(name, email, password, uniqueUserName)
@@ -214,12 +210,11 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
               addUserToGroup("tenant_admin", None, None, userId, Some(tc))
             }
           case (true, false) =>
-            println("Trying to remove user from tenant_admin role")
+            logger.info("Trying to remove user from tenant_admin role")
             val userId = checkUserId(email)
             if (userId != -1) removeUserFromGroup("tenant_admin", None, None, userId, Some(tc))
           case (true, true) =>
-            //This is a edge case scenario
-            println("User already had and still has tenant_admin role")
+            logger.info("User already had and still has tenant_admin role")
           case _ => // No action needed
         }
       }
@@ -228,11 +223,11 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
     def handleOrgAdmin(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, orgId: Option[Int]): Unit = {
       val orgIdOpt = orgId.filter(_ > 0)
       if (orgIdOpt.isEmpty) {
-        println("Missing orgId for org_admin; skipping.");
+        logger.info("Missing orgId for org_admin; skipping.")
         return
       }
       val orgIdSafe = orgIdOpt.get
-      println(s"<<<======== Processing for the role Org_Admin_$orgIdSafe ========>>>")
+      logger.info(s"<<<======== Processing for the role Org_Admin_$orgIdSafe ========>>>")
       if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
         val userId = checkUserId(email)
         if (userId == -1) {
@@ -240,7 +235,7 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
           addUserToGroup("org_admin", None, None, newUserId, None, Some(orgIdSafe))
           pushNotification(name, email, password, phone, context)
         } else {
-          println("Stopped processing")
+          logger.info("Stopped processing")
         }
       }
       else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
@@ -250,7 +245,7 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
         val hasOrgAdmin = newRoles.contains("org_admin")
         (hadOrgAdmin, hasOrgAdmin) match {
           case (false, true) =>
-            println("Trying to add user to org_admin role")
+            logger.info("Trying to add user to org_admin role")
             val userId = checkUserId(email)
             if (userId == -1) {
               val newUserId = createUser(name, email, password, uniqueUserName)
@@ -260,12 +255,11 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
               addUserToGroup("org_admin", None, None, userId, None, Some(orgIdSafe))
             }
           case (true, false) =>
-            println("Trying to remove user from org_admin role")
+            logger.info("Trying to remove user from org_admin role")
             val userId = checkUserId(email)
             if (userId != -1) removeUserFromGroup("org_admin", None, None, userId, None, Some(orgIdSafe))
           case (true, true) =>
-            //This is a edge case scenario
-            println("User already had and still has org_admin role")
+            logger.info("User already had and still has org_admin role")
           case _ => // No action needed
         }
       }
@@ -273,7 +267,7 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
 
 
     def handleStateAdmin(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, stateId: String): Unit = {
-      println("<<<======== Processing for the role state_manager ========>>>")
+      logger.info("<<<======== Processing for the role state_manager ========>>>")
       if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
         val userId = checkUserId(email)
         if (userId == -1) {
@@ -281,7 +275,7 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
           addUserToGroup("state_manager", Some(stateId), None, newUserId)
           pushNotification(name, email, password, phone, context)
         } else {
-          println("Stopped processing")
+          logger.info("Stopped processing")
         }
       }
       else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
@@ -291,7 +285,7 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
         val hasReportAdmin = newRoles.contains("state_manager")
         (hadReportAdmin, hasReportAdmin) match {
           case (false, true) =>
-            println("Trying to add user to state_manager role")
+            logger.info("Trying to add user to state_manager role")
             val userId = checkUserId(email)
             if (userId == -1) {
               val newUserId = createUser(name, email, password, uniqueUserName)
@@ -301,19 +295,18 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
               addUserToGroup("state_manager", Some(stateId), None, userId)
             }
           case (true, false) =>
-            println("Trying to remove user from state_manager role")
+            logger.info("Trying to remove user from state_manager role")
             val userId = checkUserId(email)
             if (userId != -1) removeUserFromGroup("state_manager", Some(stateId), None, userId)
           case (true, true) =>
-            //This is a edge case scenario
-            println("User already had and still has state_manager role")
+            logger.info("User already had and still has state_manager role")
           case _ => // No action needed
         }
       }
     }
 
     def handleDistrictUser(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, stateId: String, districtId: String): Unit = {
-      println("<<<======== Processing for the role district_manager ========>>>")
+      logger.info("<<<======== Processing for the role district_manager ========>>>")
       if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
         val userId = checkUserId(email)
         if (userId == -1) {
@@ -321,7 +314,7 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
           addUserToGroup("district_manager", Some(stateId), Some(districtId), newUserId)
           pushNotification(name, email, password, phone, context)
         } else {
-          println("Stopped processing")
+          logger.info("Stopped processing")
         }
       }
       else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
@@ -331,7 +324,7 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
         val hasReportAdmin = newRoles.contains("district_manager")
         (hadReportAdmin, hasReportAdmin) match {
           case (false, true) =>
-            println("Trying to add user to report_admin role")
+            logger.info("Trying to add user to report_admin role")
             val userId = checkUserId(email)
             if (userId == -1) {
               val newUserId = createUser(name, email, password, uniqueUserName)
@@ -341,26 +334,25 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
               addUserToGroup("district_manager", Some(stateId), Some(districtId), userId)
             }
           case (true, false) =>
-            println("Trying to remove user from district_manager role")
+            logger.info("Trying to remove user from district_manager role")
             val userId = checkUserId(email)
             if (userId != -1) removeUserFromGroup("district_manager", Some(stateId), Some(districtId), userId)
           case (true, true) =>
-            //This is a edge case scenario
-            println("User already had and still has district_manager role")
+            logger.info("User already had and still has district_manager role")
           case _ => // No action needed
         }
       }
     }
 
     def handleProgramUser(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String): Unit = {
-      println("<<<======== Processing for the role program_manager ========>>>")
+      logger.info("<<<======== Processing for the role program_manager ========>>>")
       if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
         val userId = checkUserId(email)
         if (userId == -1) {
           createUser(name, email, password, uniqueUserName)
           pushNotification(name, email, password, phone, context)
         } else {
-          println("Stopped processing")
+          logger.info("Stopped processing")
         }
       }
       else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
@@ -370,20 +362,24 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
         val hasReportAdmin = newRoles.contains("program_manager")
         (hadReportAdmin, hasReportAdmin) match {
           case (false, true) =>
-            println("Trying to add user to program_manager role")
+            logger.info("Trying to add user to program_manager role")
             val userId = checkUserId(email)
             if (userId == -1) {
               createUser(name, email, password, uniqueUserName)
               pushNotification(name, email, password, phone, context)
             } else {
-              println("Stopped processing")
+              logger.info("Stopped processing")
             }
           case _ => // No action needed
         }
       }
     }
 
-    println(s"***************** End of Processing the User Service Event *****************")
+    logger.info(s"***************** End of Processing the User Service Event *****************")
+    } catch {
+      case e: Exception =>
+        logger.error(s"Error processing User Service Event: ${e.getMessage}", e)
+    }
   }
 
   private def generatePassword(length: Int = 12): String = {
@@ -410,10 +406,10 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
       case Some(user) =>
         val id = user.get("id").asInt()
         if (user.get("is_active").asBoolean()) {
-          println(s"User already exists and is active: $email with id: $id")
+          logger.info(s"User already exists and is active: $email with id: $id")
           id
         } else {
-          println(s"User with email: $email exists but has been deactivated (id: $id)")
+          logger.info(s"User with email: $email exists but has been deactivated (id: $id)")
           id
         }
       case None =>
@@ -434,19 +430,19 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
          |}
          |""".stripMargin
     val newUserId = mapper.readTree(metabaseUtil.createUser(requestBody)).get("id").asInt()
-    println(s"User created: $email with id: $newUserId")
+    logger.info(s"User created: $email with id: $newUserId")
     newUserId
   }
 
   private def addUserToGroup(userRole: String, stateId: Option[String] = None, districtId: Option[String] = None, userId: Int, tenantCode: Option[String] = None, orgId: Option[Int] = None): Unit = {
 
     if (userRole == "tenant_admin" && tenantCode.forall(tc => tc == null || tc.trim.isEmpty)) {
-      println("tenant_admin requires tenantCode; skipping group assignment")
+      logger.info("tenant_admin requires tenantCode; skipping group assignment")
       return
     }
 
     if (userRole == "org_admin" && orgId.forall(_ <= 0)) {
-      println("org_admin requires orgId; skipping group assignment")
+      logger.info("org_admin requires orgId; skipping group assignment")
       return
     }
 
@@ -470,10 +466,10 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
     groupNames.foreach { groupName =>
       findGroupId(existingUserGroups, groupName) match {
         case Some(id) =>
-          println(s"Found group id as $id for group name $groupName")
+          logger.info(s"Found group id as $id for group name $groupName")
           validateUserInGroup(userId, id)
         case None =>
-          println(s"No group found for $groupName. Ask Super Admin to create the group")
+          logger.info(s"No group found for $groupName. Ask Super Admin to create the group")
       }
     }
   }
@@ -482,12 +478,12 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
   private def removeUserFromGroup(userRole: String, stateId: Option[String] = None, districtId: Option[String] = None, userId: Int, tenantCode: Option[String] = None, orgId: Option[Int] = None): Unit = {
 
     if (userRole == "tenant_admin" && tenantCode.forall(tc => tc == null || tc.trim.isEmpty)) {
-      println("tenant_admin requires tenantCode; skipping group removal")
+      logger.info("tenant_admin requires tenantCode; skipping group removal")
       return
     }
 
     if (userRole == "org_admin" && orgId.forall(_ <= 0)) {
-      println("org_admin requires orgId; skipping group removal")
+      logger.info("org_admin requires orgId; skipping group removal")
       return
     }
 
@@ -511,10 +507,10 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
     groupNames.foreach { groupName =>
       findGroupId(existingUserGroups, groupName) match {
         case Some(groupId) =>
-          println(s"Found group id as $groupId for group name $groupName")
+          logger.info(s"Found group id as $groupId for group name $groupName")
           validateUserRemoval(userId, groupId)
         case None =>
-          println(s"No group found for $groupName. Skipping removal.")
+          logger.info(s"No group found for $groupName. Skipping removal.")
       }
     }
   }
@@ -532,7 +528,7 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
       .elements()
       .asScala
       .exists(_.get("user_id").asInt() == userId)
-    if (!isUserInGroup) addToGroup(userId, groupId) else println("User is already a member of the group")
+    if (!isUserInGroup) addToGroup(userId, groupId) else logger.info("User is already a member of the group")
   }
 
   private def validateUserRemoval(userId: Int, groupId: Int): Unit = {
@@ -540,10 +536,10 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
     val isUserInGroup = groupDetails.get("members").elements().asScala.exists(_.get("user_id").asInt() == userId)
     val membershipId = groupDetails.get("members").elements().asScala.find(_.get("user_id").asInt() == userId).get.get("membership_id").asInt()
     if (isUserInGroup) {
-      println(s"User with Id $userId is member of the group $groupId")
-      println(s"Removing user from the group with membership Id $membershipId")
+      logger.info(s"User with Id $userId is member of the group $groupId")
+      logger.info(s"Removing user from the group with membership Id $membershipId")
       metabaseUtil.removeFromGroup(membershipId)
-    } else println("User is not a member of the group")
+    } else logger.info("User is not a member of the group")
   }
 
   private def checkGroupId(groupName: String): Int = {
@@ -551,10 +547,10 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
     val groupIdOpt = findGroupId(existingUserGroups, groupName)
     groupIdOpt match {
       case Some(groupId) =>
-        println(s"Found group id as $groupId for group name $groupName")
+        logger.info(s"Found group id as $groupId for group name $groupName")
         groupId
       case None =>
-        println(s"No group found for $groupName. Skipping removal.")
+        logger.info(s"No group found for $groupName. Skipping removal.")
         -1
     }
   }
@@ -568,7 +564,7 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
          |}
          |""".stripMargin
     metabaseUtil.addUserToGroup(addToGroupRequestBody)
-    println("User added to group")
+    logger.info("User added to group")
   }
 
   private def pushNotification(name: String, email: String, password: String, phone: String, context: ProcessFunction[UserMappingEvent, UserMappingEvent]#Context): Unit = {
@@ -605,7 +601,7 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
     val smsJson = replacePlaceholders(notificationSmsTemplate, replacementsForNotification)
 
     if (notificationType == "kafka") {
-      println(s"----> Pushing notification via kafka")
+      logger.info(s"----> Pushing notification via kafka")
       val emailEvent = ScalaJsonUtil.serialize(emailJson)
       val smsEvent = ScalaJsonUtil.serialize(smsJson)
       if (hasEmail && hasPhone) {
@@ -616,47 +612,47 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
       } else if (hasPhone) {
         context.output(config.userServiceOutputTag, smsEvent)
       }
-      println(s"----> Pushed new Kafka message to ${config.notificationOutputTopic} topic")
+      logger.info(s"Pushed new Kafka message to ${config.notificationOutputTopic} topic")
     } else if (notificationType == "api") {
-      println(s"----> Pushing notification via api")
+      logger.info(s"----> Pushing notification via api")
       var emailResponse: Option[requests.Response] = None
       var smsResponse: Option[requests.Response] = None
       if (hasEmail) {
         try {
-          // println(emailJson)
+          // logger.debug(emailJson)
           val response = requests.post(
             notificationApiUrl,
             data = emailJson,
             headers = Map("Content-Type" -> "application/json")
           )
           emailResponse = Some(response)
-          println(s"Email sent with status: ${response.statusCode}")
+          logger.info(s"Email sent with status: ${response.statusCode}")
         } catch {
           case e: Exception =>
-            println(s"Failed to send email notification: ${e.getMessage}")
+            logger.error(s"Failed to send email notification: ${e.getMessage}", e)
         }
       }
 
       if (hasPhone) {
         try {
-          // println(smsJson)
+          // logger.debug(smsJson)
           val response = requests.post(
             notificationApiUrl,
             data = smsJson,
             headers = Map("Content-Type" -> "application/json")
           )
           smsResponse = Some(response)
-          println(s"SMS sent with status: ${response.statusCode}")
+          logger.info(s"SMS sent with status: ${response.statusCode}")
         } catch {
           case e: Exception =>
-            println(s"Failed to send SMS notification: ${e.getMessage}")
+            logger.error(s"Failed to send SMS notification: ${e.getMessage}", e)
         }
       }
 
       val success = Seq(emailResponse, smsResponse).flatten.exists(_.statusCode == 200)
 
       if (success) {
-        println("----> Pushed notification via API")
+        logger.info("----> Pushed notification via API")
       } else {
         throw new Exception(
           s"""Failed to send notification:

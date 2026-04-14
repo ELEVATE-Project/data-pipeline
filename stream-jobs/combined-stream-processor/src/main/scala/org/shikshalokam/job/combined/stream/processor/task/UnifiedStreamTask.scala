@@ -28,20 +28,9 @@ object UnifiedStreamTask {
       ConfigFactory.parseFile(new java.io.File("unified-common.conf")).resolve()
     }
 
-    val config = if (baseConfig.hasPath("stream")) {
-      baseConfig.getConfig("stream").withFallback(baseConfig)
-    } else {
-      baseConfig
-    }
-    val unifiedStreamConfig: UnifiedStreamConfig = new UnifiedStreamConfig(config)
+    val unifiedStreamConfig: UnifiedStreamConfig = new UnifiedStreamConfig(baseConfig)
     val kafkaConnector: FlinkKafkaConnector = new FlinkKafkaConnector(unifiedStreamConfig)
     runJob(unifiedStreamConfig, kafkaConnector)
-    val streamType = params.get("streamType")
-    if (streamType != null && streamType.nonEmpty) {
-      runJob(unifiedStreamConfig, kafkaConnector, streamType)
-    } else {
-      runJob(unifiedStreamConfig, kafkaConnector)
-    }
   }
 
   def runJob(config: UnifiedStreamConfig, kafkaConnector: FlinkKafkaConnector): Unit = {
@@ -120,81 +109,4 @@ object UnifiedStreamTask {
     env.execute("Combined Stream Processor Job")
   }
 
-  def runJob(config: UnifiedStreamConfig, kafkaConnector: FlinkKafkaConnector, streamType: String): Unit = {
-    val env = FlinkUtil.getExecutionContext(config)
-
-    streamType match {
-      case "project" =>
-        val projectSource = kafkaConnector.kafkaJobRequestSource[ProjectEvent](config.projectInputTopic)
-        val projectStream = env.addSource(projectSource)
-          .name("project-consumer").uid("project-consumer")
-          .setParallelism(config.projectConsumerParallelism).rebalance
-          .process(new ProjectStreamFunction(config))
-          .name("project-processor").uid("project-processor")
-          .setParallelism(config.projectProcessParallelism)
-
-        projectStream.getSideOutput(config.projectOutputTag)
-          .addSink(kafkaConnector.kafkaStringSink(config.projectOutputTopic))
-          .name("project-sink").setParallelism(config.projectSinkParallelism)
-
-      case "survey" =>
-        val surveySource = kafkaConnector.kafkaJobRequestSource[SurveyEvent](config.surveyInputTopic)
-        val surveyStream = env.addSource(surveySource)
-          .name("survey-consumer").uid("survey-consumer")
-          .setParallelism(config.surveyConsumerParallelism).rebalance
-          .process(new SurveyStreamFunction(config))
-          .name("survey-processor").uid("survey-processor")
-          .setParallelism(config.surveyProcessParallelism)
-
-        surveyStream.getSideOutput(config.surveyOutputTag)
-          .addSink(kafkaConnector.kafkaStringSink(config.surveyOutputTopic))
-          .name("test-survey-sink").setParallelism(config.surveySinkParallelism)
-
-      case "observation" =>
-        val observationSource = kafkaConnector.kafkaJobRequestSource[ObservationEvent](config.observationInputTopic)
-        val observationStream = env.addSource(observationSource)
-          .name("observation-consumer").uid("observation-consumer")
-          .setParallelism(config.observationConsumerParallelism).rebalance
-          .process(new ObservationStreamFunction(config))
-          .name("observation-processor").uid("observation-processor")
-          .setParallelism(config.observationProcessParallelism)
-
-        observationStream.getSideOutput(config.eventOutputTag)
-          .addSink(kafkaConnector.kafkaStringSink(config.observationOutputTopic))
-          .name("test-observation-sink").setParallelism(config.observationSinkParallelism)
-
-      case "user" =>
-        val userSource = kafkaConnector.kafkaJobRequestSource[UserEvent](config.userInputTopic)
-        val userStream = env.addSource(userSource)
-          .name("user-consumer").uid("user-consumer")
-          .setParallelism(config.userConsumerParallelism).rebalance
-          .process(new UserStreamFunction(config))
-          .name("user-processor").uid("user-processor")
-          .setParallelism(config.userProcessParallelism)
-
-        userStream.getSideOutput(config.eventOutputTag) // Note: User stream uses eventOutputTag for user dashboard
-          .addSink(kafkaConnector.kafkaStringSink(config.userOutputTopic))
-          .name("user-sink").setParallelism(config.userSinkParallelism)
-
-      case "mentoring" =>
-        val mentoringSource = kafkaConnector.kafkaJobRequestSource[MentoringEvent](config.mentoringInputTopic)
-        val mentoringStream = env.addSource(mentoringSource)
-          .name("mentoring-consumer").uid("mentoring-consumer")
-          .setParallelism(config.mentoringConsumerParallelism).rebalance
-          .process(new MentoringStreamFunction(config))
-          .name("mentoring-processor").uid("mentoring-processor")
-          .setParallelism(config.mentoringProcessParallelism)
-
-        mentoringStream.getSideOutput(config.mentoringEventOutputTag)
-          .addSink(kafkaConnector.kafkaStringSink(config.mentoringOutputTopic))
-          .name("mentoring-sink").setParallelism(config.mentoringSinkParallelism)
-
-      case _ =>
-        logger.warn(s"Unknown streamType '$streamType', falling back to all-streams mode.")
-        runJob(config, kafkaConnector)
-        return  // runJob already calls env.execute
-    }
-
-    env.execute("Combined Stream Processor Job")
-  }
 }

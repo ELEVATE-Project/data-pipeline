@@ -73,6 +73,8 @@ services:
       - elevate_net
     volumes:
       - flink_shared:/opt/flink/usrlib/
+      - ../../log4j2.properties:/opt/flink/conf/log4j-console.properties
+      - ../../logs/job-logs/:/opt/flink/log
 
   # PostgreSQL
   postgres:

@@ -13,12 +13,13 @@ object Utils {
   private val logger = LoggerFactory.getLogger(Utils.getClass)
 
   def createCollection(collectionName: String, description: String, metabaseUtil: MetabaseUtil, parentId: Option[Int] = None): Int = {
-    val collectionRequest = ujson.Obj(
-      "name" -> collectionName,
-      "description" -> description
-    )
-    parentId.foreach(pid => collectionRequest("parent_id") = pid)
-    val collectionRequestBody = collectionRequest.render()
+    val parentIdField = parentId.map(pid => s""""parent_id": $pid,""").getOrElse("")
+    val collectionRequestBody =
+      s"""{
+         |  $parentIdField
+         |  "name": "$collectionName",
+         |  "description": "$description"
+         |}""".stripMargin
     val collectionId = mapper.readTree(metabaseUtil.createCollection(collectionRequestBody)).path("id").asInt()
     logger.info(s"$collectionName : collection created with ID = $collectionId")
     collectionId
