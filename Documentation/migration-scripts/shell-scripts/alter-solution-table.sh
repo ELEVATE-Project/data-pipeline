@@ -21,7 +21,8 @@ log() { local m="$1"; printf '%s - %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$m" | t
 
 trap 'log "Script exited with code $?."' EXIT
 
-PG_CONN="postgresql://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGDBNAME"
+PGPASSWORD_ENCODED=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$PGPASSWORD")
+PG_CONN="postgresql://$PGUSER:$PGPASSWORD_ENCODED@$PGHOST:$PGPORT/$PGDBNAME"
 
 log "📌 Checking if org_id column exists in ${SOLUTION_TABLE}..."
 if ! psql "$PG_CONN" -t -A -c \

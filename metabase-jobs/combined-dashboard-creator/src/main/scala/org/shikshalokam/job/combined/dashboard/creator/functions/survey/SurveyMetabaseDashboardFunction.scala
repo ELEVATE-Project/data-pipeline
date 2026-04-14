@@ -94,7 +94,7 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
         val programName = postgresUtil.fetchData(s"""SELECT entity_name from $metaDataTable where entity_id = '$targetedProgramId'""").collectFirst { case map: Map[_, _] => map.get("entity_name").map(_.toString).getOrElse("") }.getOrElse("")
 
         val orgId = postgresUtil.fetchData(s"""SELECT org_id FROM $solutions WHERE program_id = '$targetedProgramId' AND org_id IS NOT NULL AND TRIM(org_id) <> '' LIMIT 1 """).collectFirst { case map: Map[_, _] => map.getOrElse("org_id", "").toString }.getOrElse("")
-        val programCollectionName = s"$programName [org : $orgId]"
+        val programCollectionName = s"$programName"
         val solutionCollectionName = s"$solutionName [Survey]"
         val tabList: List[String] = List("Status Report", "Question Report", "Status CSV", "Question CSV")
 
@@ -130,7 +130,7 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
                   }
                 } else {
                   logger.info(s"=====> $programCollectionName collection is not present, creating $programCollectionName collection for Admin ......")
-                  val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, targetedProgramId, programExternalId, s"$programName [org : $orgId]", programDescription, "Admin")
+                  val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, targetedProgramId, programExternalId, programCollectionName, programDescription, "Admin")
                   val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, targetedSolutionId, solutionExternalId, s"$solutionName [Survey]", solutionDescription, "Admin")
                   val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
                   val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
@@ -140,7 +140,7 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
               } else {
                 logger.info(s"=====> Programs Collection is not present, creating Programs Collection ......")
                 val adminCollectionId = createAdminCollection
-                val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, targetedProgramId, programExternalId, s"$programName [org : $orgId]", programDescription, "Admin")
+                val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, targetedProgramId, programExternalId, programCollectionName, programDescription, "Admin")
                 val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, targetedSolutionId, solutionExternalId, s"$solutionName [Survey]", solutionDescription, "Admin")
                 val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
                 val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
@@ -179,7 +179,7 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
           logger.info(s"***************** Processing Completed for Survey Metabase Dashboard Event with Id = ${event._id}*****************\n\n")
         }
 
-        if (filterSync.nonEmpty) {
+        if (filterSync.nonEmpty){
           val searchTableResponse = metabaseUtil.searchTable(filterTable, databaseId)
           val filterTableId: Int = extractTableId(searchTableResponse)
           if (filterTableId != -1) {
@@ -221,7 +221,7 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
         }
 
         def createProgramCollection(programCollectionName: String, targetedProgramId: String, programExternalId: String, programDescription: String, reportFor: String): Int = {
-          val programCollectionDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $programExternalId\n\nCollection For: $reportFor\n\nProgram Description: $programDescription"
+          val programCollectionDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $programExternalId\n\nCreator Organisation: $orgId\n\nCollection For: $reportFor\n\nProgram Description: $programDescription"
           val programCollectionId: Int = Utils.createCollection(programCollectionName, programCollectionDescription, metabaseUtil)
           if (programCollectionId != -1) {
             val programMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", programCollectionId).put("collectionName", programCollectionName).put("Collection For", reportFor))
@@ -236,7 +236,7 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
         }
 
         def createProgramCollectionInsideAdmin(adminCollectionId: Int, targetedProgramId: String, programExternalId: String, programCollectionName: String, programDescription: String, reportFor: String): Int = {
-          val programCollectionDescription = s"Program Id: $targetedProgramId\n\nExternal Id: $programExternalId\n\nCollection For: $reportFor\n\nProgram Description: $programDescription"
+          val programCollectionDescription = s"Program Id: $targetedProgramId\n\nExternal Id: $programExternalId\n\nCreator Organisation: $orgId\n\nCollection For: $reportFor\n\nProgram Description: $programDescription"
           val programCollectionId = Utils.createCollection(programCollectionName, programCollectionDescription, metabaseUtil, Some(adminCollectionId))
           val programMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", programCollectionId).put("collectionName", programCollectionName).put("Collection For", reportFor))
           val programMetadataJsonString = programMetadataJson.toString.replace("'", "''")
@@ -336,7 +336,7 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
               postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}' WHERE entity_id = '$targetedSolutionId';")
               logger.error(s"An error occurred: ${e.getMessage}")
               e.printStackTrace()
-
+              -1
           }
         }
 

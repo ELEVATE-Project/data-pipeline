@@ -2,7 +2,7 @@ package org.shikshalokam.job.combined.dashboard.creator.domain
 
 import org.shikshalokam.job.domain.reader.JobRequest
 
-class ObservationEvent(eventMap: java.util.Map[String, Any], override val partition: Int, override val offset: Long) extends JobRequest(eventMap, partition, offset) {
+class ObservationEvent(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) extends JobRequest(eventMap, partition, offset) {
 
   def _id: String = readOrDefault[String]("_id", "")
 

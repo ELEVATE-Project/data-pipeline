@@ -29,13 +29,7 @@ object CombinedDashboardCreatorTask {
       ConfigFactory.load("unified-common.conf").resolve()
     }
 
-    val config: Config = if (baseConfig.hasPath("dashboard")) {
-      baseConfig.getConfig("dashboard").withFallback(baseConfig).resolve()
-    } else {
-      baseConfig
-    }
-
-    val dashboardConfig: CombinedDashboardCreatorConfig = new CombinedDashboardCreatorConfig(config)
+    val dashboardConfig: CombinedDashboardCreatorConfig = new CombinedDashboardCreatorConfig(baseConfig)
     val kafkaConnector: FlinkKafkaConnector = new FlinkKafkaConnector(dashboardConfig)
 
     runJob(dashboardConfig, kafkaConnector)

@@ -7,7 +7,7 @@ import java.text.SimpleDateFormat
 import java.time.Instant
 import scala.language.postfixOps
 
-case class UserEvent(eventMap: java.util.Map[String, Any], override val partition: Int, override val offset: Long) extends JobRequest(eventMap, partition, offset) {
+class UserEvent(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) extends JobRequest(eventMap, partition, offset) {
 
   def eventType: String = readOrDefault[String]("eventType", null)
 

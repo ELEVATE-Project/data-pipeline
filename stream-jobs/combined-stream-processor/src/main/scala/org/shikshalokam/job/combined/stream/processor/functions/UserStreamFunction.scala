@@ -41,7 +41,7 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
 
   override def processElement(event: UserEvent, context: ProcessFunction[UserEvent, UserEvent]#Context, metrics: Metrics): Unit = {
 
-    println(s"***************** Start of Processing the User Event with User Id = ${event.userId} *****************")
+    logger.info(s"***************** Start of Processing the User Event with User Id = ${event.userId} *****************")
 
     val userId = event.userId
     val tenantCode = event.tenantCode
@@ -78,30 +78,30 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
     val userDashboardReportType = "User Dashboard"
     val mentoringDashboardReportType = "Mentoring"
 
-    println(s"userId: $userId")
-    println(s"tenantCode: $tenantCode")
-    println(s"username: $username")
-    println(s"name: $name")
-    println(s"status: $status")
-    println(s"isDeleted: $isDeleted")
-    println(s"createdBy: $createdBy")
-    println(s"createdAt: $createdAt")
-    println(s"updatedAt: $updatedAt")
-    println(s"userProfileOneId : $userProfileOneId")
-    println(s"userProfileOneName : $userProfileOneName")
-    println(s"userProfileOneExternalId : $userProfileOneExternalId")
-    println(s"userProfileTwoId : $userProfileTwoId")
-    println(s"userProfileTwoName : $userProfileTwoName")
-    println(s"userProfileTwoExternalId : $userProfileTwoExternalId")
-    println(s"userProfileThreeId : $userProfileThreeId")
-    println(s"userProfileThreeName : $userProfileThreeName")
-    println(s"userProfileThreeExternalId : $userProfileThreeExternalId")
-    println(s"userProfileFourId : $userProfileFourId")
-    println(s"userProfileFourName : $userProfileFourName")
-    println(s"userProfileFourExternalId : $userProfileFourExternalId")
-    println(s"userProfileFiveId : $userProfileFiveId")
-    println(s"userProfileFiveName : $userProfileFiveName")
-    println(s"userProfileFiveExternalId : $userProfileFiveExternalId")
+    logger.info(s"userId: $userId")
+    logger.info(s"tenantCode: $tenantCode")
+    logger.info(s"username: $username")
+    logger.info(s"name: $name")
+    logger.info(s"status: $status")
+    logger.info(s"isDeleted: $isDeleted")
+    logger.info(s"createdBy: $createdBy")
+    logger.info(s"createdAt: $createdAt")
+    logger.info(s"updatedAt: $updatedAt")
+    logger.info(s"userProfileOneId : $userProfileOneId")
+    logger.info(s"userProfileOneName : $userProfileOneName")
+    logger.info(s"userProfileOneExternalId : $userProfileOneExternalId")
+    logger.info(s"userProfileTwoId : $userProfileTwoId")
+    logger.info(s"userProfileTwoName : $userProfileTwoName")
+    logger.info(s"userProfileTwoExternalId : $userProfileTwoExternalId")
+    logger.info(s"userProfileThreeId : $userProfileThreeId")
+    logger.info(s"userProfileThreeName : $userProfileThreeName")
+    logger.info(s"userProfileThreeExternalId : $userProfileThreeExternalId")
+    logger.info(s"userProfileFourId : $userProfileFourId")
+    logger.info(s"userProfileFourName : $userProfileFourName")
+    logger.info(s"userProfileFourExternalId : $userProfileFourExternalId")
+    logger.info(s"userProfileFiveId : $userProfileFiveId")
+    logger.info(s"userProfileFiveName : $userProfileFiveName")
+    logger.info(s"userProfileFiveExternalId : $userProfileFiveExternalId")
 
     val userDashboardFilters: List[Map[String, String]] = List(
       Map(
@@ -146,14 +146,14 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
         resultList += checkIfValueExists(tenantUserMetadataTable.replace("\"", ""), "attribute_value", professionalRoleName)
         processUserMetadata(tenantUserMetadataTable, userId, "Professional Role", professionalRoleName, professionalRoleId)
         event.organizations.foreach { org =>
-          println(s"Organization ID: ${org.get("id")}")
+          logger.info(s"Organization ID: ${org.get("id")}")
           val organizationsName = org.get("name").map(_.toString).getOrElse("")
           val organizationsId = org.get("id").map(_.toString).getOrElse("")
           /**
            * Processing for Orgs data
            */
           if (organizationsName.nonEmpty && organizationsId.nonEmpty) {
-            println(s"Upserting for attribute_code: Organizations, attribute_value: $organizationsName, attribute_label: $organizationsId")
+            logger.info(s"Upserting for attribute_code: Organizations, attribute_value: $organizationsName, attribute_label: $organizationsId")
             resultList += checkIfValueExists(tenantUserMetadataTable.replace("\"", ""), "attribute_value", organizationsName)
             processUserMetadata(tenantUserMetadataTable, userId, "Organizations", organizationsName, organizationsId)
 
@@ -162,7 +162,7 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
             val finalOrgDashboardFilterList: List[String] = orgDashboardFiltersList.toList
             checkExistenceOfDataAndPushMessageToKafka(mentoringDashboardReportType, finalOrgDashboardFilterList, context, orgRolesTable, event.tenantCode, true)
           } else {
-            println("Org name or Org Id is empty")
+            logger.info("Org name or Org Id is empty")
           }
 
           /**
@@ -174,21 +174,21 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
             val subrolePairs = extractProfessionalSubrolesPerRow(professionalSubroles)
             rolePairs.foreach { case (userRoleName, userRoleId) =>
               resultList += checkIfValueExists(tenantUserMetadataTable.replace("\"", ""), "attribute_value", userRoleName)
-              println(s"Upserting for attribute_code: Platform Role, attribute_value: $userRoleName, attribute_label: $userRoleId")
+              logger.info(s"Upserting for attribute_code: Platform Role, attribute_value: $userRoleName, attribute_label: $userRoleId")
               processUserMetadata(tenantUserMetadataTable, userId, "Platform Role", userRoleName, userRoleId)
               processOrgRolesTable(orgRolesTable, userId, organizationsId.toInt, organizationsName, userRoleId.toInt, userRoleName)
               if (subrolePairs.nonEmpty) {
                 subrolePairs.foreach { case (professionalSubrolesName, professionalSubrolesId) =>
                   resultList += checkIfValueExists(tenantUserMetadataTable.replace("\"", ""), "attribute_value", professionalSubrolesName)
-                  println(s"Upserting for attribute_code: Professional Subroles, attribute_value: $professionalSubrolesName, attribute_label: $professionalSubrolesId")
+                  logger.info(s"Upserting for attribute_code: Professional Subroles, attribute_value: $professionalSubrolesName, attribute_label: $professionalSubrolesId")
                   processUserMetadata(tenantUserMetadataTable, userId, "Professional Subroles", professionalSubrolesName, professionalSubrolesId)
                 }
               } else {
-                println(s"No professional subroles found for user $userId in organization $organizationsId")
+                logger.info(s"No professional subroles found for user $userId in organization $organizationsId")
               }
             }
           } else {
-            println("Roles object is empty")
+            logger.info("Roles object is empty")
           }
         }
 
@@ -207,7 +207,7 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
       val finalUserMetricDashboardFiltersList: List[String] = userMetricDashboardFiltersList.toList
       checkExistenceOfDataAndPushMessageToKafka(userDashboardReportType, finalUserMetricDashboardFiltersList, context, userMetrics, event.tenantCode)
     } else {
-      println("Tenant Code is Empty")
+      logger.info("Tenant Code is Empty")
     }
 
     def extractUserRolesPerRow(roles: List[Map[String, Any]]): List[(String, String)] = {
@@ -229,7 +229,7 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
     def processUserMetadata(tenantUserMetadataTable: String, userId: Int, attributeCode: String, attributeValue: String, attributeLabel: String): Unit = {
       // Skip if either value or label is null/empty
       if (attributeValue == null || attributeValue.trim.isEmpty || attributeLabel == null || attributeLabel.trim.isEmpty) {
-        println(s"Skipped metadata insert for [$attributeCode] because attributeValue or attributeLabel is empty for user [$userId]")
+        logger.info(s"Skipped metadata insert for [$attributeCode] because attributeValue or attributeLabel is empty for user [$userId]")
         return
       }
       val upsertQuery =
@@ -242,11 +242,11 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
 
       val params = Seq(userId, attributeCode, attributeValue, attributeLabel)
       postgresUtil.executePreparedUpdate(upsertQuery, params, tenantUserMetadataTable, userId.toString)
-      println(s"Upserted [$attributeCode] for user [$userId] into [$tenantUserMetadataTable]")
+      logger.info(s"Upserted [$attributeCode] for user [$userId] into [$tenantUserMetadataTable]")
     }
 
     def processOrgRolesTable(orgRolesTable: String, userId: Int, org_id: Int, org_name: String, role_id: Int, role_name: String): Unit = {
-      println(s"processing org role table")
+      logger.info(s"processing org role table")
       val upsertQuery =
         s"""INSERT INTO $orgRolesTable (id, user_id, org_id, org_name, role_id, role_name)
            |VALUES (DEFAULT, ?, ?, ?, ?, ?)
@@ -257,11 +257,11 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
 
       val params = Seq(userId, org_id, org_name, role_id, role_name)
       postgresUtil.executePreparedUpdate(upsertQuery, params, orgRolesTable, userId.toString)
-      println(s"Upserted org roles for user [$userId] into [$orgRolesTable]")
+      logger.info(s"Upserted org roles for user [$userId] into [$orgRolesTable]")
     }
 
     def processUsers(tenantUserTable: String, userId: Int): Unit = {
-      println(">>> Started processing user data for a tenant")
+      logger.info(">>> Started processing user data for a tenant")
       val upsertUserQuery =
         s"""
            |INSERT INTO $tenantUserTable (
@@ -284,7 +284,7 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
         userProfileThreeId, userProfileThreeName, userProfileThreeExternalId, userProfileFourId, userProfileFourName, userProfileFourExternalId, userProfileFiveId, userProfileFiveName, userProfileFiveExternalId
       )
       postgresUtil.executePreparedUpdate(upsertUserQuery, userParams, tenantUserTable, userId.toString)
-      println(">>> Completed processing user data for a tenant")
+      logger.info(">>> Completed processing user data for a tenant")
     }
 
     def deleteData(tenantUserTable: String, userId: Int): Unit = {
@@ -316,7 +316,7 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
            |""".stripMargin
 
       postgresUtil.executePreparedUpdate(upsertQuery, Seq.empty, userMetrics, tenantUserTable)
-      println(s"User metrics updated for tenant: $tenantUserTable")
+      logger.info(s"User metrics updated for tenant: $tenantUserTable")
 
     }
 
@@ -340,11 +340,11 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
       pushUserDashboardEvents(userDashboardReportType, dashboardData, context)
     }
 
-    println(s"***************** Completed Processing the User Event with User Id = ${event.userId} *****************")
+    logger.info(s"***************** Completed Processing the User Event with User Id = ${event.userId} *****************")
 
     def checkAndInsert(entityType: String, targetedId: String, dashboardData: java.util.HashMap[String, String], dashboardKey: String): Unit = {
       if (tenantCode.isEmpty) {
-        println(s"Tenant code is empty, skipping insertion.")
+        logger.info(s"Tenant code is empty, skipping insertion.")
         return
       }
       val query = s"SELECT EXISTS (SELECT 1 FROM ${config.dashboard_metadata} WHERE entity_id = '$targetedId') AS is_present"
@@ -353,12 +353,12 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
       result.foreach { row =>
         row.get(s"is_present") match {
           case Some(isPresent: Boolean) if isPresent =>
-            println(s"$entityType details already exist.")
+            logger.info(s"$entityType details already exist.")
           case _ =>
             if (entityType == "User Dashboard") {
               val insertQuery = s"INSERT INTO ${config.dashboard_metadata} (entity_type, entity_name, entity_id) VALUES ('$entityType', '${event.tenantCode}', '$targetedId')"
               val affectedRows = postgresUtil.insertData(insertQuery)
-              println(s"Inserted userDashboard details. Affected rows: $affectedRows")
+              logger.info(s"Inserted userDashboard details. Affected rows: $affectedRows")
               dashboardData.put("tenantCode", targetedId)
             }
         }
@@ -392,7 +392,7 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
       if (rs.next()) rs.getLong("row_count") else 0
     }
     if (rowCount == 0) {
-      println(s"Table $tableName has no rows → first time inserting data.")
+      logger.info(s"Table $tableName has no rows → first time inserting data.")
       ""
     } else {
       val safeValue = value.replace("'", "''")
@@ -426,9 +426,9 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
       eventData.put("filterSync", "Yes")
       eventData.put("tenantCode", tenantCode)
       pushUserDashboardEvents(reportType, eventData, context, isMentoring)
-      println(s"eventData: $eventData")
+      logger.info(s"eventData: $eventData")
     } else {
-      println(s"Data already Exists in $tableName → not sending Kafka message for $tableName")
+      logger.info(s"Data already Exists in $tableName → not sending Kafka message for $tableName")
     }
   }
 
@@ -448,8 +448,8 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
     context.output(targetTag, serializedEvent)
 
     val targetTopic = if (isMentoring) config.mentoringOutputTopic else config.userOutputTopic
-    println(s"----> Pushed new Kafka message to $targetTopic topic")
-    println(objects)
+    logger.info(s"----> Pushed new Kafka message to $targetTopic topic")
+    logger.info(objects.toString)
     objects
   }
 

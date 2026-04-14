@@ -357,10 +357,7 @@ object DistrictPage {
     }
     val dashboardResponse = metabaseUtil.getDashboardDetailsById(dashboardId)
     val dashboardJson = objectMapper.readTree(dashboardResponse)
-    val currentParametersJson = dashboardJson.path("parameters") match {  
-      case array: ArrayNode => array  
-      case _ => objectMapper.createArrayNode()  
-    }  
+    val currentParametersJson = dashboardJson.path("parameters").asInstanceOf[ArrayNode]
 
     val finalParametersJson = (currentParametersJson.elements().asScala.filterNot { param =>
       val slug = param.path("slug").asText()
