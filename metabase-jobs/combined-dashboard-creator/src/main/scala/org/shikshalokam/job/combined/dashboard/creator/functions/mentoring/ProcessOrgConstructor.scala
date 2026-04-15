@@ -133,9 +133,7 @@ object ProcessOrgConstructor {
             }
           }
         }
-        Option(configObjectNode.get("questionCard")).getOrElse {  
-          throw new IllegalStateException("'questionCard' missing after update")  
-        }  
+        configObjectNode.get("questionCard")
       } catch {
         case e: Exception =>
           logger.warn(s"Warning: JSON node could not be updated. Error: ${e.getMessage}")

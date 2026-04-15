@@ -54,7 +54,6 @@ class ProjectStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInf
       var orgCode: String = ""
 
       event.organisation.foreach { org =>
-        logger.info(s"Inspecting organisation: ${org}")
         if (org.get("code").contains(event.organisationId)) {
           orgName = org.get("name").map(_.toString).getOrElse("")
           orgId = org.get("id").map(_.toString).getOrElse("")
@@ -69,7 +68,7 @@ class ProjectStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInf
       }
 
       //TODO: TO be removed later
-      logger.info("\n==> Solutions data ")
+      logger.info("==> Solutions data ")
       logger.info("solutionId = " + event.solutionId)
       logger.info("solutionExternalId = " + event.solutionExternalId)
       logger.info("solutionName = " + event.solutionName)
@@ -82,7 +81,7 @@ class ProjectStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInf
       logger.info("programName = " + event.programName)
       logger.info("programDescription = " + event.programDescription)
 
-      logger.info("\n==> Project data")
+      logger.info("==> Project data")
       logger.info("projectId = " + event.projectId)
       logger.info("solutionId = " + event.solutionId)
       logger.info("createdBy = " + event.createdBy)
@@ -120,8 +119,7 @@ class ProjectStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInf
       logger.info("organisationName = " + orgName)
       logger.info("organisationCode = " + orgCode)
       logger.info("parentOrgId = " + event.parentOrgId)
-      logger.info("\n==> Tasks data")
-      logger.info(tasksData.toString)
+      logger.info("==> Tasks data")
 
       // Uncomment the bellow lines to create table schema for the first time.
       postgresUtil.createTable(config.createSolutionsTable, config.solutions)
@@ -322,7 +320,7 @@ class ProjectStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInf
         pushProjectDashboardEvents(dashboardData, context)
       }
 
-      logger.info(s"\n***************** End of Processing the Project Event *****************")
+      logger.info(s"***************** End of Processing the Project Event *****************")
     } else {
       logger.info(s"Skipping the project event with Id = ${event._id} and status = ${event.projectStatus} as it is not in a valid status.")
     }

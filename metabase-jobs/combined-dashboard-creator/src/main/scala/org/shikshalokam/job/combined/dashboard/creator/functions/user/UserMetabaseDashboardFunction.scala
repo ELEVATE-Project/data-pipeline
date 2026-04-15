@@ -67,7 +67,7 @@ class UserMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(impl
       val storedTableIds = TrieMap.empty[(Int, String), Int]
       val storedColumnIds = TrieMap.empty[(Int, String), Int]
 
-      logger.info("\n-->> Process Report Admin User Metrics Dashboard")
+      logger.info("-->> Process Report Admin User Metrics Dashboard")
       if (filterSync.nonEmpty) {
         val searchTableResponse = metabaseUtil.searchTable(filterTable, databaseId)
         val filterTableId: Int = extractTableId(searchTableResponse)
@@ -99,7 +99,7 @@ class UserMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(impl
       }
 
       if (tenantCode.nonEmpty) {
-        logger.info(s"\n-->> Process Tenant Admin User Metrics Dashboard [$tenantCode]")
+        logger.info(s"-->> Process Tenant Admin User Metrics Dashboard [$tenantCode]")
 
         val tenantAdminCollectionName = s"User Activity $tenantCode"
         val (tenantCollectionPresent, tenantCollectionId) = validateCollection(tenantAdminCollectionName, "Tenant Admin")

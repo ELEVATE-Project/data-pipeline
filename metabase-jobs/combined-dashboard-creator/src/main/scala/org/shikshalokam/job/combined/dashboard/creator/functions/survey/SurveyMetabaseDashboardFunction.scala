@@ -151,7 +151,7 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
               /**
                * Logic to process and create Program Dashboard for Survey
                */
-              logger.info("\n=>> Logic to process and create Program Dashboard for Survey")
+              logger.info("=>> Logic to process and create Program Dashboard for Survey")
               val (programCollectionPresent, programCollectionId) = validateCollection(programCollectionName, "Program Manager", Some(targetedProgramId))
               if (programCollectionPresent && programCollectionId != 0) {
                 logger.info(s"=====> $programCollectionName collection is present hence skipping the process ......")

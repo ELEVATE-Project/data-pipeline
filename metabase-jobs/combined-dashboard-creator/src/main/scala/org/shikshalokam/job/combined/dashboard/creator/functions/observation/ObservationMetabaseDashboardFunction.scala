@@ -97,7 +97,7 @@ class ObservationMetabaseDashboardFunction(config: CombinedDashboardCreatorConfi
         val programExternalId = resultMap.get("program_external_id").map(_.toString).getOrElse("")
         val solutionDescription = resultMap.get("description").map(_.toString).getOrElse("")
 
-        val programCollectionName = s"$programName [org : $orgId]"
+      val programCollectionName = s"$programName"
         val solutionCollectionName = s"$solutionName [Observation]"
 
         var tabList: List[String] = List()
@@ -262,7 +262,7 @@ class ObservationMetabaseDashboardFunction(config: CombinedDashboardCreatorConfi
         }
 
         def createProgramCollectionInsideAdmin(adminCollectionId: Int, targetedProgramId: String, externalId: String, programCollectionName: String, programCollectionDescription: String, reportFor: String): Int = {
-          val programDescription = s"Program Id: $targetedProgramId\n\nExternal Id: $externalId\n\nCollection For: $reportFor\n\nProgram Description: $programCollectionDescription"
+        val programDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $externalId\n\nCreator Organisation: $orgId\n\nCollection For: $reportFor\n\nProgram Description: $programCollectionDescription"
           val programCollectionId = Utils.createCollection(programCollectionName.take(100), programDescription.take(255), metabaseUtil, Some(adminCollectionId))
           val programMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", programCollectionId).put("collectionName", programCollectionName).put("Collection For", reportFor))
           val programMetadataJsonString = programMetadataJson.toString.replace("'", "''")
