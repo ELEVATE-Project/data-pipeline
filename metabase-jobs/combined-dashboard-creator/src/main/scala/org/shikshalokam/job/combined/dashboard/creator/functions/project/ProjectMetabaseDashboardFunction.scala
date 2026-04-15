@@ -103,7 +103,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
           /**
            * Logic to process and create the Micro Improvements Dashboard
            */
-          logger.info("\n-->> Process Admin Micro Improvements Dashboard")
+          logger.info("-->> Process Admin Micro Improvements Dashboard")
           val (mipCollectionPresent, mipCollectionId) = validateCollection("Micro Improvements", "Admin")
           if (mipCollectionPresent && mipCollectionId != 0) {
             logger.info(s"=====> Micro Improvements collection present with id: $mipCollectionId, Skipping this step.")
@@ -115,7 +115,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
           /**
            * Logic to process and create National Overview Dashboard
            */
-          logger.info("\n-->> Process Admin Micro National Overview Dashboard")
+          logger.info("-->> Process Admin Micro National Overview Dashboard")
           val (nationalCollectionPresent, nationalCollectionId) = validateCollection("National Overview", "Admin")
           if (nationalCollectionPresent && nationalCollectionId != 0) {
             logger.info(s"=====> National Overview collection present with id: $nationalCollectionId, Skipping this step.")
@@ -127,7 +127,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
           /**
            * Logic to process and create State Micro Improvements & Overview Dashboard
            */
-          logger.info("\n-->> Process State Micro Improvements & Overview Dashboard")
+          logger.info("-->> Process State Micro Improvements & Overview Dashboard")
           val stateReportConfigQueryForAdmin: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mi-Dashboard' AND report_name IN ('State-Details-Report', 'State-Details-Table-For-Admin');"
           val stateReportConfigQueryForStateManager: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mi-Dashboard' AND report_name IN ('State-Details-Report', 'State-Details-Table-For-State-Manager');"
           if (targetedStateId.nonEmpty && stateName.nonEmpty) {
@@ -141,7 +141,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
               createDistrictComparisonDashboard(stateCollectionId, s"$stateName State [Tenant : $tenantId]", stateName, databaseId, metabaseUtil, postgresUtil, "State", "State Manager", "Yes")
             }
 
-            logger.info(s"\n-->> Process $stateName state inside National Overview Collection")
+            logger.info(s"-->> Process $stateName state inside National Overview Collection")
             val (collectionPresent, collectionId) = validateCollection("National Overview", "Admin")
             if (collectionPresent && collectionId != 0) {
               val (stateDashboardPresent, stateDashboardId) = validateDashboard(s"$stateName - State overview", "Admin", Some(targetedStateId))
@@ -161,7 +161,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
           /**
            * Logic to process and create District Micro Improvements & Overview Dashboard
            */
-          logger.info("\n-->> Process District Micro Improvements & Overview Dashboard")
+          logger.info("-->> Process District Micro Improvements & Overview Dashboard")
           if (targetedDistrictId.nonEmpty && districtName.nonEmpty) {
             val (districtCollectionPresent, districtCollectionId) = validateCollection(s"$districtName District [Tenant : $tenantIdForDistrictId]", "District Manager", Some(targetedDistrictId))
             if (districtCollectionPresent && districtCollectionId != 0) {
@@ -173,7 +173,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
               createDistrictOverviewDashboard(districtDashboardName, districtDashboardDescription, districtCollectionId, s"$districtName District [Tenant : $tenantIdForDistrictId]", districtName, databaseId, metabaseUtil, postgresUtil, "District", "District Manager", "Yes")
             }
 
-            logger.info(s"\n-->> Process $districtName district inside $stateName Collection")
+            logger.info(s"-->> Process $districtName district inside $stateName Collection")
             if (stateIdForDistrictId.nonEmpty && stateNameForDistrictId.nonEmpty) {
               val (stateCollectionPresent, stateCollectionId) = validateCollection(s"$stateName State [Tenant : $tenantId]", "State Manager", Some(targetedStateId))
               if (stateCollectionPresent && stateCollectionId != 0) {
@@ -189,7 +189,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
               }
             } else logger.info("Targeted State given a district is not present or is empty")
 
-            logger.info(s"\n-->> Process $districtName district inside National Overview Collection")
+            logger.info(s"-->> Process $districtName district inside National Overview Collection")
             val (collectionPresent, collectionId) = validateCollection("National Overview", "Admin")
             if (collectionPresent && collectionId != 0) {
               val (districtDashboardPresent, districtDashboardId) = validateDashboard(s"$districtName District [Tenant : $tenantIdForDistrictId]", "Admin", Some(targetedDistrictId))
@@ -209,7 +209,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
           /**
            * Logic to process and create Programs Collection and project solution Dashboard for Admin
            */
-          logger.info("\n-->> Process Admin Programs Collection and project solution Dashboard")
+          logger.info("-->> Process Admin Programs Collection and project solution Dashboard")
           if (targetedSolutionId.nonEmpty && solutionName.nonEmpty && targetedProgramId.nonEmpty && programName.nonEmpty) {
             val programCollectionName = s"$programName"
             val programCollectionDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $programExternalId\n\nCreator Organisation: $orgId\n\nCollection For: Admin\n\nProgram Description: $programDescription"
@@ -243,7 +243,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
           /**
            * Logic to process and create Programs Collection and project solution Dashboard for Program Manager
            */
-          logger.info("\n-->> Process Program Manager Collection and project solution Dashboard")
+          logger.info("-->> Process Program Manager Collection and project solution Dashboard")
           if (targetedSolutionId.nonEmpty && solutionName.nonEmpty && targetedProgramId.nonEmpty && programName.nonEmpty) {
             val programCollectionName = s"$programName [org : $orgId]"
             val programCollectionDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $programExternalId\n\nCollection For: Program Manager\n\nProgram Description: $programDescription"
@@ -455,7 +455,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
       }
 
       def createStateOverviewDashboard(stateDashboardName: String, stateDashboardDescription: String, parentCollectionId: Int, parentCollectionName: String, stateName: String, databaseId: Int, stateReportConfigQuery: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, processType: String, reportFor: String, pinDashboard: String): Unit = {
-        logger.info("\nProcessing State overview logic")
+        logger.info("Processing State overview logic")
         if (parentCollectionId != -1) {
           val stateDashboardId: Int = Utils.createDashboard(parentCollectionId, stateDashboardName, stateDashboardDescription, metabaseUtil, pinDashboard)
           val stateQuestionCardIdList = StatePage.ProcessAndUpdateJsonFiles(stateReportConfigQuery, parentCollectionId, databaseId, stateDashboardId, projects, solutions, metaDataTable, reportConfig, metabaseUtil, postgresUtil, targetedStateId, stateName)
@@ -489,7 +489,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
       }
 
       def createDistrictOverviewDashboard(districtDashboardName: String, dashboardDescription: String, parentCollectionId: Int, parentCollectionName: String, districtName: String, databaseId: Int, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, processType: String, reportFor: String, pinDashboard: String): Unit = {
-        logger.info("\nProcessing District overview logic")
+        logger.info("Processing District overview logic")
         if (parentCollectionId != -1) {
           val districtDashboardId: Int = Utils.createDashboard(parentCollectionId, districtDashboardName, dashboardDescription, metabaseUtil, pinDashboard)
           val districtReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mi-Dashboard' AND report_name = 'District-Details-Report';"
@@ -529,7 +529,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
       }
 
       def createDistrictComparisonDashboard(parentCollectionId: Int, parentCollectionName: String, stateName: String, databaseId: Int, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil, processType: String, reportFor: String, pinDashboard: String): Unit = {
-        logger.info("\nProcessing District Comparison logic")
+        logger.info("Processing District Comparison logic")
         val (districtCompareDashboardName, districtCompareDashboardDescription) = (s"Compare Districts [$stateName]", s"Compare micro improvement progress across districts in $stateName state")
         val compareDistrictDashboardId: Int = Utils.createDashboard(parentCollectionId, districtCompareDashboardName, districtCompareDashboardDescription, metabaseUtil, pinDashboard)
         val compareReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mi-Dashboard' AND report_name = 'Compare-District-Details-Report';"

@@ -162,14 +162,10 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
       }
     }
 
-    def safeToInt(value: Any): Int = {
-      Option(value).map(_.toString).flatMap(s => scala.util.Try(s.toInt).toOption).getOrElse(0)
-    }
-
-    val safeMentorId = safeToInt(mentorId)
-    val safeOrgId = safeToInt(orgId)
-    val safeCreatedBy = safeToInt(createdBy)
-    val safeUpdatedBy = safeToInt(updatedBy)
+    val safeMentorId = Option(mentorId).map(_.toString.toInt).getOrElse(0)
+    val safeOrgId = Option(orgId).map(_.toString.toInt).getOrElse(0)
+    val safeCreatedBy = Option(createdBy).map(_.toString.toInt).getOrElse(0)
+    val safeUpdatedBy = Option(updatedBy).map(_.toString.toInt).getOrElse(0)
 
 
     if (tenantCode.nonEmpty) {
@@ -216,7 +212,7 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
                |  created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
                |""".stripMargin
 
-          val sessionAttendanceParams = Seq(attendanceId, attendanceSessionId, safeToInt(menteeId), joinedAt, leftAt, isFeedbackSkipped, sessionType, createdAt, updatedAt, deletedAt)
+          val sessionAttendanceParams = Seq(attendanceId, attendanceSessionId, menteeId.toInt, joinedAt, leftAt, isFeedbackSkipped, sessionType, createdAt, updatedAt, deletedAt)
           postgresUtil.executePreparedUpdate(insertSessionAttendanceQuery, sessionAttendanceParams, tenantSessionAttendanceTable, attendanceId.toString)
         } else if (entity == "rating") {
           val createOrgMentorRatingTable = config.createOrgMentorRatingTable.replace("@orgMentorRating", tenantOrgMentorRatingTable)
@@ -228,7 +224,7 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
                |VALUES (DEFAULT, ?, ?, ?, ?, ?)
                |""".stripMargin
 
-          val orgMentorRatingParams = Seq(safeToInt(orgId), orgName, safeToInt(mentorId), rating, ratingUpdatedAt)
+          val orgMentorRatingParams = Seq(orgId.toInt, orgName, mentorId.toInt, rating, ratingUpdatedAt)
           postgresUtil.executePreparedUpdate(insertOrgMentorRatingQuery, orgMentorRatingParams, tenantOrgMentorRatingTable, orgId.toString)
         } else if (entity == "connections") {
           val createConnectionsTable = config.createTenantConnectionsTable.replace("@connectionsTable", tenantConnectionsTable)
@@ -244,7 +240,7 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
                |  created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at, deleted_at = EXCLUDED.deleted_at
                |""".stripMargin
 
-          val connectionsParams = Seq(connectionId, safeToInt(userId), safeToInt(friendId), sessionStatus, safeToInt(orgId), safeToInt(createdBy), safeToInt(updatedBy), createdAt, updatedAt, deletedAt)
+          val connectionsParams = Seq(connectionId, userId.toInt, friendId.toInt, sessionStatus, orgId.toInt, createdBy.toInt, updatedBy.toInt, createdAt, updatedAt, deletedAt)
           postgresUtil.executePreparedUpdate(insertConnectionsQuery, connectionsParams, tenantConnectionsTable, connectionId.toString)
         }
       } else if (eventType == "delete") {
@@ -312,7 +308,7 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
     /**
      * Logic to populate kafka messages for creating user metabase dashboard
      */
-    postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboard_metadata)
+    postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboardMetadata)
 
     val dashboardData = new java.util.HashMap[String, String]()
     val dashboardConfig = Seq(
@@ -344,7 +340,7 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
             logger.info(s"$entityType details already exist.")
           case _ =>
             if (entityType == "Mentoring") {
-              val insertQuery = s"INSERT INTO ${config.dashboard_metadata} (entity_type, entity_name, entity_id) VALUES ('$entityType', '$entityName', '$entityId')"
+              val insertQuery = s"INSERT INTO ${config.dashboardMetadata} (entity_type, entity_name, entity_id) VALUES ('$entityType', '$entityName', '$entityId')"
               val affectedRows = postgresUtil.insertData(insertQuery)
               logger.info(s"Inserted mentoringDashboard details. Affected rows: $affectedRows")
               dashboardData.put("tenantCode", event.tenantCode)

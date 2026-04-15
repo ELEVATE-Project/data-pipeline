@@ -133,7 +133,7 @@ class SurveyStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo
        * Extracting Solution Data
        *
        */
-      logger.info("\n==> SURVEY - Solution Data ")
+      logger.info("==> SURVEY - Solution Data ")
       logger.info("solutionId = " + SurveyEvent.solutionId)
       logger.info("solutionExternalId = " + SurveyEvent.solutionExternalId)
       logger.info("solutionName = " + SurveyEvent.solutionName)
@@ -178,7 +178,7 @@ class SurveyStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo
        * Extracting Survey Data per user submission
        *
        */
-      logger.info("\n==> Survey Data per user submission ")
+      logger.info("==> Survey Data per user submission ")
       logger.info("surveyId = " + SurveyEvent._id)
       logger.info("userId = " + SurveyEvent.createdBy)
       logger.info("userRoleIds = " + userRoleIds)

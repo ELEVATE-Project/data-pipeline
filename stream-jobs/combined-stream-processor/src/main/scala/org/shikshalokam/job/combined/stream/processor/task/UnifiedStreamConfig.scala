@@ -1,17 +1,12 @@
 package org.shikshalokam.job.combined.stream.processor.task
 
 import com.typesafe.config.Config
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.java.typeutils.TypeExtractor
 import org.apache.flink.streaming.api.scala.OutputTag
 import org.shikshalokam.job.BaseJobConfig
-import org.shikshalokam.job.combined.stream.processor.domain.{MentoringEvent, ProjectEvent}
+
 import scala.collection.JavaConverters._
 
 class UnifiedStreamConfig(override val config: Config) extends BaseJobConfig(config, "CombinedStreamProcessorJob") {
-
-  implicit val mapTypeInfo: TypeInformation[ProjectEvent] = TypeExtractor.getForClass(classOf[ProjectEvent])
-  implicit val eventTypeInfo: TypeInformation[MentoringEvent] = TypeExtractor.getForClass(classOf[MentoringEvent])
 
   // === Project ===
   val projectInputTopic: String = config.getString("kafka.project.stream.input.topic")
@@ -31,10 +26,6 @@ class UnifiedStreamConfig(override val config: Config) extends BaseJobConfig(con
   val surveyOutputTag = new OutputTag[String]("survey-dashboard-events")
   val isTestMode: Boolean = config.hasPath("test.mode") && config.getBoolean("test.mode")
   val isSurveyStreamEnabled: Boolean = if (config.hasPath("combined.survey.stream.job.enabled")) config.getBoolean("combined.survey.stream.job.enabled") else false
-
-  // Kafka Topics Configuration
-  //  val inputTopic: String = config.getString("kafka.input.topic")
-  //  val outputTopic: String = config.getString("kafka.output.topic")
 
   // Output Tags
   val projectEventOutputTag: OutputTag[String] = OutputTag[String]("project-dashboard-output-event")
