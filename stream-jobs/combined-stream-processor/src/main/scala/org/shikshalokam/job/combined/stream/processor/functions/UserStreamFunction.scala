@@ -347,7 +347,7 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
         logger.info(s"Tenant code is empty, skipping insertion.")
         return
       }
-      val query = s"SELECT EXISTS (SELECT 1 FROM ${config.dashboardMetadata} WHERE entity_id = '$targetedId') AS is_present"
+      val query = s"SELECT EXISTS (SELECT 1 FROM ${config.dashboard_metadata} WHERE entity_id = '$targetedId') AS is_present"
       val result = postgresUtil.fetchData(query)
 
       result.foreach { row =>
@@ -356,7 +356,7 @@ class UserStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo: 
             logger.info(s"$entityType details already exist.")
           case _ =>
             if (entityType == "User Dashboard") {
-              val insertQuery = s"INSERT INTO ${config.dashboardMetadata} (entity_type, entity_name, entity_id) VALUES ('$entityType', '${event.tenantCode}', '$targetedId')"
+              val insertQuery = s"INSERT INTO ${config.dashboard_metadata} (entity_type, entity_name, entity_id) VALUES ('$entityType', '${event.tenantCode}', '$targetedId')"
               val affectedRows = postgresUtil.insertData(insertQuery)
               logger.info(s"Inserted userDashboard details. Affected rows: $affectedRows")
               dashboardData.put("tenantCode", targetedId)

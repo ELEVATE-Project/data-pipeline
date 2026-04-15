@@ -308,7 +308,7 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
     /**
      * Logic to populate kafka messages for creating user metabase dashboard
      */
-    postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboardMetadata)
+    postgresUtil.createTable(config.createDashboardMetadataTable, config.dashboard_metadata)
 
     val dashboardData = new java.util.HashMap[String, String]()
     val dashboardConfig = Seq(
@@ -340,7 +340,7 @@ class MentoringStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeI
             logger.info(s"$entityType details already exist.")
           case _ =>
             if (entityType == "Mentoring") {
-              val insertQuery = s"INSERT INTO ${config.dashboardMetadata} (entity_type, entity_name, entity_id) VALUES ('$entityType', '$entityName', '$entityId')"
+              val insertQuery = s"INSERT INTO ${config.dashboard_metadata} (entity_type, entity_name, entity_id) VALUES ('$entityType', '$entityName', '$entityId')"
               val affectedRows = postgresUtil.insertData(insertQuery)
               logger.info(s"Inserted mentoringDashboard details. Affected rows: $affectedRows")
               dashboardData.put("tenantCode", event.tenantCode)
