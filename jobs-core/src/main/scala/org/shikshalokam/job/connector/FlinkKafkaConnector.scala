@@ -32,6 +32,10 @@ class FlinkKafkaConnector(config: BaseJobConfig) extends Serializable {
     new FlinkKafkaConsumer[T](kafkaTopic, new JobRequestDeserializationSchema[T], config.kafkaConsumerProperties)
   }
 
+  def kafkaJobRequestSourceWithProperties[T <: JobRequest](kafkaTopic: String, properties: java.util.Properties)(implicit m: Manifest[T]): SourceFunction[T] = {
+    new FlinkKafkaConsumer[T](kafkaTopic, new JobRequestDeserializationSchema[T], properties)
+  }
+
   def kafkaJobRequestSink[T <: JobRequest](kafkaTopic: String)(implicit m: Manifest[T]): SinkFunction[T] = {
     new FlinkKafkaProducer[T](kafkaTopic,
       new JobRequestSerializationSchema[T](kafkaTopic), config.kafkaProducerProperties, Semantic.AT_LEAST_ONCE)

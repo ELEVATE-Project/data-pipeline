@@ -36,36 +36,43 @@ class CombinedDashboardCreatorConfig(override val config: Config) extends BaseJo
   val mentoringConsumerParallelism: Int = config.getInt("task.mentoring.dashboard.parallelism")
   val mentoringProcessParallelism: Int = config.getInt("task.mentoring.metabase.dashboard.parallelism")
   val mentoringConsumerGroup: String = config.getString("kafka.mentoring.dashboard.groupId")
+  lazy val mentoringKafkaConsumerProperties: java.util.Properties = kafkaConsumerPropertiesWithGroupId(mentoringConsumerGroup)
 
   // Observation
   val observationConsumerParallelism: Int = config.getInt("task.observation.dashboard.parallelism")
   val observationProcessParallelism: Int = config.getInt("task.observation.metabase.dashboard.parallelism")
   val observationConsumerGroup: String = config.getString("kafka.observation.dashboard.groupId")
+  lazy val observationKafkaConsumerProperties: java.util.Properties = kafkaConsumerPropertiesWithGroupId(observationConsumerGroup)
 
   // Project
   val projectConsumerParallelism: Int = config.getInt("task.project.dashboard.parallelism")
   val projectProcessParallelism: Int = config.getInt("task.project.metabase.dashboard.parallelism")
   val projectConsumerGroup: String = config.getString("kafka.project.dashboard.groupId")
+  lazy val projectKafkaConsumerProperties: java.util.Properties = kafkaConsumerPropertiesWithGroupId(projectConsumerGroup)
 
   // Survey
   val surveyConsumerParallelism: Int = config.getInt("task.survey.dashboard.parallelism")
   val surveyProcessParallelism: Int = config.getInt("task.survey.metabase.dashboard.parallelism")
   val surveyConsumerGroup: String = config.getString("kafka.survey.dashboard.groupId")
+  lazy val surveyKafkaConsumerProperties: java.util.Properties = kafkaConsumerPropertiesWithGroupId(surveyConsumerGroup)
 
   // User
   val userConsumerParallelism: Int = config.getInt("task.user.dashboard.parallelism")
   val userProcessParallelism: Int = config.getInt("task.user.metabase.dashboard.parallelism")
   val userConsumerGroup: String = config.getString("kafka.user.dashboard.groupId")
+  lazy val userKafkaConsumerProperties: java.util.Properties = kafkaConsumerPropertiesWithGroupId(userConsumerGroup)
 
   // User Service
   val userServiceConsumerParallelism: Int = config.getInt("task.user.map.user.service.parallelism")
   val userServiceProcessParallelism: Int = config.getInt("task.user.map.user.service.process.parallelism")
   val userServiceConsumerGroup: String = config.getString("kafka.user.map.groupId")
+  lazy val userServiceKafkaConsumerProperties: java.util.Properties = kafkaConsumerPropertiesWithGroupId(userServiceConsumerGroup)
 
   // Program Service
   val programServiceConsumerParallelism: Int = config.getInt("task.user.map.program.service.parallelism")
   val programServiceProcessParallelism: Int = config.getInt("task.user.map.program.service.process.parallelism")
   val programServiceConsumerGroup: String = config.getString("kafka.user.map.groupId")
+  lazy val programServiceKafkaConsumerProperties: java.util.Properties = kafkaConsumerPropertiesWithGroupId(programServiceConsumerGroup)
 
   // Notification
   val notificationProducerParallelism: Int = config.getInt("task.user.map.notification.parallelism")

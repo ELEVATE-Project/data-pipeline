@@ -16,6 +16,8 @@ class UnifiedStreamConfig(override val config: Config) extends BaseJobConfig(con
   val projectSinkParallelism: Int = config.getInt("task.project.sink.parallelism")
   val projectOutputTag = new OutputTag[String]("project-dashboard-events")
   val isProjectStreamEnabled: Boolean = if (config.hasPath("combined.project.stream.job.enabled")) config.getBoolean("combined.project.stream.job.enabled") else false
+  val projectGroupId: String = if (config.hasPath("kafka.project.stream.groupId")) config.getString("kafka.project.stream.groupId") else groupId
+  lazy val projectKafkaConsumerProperties: java.util.Properties = kafkaConsumerPropertiesWithGroupId(projectGroupId)
 
   // === Survey ===
   val surveyInputTopic: String = config.getString("kafka.survey.stream.input.topic")
@@ -26,6 +28,8 @@ class UnifiedStreamConfig(override val config: Config) extends BaseJobConfig(con
   val surveyOutputTag = new OutputTag[String]("survey-dashboard-events")
   val isTestMode: Boolean = config.hasPath("test.mode") && config.getBoolean("test.mode")
   val isSurveyStreamEnabled: Boolean = if (config.hasPath("combined.survey.stream.job.enabled")) config.getBoolean("combined.survey.stream.job.enabled") else false
+  val surveyGroupId: String = if (config.hasPath("kafka.survey.stream.groupId")) config.getString("kafka.survey.stream.groupId") else groupId
+  lazy val surveyKafkaConsumerProperties: java.util.Properties = kafkaConsumerPropertiesWithGroupId(surveyGroupId)
 
   // Output Tags
   val projectEventOutputTag: OutputTag[String] = OutputTag[String]("project-dashboard-output-event")
@@ -42,6 +46,8 @@ class UnifiedStreamConfig(override val config: Config) extends BaseJobConfig(con
   val observationSinkParallelism: Int = config.getInt("task.observation.sink.parallelism")
   val observationCleanupHit = "observation-cleanup-hit"
   val isObservationStreamEnabled: Boolean = if (config.hasPath("combined.observation.stream.job.enabled")) config.getBoolean("combined.observation.stream.job.enabled") else false
+  val observationGroupId: String = if (config.hasPath("kafka.observation.stream.groupId")) config.getString("kafka.observation.stream.groupId") else groupId
+  lazy val observationKafkaConsumerProperties: java.util.Properties = kafkaConsumerPropertiesWithGroupId(observationGroupId)
 
   // === User ===
   val userInputTopic: String = config.getString("kafka.user.stream.input.topic")
@@ -52,6 +58,8 @@ class UnifiedStreamConfig(override val config: Config) extends BaseJobConfig(con
   val usersCleanupHit = "user-cleanup-hit"
   val userMetrics: String = config.getString("postgres.tables.userMetrics")
   val isUserStreamEnabled: Boolean = if (config.hasPath("combined.user.stream.job.enabled")) config.getBoolean("combined.user.stream.job.enabled") else false
+  val userGroupId: String = if (config.hasPath("kafka.user.stream.groupId")) config.getString("kafka.user.stream.groupId") else groupId
+  lazy val userKafkaConsumerProperties: java.util.Properties = kafkaConsumerPropertiesWithGroupId(userGroupId)
 
   // === Mentoring ===
   val mentoringInputTopic: String = config.getString("kafka.mentoring.stream.input.topic")
@@ -61,6 +69,8 @@ class UnifiedStreamConfig(override val config: Config) extends BaseJobConfig(con
   val mentoringSinkParallelism: Int = config.getInt("task.mentoring.stream.sink.parallelism")
   val mentoringCleanupHit = "mentoring-cleanup-hit"
   val isMentoringStreamEnabled: Boolean = if (config.hasPath("combined.mentoring.stream.job.enabled")) config.getBoolean("combined.mentoring.stream.job.enabled") else false
+  val mentoringGroupId: String = if (config.hasPath("kafka.mentoring.stream.groupId")) config.getString("kafka.mentoring.stream.groupId") else groupId
+  lazy val mentoringKafkaConsumerProperties: java.util.Properties = kafkaConsumerPropertiesWithGroupId(mentoringGroupId)
 
   // Parallelism
   override val kafkaConsumerParallelism: Int = config.getInt("task.consumer.parallelism")
