@@ -44,6 +44,17 @@ class BaseJobConfig(val config: Config, val jobName: String) extends Serializabl
     properties
   }
 
+  def kafkaConsumerPropertiesWithGroupId(customGroupId: String): Properties = {
+    val properties = new Properties()
+    properties.setProperty("bootstrap.servers", kafkaBrokerServers)
+    properties.setProperty("group.id", customGroupId)
+    properties.setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed")
+    kafkaAutoOffsetReset.map {
+      properties.setProperty("auto.offset.reset", _)
+    }
+    properties
+  }
+
   def kafkaProducerProperties: Properties = {
     val properties = new Properties()
     properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBrokerServers)
