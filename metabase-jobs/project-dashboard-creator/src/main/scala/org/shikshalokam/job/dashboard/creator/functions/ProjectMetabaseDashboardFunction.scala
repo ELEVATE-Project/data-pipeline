@@ -143,7 +143,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
           println(s"\n-->> Process $stateName state inside National Overview Collection")
           val (collectionPresent, collectionId) = validateCollection("National Overview", "Admin")
           if (collectionPresent && collectionId != 0) {
-            val (stateDashboardPresent, stateDashboardId) = validateDashboard(s"$stateName - State overview", "Admin", Some(targetedStateId))
+            val (stateDashboardPresent, stateDashboardId) = validateDashboard(s"$stateName - State overview", "Admin", collectionId, Some(targetedStateId))
             if (stateDashboardPresent && stateDashboardId != 0) {
               println(s"=====> $stateName - State overview dashboard already present inside National Overview collection with id: $stateDashboardId, Skipping this step.")
             } else {
@@ -176,7 +176,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
           if (stateIdForDistrictId.nonEmpty && stateNameForDistrictId.nonEmpty) {
             val (stateCollectionPresent, stateCollectionId) = validateCollection(s"$stateName State [Tenant : $tenantId]", "State Manager", Some(targetedStateId))
             if (stateCollectionPresent && stateCollectionId != 0) {
-              val (districtDashboardPresent, districtDashboardId) = validateDashboard(s"$districtName District [Tenant : $tenantIdForDistrictId]", "State Manager", Some(targetedDistrictId))
+              val (districtDashboardPresent, districtDashboardId) = validateDashboard(s"$districtName District [Tenant : $tenantIdForDistrictId]", "State Manager", stateCollectionId, Some(targetedDistrictId))
               if (districtDashboardPresent && districtDashboardId != 0) {
                 println(s"=====> $districtName District [Tenant : $tenantIdForDistrictId] dashboard already present inside state collection with id: $districtDashboardId, Skipping this step.")
               } else {
@@ -191,7 +191,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
           println(s"\n-->> Process $districtName district inside National Overview Collection")
           val (collectionPresent, collectionId) = validateCollection("National Overview", "Admin")
           if (collectionPresent && collectionId != 0) {
-            val (districtDashboardPresent, districtDashboardId) = validateDashboard(s"$districtName District [Tenant : $tenantIdForDistrictId]", "Admin", Some(targetedDistrictId))
+            val (districtDashboardPresent, districtDashboardId) = validateDashboard(s"$districtName District [Tenant : $tenantIdForDistrictId]", "Admin", collectionId , Some(targetedDistrictId))
             if (districtDashboardPresent && districtDashboardId != 0) {
               println(s"=====> $districtName District [Tenant : $tenantIdForDistrictId] dashboard already present inside National Overview collection, Skipping this step.")
             } else {
@@ -693,67 +693,54 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
     }
 
     def validateCollection(collectionName: String, reportFor: String, reportId: Option[String] = None): (Boolean, Int) = {
-      val mapper = new ObjectMapper()
-      println(s">>> Checking Metabase API for collection: $collectionName")
-      try {
-        val collections = mapper.readTree(metabaseUtil.listCollections())
-        val result = collections match {
-          case arr: ArrayNode =>
-            arr.asScala.find { c =>
-                val name = Option(c.get("name")).map(_.asText).getOrElse("")
-                val desc = Option(c.get("description")).map(_.asText).getOrElse("")
+      val reportForPattern = s"%Collection For: $reportFor%"
+      val baseQuery = s"""SELECT id FROM collection WHERE name = '$collectionName' AND description LIKE '$reportForPattern' AND archived = false """.stripMargin
+      val finalQuery =
+        reportId match {
+          case Some(id) =>
+            baseQuery + s""" AND ( description LIKE '%Program Id: $id%' OR description LIKE '%Solution Id: $id%' OR description LIKE '%State Id: $id%' OR description LIKE '%District Id: $id%' OR description LIKE '%Tenant Id: $id%' ) LIMIT 1 """.stripMargin
 
-                val matchesName = name == collectionName
-                val matchesReportFor = desc.contains(s"Collection For: $reportFor")
-                val matchesReportId = reportId.forall(id =>
-                  desc.contains(s"Program Id: $id") || desc.contains(s"Solution Id: $id") || desc.contains(s"State Id: $id") || desc.contains(s"District Id: $id") || desc.contains(s"Tenant Id: $id")
-                )
-
-                val isMatch = if (reportId.isEmpty) matchesName && matchesReportFor else matchesName && matchesReportFor && matchesReportId
-
-                isMatch
-              }.map(c => (true, Option(c.get("id")).map(_.asInt).getOrElse(0)))
-              .getOrElse((false, 0))
-          case _ => (false, 0)
+          case None =>
+            baseQuery + " LIMIT 1"
         }
-        println(s">>> API result: $result")
-        result
+      try {
+        val result = metabasePostgresUtil.fetchData(finalQuery)
+        result.collectFirst {
+          case map: Map[_, _] =>
+            val id = map.get("id").map(_.toString.toInt).getOrElse(0)
+            (true, id)
+        }.getOrElse((false, 0))
+
       } catch {
         case e: Exception =>
-          println(s"[ERROR] API or JSON failure: ${e.getMessage}")
+          println(s"[ERROR] DB validation failed: ${e.getMessage}")
           (false, 0)
       }
     }
 
-    def validateDashboard(dashboardName: String, reportFor: String, reportId: Option[String] = None): (Boolean, Int) = {
-      val mapper = new ObjectMapper()
-      println(s">>> Checking Metabase API for dashboard: $dashboardName")
-      try {
-        val collections = mapper.readTree(metabaseUtil.listDashboards())
-        val result = collections match {
-          case arr: ArrayNode =>
-            arr.asScala.find { c =>
-                val name = Option(c.get("name")).map(_.asText).getOrElse("")
-                val desc = Option(c.get("description")).map(_.asText).getOrElse("")
+    def validateDashboard(dashboardName: String, reportFor: String, collectionId: Int, reportId: Option[String] = None): (Boolean, Int) = {
+      val reportForPattern = s"%Dashboard For: $reportFor%"
+      val baseQuery = s"""SELECT id FROM report_dashboard WHERE name = '$dashboardName' AND collection_id = $collectionId AND description LIKE '$reportForPattern' AND archived = false """.stripMargin
+      val finalQuery =
+        reportId match {
+          case Some(id) =>
+            baseQuery + s""" AND ( description LIKE '%State Id: $id%' OR description LIKE '%District Id: $id%' ) LIMIT 1 """.stripMargin
 
-                val matchesName = name == dashboardName
-                val matchesReportFor = desc.contains(s"Dashboard For: $reportFor")
-                val matchesReportId = reportId.forall(id =>
-                  desc.contains(s"State Id: $id") || desc.contains(s"District Id: $id")
-                )
-
-                val isMatch = if (reportId.isEmpty) matchesName && matchesReportFor else matchesName && matchesReportFor && matchesReportId
-
-                isMatch
-              }.map(c => (true, Option(c.get("id")).map(_.asInt).getOrElse(0)))
-              .getOrElse((false, 0))
-          case _ => (false, 0)
+          case None =>
+            baseQuery + " LIMIT 1"
         }
-        println(s">>> API result: $result")
-        result
+      try {
+        println(s">>> Validating dashboard with query: $finalQuery")
+        val result = metabasePostgresUtil.fetchData(finalQuery)
+        result.collectFirst {
+          case map: Map[_, _] =>
+            val id = map.get("id").map(_.toString.toInt).getOrElse(0)
+            (true, id)
+        }.getOrElse((false, 0))
+
       } catch {
         case e: Exception =>
-          println(s"[ERROR] API or JSON failure: ${e.getMessage}")
+          println(s"[ERROR] DB validation failed: ${e.getMessage}")
           (false, 0)
       }
     }
