@@ -61,7 +61,13 @@ services:
     container_name: taskmanager
     depends_on:
       - jobmanager
-    command: taskmanager
+    command: taskmanager  
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        chown -R flink:flink /opt/flink/log
+        exec /docker-entrypoint.sh taskmanager
     scale: 1
     user: root
     environment:
