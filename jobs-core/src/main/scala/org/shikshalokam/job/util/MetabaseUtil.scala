@@ -786,14 +786,16 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
   }
 
   def getTheTableId(databaseId: Int, tableName: String, metabaseApiKey: String): Int = {
+    def escape(v: String): String = v.replace("'", "''")
     storedTableIds.get((databaseId, tableName)) match {
       case Some(tableId) =>
         tableId
 
       case None =>
-        val tableQuery = s"SELECT id FROM metabase_table WHERE name = '$tableName';"
+        val safeTableName = escape(tableName)
+        val tableQuery =s"""SELECT id FROM metabase_table WHERE db_id = $databaseId AND name = '$safeTableName' AND active = true LIMIT 1""".stripMargin
         val tableIdOpt = metabasePostgresUtil.fetchData(tableQuery) match {
-          case List(map: Map[_, _]) =>
+          case map :: _ =>
             map.get("id").flatMap(id => scala.util.Try(id.toString.toInt).toOption)
           case _ => None
         }
@@ -810,41 +812,36 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
   }
 
   def getTheColumnId(databaseId: Int, tableName: String, columnName: String, metabaseApiKey: String, metaTableQuery: String): Int = {
+    def escape(value: String): String = value.replace("'", "''")
     try {
       val tableId = getTheTableId(databaseId, tableName, metabaseApiKey)
-
       storedColumnIds.get((tableId, columnName)) match {
         case Some(columnId) =>
           columnId
-
         case None =>
-          val columnQuery = s"SELECT id FROM metabase_field WHERE table_id = '$tableId' AND name = '$columnName';"
-
+          val columnQuery =s"""SELECT id FROM metabase_field WHERE table_id = $tableId AND name = '${escape(columnName)}'""".stripMargin
           val columnIdOpt = metabasePostgresUtil.fetchData(columnQuery) match {
-            case List(map: Map[_, _]) =>
-              map.get("id").flatMap(id => scala.util.Try(id.toString.toInt).toOption)
-            case _ => None
-          }
+              case List(map: Map[_, _]) =>
+                map.get("id").flatMap(id => scala.util.Try(id.toString.toInt).toOption)
+              case _ => None
+            }
 
-          val columnId = columnIdOpt.getOrElse(-1)
-
-          if (columnId != -1) {
-            storedColumnIds.put((tableId, columnName), columnId)
-            columnId
-          } else {
-            val errorMessage =
-              s"Column '$columnName' not found in table '$tableName' (tableId: $tableId)"
-            val escapedError = errorMessage.replace("'", "''")
-            val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'$escapedError'")
-            postgresUtil.insertData(updateTableQuery)
-            println(s"[WARN] $errorMessage")
-            -1
+          columnIdOpt match {
+            case Some(columnId) =>
+              storedColumnIds.put((tableId, columnName), columnId)
+              columnId
+            case None =>
+              val errorMessage =s"Column '$columnName' not found in table '$tableName' (tableId: $tableId)"
+              val escapedError = escape(errorMessage)
+              val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'$escapedError'")
+              postgresUtil.insertData(updateTableQuery)
+              throw new NoSuchElementException(errorMessage)
           }
       }
     } catch {
       case e: Exception =>
-        val escapedError = e.getMessage.replace("'", "''")
-        val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'$escapedError'")
+        val escapedError = escape(e.getMessage)
+        val updateTableQuery =metaTableQuery.replace("'errorMessage'", s"'$escapedError'")
         postgresUtil.insertData(updateTableQuery)
         println(s"[ERROR] Failed to get column ID: ${e.getMessage}")
         -1

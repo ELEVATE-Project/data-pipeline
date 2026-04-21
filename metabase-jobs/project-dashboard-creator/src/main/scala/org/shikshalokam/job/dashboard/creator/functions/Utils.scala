@@ -180,8 +180,9 @@ object Utils {
 
   def createGroupForCollection(metabaseUtil: MetabaseUtil, groupName: String, collectionId: Int): Unit = {
     val (exists, groupId) = metabaseUtil.getGroupByName(groupName)
-    if (exists) {
+    val targetGroupId = if (exists) {
       println(s"Group '$groupName' already exists with ID: $groupId")
+      groupId
     } else {
       val createGroupRequestData =s"""{ "name": "$groupName" }""".stripMargin
 
@@ -189,24 +190,25 @@ object Utils {
       val id = mapper.readTree(response).get("id").asInt()
 
       println(s"Created new group '$groupName' with ID: $id")
-
-      val revisionData = metabaseUtil.getRevisionId()
-      val revisionId = mapper.readTree(revisionData).get("revision").asInt()
-
-      val addCollectionToUserRequestBody =
-        s"""
-           |{
-           |    "revision": $revisionId,
-           |    "groups": {
-           |        "$id": {
-           |            "$collectionId": "read"
-           |        }
-           |    }
-           |}
-       """.stripMargin
-
-      metabaseUtil.addCollectionToGroup(addCollectionToUserRequestBody)
+        id
     }
+
+    val revisionData = metabaseUtil.getRevisionId()
+    val revisionId = mapper.readTree(revisionData).get("revision").asInt()
+
+    val addCollectionToUserRequestBody =
+      s"""
+          |{
+          |    "revision": $revisionId,
+          |    "groups": {
+          |        "$targetGroupId": {
+          |            "$collectionId": "read"
+          |        }
+          |    }
+          |}
+      """.stripMargin
+
+    metabaseUtil.addCollectionToGroup(addCollectionToUserRequestBody)
   }
 
   val objectMapper = new ObjectMapper()

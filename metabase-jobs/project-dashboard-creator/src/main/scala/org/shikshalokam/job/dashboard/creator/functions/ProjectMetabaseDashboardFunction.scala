@@ -65,6 +65,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
     val filterSync: String = event.filterSync
     val filterTable: String = event.filterTable
     val databaseId: Int = metabaseUtil.getDatabaseID(metabaseDatabase)
+    if (databaseId == -1) { throw new IllegalStateException(s"Metabase database '$metabaseDatabase' not found")}
     val solutionName = postgresUtil.fetchData(s"""SELECT name FROM $solutions WHERE solution_id = '$targetedSolutionId'""").collectFirst { case map: Map[_, _] => map.getOrElse("name", "").toString }.getOrElse("")
     val targetedProgramId: String = Option(event.targetedProgram).map(_.trim).filter(_.nonEmpty).getOrElse(postgresUtil.fetchData(s"SELECT program_id FROM $solutions WHERE solution_id = '$targetedSolutionId'").collectFirst { case map: Map[_, _] => map.get("program_id").map(_.toString).getOrElse("") }.getOrElse(""))
     val programName = postgresUtil.fetchData(s"""SELECT program_name FROM $solutions WHERE solution_id = '$targetedSolutionId'""").collectFirst { case map: Map[_, _] => map.getOrElse("program_name", "").toString }.getOrElse("")
@@ -169,7 +170,8 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
 
           println(s"\n-->> Process $districtName district inside $stateName Collection")
           if (stateIdForDistrictId.nonEmpty && stateNameForDistrictId.nonEmpty) {
-            val (stateCollectionPresent, stateCollectionId) = metabaseUtil.validateCollection(s"$stateName State [Tenant : $tenantId]", "State Manager", Some(targetedStateId))
+            val stateCollectionNameForDistrict = s"$stateNameForDistrictId State [Tenant : $tenantIdForDistrictId]"
+            val (stateCollectionPresent, stateCollectionId) = metabaseUtil.validateCollection(stateCollectionNameForDistrict, "State Manager", Some(stateIdForDistrictId))
             if (stateCollectionPresent && stateCollectionId != 0) {
               val (districtDashboardPresent, districtDashboardId) = metabaseUtil.validateDashboard(s"$districtName District [Tenant : $tenantIdForDistrictId]", "State Manager", stateCollectionId, Some(targetedDistrictId))
               if (districtDashboardPresent && districtDashboardId != 0) {
@@ -179,7 +181,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
                 createDistrictOverviewDashboard(districtDashboardName, districtDashboardDescription, stateCollectionId, s"$districtName District [Tenant : $tenantIdForDistrictId]", districtName, databaseId, "State", "State Manager", "No")
               }
             } else {
-              println(s"=====> $stateName State [Tenant : $tenantId] collection is not created.")
+              println(s"=====> $stateCollectionNameForDistrict collection is not created.")
             }
           } else println("Targeted State given a district is not present or is empty")
 
