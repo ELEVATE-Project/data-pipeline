@@ -9,27 +9,28 @@ import scala.collection.JavaConverters._
 
 object Utils {
 
-  def checkAndCreateCollection(collectionName: String, description: String, metabaseUtil: MetabaseUtil, parentId: Option[Int] = None): Int = {
-    val collectionListJson = mapper.readTree(metabaseUtil.listCollections())
-    val existingCollectionId = collectionListJson.elements().asScala
-      .find(_.path("name").asText() == collectionName)
-      .map(_.path("id").asInt())
-    existingCollectionId match {
-      case Some(id) =>
-        println(s"$collectionName : collection already exists with ID: $id.")
-        -1
+  def checkAndCreateCollection(collectionName: String, description: String, metabaseUtil: MetabaseUtil, parentId: Option[Int] = None, reportFor: String, reportId: Option[String] = None): Int = {
+    val (exists, existingId) = metabaseUtil.validateCollection(collectionName, reportFor, reportId)
 
-      case None =>
-        val parentIdField = parentId.map(pid => s""""parent_id": $pid,""").getOrElse("")
-        val collectionRequestBody =
-          s"""{
-             |  $parentIdField
-             |  "name": "$collectionName",
-             |  "description": "$description"
-             |}""".stripMargin
-        val collectionId = mapper.readTree(metabaseUtil.createCollection(collectionRequestBody)).path("id").asInt()
-        println(s"$collectionName : collection created with ID = $collectionId")
-        collectionId
+    if (exists) {
+      println(s"$collectionName : collection already util exists with ID: $existingId.")
+      -1
+    } else {
+      val parentIdField = parentId.map(pid => s""""parent_id": $pid,""").getOrElse("")
+
+      val collectionRequestBody =
+        s"""{
+           |  $parentIdField
+           |  "name": "$collectionName",
+           |  "description": "$description"
+           |}""".stripMargin
+
+      val collectionId =
+        mapper.readTree(metabaseUtil.createCollection(collectionRequestBody))
+          .path("id").asInt()
+
+      println(s"$collectionName : collection created with ID = $collectionId")
+      collectionId
     }
   }
 
@@ -177,38 +178,34 @@ object Utils {
     databaseId
   }
 
+  def createGroupForCollection(metabaseUtil: MetabaseUtil, groupName: String, collectionId: Int): Unit = {
+    val (exists, groupId) = metabaseUtil.getGroupByName(groupName)
+    if (exists) {
+      println(s"Group '$groupName' already exists with ID: $groupId")
+    } else {
+      val createGroupRequestData =s"""{ "name": "$groupName" }""".stripMargin
 
-  def createGroupForCollection(metabaseUtil: MetabaseUtil = null, groupName: String, collectionId: Int): Unit = {
-    val existingGroups = mapper.readTree(metabaseUtil.listGroups())
-    val existingGroup = existingGroups.elements().asScala.find { node => node.get("name").asText().equalsIgnoreCase(groupName) }
-    existingGroup match {
-      case Some(group) =>
-        println(s"Group '$groupName' already exists with ID: ${group.get("id").asInt()}")
-        group.get("id").asInt()
-      case None =>
-        val createGroupRequestData =
-          s"""
-             |{
-             |  "name": "$groupName"
-             |}
-             |""".stripMargin
-        val response = metabaseUtil.createGroup(createGroupRequestData)
-        val id = mapper.readTree(response).get("id").asInt()
-        println(s"Created new group '$groupName' with ID: $id")
-        val revisionData = metabaseUtil.getRevisionId()
-        val revisionId = mapper.readTree(revisionData).get("revision").asInt()
-        val addCollectionToUserRequestBody =
-          s"""
-             |{
-             |    "revision": $revisionId,
-             |    "groups": {
-             |        "$id": {
-             |            "$collectionId": "read"
-             |        }
-             |    }
-             |}
-             |""".stripMargin
-        metabaseUtil.addCollectionToGroup(addCollectionToUserRequestBody)
+      val response = metabaseUtil.createGroup(createGroupRequestData)
+      val id = mapper.readTree(response).get("id").asInt()
+
+      println(s"Created new group '$groupName' with ID: $id")
+
+      val revisionData = metabaseUtil.getRevisionId()
+      val revisionId = mapper.readTree(revisionData).get("revision").asInt()
+
+      val addCollectionToUserRequestBody =
+        s"""
+           |{
+           |    "revision": $revisionId,
+           |    "groups": {
+           |        "$id": {
+           |            "$collectionId": "read"
+           |        }
+           |    }
+           |}
+       """.stripMargin
+
+      metabaseUtil.addCollectionToGroup(addCollectionToUserRequestBody)
     }
   }
 
