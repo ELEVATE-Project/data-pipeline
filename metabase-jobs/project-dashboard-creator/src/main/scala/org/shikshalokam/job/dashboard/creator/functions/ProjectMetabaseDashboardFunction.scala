@@ -64,8 +64,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
     val metabaseApiKey: String = config.metabaseKey
     val filterSync: String = event.filterSync
     val filterTable: String = event.filterTable
-    val databaseId: Int = metabaseUtil.getDatabaseID(metabaseDatabase)
-    if (databaseId == -1) { throw new IllegalStateException(s"Metabase database '$metabaseDatabase' not found")}
+    val databaseId = metabaseUtil.getDatabaseID(metabaseDatabase); if (databaseId == -1) { println(s"[ERROR] Metabase database '$metabaseDatabase' not found"); return }
     val solutionName = postgresUtil.fetchData(s"""SELECT name FROM $solutions WHERE solution_id = '$targetedSolutionId'""").collectFirst { case map: Map[_, _] => map.getOrElse("name", "").toString }.getOrElse("")
     val targetedProgramId: String = Option(event.targetedProgram).map(_.trim).filter(_.nonEmpty).getOrElse(postgresUtil.fetchData(s"SELECT program_id FROM $solutions WHERE solution_id = '$targetedSolutionId'").collectFirst { case map: Map[_, _] => map.get("program_id").map(_.toString).getOrElse("") }.getOrElse(""))
     val programName = postgresUtil.fetchData(s"""SELECT program_name FROM $solutions WHERE solution_id = '$targetedSolutionId'""").collectFirst { case map: Map[_, _] => map.getOrElse("program_name", "").toString }.getOrElse("")
@@ -279,7 +278,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
     def createMicroImprovementsCollectionAndDashboard(metaDataTable: String, reportConfig: String, databaseId: Int): Unit = {
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$admin';"
       val (mipCollectionName, mipCollectionDescription) = (s"Micro Improvements", s"This collection contains dashboards that track the progress, participation, and effectiveness of Micro Improvement Projects across various programs.\n\nCollection For: Admin")
-      val mipCollectionId = Utils.checkAndCreateCollection(mipCollectionName, mipCollectionDescription, metabaseUtil, None, "Admin")
+      val mipCollectionId = Utils.checkAndCreateCollection(mipCollectionName, mipCollectionDescription, metabaseUtil, "Admin")
       if (mipCollectionId != -1) {
         Utils.createGroupForCollection(metabaseUtil, s"Report_Admin_Micro_Improvement", mipCollectionId)
         val (mipDashboardName, mipDashboardDescription) = (s"Overview - Across States and Programs", s"A consolidated view of project progress and user participation.")
@@ -396,12 +395,11 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
     def createNationalOverviewCollectionAndDashboard(metaDataTable: String, reportConfig: String, metabaseDatabase: String): Unit = {
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$admin';"
       val (mainCollectionName, mainCollectionDescription) = (s"National Overview", s"A collection of dashboards that highlight progress and comparisons of Micro Improvement projects across states and districts.\n\nCollection For: Admin")
-      val mainCollectionId = Utils.checkAndCreateCollection(mainCollectionName, mainCollectionDescription, metabaseUtil, None, "Admin")
+      val mainCollectionId = Utils.checkAndCreateCollection(mainCollectionName, mainCollectionDescription, metabaseUtil, "Admin")
       if (mainCollectionId != -1) {
         Utils.createGroupForCollection(metabaseUtil, s"Report_Admin_National_Overview", mainCollectionId)
         val (homeDashboardName, homeDashboardDescription) = (s"National Dashboard", s"Centralized view of regional performance data for Micro Improvement programs.")
         val homeDashboardId: Int = Utils.createDashboard(mainCollectionId, homeDashboardName, homeDashboardDescription, metabaseUtil, "Yes")
-        val databaseId: Int = metabaseUtil.getDatabaseID(metabaseDatabase)
         val homeReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mi-Dashboard' AND report_name = 'Home-Details-Report';"
         val homeQuestionCardIdList = HomePage.ProcessAndUpdateJsonFiles(homeReportConfigQuery, mainCollectionId, databaseId, homeDashboardId, projects, solutions, reportConfig, metaDataTable, metabaseUtil, postgresUtil)
         val homeQuestionIdsString = "[" + homeQuestionCardIdList.mkString(",") + "]"
@@ -540,7 +538,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
 
     def createMainProgramsCollection: Int = {
       val (mainCollectionName, mainCollectionDescription) = ("Programs", s"All programs made available on the platform are stored in this collection.\n\nCollection For: Admin")
-      val mainCollectionId: Int = Utils.checkAndCreateCollection(mainCollectionName, mainCollectionDescription, metabaseUtil, None, "Admin")
+      val mainCollectionId: Int = Utils.checkAndCreateCollection(mainCollectionName, mainCollectionDescription, metabaseUtil, "Admin")
       if (mainCollectionId != -1) {
         Utils.createGroupForCollection(metabaseUtil, "Report_Admin_Programs", mainCollectionId)
         val adminMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", mainCollectionId).put("collectionName", mainCollectionName))

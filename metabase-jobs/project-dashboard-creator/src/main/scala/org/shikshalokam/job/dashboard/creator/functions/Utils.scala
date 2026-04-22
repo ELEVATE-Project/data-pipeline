@@ -9,11 +9,11 @@ import scala.collection.JavaConverters._
 
 object Utils {
 
-  def checkAndCreateCollection(collectionName: String, description: String, metabaseUtil: MetabaseUtil, parentId: Option[Int] = None, reportFor: String, reportId: Option[String] = None): Int = {
+  def checkAndCreateCollection(collectionName: String, description: String, metabaseUtil: MetabaseUtil, reportFor: String, reportId: Option[String] = None, parentId: Option[Int] = None): Int = {
     val (exists, existingId) = metabaseUtil.validateCollection(collectionName, reportFor, reportId)
 
     if (exists) {
-      println(s"$collectionName : collection already util exists with ID: $existingId.")
+      println(s"$collectionName : collection already exists with ID: $existingId.")
       -1
     } else {
       val parentIdField = parentId.map(pid => s""""parent_id": $pid,""").getOrElse("")
