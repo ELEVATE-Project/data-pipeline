@@ -9,27 +9,28 @@ import scala.collection.JavaConverters._
 
 object Utils {
 
-  def checkAndCreateCollection(collectionName: String, description: String, metabaseUtil: MetabaseUtil, parentId: Option[Int] = None): Int = {
-    val collectionListJson = mapper.readTree(metabaseUtil.listCollections())
-    val existingCollectionId = collectionListJson.elements().asScala
-      .find(_.path("name").asText() == collectionName)
-      .map(_.path("id").asInt())
-    existingCollectionId match {
-      case Some(id) =>
-        println(s"$collectionName : already exists with ID: $id.")
-        -1
+  def checkAndCreateCollection(collectionName: String, description: String, metabaseUtil: MetabaseUtil, reportFor: String, reportId: Option[String] = None, parentId: Option[Int] = None): Int = {
+    val (exists, existingId) = metabaseUtil.validateCollection(collectionName, reportFor, reportId)
 
-      case None =>
-        val parentIdField = parentId.map(pid => s""""parent_id": $pid,""").getOrElse("")
-        val collectionRequestBody =
-          s"""{
-             |  $parentIdField
-             |  "name": "$collectionName",
-             |  "description": "$description"
-             |}""".stripMargin
-        val collectionId = mapper.readTree(metabaseUtil.createCollection(collectionRequestBody)).path("id").asInt()
-        println(s"$collectionName : collection created with ID = $collectionId")
-        collectionId
+    if (exists) {
+      println(s"$collectionName : collection already exists with ID: $existingId.")
+      -1
+    } else {
+      val parentIdField = parentId.map(pid => s""""parent_id": $pid,""").getOrElse("")
+
+      val collectionRequestBody =
+        s"""{
+           |  $parentIdField
+           |  "name": "$collectionName",
+           |  "description": "$description"
+           |}""".stripMargin
+
+      val collectionId =
+        mapper.readTree(metabaseUtil.createCollection(collectionRequestBody))
+          .path("id").asInt()
+
+      println(s"$collectionName : collection created with ID = $collectionId")
+      collectionId
     }
   }
 
