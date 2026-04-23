@@ -699,23 +699,28 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
    * @return JSON string representing the response from the sync operation
    */
 
-  def syncNewTable(dbId: Int, tableName: String, apiKey: String): ujson.Value = {
-    val url = s"$metabaseUrl/notify/db/$dbId/new-table"
-    val payload = ujson.Obj(
-      "schema_name" -> "public",
-      "table_name" -> tableName
-    ).render()
-    val headers = Map(
-      "Content-Type" -> "application/json",
-      "X-METABASE-APIKEY" -> apiKey
-    )
-    val response = requests.post(url, data = payload, headers = headers)
-    if (response.statusCode == 200) {
-      ujson.read(response.text)
-    } else {
-      throw new Exception(s"Failed to retrieve database metadata with status code: ${response.statusCode}, message: ${response.text}")
-    }
-  }
+   def syncNewTable(dbId: Int, tableName: String, apiKey: String): ujson.Value = {
+     val url = s"$metabaseUrl/notify/db/$dbId/new-table"
+     val payload = ujson.Obj(
+       "schema_name" -> "public",
+       "table_name" -> tableName
+     ).render()
+
+     val headers = Map(
+       "Content-Type" -> "application/json",
+       "X-Metabase-Session" -> getSessionToken
+     )
+
+     val response = requests.post(url, data = payload, headers = headers)
+
+     if (response.statusCode == 200) {
+       ujson.read(response.text)
+     } else if (response.statusCode == 403) {
+       throw new Exception(s"Authorization failed: User does not have admin privileges to sync tables. Status: ${response.statusCode}, Message: ${response.text}")
+     } else {
+       throw new Exception(s"Failed to sync table '$tableName' in database ID $dbId. Status: ${response.statusCode}, Message: ${response.text}")
+     }
+   }
 
   /**
    * Method to search a table in Metabase DB by table name and database ID.
@@ -758,33 +763,37 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
    *         - Int represents collection ID if found, otherwise 0
    */
 
-  def validateCollection(collectionName: String, reportFor: String, reportId: Option[String] = None): (Boolean, Int) = {
-    def esc(s: String): String = s.replace("'", "''")
-    val safeName      = esc(collectionName)
-    val safeReportFor = s"%Collection For: ${esc(reportFor)}%"
-    val baseQuery = s"""SELECT id FROM collection WHERE name = '$safeName' AND description LIKE '$safeReportFor' AND archived = false """.stripMargin
-    val finalQuery =
-      reportId.map(esc) match {
-        case Some(id) =>
-          baseQuery + s""" AND ( description LIKE '%Program Id: $id%' OR description LIKE '%Solution Id: $id%' OR description LIKE '%State Id: $id%' OR description LIKE '%District Id: $id%' OR description LIKE '%Tenant Id: $id%' ) LIMIT 1 """.stripMargin
+   def validateCollection(collectionName: String, reportFor: String, reportId: Option[String] = None): (Boolean, Int) = {
+     def esc(s: String): String = s.replace("'", "''")
+     val safeName      = esc(collectionName)
+     val safeReportFor = s"%Collection For: ${esc(reportFor)}%"
+     val baseQuery = s"""SELECT id FROM collection WHERE name = '$safeName' AND description LIKE '$safeReportFor' AND archived = false """.stripMargin
+     val finalQuery =
+       reportId.map(esc) match {
+         case Some(id) =>
+           baseQuery + s""" AND ( description LIKE '%Program Id: $id%' OR description LIKE '%Solution Id: $id%' OR description LIKE '%State Id: $id%' OR description LIKE '%District Id: $id%' OR description LIKE '%Tenant Id: $id%' ) LIMIT 1 """.stripMargin
 
-        case None =>
-          baseQuery + " LIMIT 1"
-      }
-    try {
-      val result = metabasePostgresUtil.fetchData(finalQuery)
-      result.collectFirst {
-        case map: Map[_, _] =>
-          val id = map.get("id").map(_.toString.toInt).getOrElse(0)
-          (true, id)
-      }.getOrElse((false, 0))
+         case None =>
+           baseQuery + " LIMIT 1"
+       }
+     try {
+       val result = metabasePostgresUtil.fetchData(finalQuery)
+       result.collectFirst {
+         case map: Map[_, _] =>
+           val id = map.get("id").map(_.toString.toInt).getOrElse(0)
+           println(s"[DEBUG] Collection found: id=$id")
+           (true, id)
+       }.getOrElse {
+         (false, 0)
+       }
 
-    } catch {
-      case e: Exception =>
-        println(s"[ERROR] DB validation failed: ${e.getMessage}")
-        (false, 0)
-    }
-  }
+     } catch {
+       case e: Exception =>
+         println(s"[ERROR] validateCollection failed for '$collectionName' (reportFor='$reportFor'): ${e.getMessage}")
+         e.printStackTrace()
+         (false, 0)
+     }
+   }
 
   /**
    * Method to validate whether a dashboard exists in Metabase DB based on name,
