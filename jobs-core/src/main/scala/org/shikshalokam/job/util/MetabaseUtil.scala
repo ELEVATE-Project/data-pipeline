@@ -708,10 +708,10 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
 
      val headers = Map(
        "Content-Type" -> "application/json",
-       "X-Metabase-Session" -> getSessionToken
+       "X-METABASE-APIKEY" -> apiKey
      )
 
-     val response = requests.post(url, data = payload, headers = headers)
+     val response = requests.post(url, data = payload, headers = headers, check = false)
 
      if (response.statusCode == 200) {
        ujson.read(response.text)
@@ -889,10 +889,12 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
           columnId
         case None =>
           val columnQuery =s"""SELECT id FROM metabase_field WHERE table_id = $tableId AND name = '${escape(columnName)}' AND active = true LIMIT 1""".stripMargin
-          val columnIdOpt = metabasePostgresUtil.fetchData(columnQuery) match {
-            case map :: _ => map.get("id").flatMap(id => scala.util.Try(id.toString.toInt).toOption)
-            case _ => None
-          }
+          val columnIdOpt = metabasePostgresUtil.fetchData(columnQuery).headOption.flatMap(_.get("id"))
+              .flatMap {
+                case i: Int => Some(i)
+                case s: String if s.nonEmpty => scala.util.Try(s.toInt).toOption
+                case _ => None
+              }
 
           columnIdOpt match {
             case Some(columnId) =>
