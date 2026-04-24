@@ -43,7 +43,7 @@ object Utils {
          |  "description": "$description"
          |}""".stripMargin
     val collectionId = mapper.readTree(metabaseUtil.createCollection(collectionRequestBody)).path("id").asInt()
-    println(s"$collectionName : collection created with ID = $collectionId")
+    logger.info(s"$collectionName : collection created with ID = $collectionId")
     collectionId
 
   }
@@ -57,7 +57,7 @@ object Utils {
          |  "collection_position": "1"
          |}""".stripMargin
     val dashboardId = mapper.readTree(metabaseUtil.createDashboard(dashboardRequestBody)).path("id").asInt()
-    println(s"$dashboardName : dashboard created with ID = $dashboardId")
+    logger.info(s"$dashboardName : dashboard created with ID = $dashboardId")
     dashboardId
   }
 
@@ -67,44 +67,46 @@ object Utils {
       .find(_.path("name").asText() == metabaseDatabase)
       .map(_.path("id").asInt())
       .getOrElse {
-        println(s"Database '$metabaseDatabase' not found. Process stopped.")
+        logger.error(s"Database '$metabaseDatabase' not found. Process stopped.")
         -1
       }
-    println(s"Database ID = $databaseId")
+    logger.info(s"Database ID = $databaseId")
     databaseId
   }
 
-  def createGroupForCollection(metabaseUtil: MetabaseUtil, groupName: String, collectionId: Int): Unit = {
-    val (exists, groupId) = metabaseUtil.getGroupByName(groupName)
-    val targetGroupId = if (exists) {
-      println(s"Group '$groupName' already exists with ID: $groupId")
-      groupId
-    } else {
-      val createGroupRequestData =s"""{ "name": "$groupName" }""".stripMargin
+  def createGroupForCollection(metabaseUtil: MetabaseUtil = null, groupName: String, collectionId: Int): Unit = {
 
-      val response = metabaseUtil.createGroup(createGroupRequestData)
-      val id = mapper.readTree(response).get("id").asInt()
-
-      println(s"Created new group '$groupName' with ID: $id")
-      id
+    val existingGroups = mapper.readTree(metabaseUtil.listGroups())
+    val existingGroup = existingGroups.elements().asScala.find { node => node.get("name").asText().equalsIgnoreCase(groupName) }
+    existingGroup match {
+      case Some(group) =>
+        logger.info(s"Group '$groupName' already exists with ID: ${group.get("id").asInt()}")
+        group.get("id").asInt()
+      case None =>
+        val createGroupRequestData =
+          s"""
+             |{
+             |  "name": "$groupName"
+             |}
+             |""".stripMargin
+        val response = metabaseUtil.createGroup(createGroupRequestData)
+        val id = mapper.readTree(response).get("id").asInt()
+        logger.info(s"Created new group '$groupName' with ID: $id")
+        val revisionData = metabaseUtil.getRevisionId()
+        val revisionId = mapper.readTree(revisionData).get("revision").asInt()
+        val addCollectionToUserRequestBody =
+          s"""
+             |{
+             |    "revision": $revisionId,
+             |    "groups": {
+             |        "$id": {
+             |         "$collectionId": "read"
+             |        }
+             |    }
+             |}
+             |""".stripMargin
+        metabaseUtil.addCollectionToGroup(addCollectionToUserRequestBody)
     }
-
-    val revisionData = metabaseUtil.getRevisionId()
-    val revisionId = mapper.readTree(revisionData).get("revision").asInt()
-
-    val addCollectionToUserRequestBody =
-      s"""
-         |{
-         |    "revision": $revisionId,
-         |    "groups": {
-         |        "$targetGroupId": {
-         |            "$collectionId": "read"
-         |        }
-         |    }
-         |}
-      """.stripMargin
-
-    metabaseUtil.addCollectionToGroup(addCollectionToUserRequestBody)
   }
 
   val objectMapper = new ObjectMapper()
