@@ -57,8 +57,8 @@ def push_event(event: dict):
         raise
 
 # ---------------- Logging Setup ----------------
-LOG_DIR = config.get_string('mentoring.batch.log.path', 'logs')  # fallback to "logs" if missing
-RETENTION_DAYS = config.get_int('mentoring.batch.log.retention.days', 7)
+LOG_DIR = config.get_string('mentoring.batch.job.log.path', 'logs')  # fallback to "logs" if missing
+RETENTION_DAYS = config.get_int('mentoring.batch.job.log.retention.days', 7)
 
 os.makedirs(LOG_DIR, exist_ok=True)
 
