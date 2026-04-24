@@ -58,7 +58,7 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
     val filterTable: String = event.filterTable
     val targetedSolutionId = event.targetedSolution
     if (targetedSolutionId.nonEmpty) {
-      val databaseId = metabaseUtil.getDatabaseID(metabaseDatabase)
+      val databaseId = metabaseUtil.getDatabaseID(metabaseDatabase); if (databaseId == -1) { println(s"[ERROR] Metabase database '$metabaseDatabase' not found"); return }
       val surveyQuestionTable = s"${targetedSolutionId}"
       val dashboardDescription = s"Analytical overview of the data for solutionId $targetedSolutionId"
       val solutionName = postgresUtil.fetchData(s"""SELECT entity_name FROM $metaDataTable WHERE entity_id = '$targetedSolutionId'""").collectFirst { case map: Map[_, _] => map.getOrElse("entity_name", "").toString }.getOrElse("")

@@ -40,7 +40,7 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
     val metabaseConnectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$metabasePgDb"
     postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
     metabasePostgresUtil = new PostgresUtil(metabaseConnectionUrl, pgUsername, pgPassword)
-    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword)
+    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil, postgresUtil)
   }
 
   override def close(): Unit = {
@@ -63,7 +63,7 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
       val filterTable: String = event.filterTable
       val targetedSolutionId = event.targetedSolution
       if (targetedSolutionId.nonEmpty) {
-        val databaseId: Int = Utils.getDatabaseId(metabaseDatabase, metabaseUtil)
+        val databaseId = metabaseUtil.getDatabaseID(metabaseDatabase); if (databaseId == -1) { println(s"[ERROR] Metabase database '$metabaseDatabase' not found"); return }
         val surveyQuestionTable = s"${targetedSolutionId}"
         val dashboardDescription = s"Analytical overview of the data for solutionId $targetedSolutionId"
         val solutionName = postgresUtil.fetchData(s"""SELECT entity_name FROM $metaDataTable WHERE entity_id = '$targetedSolutionId'""").collectFirst { case map: Map[_, _] => map.getOrElse("entity_name", "").toString }.getOrElse("")
@@ -80,8 +80,6 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
             }
           }
         }
-        val storedTableIds = TrieMap.empty[(Int, String), Int]
-        val storedColumnIds = TrieMap.empty[(Int, String), Int]
 
         val query = s"SELECT external_id, program_external_id, program_description, description FROM $solutions WHERE solution_id = '$targetedSolutionId'"
         val resultMap = postgresUtil.fetchData(query).collectFirst { case map: Map[_, _] => map }.getOrElse(Map.empty)
@@ -114,11 +112,11 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
                * Logic to process and create Survey Admin Dashboard
                */
               logger.info("\n=>> Logic to process and create Survey Admin Dashboard")
-              val (adminCollectionPresent, adminCollectionId) = validateCollection(s"Programs", "Admin")
+              val (adminCollectionPresent, adminCollectionId) = metabaseUtil.validateCollection(s"Programs", "Admin")
               if (adminCollectionPresent && adminCollectionId != 0) {
-                val (programCollectionPresent, programCollectionId) = validateCollection(programCollectionName, "Admin", Some(targetedProgramId))
+                val (programCollectionPresent, programCollectionId) = metabaseUtil.validateCollection(programCollectionName, "Admin", Some(targetedProgramId))
                 if (programCollectionPresent && programCollectionId != 0) {
-                  val (solutionCollectionPresent, solutionCollectionId) = validateCollection(solutionCollectionName, "Admin", Some(targetedSolutionId))
+                  val (solutionCollectionPresent, solutionCollectionId) = metabaseUtil.validateCollection(solutionCollectionName, "Admin", Some(targetedSolutionId))
                   if (solutionCollectionPresent && solutionCollectionId != 0) {
                     logger.info(s"=====> $solutionCollectionName collection is present, hence skipping the process ......")
                   } else {
@@ -152,10 +150,10 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
                * Logic to process and create Program Dashboard for Survey
                */
               logger.info("=>> Logic to process and create Program Dashboard for Survey")
-              val (programCollectionPresent, programCollectionId) = validateCollection(programCollectionName, "Program Manager", Some(targetedProgramId))
+              val (programCollectionPresent, programCollectionId) = metabaseUtil.validateCollection(programCollectionName, "Program Manager", Some(targetedProgramId))
               if (programCollectionPresent && programCollectionId != 0) {
                 logger.info(s"=====> $programCollectionName collection is present hence skipping the process ......")
-                val (solutionCollectionPresent, solutionCollectionId) = validateCollection(solutionCollectionName, "Program Manager", Some(targetedSolutionId))
+                val (solutionCollectionPresent, solutionCollectionId) = metabaseUtil.validateCollection(solutionCollectionName, "Program Manager", Some(targetedSolutionId))
                 if (solutionCollectionPresent && solutionCollectionId != 0) {
                   logger.info(s"=====> $solutionCollectionName collection is present, hence skipping the process ......")
                 } else {
@@ -180,8 +178,7 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
         }
 
         if (filterSync.nonEmpty){
-          val searchTableResponse = metabaseUtil.searchTable(filterTable, databaseId)
-          val filterTableId: Int = extractTableId(searchTableResponse)
+          val filterTableId: Int = metabaseUtil.searchTable(filterTable, databaseId)
           if (filterTableId != -1) {
             metabaseUtil.discardValues(filterTableId)
             metabaseUtil.rescanValues(filterTableId)
@@ -189,16 +186,6 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
             logger.info(s"Table does not exits in the metabase DB")
           }
           logger.info("Successfully updated the filters values")
-        }
-
-        def extractTableId(response: String): Int = {
-          val json = ujson.read(response)
-          val dataArr = json("data").arr
-          if (dataArr.nonEmpty && dataArr(0).obj.contains("table_id")) {
-            dataArr(0)("table_id").num.toInt
-          } else {
-            -1
-          }
         }
 
         def createAdminDashboard(solutionCollectionId: Int, dashboardId: Int, tabIdMap: Map[String, Int], solutionCollectionName: String, category: String): Unit = {
@@ -262,12 +249,12 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
             val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
             if (parentCollectionId != -1) {
               val tabId: Int = tabIdMap.getOrElse(dashboardName, -1)
-              val stateNameId: Int = getTheColumnId(databaseId, surveyQuestionTable, "state_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
-              val districtNameId: Int = getTheColumnId(databaseId, surveyQuestionTable, "district_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
-              val blockNameId: Int = getTheColumnId(databaseId, surveyQuestionTable, "block_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
-              val clusterNameId: Int = getTheColumnId(databaseId, surveyQuestionTable, "cluster_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
-              val schoolNameId: Int = getTheColumnId(databaseId, surveyQuestionTable, "school_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
-              val orgNameId: Int = getTheColumnId(databaseId, surveyQuestionTable, "organisation_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
+              val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "state_name", metabaseApiKey, createDashboardQuery)
+              val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "district_name", metabaseApiKey, createDashboardQuery)
+              val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "block_name", metabaseApiKey, createDashboardQuery)
+              val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "cluster_name", metabaseApiKey, createDashboardQuery)
+              val schoolNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "school_name", metabaseApiKey, createDashboardQuery)
+              val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "organisation_name", metabaseApiKey, createDashboardQuery)
               metabaseUtil.updateColumnCategory(stateNameId, "State")
               metabaseUtil.updateColumnCategory(districtNameId, "City")
               val questionCardIdList = UpdateQuestionJsonFiles.ProcessAndUpdateJsonFiles(parentCollectionId, databaseId, dashboardId, tabId, stateNameId, districtNameId, blockNameId: Int, clusterNameId, schoolNameId, orgNameId, surveyQuestionTable, metabaseUtil, postgresUtil, reportConfig, evidenceBaseUrl)
@@ -310,12 +297,12 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
 
             def commonStepsToCreateCsvDashboard(reportConfigQuery: String, databaseId: Int, dashboardName: String, dashboardId: Int, tabIdMap: Map[String, Int], parentCollectionId: Int, parametersQuery: String, surveyTable: String, replacements: Map[String, String], metabaseApiKey: String): Unit = {
               val tabId: Int = tabIdMap.getOrElse(dashboardName, -1)
-              val stateNameId: Int = getTheColumnId(databaseId, surveyTable, "state_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
-              val districtNameId: Int = getTheColumnId(databaseId, surveyTable, "district_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
-              val blockNameId: Int = getTheColumnId(databaseId, surveyTable, "block_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
-              val clusterNameId: Int = getTheColumnId(databaseId, surveyTable, "cluster_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
-              val schoolNameId: Int = getTheColumnId(databaseId, surveyTable, "school_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
-              val orgNameId: Int = getTheColumnId(databaseId, surveyTable, "organisation_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
+              val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "state_name", metabaseApiKey, createDashboardQuery)
+              val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "district_name", metabaseApiKey, createDashboardQuery)
+              val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "block_name", metabaseApiKey, createDashboardQuery)
+              val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "cluster_name", metabaseApiKey, createDashboardQuery)
+              val schoolNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "school_name", metabaseApiKey, createDashboardQuery)
+              val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "organisation_name", metabaseApiKey, createDashboardQuery)
               metabaseUtil.updateColumnCategory(stateNameId, "State")
               metabaseUtil.updateColumnCategory(districtNameId, "City")
               val questionCardIdList = UpdateCsvDownloadJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, tabId, stateNameId, districtNameId, blockNameId, clusterNameId, schoolNameId, orgNameId, replacements, metabaseUtil, postgresUtil)
@@ -345,12 +332,12 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
             val dashboardName: String = s"Status Report"
             val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
             val tabId: Int = tabIdMap.getOrElse(dashboardName, -1)
-            val stateNameId: Int = getTheColumnId(databaseId, surveyStatusTable, "state_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
-            val districtNameId: Int = getTheColumnId(databaseId, surveyStatusTable, "district_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
-            val blockNameId: Int = getTheColumnId(databaseId, surveyStatusTable, "block_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
-            val clusterNameId: Int = getTheColumnId(databaseId, surveyStatusTable, "cluster_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
-            val schoolNameId: Int = getTheColumnId(databaseId, surveyStatusTable, "school_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
-            val orgNameId: Int = getTheColumnId(databaseId, surveyStatusTable, "organisation_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
+            val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "state_name", metabaseApiKey, createDashboardQuery)
+            val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "district_name", metabaseApiKey, createDashboardQuery)
+            val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "block_name", metabaseApiKey, createDashboardQuery)
+            val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "cluster_name", metabaseApiKey, createDashboardQuery)
+            val schoolNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "school_name", metabaseApiKey, createDashboardQuery)
+            val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "organisation_name", metabaseApiKey, createDashboardQuery)
             metabaseUtil.updateColumnCategory(stateNameId, "State")
             metabaseUtil.updateColumnCategory(districtNameId, "City")
             val reportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Survey' AND report_name = 'Status-Report' AND question_type IN ('big-number', 'table');"
@@ -365,101 +352,6 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
               postgresUtil.insertData(s"UPDATE $metaDataTable SET status = 'Failed',error_message = '${e.getMessage}' WHERE entity_id = '$targetedSolutionId';")
               logger.error(s"An error occurred: ${e.getMessage}")
               e.printStackTrace()
-          }
-        }
-
-        def getTheTableId(databaseId: Int, tableName: String, metabaseUtil: MetabaseUtil, metabasePostgresUtil: PostgresUtil, metabaseApiKey: String): Int = {
-          storedTableIds.get((databaseId, tableName)) match {
-            case Some(tableId) =>
-              tableId
-
-            case None =>
-              val tableQuery = s"SELECT id FROM metabase_table WHERE name = '$tableName';"
-              val tableIdOpt = metabasePostgresUtil.fetchData(tableQuery) match {
-                case List(map: Map[_, _]) =>
-                  map.get("id").flatMap(id => scala.util.Try(id.toString.toInt).toOption)
-                case _ => None
-              }
-
-              val tableId = tableIdOpt.getOrElse {
-                val tableJson = metabaseUtil.syncNewTable(databaseId, tableName, metabaseApiKey)
-                tableJson("id").num.toInt
-              }
-
-              storedTableIds.put((databaseId, tableName), tableId)
-              tableId
-          }
-        }
-
-        def getTheColumnId(databaseId: Int, tableName: String, columnName: String, metabaseUtil: MetabaseUtil, metabasePostgresUtil: PostgresUtil, metabaseApiKey: String, metaTableQuery: String): Int = {
-          try {
-            val tableId = getTheTableId(databaseId, tableName, metabaseUtil, metabasePostgresUtil, metabaseApiKey)
-
-            storedColumnIds.get((tableId, columnName)) match {
-              case Some(columnId) =>
-                columnId
-
-              case None =>
-                val columnQuery = s"SELECT id FROM metabase_field WHERE table_id = '$tableId' AND name = '$columnName';"
-
-                val columnIdOpt = metabasePostgresUtil.fetchData(columnQuery) match {
-                  case List(map: Map[_, _]) =>
-                    map.get("id").flatMap(id => scala.util.Try(id.toString.toInt).toOption)
-                  case _ => None
-                }
-
-                val columnId = columnIdOpt.getOrElse(-1)
-
-                if (columnId != -1) {
-                  storedColumnIds.put((tableId, columnName), columnId)
-                  columnId
-                } else {
-                  val errorMessage = s"Column '$columnName' not found in table '$tableName' (tableId: $tableId)"
-                  val escapedError = errorMessage.replace("'", "''")
-                  val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'$escapedError'")
-                  postgresUtil.insertData(updateTableQuery)
-                  logger.warn(s"[WARN] $errorMessage")
-                  -1
-                }
-            }
-          } catch {
-            case e: Exception =>
-              val escapedError = e.getMessage.replace("'", "''")
-              val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'$escapedError'")
-              postgresUtil.insertData(updateTableQuery)
-              logger.error(s"[ERROR] Failed to get column ID: ${e.getMessage}")
-              -1
-          }
-        }
-
-        def validateCollection(collectionName: String, reportFor: String, reportId: Option[String] = None): (Boolean, Int) = {
-          val mapper = new ObjectMapper()
-          logger.info(s">>> Checking Metabase API for collection: $collectionName")
-          try {
-            val collections = mapper.readTree(metabaseUtil.listCollections())
-            val result = collections match {
-              case arr: ArrayNode =>
-                arr.asScala.find { c =>
-                    val name = Option(c.get("name")).map(_.asText).getOrElse("")
-                    val desc = Option(c.get("description")).map(_.asText).getOrElse("")
-                    val matchesName = name == collectionName
-                    val matchesReportFor = desc.contains(s"Collection For: $reportFor")
-                    val matchesReportId = reportId.forall(id =>
-                      desc.contains(s"Program Id: $id") || desc.contains(s"Solution Id: $id")
-                    )
-
-                    val isMatch = if (reportId.isEmpty) matchesName && matchesReportFor else matchesName && matchesReportFor && matchesReportId
-                    isMatch
-                  }.map(c => (true, Option(c.get("id")).map(_.asInt).getOrElse(0)))
-                  .getOrElse((false, 0))
-              case _ => (false, 0)
-            }
-            logger.info(s">>> API result: $result")
-            result
-          } catch {
-            case e: Exception =>
-              logger.error(s"[ERROR] API or JSON failure: ${e.getMessage}")
-              (false, 0)
           }
         }
 
