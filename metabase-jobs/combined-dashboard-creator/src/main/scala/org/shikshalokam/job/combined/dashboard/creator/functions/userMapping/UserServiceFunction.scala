@@ -14,7 +14,7 @@ import java.security.SecureRandom
 import scala.collection.JavaConverters._
 import scala.collection.immutable.{Map, _}
 
-class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val mapTypeInfo: TypeInformation[UserMappingEvent], @transient var postgresUtil: PostgresUtil = null, @transient var metabaseUtil: MetabaseUtil = null)
+class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val mapTypeInfo: TypeInformation[UserMappingEvent], @transient var postgresUtil: PostgresUtil = null, @transient var metabasePostgresUtil: PostgresUtil = null, @transient var metabaseUtil: MetabaseUtil = null)
   extends BaseProcessFunction[UserMappingEvent, UserMappingEvent](config) {
 
   private[this] val logger = LoggerFactory.getLogger(classOf[UserServiceFunction])
@@ -30,12 +30,15 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
     val pgUsername: String = config.pgUsername
     val pgPassword: String = config.pgPassword
     val pgDataBase: String = config.pgDataBase
+    val metabasePgDb: String = config.metabasePgDatabase
     val metabaseUrl: String = config.metabaseUrl
     val metabaseUsername: String = config.metabaseUsername
     val metabasePassword: String = config.metabasePassword
     val connectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$pgDataBase"
+    val metabaseConnectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$metabasePgDb"
     postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
-    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword)
+    metabasePostgresUtil = new PostgresUtil(metabaseConnectionUrl, pgUsername, pgPassword)
+    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil, postgresUtil)
   }
 
   override def close(): Unit = {
@@ -48,334 +51,334 @@ class UserServiceFunction(config: CombinedDashboardCreatorConfig)(implicit val m
 
       val (entity, eventType) = (event.entity, event.eventType)
 
-    val isUpdateEvent = (eventType == "update" || eventType == "bulk-update") &&
-      Option(event.oldValues).exists(_.nonEmpty) &&
-      Option(event.newValues).exists(_.nonEmpty)
+      val isUpdateEvent = (eventType == "update" || eventType == "bulk-update") &&
+        Option(event.oldValues).exists(_.nonEmpty) &&
+        Option(event.newValues).exists(_.nonEmpty)
 
-    val sourceMap: Map[String, Any] = if (isUpdateEvent) event.oldValues else Map.empty
+      val sourceMap: Map[String, Any] = if (isUpdateEvent) event.oldValues else Map.empty
 
-    def getValue[T](key: String, default: T): T = sourceMap.getOrElse(key, default).asInstanceOf[T]
+      def getValue[T](key: String, default: T): T = sourceMap.getOrElse(key, default).asInstanceOf[T]
 
-    def getLabelFromSourceOrDefault(sourceMap: Map[String, Any], key: String, defaultLabel: String): String = {
-      sourceMap.get(key) match {
-        case Some(map: Map[String, Any] @unchecked) =>
-          map.get("id").map(_.toString).getOrElse(defaultLabel)
-        case _ => defaultLabel
+      def getLabelFromSourceOrDefault(sourceMap: Map[String, Any], key: String, defaultLabel: String): String = {
+        sourceMap.get(key) match {
+          case Some(map: Map[String, Any] @unchecked) =>
+            map.get("id").map(_.toString).getOrElse(defaultLabel)
+          case _ => defaultLabel
+        }
       }
-    }
 
-    // Fetching from oldValues or using fallback
-    val name = getValue("name", event.name)
-    val uniqueUserName = getValue("username", event.username)
-    val tenantCode = getValue("tenant_code", event.tenantCode)
-    val email = Option(getValue("email", event.email)).filter(_.trim.nonEmpty).getOrElse(uniqueUserName + config.domainName)
-    val password = generatePassword(10)
-    val phone = getValue("phone", event.phone)
-    val stateId = getLabelFromSourceOrDefault(sourceMap, "state", event.stateId)
-    val districtId = getLabelFromSourceOrDefault(sourceMap, "district", event.districtId)
-    val status = getValue("status", event.status)
-    val isUserDeleted = getValue("deleted", event.isUserDeleted)
-    val orgDetails = getValue("organizations", event.organizations)
-    var userRoles: List[Map[String, Any]] = orgDetails.flatMap(_.get("roles").collect { case roles: List[Map[String, Any]] @unchecked => roles }.getOrElse(Nil))
-    val orgIdOpt: Option[Int] = orgDetails.headOption.flatMap(_.get("id")).flatMap {
-      case i: Int => Some(i)
-      case l: Long => Some(l.toInt)
-      case s: String => scala.util.Try(s.toInt).toOption
-      case _ => None
-    }
-
-    if (isUpdateEvent) {
-      userRoles ++= event.newValues
-        .get("organizations")
-        .collect { case orgs: List[Map[String, Any]] @unchecked => orgs }
-        .getOrElse(Nil)
-        .flatMap(_.get("roles").collect {
-          case roles: List[Map[String, Any]] @unchecked => roles
-        }.getOrElse(Nil))
-    }
-
-    logger.info(s"Entity = $entity")
-    logger.info(s"EntityType = $eventType")
-    logger.info(s"User Name = $name")
-    logger.info(s"Unique User Name = $uniqueUserName")
-    logger.info(s"Tenant Code = $tenantCode")
-    logger.info(s"Org Id = ${orgIdOpt.getOrElse(-1)}")
-    logger.info(s"Email = $email")
-    logger.info(s"Password = $password")
-    logger.info(s"Phone = $phone")
-    logger.info(s"State Id = $stateId")
-    logger.info(s"District ID = $districtId")
-    logger.info(s"Status = $status")
-    logger.info(s"Is User Deleted = $isUserDeleted")
-    logger.info(s"User Organizations = $orgDetails")
-    logger.info(s"User Role = $userRoles")
-
-    if (entity == "user" && eventType == "delete") {
-      val userId = checkUserId(email)
-      if (userId != -1) metabaseUtil.deleteUser(userId)
-    }
-
-    userRoles.foreach { roleMap =>
-      roleMap.get("title") match {
-        case Some("report_admin") =>
-          handleReportAdmin(entity, eventType, name, email, password, uniqueUserName)
-        case Some("tenant_admin") =>
-          handleTenantAdmin(entity, eventType, name, email, password, uniqueUserName, Some(tenantCode))
-        case Some("org_admin") =>
-          handleOrgAdmin(entity, eventType, name, email, password, uniqueUserName, orgIdOpt)
-        case Some("state_manager") =>
-          handleStateAdmin(entity, eventType, name, email, password, uniqueUserName, stateId)
-        case Some("district_manager") =>
-          handleDistrictUser(entity, eventType, name, email, password, uniqueUserName, stateId, districtId)
-        case Some("program_manager") =>
-          handleProgramUser(entity, eventType, name, email, password, uniqueUserName)
-        case Some(unknownRole) =>
-          logger.info(s"Unknown Metabase Platform Role: $unknownRole")
-        case None =>
-          logger.info("Role not found in map")
+      // Fetching from oldValues or using fallback
+      val name = getValue("name", event.name)
+      val uniqueUserName = getValue("username", event.username)
+      val tenantCode = getValue("tenant_code", event.tenantCode)
+      val email = Option(getValue("email", event.email)).filter(_.trim.nonEmpty).getOrElse(uniqueUserName + config.domainName)
+      val password = generatePassword(10)
+      val phone = getValue("phone", event.phone)
+      val stateId = getLabelFromSourceOrDefault(sourceMap, "state", event.stateId)
+      val districtId = getLabelFromSourceOrDefault(sourceMap, "district", event.districtId)
+      val status = getValue("status", event.status)
+      val isUserDeleted = getValue("deleted", event.isUserDeleted)
+      val orgDetails = getValue("organizations", event.organizations)
+      var userRoles: List[Map[String, Any]] = orgDetails.flatMap(_.get("roles").collect { case roles: List[Map[String, Any]] @unchecked => roles }.getOrElse(Nil))
+      val orgIdOpt: Option[Int] = orgDetails.headOption.flatMap(_.get("id")).flatMap {
+        case i: Int => Some(i)
+        case l: Long => Some(l.toInt)
+        case s: String => scala.util.Try(s.toInt).toOption
+        case _ => None
       }
-    }
 
-    def handleReportAdmin(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String): Unit = {
-      logger.info("<<<======== Processing for the role report_admin ========>>>")
-      if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
+      if (isUpdateEvent) {
+        userRoles ++= event.newValues
+          .get("organizations")
+          .collect { case orgs: List[Map[String, Any]] @unchecked => orgs }
+          .getOrElse(Nil)
+          .flatMap(_.get("roles").collect {
+            case roles: List[Map[String, Any]] @unchecked => roles
+          }.getOrElse(Nil))
+      }
+
+      logger.info(s"Entity = $entity")
+      logger.info(s"EntityType = $eventType")
+      logger.info(s"User Name = $name")
+      logger.info(s"Unique User Name = $uniqueUserName")
+      logger.info(s"Tenant Code = $tenantCode")
+      logger.info(s"Org Id = ${orgIdOpt.getOrElse(-1)}")
+      logger.info(s"Email = $email")
+      logger.info(s"Password = $password")
+      logger.info(s"Phone = $phone")
+      logger.info(s"State Id = $stateId")
+      logger.info(s"District ID = $districtId")
+      logger.info(s"Status = $status")
+      logger.info(s"Is User Deleted = $isUserDeleted")
+      logger.info(s"User Organizations = $orgDetails")
+      logger.info(s"User Role = $userRoles")
+
+      if (entity == "user" && eventType == "delete") {
         val userId = checkUserId(email)
-        if (userId == -1) {
-          val newUserId = createUser(name, email, password, uniqueUserName)
-          addUserToGroup("report_admin", None, None, newUserId)
-          pushNotification(name, email, password, phone, context)
-        } else {
-          logger.info("Stopped processing")
-        }
+        if (userId != -1) metabaseUtil.deleteUser(userId)
       }
-      else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
-        val oldRoles = extractRoles(event.oldValues)
-        val newRoles = extractRoles(event.newValues)
-        val hadReportAdmin = oldRoles.contains("report_admin")
-        val hasReportAdmin = newRoles.contains("report_admin")
-        (hadReportAdmin, hasReportAdmin) match {
-          case (false, true) =>
-            logger.info("Trying to add user to report_admin role")
-            val userId = checkUserId(email)
-            if (userId == -1) {
-              val newUserId = createUser(name, email, password, uniqueUserName)
-              addUserToGroup("report_admin", None, None, newUserId)
-              pushNotification(name, email, password, phone, context)
-            } else {
-              addUserToGroup("report_admin", None, None, userId)
-            }
-          case (true, false) =>
-            logger.info("Trying to remove user from report_admin role")
-            val userId = checkUserId(email)
-            if (userId != -1) removeUserFromGroup("report_admin", None, None, userId)
-          case (true, true) =>
-            logger.info("User already had and still has report_admin role")
-          case _ => // No action needed
-        }
-      }
-    }
 
-    def handleTenantAdmin(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, tenantCodeOpt: Option[String]): Unit = {
-      val tcOpt = tenantCodeOpt.map(_.trim).filter(_.nonEmpty)
-      if (tcOpt.isEmpty) {
-        logger.info("Missing tenant_code for tenant_admin; skipping.")
-        return
-      }
-      val tc = tcOpt.get
-      logger.info(s"<<<======== Processing for the role Tenant_Admin_$tc ========>>>")
-      if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
-        val userId = checkUserId(email)
-        if (userId == -1) {
-          val newUserId = createUser(name, email, password, uniqueUserName)
-          addUserToGroup("tenant_admin", None, None, newUserId, Some(tc))
-          pushNotification(name, email, password, phone, context)
-        } else {
-          logger.info("Stopped processing")
+      userRoles.foreach { roleMap =>
+        roleMap.get("title") match {
+          case Some("report_admin") =>
+            handleReportAdmin(entity, eventType, name, email, password, uniqueUserName)
+          case Some("tenant_admin") =>
+            handleTenantAdmin(entity, eventType, name, email, password, uniqueUserName, Some(tenantCode))
+          case Some("org_admin") =>
+            handleOrgAdmin(entity, eventType, name, email, password, uniqueUserName, orgIdOpt)
+          case Some("state_manager") =>
+            handleStateAdmin(entity, eventType, name, email, password, uniqueUserName, stateId)
+          case Some("district_manager") =>
+            handleDistrictUser(entity, eventType, name, email, password, uniqueUserName, stateId, districtId)
+          case Some("program_manager") =>
+            handleProgramUser(entity, eventType, name, email, password, uniqueUserName)
+          case Some(unknownRole) =>
+            logger.info(s"Unknown Metabase Platform Role: $unknownRole")
+          case None =>
+            logger.info("Role not found in map")
         }
       }
-      else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
-        val oldRoles = extractRoles(event.oldValues)
-        val newRoles = extractRoles(event.newValues)
-        val hadTenantAdmin = oldRoles.contains("tenant_admin")
-        val hasTenantAdmin = newRoles.contains("tenant_admin")
-        (hadTenantAdmin, hasTenantAdmin) match {
-          case (false, true) =>
-            logger.info("Trying to add user to tenant_admin role")
-            val userId = checkUserId(email)
-            if (userId == -1) {
-              val newUserId = createUser(name, email, password, uniqueUserName)
-              addUserToGroup("tenant_admin", None, None, newUserId, Some(tc))
-              pushNotification(name, email, password, phone, context)
-            } else {
-              addUserToGroup("tenant_admin", None, None, userId, Some(tc))
-            }
-          case (true, false) =>
-            logger.info("Trying to remove user from tenant_admin role")
-            val userId = checkUserId(email)
-            if (userId != -1) removeUserFromGroup("tenant_admin", None, None, userId, Some(tc))
-          case (true, true) =>
-            logger.info("User already had and still has tenant_admin role")
-          case _ => // No action needed
-        }
-      }
-    }
 
-    def handleOrgAdmin(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, orgId: Option[Int]): Unit = {
-      val orgIdOpt = orgId.filter(_ > 0)
-      if (orgIdOpt.isEmpty) {
-        logger.info("Missing orgId for org_admin; skipping.")
-        return
-      }
-      val orgIdSafe = orgIdOpt.get
-      logger.info(s"<<<======== Processing for the role Org_Admin_$orgIdSafe ========>>>")
-      if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
-        val userId = checkUserId(email)
-        if (userId == -1) {
-          val newUserId = createUser(name, email, password, uniqueUserName)
-          addUserToGroup("org_admin", None, None, newUserId, None, Some(orgIdSafe))
-          pushNotification(name, email, password, phone, context)
-        } else {
-          logger.info("Stopped processing")
+      def handleReportAdmin(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String): Unit = {
+        logger.info("<<<======== Processing for the role report_admin ========>>>")
+        if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
+          val userId = checkUserId(email)
+          if (userId == -1) {
+            val newUserId = createUser(name, email, password, uniqueUserName)
+            addUserToGroup("report_admin", None, None, newUserId)
+            pushNotification(name, email, password, phone, context)
+          } else {
+            logger.info("Stopped processing")
+          }
+        }
+        else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
+          val oldRoles = extractRoles(event.oldValues)
+          val newRoles = extractRoles(event.newValues)
+          val hadReportAdmin = oldRoles.contains("report_admin")
+          val hasReportAdmin = newRoles.contains("report_admin")
+          (hadReportAdmin, hasReportAdmin) match {
+            case (false, true) =>
+              logger.info("Trying to add user to report_admin role")
+              val userId = checkUserId(email)
+              if (userId == -1) {
+                val newUserId = createUser(name, email, password, uniqueUserName)
+                addUserToGroup("report_admin", None, None, newUserId)
+                pushNotification(name, email, password, phone, context)
+              } else {
+                addUserToGroup("report_admin", None, None, userId)
+              }
+            case (true, false) =>
+              logger.info("Trying to remove user from report_admin role")
+              val userId = checkUserId(email)
+              if (userId != -1) removeUserFromGroup("report_admin", None, None, userId)
+            case (true, true) =>
+              logger.info("User already had and still has report_admin role")
+            case _ => // No action needed
+          }
         }
       }
-      else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
-        val oldRoles = extractRoles(event.oldValues)
-        val newRoles = extractRoles(event.newValues)
-        val hadOrgAdmin = oldRoles.contains("org_admin")
-        val hasOrgAdmin = newRoles.contains("org_admin")
-        (hadOrgAdmin, hasOrgAdmin) match {
-          case (false, true) =>
-            logger.info("Trying to add user to org_admin role")
-            val userId = checkUserId(email)
-            if (userId == -1) {
-              val newUserId = createUser(name, email, password, uniqueUserName)
-              addUserToGroup("org_admin", None, None, newUserId, None, Some(orgIdSafe))
-              pushNotification(name, email, password, phone, context)
-            } else {
-              addUserToGroup("org_admin", None, None, userId, None, Some(orgIdSafe))
-            }
-          case (true, false) =>
-            logger.info("Trying to remove user from org_admin role")
-            val userId = checkUserId(email)
-            if (userId != -1) removeUserFromGroup("org_admin", None, None, userId, None, Some(orgIdSafe))
-          case (true, true) =>
-            logger.info("User already had and still has org_admin role")
-          case _ => // No action needed
+
+      def handleTenantAdmin(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, tenantCodeOpt: Option[String]): Unit = {
+        val tcOpt = tenantCodeOpt.map(_.trim).filter(_.nonEmpty)
+        if (tcOpt.isEmpty) {
+          logger.info("Missing tenant_code for tenant_admin; skipping.")
+          return
+        }
+        val tc = tcOpt.get
+        logger.info(s"<<<======== Processing for the role Tenant_Admin_$tc ========>>>")
+        if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
+          val userId = checkUserId(email)
+          if (userId == -1) {
+            val newUserId = createUser(name, email, password, uniqueUserName)
+            addUserToGroup("tenant_admin", None, None, newUserId, Some(tc))
+            pushNotification(name, email, password, phone, context)
+          } else {
+            logger.info("Stopped processing")
+          }
+        }
+        else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
+          val oldRoles = extractRoles(event.oldValues)
+          val newRoles = extractRoles(event.newValues)
+          val hadTenantAdmin = oldRoles.contains("tenant_admin")
+          val hasTenantAdmin = newRoles.contains("tenant_admin")
+          (hadTenantAdmin, hasTenantAdmin) match {
+            case (false, true) =>
+              logger.info("Trying to add user to tenant_admin role")
+              val userId = checkUserId(email)
+              if (userId == -1) {
+                val newUserId = createUser(name, email, password, uniqueUserName)
+                addUserToGroup("tenant_admin", None, None, newUserId, Some(tc))
+                pushNotification(name, email, password, phone, context)
+              } else {
+                addUserToGroup("tenant_admin", None, None, userId, Some(tc))
+              }
+            case (true, false) =>
+              logger.info("Trying to remove user from tenant_admin role")
+              val userId = checkUserId(email)
+              if (userId != -1) removeUserFromGroup("tenant_admin", None, None, userId, Some(tc))
+            case (true, true) =>
+              logger.info("User already had and still has tenant_admin role")
+            case _ => // No action needed
+          }
         }
       }
-    }
+
+      def handleOrgAdmin(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, orgId: Option[Int]): Unit = {
+        val orgIdOpt = orgId.filter(_ > 0)
+        if (orgIdOpt.isEmpty) {
+          logger.info("Missing orgId for org_admin; skipping.")
+          return
+        }
+        val orgIdSafe = orgIdOpt.get
+        logger.info(s"<<<======== Processing for the role Org_Admin_$orgIdSafe ========>>>")
+        if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
+          val userId = checkUserId(email)
+          if (userId == -1) {
+            val newUserId = createUser(name, email, password, uniqueUserName)
+            addUserToGroup("org_admin", None, None, newUserId, None, Some(orgIdSafe))
+            pushNotification(name, email, password, phone, context)
+          } else {
+            logger.info("Stopped processing")
+          }
+        }
+        else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
+          val oldRoles = extractRoles(event.oldValues)
+          val newRoles = extractRoles(event.newValues)
+          val hadOrgAdmin = oldRoles.contains("org_admin")
+          val hasOrgAdmin = newRoles.contains("org_admin")
+          (hadOrgAdmin, hasOrgAdmin) match {
+            case (false, true) =>
+              logger.info("Trying to add user to org_admin role")
+              val userId = checkUserId(email)
+              if (userId == -1) {
+                val newUserId = createUser(name, email, password, uniqueUserName)
+                addUserToGroup("org_admin", None, None, newUserId, None, Some(orgIdSafe))
+                pushNotification(name, email, password, phone, context)
+              } else {
+                addUserToGroup("org_admin", None, None, userId, None, Some(orgIdSafe))
+              }
+            case (true, false) =>
+              logger.info("Trying to remove user from org_admin role")
+              val userId = checkUserId(email)
+              if (userId != -1) removeUserFromGroup("org_admin", None, None, userId, None, Some(orgIdSafe))
+            case (true, true) =>
+              logger.info("User already had and still has org_admin role")
+            case _ => // No action needed
+          }
+        }
+      }
 
 
-    def handleStateAdmin(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, stateId: String): Unit = {
-      logger.info("<<<======== Processing for the role state_manager ========>>>")
-      if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
-        val userId = checkUserId(email)
-        if (userId == -1) {
-          val newUserId = createUser(name, email, password, uniqueUserName)
-          addUserToGroup("state_manager", Some(stateId), None, newUserId)
-          pushNotification(name, email, password, phone, context)
-        } else {
-          logger.info("Stopped processing")
+      def handleStateAdmin(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, stateId: String): Unit = {
+        logger.info("<<<======== Processing for the role state_manager ========>>>")
+        if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
+          val userId = checkUserId(email)
+          if (userId == -1) {
+            val newUserId = createUser(name, email, password, uniqueUserName)
+            addUserToGroup("state_manager", Some(stateId), None, newUserId)
+            pushNotification(name, email, password, phone, context)
+          } else {
+            logger.info("Stopped processing")
+          }
+        }
+        else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
+          val oldRoles = extractRoles(event.oldValues)
+          val newRoles = extractRoles(event.newValues)
+          val hadReportAdmin = oldRoles.contains("state_manager")
+          val hasReportAdmin = newRoles.contains("state_manager")
+          (hadReportAdmin, hasReportAdmin) match {
+            case (false, true) =>
+              logger.info("Trying to add user to state_manager role")
+              val userId = checkUserId(email)
+              if (userId == -1) {
+                val newUserId = createUser(name, email, password, uniqueUserName)
+                addUserToGroup("state_manager", Some(stateId), None, newUserId)
+                pushNotification(name, email, password, phone, context)
+              } else {
+                addUserToGroup("state_manager", Some(stateId), None, userId)
+              }
+            case (true, false) =>
+              logger.info("Trying to remove user from state_manager role")
+              val userId = checkUserId(email)
+              if (userId != -1) removeUserFromGroup("state_manager", Some(stateId), None, userId)
+            case (true, true) =>
+              logger.info("User already had and still has state_manager role")
+            case _ => // No action needed
+          }
         }
       }
-      else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
-        val oldRoles = extractRoles(event.oldValues)
-        val newRoles = extractRoles(event.newValues)
-        val hadReportAdmin = oldRoles.contains("state_manager")
-        val hasReportAdmin = newRoles.contains("state_manager")
-        (hadReportAdmin, hasReportAdmin) match {
-          case (false, true) =>
-            logger.info("Trying to add user to state_manager role")
-            val userId = checkUserId(email)
-            if (userId == -1) {
-              val newUserId = createUser(name, email, password, uniqueUserName)
-              addUserToGroup("state_manager", Some(stateId), None, newUserId)
-              pushNotification(name, email, password, phone, context)
-            } else {
-              addUserToGroup("state_manager", Some(stateId), None, userId)
-            }
-          case (true, false) =>
-            logger.info("Trying to remove user from state_manager role")
-            val userId = checkUserId(email)
-            if (userId != -1) removeUserFromGroup("state_manager", Some(stateId), None, userId)
-          case (true, true) =>
-            logger.info("User already had and still has state_manager role")
-          case _ => // No action needed
-        }
-      }
-    }
 
-    def handleDistrictUser(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, stateId: String, districtId: String): Unit = {
-      logger.info("<<<======== Processing for the role district_manager ========>>>")
-      if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
-        val userId = checkUserId(email)
-        if (userId == -1) {
-          val newUserId = createUser(name, email, password, uniqueUserName)
-          addUserToGroup("district_manager", Some(stateId), Some(districtId), newUserId)
-          pushNotification(name, email, password, phone, context)
-        } else {
-          logger.info("Stopped processing")
+      def handleDistrictUser(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String, stateId: String, districtId: String): Unit = {
+        logger.info("<<<======== Processing for the role district_manager ========>>>")
+        if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
+          val userId = checkUserId(email)
+          if (userId == -1) {
+            val newUserId = createUser(name, email, password, uniqueUserName)
+            addUserToGroup("district_manager", Some(stateId), Some(districtId), newUserId)
+            pushNotification(name, email, password, phone, context)
+          } else {
+            logger.info("Stopped processing")
+          }
+        }
+        else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
+          val oldRoles = extractRoles(event.oldValues)
+          val newRoles = extractRoles(event.newValues)
+          val hadReportAdmin = oldRoles.contains("district_manager")
+          val hasReportAdmin = newRoles.contains("district_manager")
+          (hadReportAdmin, hasReportAdmin) match {
+            case (false, true) =>
+              logger.info("Trying to add user to report_admin role")
+              val userId = checkUserId(email)
+              if (userId == -1) {
+                val newUserId = createUser(name, email, password, uniqueUserName)
+                addUserToGroup("district_manager", Some(stateId), Some(districtId), newUserId)
+                pushNotification(name, email, password, phone, context)
+              } else {
+                addUserToGroup("district_manager", Some(stateId), Some(districtId), userId)
+              }
+            case (true, false) =>
+              logger.info("Trying to remove user from district_manager role")
+              val userId = checkUserId(email)
+              if (userId != -1) removeUserFromGroup("district_manager", Some(stateId), Some(districtId), userId)
+            case (true, true) =>
+              logger.info("User already had and still has district_manager role")
+            case _ => // No action needed
+          }
         }
       }
-      else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
-        val oldRoles = extractRoles(event.oldValues)
-        val newRoles = extractRoles(event.newValues)
-        val hadReportAdmin = oldRoles.contains("district_manager")
-        val hasReportAdmin = newRoles.contains("district_manager")
-        (hadReportAdmin, hasReportAdmin) match {
-          case (false, true) =>
-            logger.info("Trying to add user to report_admin role")
-            val userId = checkUserId(email)
-            if (userId == -1) {
-              val newUserId = createUser(name, email, password, uniqueUserName)
-              addUserToGroup("district_manager", Some(stateId), Some(districtId), newUserId)
-              pushNotification(name, email, password, phone, context)
-            } else {
-              addUserToGroup("district_manager", Some(stateId), Some(districtId), userId)
-            }
-          case (true, false) =>
-            logger.info("Trying to remove user from district_manager role")
-            val userId = checkUserId(email)
-            if (userId != -1) removeUserFromGroup("district_manager", Some(stateId), Some(districtId), userId)
-          case (true, true) =>
-            logger.info("User already had and still has district_manager role")
-          case _ => // No action needed
-        }
-      }
-    }
 
-    def handleProgramUser(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String): Unit = {
-      logger.info("<<<======== Processing for the role program_manager ========>>>")
-      if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
-        val userId = checkUserId(email)
-        if (userId == -1) {
-          createUser(name, email, password, uniqueUserName)
-          pushNotification(name, email, password, phone, context)
-        } else {
-          logger.info("Stopped processing")
+      def handleProgramUser(entity: String, eventType: String, name: String, email: String, password: String, uniqueUserName: String): Unit = {
+        logger.info("<<<======== Processing for the role program_manager ========>>>")
+        if (entity == "user" && (eventType == "create" || eventType == "bulk-create")) {
+          val userId = checkUserId(email)
+          if (userId == -1) {
+            createUser(name, email, password, uniqueUserName)
+            pushNotification(name, email, password, phone, context)
+          } else {
+            logger.info("Stopped processing")
+          }
+        }
+        else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
+          val oldRoles = extractRoles(event.oldValues)
+          val newRoles = extractRoles(event.newValues)
+          val hadReportAdmin = oldRoles.contains("program_manager")
+          val hasReportAdmin = newRoles.contains("program_manager")
+          (hadReportAdmin, hasReportAdmin) match {
+            case (false, true) =>
+              logger.info("Trying to add user to program_manager role")
+              val userId = checkUserId(email)
+              if (userId == -1) {
+                createUser(name, email, password, uniqueUserName)
+                pushNotification(name, email, password, phone, context)
+              } else {
+                logger.info("Stopped processing")
+              }
+            case _ => // No action needed
+          }
         }
       }
-      else if (entity == "user" && (eventType == "update" || eventType == "bulk-update")) {
-        val oldRoles = extractRoles(event.oldValues)
-        val newRoles = extractRoles(event.newValues)
-        val hadReportAdmin = oldRoles.contains("program_manager")
-        val hasReportAdmin = newRoles.contains("program_manager")
-        (hadReportAdmin, hasReportAdmin) match {
-          case (false, true) =>
-            logger.info("Trying to add user to program_manager role")
-            val userId = checkUserId(email)
-            if (userId == -1) {
-              createUser(name, email, password, uniqueUserName)
-              pushNotification(name, email, password, phone, context)
-            } else {
-              logger.info("Stopped processing")
-            }
-          case _ => // No action needed
-        }
-      }
-    }
 
-    logger.info(s"***************** End of Processing the User Service Event *****************")
+      logger.info(s"***************** End of Processing the User Service Event *****************")
     } catch {
       case e: Exception =>
         logger.error(s"Error processing User Service Event: ${e.getMessage}", e)
