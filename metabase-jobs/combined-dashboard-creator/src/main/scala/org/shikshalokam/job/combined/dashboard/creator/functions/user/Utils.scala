@@ -13,7 +13,7 @@ object Utils {
     val (exists, existingId) = metabaseUtil.validateCollection(collectionName, reportFor, reportId)
 
     if (exists) {
-      println(s"$collectionName : collection already exists with ID: $existingId.")
+      logger.info(s"$collectionName : collection already exists with ID: $existingId.")
       -1
     } else {
       val parentIdField = parentId.map(pid => s""""parent_id": $pid,""").getOrElse("")
@@ -29,7 +29,7 @@ object Utils {
         mapper.readTree(metabaseUtil.createCollection(collectionRequestBody))
           .path("id").asInt()
 
-      println(s"$collectionName : collection created with ID = $collectionId")
+      logger.info(s"$collectionName : collection created with ID = $collectionId")
       collectionId
     }
   }
@@ -43,7 +43,7 @@ object Utils {
          |  "description": "$description"
          |}""".stripMargin
     val collectionId = mapper.readTree(metabaseUtil.createCollection(collectionRequestBody)).path("id").asInt()
-    println(s"$collectionName : collection created with ID = $collectionId")
+    logger.info(s"$collectionName : collection created with ID = $collectionId")
     collectionId
 
   }
@@ -57,7 +57,7 @@ object Utils {
          |  "collection_position": "1"
          |}""".stripMargin
     val dashboardId = mapper.readTree(metabaseUtil.createDashboard(dashboardRequestBody)).path("id").asInt()
-    println(s"$dashboardName : dashboard created with ID = $dashboardId")
+    logger.info(s"$dashboardName : dashboard created with ID = $dashboardId")
     dashboardId
   }
 
@@ -67,10 +67,10 @@ object Utils {
       .find(_.path("name").asText() == metabaseDatabase)
       .map(_.path("id").asInt())
       .getOrElse {
-        println(s"Database '$metabaseDatabase' not found. Process stopped.")
+        logger.info(s"Database '$metabaseDatabase' not found. Process stopped.")
         -1
       }
-    println(s"Database ID = $databaseId")
+    logger.info(s"Database ID = $databaseId")
     databaseId
   }
 
