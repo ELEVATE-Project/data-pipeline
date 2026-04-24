@@ -54,7 +54,7 @@ class MentoringMetabaseDashboardFunction(config: MentoringMetabaseDashboardConfi
     val startTime = System.currentTimeMillis()
     val metaDataTable = config.dashboardMetadata
     val metabaseDatabase: String = config.metabaseDatabase
-    val databaseId: Int = metabaseUtil.getDatabaseID(metabaseDatabase)
+    val databaseId = metabaseUtil.getDatabaseID(metabaseDatabase); if (databaseId == -1) { println(s"[ERROR] Metabase database '$metabaseDatabase' not found"); return }
     val reportConfig: String = config.reportConfig
     val metabaseApiKey: String = config.metabaseApiKey
     val tenantCode: String = event.tenantCode
