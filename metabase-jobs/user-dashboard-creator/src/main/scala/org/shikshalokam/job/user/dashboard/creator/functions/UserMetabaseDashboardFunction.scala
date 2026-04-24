@@ -52,7 +52,7 @@ class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implici
     val metaDataTable = config.dashboardMetadata
     val userMetrics: String = config.userMetrics
     val metabaseDatabase: String = config.metabaseDatabase
-    val databaseId = metabaseUtil.getDatabaseID(metabaseDatabase)
+    val databaseId = metabaseUtil.getDatabaseID(metabaseDatabase); if (databaseId == -1) { println(s"[ERROR] Metabase database '$metabaseDatabase' not found"); return }
     val reportConfig: String = config.reportConfig
     val metabaseApiKey: String = config.metabaseApiKey
     val tenantCode: String = event.tenantCode

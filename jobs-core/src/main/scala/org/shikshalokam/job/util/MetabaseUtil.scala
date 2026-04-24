@@ -699,28 +699,28 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
    * @return JSON string representing the response from the sync operation
    */
 
-   def syncNewTable(dbId: Int, tableName: String, apiKey: String): ujson.Value = {
-     val url = s"$metabaseUrl/notify/db/$dbId/new-table"
-     val payload = ujson.Obj(
-       "schema_name" -> "public",
-       "table_name" -> tableName
-     ).render()
+  def syncNewTable(dbId: Int, tableName: String, apiKey: String): ujson.Value = {
+    val url = s"$metabaseUrl/notify/db/$dbId/new-table"
+    val payload = ujson.Obj(
+      "schema_name" -> "public",
+      "table_name" -> tableName
+    ).render()
 
-     val headers = Map(
-       "Content-Type" -> "application/json",
-       "X-Metabase-Session" -> getSessionToken
-     )
+    val headers = Map(
+      "Content-Type" -> "application/json",
+      "X-METABASE-APIKEY" -> apiKey
+    )
 
-     val response = requests.post(url, data = payload, headers = headers)
+    val response = requests.post(url, data = payload, headers = headers, check = false)
 
-     if (response.statusCode == 200) {
-       ujson.read(response.text)
-     } else if (response.statusCode == 403) {
-       throw new Exception(s"Authorization failed: User does not have admin privileges to sync tables. Status: ${response.statusCode}, Message: ${response.text}")
-     } else {
-       throw new Exception(s"Failed to sync table '$tableName' in database ID $dbId. Status: ${response.statusCode}, Message: ${response.text}")
-     }
-   }
+    if (response.statusCode == 200) {
+      ujson.read(response.text)
+    } else if (response.statusCode == 403) {
+      throw new Exception(s"Authorization failed: User does not have admin privileges to sync tables. Status: ${response.statusCode}, Message: ${response.text}")
+    } else {
+      throw new Exception(s"Failed to sync table '$tableName' in database ID $dbId. Status: ${response.statusCode}, Message: ${response.text}")
+    }
+  }
 
   /**
    * Method to search a table in Metabase DB by table name and database ID.
@@ -763,37 +763,37 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
    *         - Int represents collection ID if found, otherwise 0
    */
 
-   def validateCollection(collectionName: String, reportFor: String, reportId: Option[String] = None): (Boolean, Int) = {
-     def esc(s: String): String = s.replace("'", "''")
-     val safeName      = esc(collectionName)
-     val safeReportFor = s"%Collection For: ${esc(reportFor)}%"
-     val baseQuery = s"""SELECT id FROM collection WHERE name = '$safeName' AND description LIKE '$safeReportFor' AND archived = false """.stripMargin
-     val finalQuery =
-       reportId.map(esc) match {
-         case Some(id) =>
-           baseQuery + s""" AND ( description LIKE '%Program Id: $id%' OR description LIKE '%Solution Id: $id%' OR description LIKE '%State Id: $id%' OR description LIKE '%District Id: $id%' OR description LIKE '%Tenant Id: $id%' ) LIMIT 1 """.stripMargin
+  def validateCollection(collectionName: String, reportFor: String, reportId: Option[String] = None): (Boolean, Int) = {
+    def esc(s: String): String = s.replace("'", "''")
+    val safeName      = esc(collectionName)
+    val safeReportFor = s"%Collection For: ${esc(reportFor)}%"
+    val baseQuery = s"""SELECT id FROM collection WHERE name = '$safeName' AND description LIKE '$safeReportFor' AND archived = false """.stripMargin
+    val finalQuery =
+      reportId.map(esc) match {
+        case Some(id) =>
+          baseQuery + s""" AND ( description LIKE '%Program Id: $id%' OR description LIKE '%Solution Id: $id%' OR description LIKE '%State Id: $id%' OR description LIKE '%District Id: $id%' OR description LIKE '%Tenant Id: $id%' ) LIMIT 1 """.stripMargin
 
-         case None =>
-           baseQuery + " LIMIT 1"
-       }
-     try {
-       val result = metabasePostgresUtil.fetchData(finalQuery)
-       result.collectFirst {
-         case map: Map[_, _] =>
-           val id = map.get("id").map(_.toString.toInt).getOrElse(0)
-           println(s"[DEBUG] Collection found: id=$id")
-           (true, id)
-       }.getOrElse {
-         (false, 0)
-       }
+        case None =>
+          baseQuery + " LIMIT 1"
+      }
+    try {
+      val result = metabasePostgresUtil.fetchData(finalQuery)
+      result.collectFirst {
+        case map: Map[_, _] =>
+          val id = map.get("id").map(_.toString.toInt).getOrElse(0)
+          println(s"[DEBUG] Collection found: id=$id")
+          (true, id)
+      }.getOrElse {
+        (false, 0)
+      }
 
-     } catch {
-       case e: Exception =>
-         println(s"[ERROR] validateCollection failed for '$collectionName' (reportFor='$reportFor'): ${e.getMessage}")
-         e.printStackTrace()
-         (false, 0)
-     }
-   }
+    } catch {
+      case e: Exception =>
+        println(s"[ERROR] validateCollection failed for '$collectionName' (reportFor='$reportFor'): ${e.getMessage}")
+        e.printStackTrace()
+        (false, 0)
+    }
+  }
 
   /**
    * Method to validate whether a dashboard exists in Metabase DB based on name,
@@ -809,10 +809,12 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
    */
 
   def validateDashboard(dashboardName: String, reportFor: String, collectionId: Int, reportId: Option[String] = None): (Boolean, Int) = {
-    val reportForPattern = s"%Dashboard For: $reportFor%"
-    val baseQuery = s"""SELECT id FROM report_dashboard WHERE name = '$dashboardName' AND collection_id = $collectionId AND description LIKE '$reportForPattern' AND archived = false """.stripMargin
+    def esc(s: String): String = s.replace("'", "''")
+    val safeName      = esc(dashboardName)
+    val safeReportFor = s"%Dashboard For: ${esc(reportFor)}%"
+    val baseQuery = s"""SELECT id FROM report_dashboard WHERE name = '$safeName' AND collection_id = $collectionId AND description LIKE '$safeReportFor' AND archived = false """.stripMargin
     val finalQuery =
-      reportId match {
+      reportId.map(esc) match {
         case Some(id) =>
           baseQuery + s""" AND ( description LIKE '%State Id: $id%' OR description LIKE '%District Id: $id%' ) LIMIT 1 """.stripMargin
 
@@ -883,29 +885,31 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
 
   def getTheColumnId(databaseId: Int, tableName: String, columnName: String, metabaseApiKey: String, metaTableQuery: String): Int = {
     def escape(value: String): String = value.replace("'", "''")
-      val tableId = getTheTableId(databaseId, tableName, metabaseApiKey)
-      storedColumnIds.get((tableId, columnName)) match {
-        case Some(columnId) =>
-          columnId
-        case None =>
-          val columnQuery =s"""SELECT id FROM metabase_field WHERE table_id = $tableId AND name = '${escape(columnName)}' AND active = true LIMIT 1""".stripMargin
-          val columnIdOpt = metabasePostgresUtil.fetchData(columnQuery) match {
-            case map :: _ => map.get("id").flatMap(id => scala.util.Try(id.toString.toInt).toOption)
+    val tableId = getTheTableId(databaseId, tableName, metabaseApiKey)
+    storedColumnIds.get((tableId, columnName)) match {
+      case Some(columnId) =>
+        columnId
+      case None =>
+        val columnQuery =s"""SELECT id FROM metabase_field WHERE table_id = $tableId AND name = '${escape(columnName)}' AND active = true LIMIT 1""".stripMargin
+        val columnIdOpt = metabasePostgresUtil.fetchData(columnQuery).headOption.flatMap(_.get("id"))
+          .flatMap {
+            case i: Int => Some(i)
+            case s: String if s.nonEmpty => scala.util.Try(s.toInt).toOption
             case _ => None
           }
 
-          columnIdOpt match {
-            case Some(columnId) =>
-              storedColumnIds.put((tableId, columnName), columnId)
-              columnId
-            case None =>
-              val errorMessage =s"Column '$columnName' not found in table '$tableName' (tableId: $tableId)"
-              val escapedError = escape(errorMessage)
-              val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'$escapedError'")
-              postgresUtil.insertData(updateTableQuery)
-              throw new NoSuchElementException(errorMessage)
-          }
-      }
+        columnIdOpt match {
+          case Some(columnId) =>
+            storedColumnIds.put((tableId, columnName), columnId)
+            columnId
+          case None =>
+            val errorMessage =s"Column '$columnName' not found in table '$tableName' (tableId: $tableId)"
+            val escapedError = escape(errorMessage)
+            val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'$escapedError'")
+            postgresUtil.insertData(updateTableQuery)
+            throw new NoSuchElementException(errorMessage)
+        }
+    }
   }
 
   /**
