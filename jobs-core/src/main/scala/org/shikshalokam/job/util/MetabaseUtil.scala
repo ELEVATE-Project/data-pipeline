@@ -1,6 +1,9 @@
 package org.shikshalokam.job.util
 
-class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: String) {
+import scala.collection.concurrent.TrieMap
+import scala.collection.immutable.{List, Map}
+
+class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: String, metabasePostgresUtil: PostgresUtil, postgresUtil: PostgresUtil) {
 
   private val metabaseUrl: String = url
   private val username: String = metabaseUsername
@@ -8,6 +11,8 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
   //  println("Metabase URL: " + url)
   //  println("Username: " + username)
   //  println("Password: " + password)
+  val storedTableIds = TrieMap.empty[(Int, String), Int]
+  val storedColumnIds = TrieMap.empty[(Int, String), Int]
 
   private var sessionToken: Option[String] = None
 
@@ -47,6 +52,31 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
         sessionToken = Some(token)
         token
     }
+  }
+
+  /**
+   * Method to fetch the Metabase database ID from the Metabase internal DB.
+   *
+   * @param metabaseDatabase Name of the Metabase database
+   * @return Database ID as Int if found, otherwise -1
+   */
+
+  def getDatabaseID(metabaseDatabase: String): Int = {
+    def escape(v: String) = v.replace("'", "''")
+
+    val databaseID =
+      metabasePostgresUtil
+        .fetchData(s"SELECT id FROM metabase_database WHERE name = '${escape(metabaseDatabase)}' LIMIT 1")
+        .headOption
+        .flatMap(_.get("id"))
+        .map(_.toString.toInt)
+        .getOrElse {
+          println(s"Database '$metabaseDatabase' not found.")
+          -1
+        }
+
+    println(s"Database ID = $databaseID")
+    databaseID
   }
 
   /**
@@ -534,27 +564,6 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
     }
   }
 
-  /**
-   * Method to search a table in Metabase
-    * @param tableName
-   * @param tableDbId
-   * @return JSON string representing the status of the search table
-   */
-
-  def searchTable(tableName: String, tableDbId: Int): String = {
-    val url = s"$metabaseUrl/search"
-    val params = Map(
-      "q" -> tableName,
-      "models" -> "table",
-      "table_db_id" -> tableDbId.toString
-    )
-    val headers = Map(
-      "X-Metabase-Session" -> getSessionToken
-    )
-    val response = requests.get(url, params = params, headers = headers)
-    if (response.statusCode == 200) response.text
-    else throw new Exception(s"Search failed: ${response.statusCode}, ${response.text}")
-  }
 
   /**
    * Method to update a user's password in Metabase
@@ -696,15 +705,249 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
       "schema_name" -> "public",
       "table_name" -> tableName
     ).render()
+
     val headers = Map(
       "Content-Type" -> "application/json",
       "X-METABASE-APIKEY" -> apiKey
     )
-    val response = requests.post(url, data = payload, headers = headers)
+
+    val response = requests.post(url, data = payload, headers = headers, check = false)
+
     if (response.statusCode == 200) {
       ujson.read(response.text)
+    } else if (response.statusCode == 403) {
+      throw new Exception(s"Authorization failed: User does not have admin privileges to sync tables. Status: ${response.statusCode}, Message: ${response.text}")
     } else {
-      throw new Exception(s"Failed to retrieve database metadata with status code: ${response.statusCode}, message: ${response.text}")
+      throw new Exception(s"Failed to sync table '$tableName' in database ID $dbId. Status: ${response.statusCode}, Message: ${response.text}")
+    }
+  }
+
+  /**
+   * Method to search a table in Metabase DB by table name and database ID.
+   *
+   * @param tableName Name of the table to search
+   * @param tableDbId Metabase database ID where the table exists
+   * @return Table ID as Int if found, otherwise -1
+   */
+
+  def searchTable(tableName: String, tableDbId: Int): Int = {
+    def escape(value: String) = value.replace("'", "''")
+    val safeName = escape(tableName)
+
+    val query =
+      s"""
+         |SELECT id
+         |FROM metabase_table
+         |WHERE db_id = $tableDbId
+         |AND (name = '$safeName' OR display_name = '$safeName')
+         |AND active = true
+         |LIMIT 1
+     """.stripMargin
+
+    metabasePostgresUtil
+      .fetchData(query)
+      .headOption
+      .flatMap(_.get("id"))
+      .map(_.toString.toInt)
+      .getOrElse(-1)
+  }
+
+  /**
+   * Method to validate whether a collection exists in Metabase DB based on name, report type, and optional report identifier.
+   *
+   * @param collectionName Name of the collection
+   * @param reportFor Type/category of report (e.g., Admin, Tenant)
+   * @param reportId Optional identifier (Program/State/District/Tenant/Solution) used for filtering
+   * @return Tuple (Boolean, Int) where:
+   *         - Boolean indicates if collection exists
+   *         - Int represents collection ID if found, otherwise 0
+   */
+
+  def validateCollection(collectionName: String, reportFor: String, reportId: Option[String] = None): (Boolean, Int) = {
+    def esc(s: String): String = s.replace("'", "''")
+    val safeName      = esc(collectionName)
+    val safeReportFor = s"%Collection For: ${esc(reportFor)}%"
+    val baseQuery = s"""SELECT id FROM collection WHERE name = '$safeName' AND description LIKE '$safeReportFor' AND archived = false """.stripMargin
+    val finalQuery =
+      reportId.map(esc) match {
+        case Some(id) =>
+          baseQuery + s""" AND ( description LIKE '%Program Id: $id%' OR description LIKE '%Solution Id: $id%' OR description LIKE '%State Id: $id%' OR description LIKE '%District Id: $id%' OR description LIKE '%Tenant Id: $id%' ) LIMIT 1 """.stripMargin
+
+        case None =>
+          baseQuery + " LIMIT 1"
+      }
+    try {
+      val result = metabasePostgresUtil.fetchData(finalQuery)
+      result.collectFirst {
+        case map: Map[_, _] =>
+          val id = map.get("id").map(_.toString.toInt).getOrElse(0)
+          println(s"[DEBUG] Collection found: id=$id")
+          (true, id)
+      }.getOrElse {
+        (false, 0)
+      }
+
+    } catch {
+      case e: Exception =>
+        println(s"[ERROR] validateCollection failed for '$collectionName' (reportFor='$reportFor'): ${e.getMessage}")
+        e.printStackTrace()
+        (false, 0)
+    }
+  }
+
+  /**
+   * Method to validate whether a dashboard exists in Metabase DB based on name,
+   * collection, report type, and optional report identifier.
+   *
+   * @param dashboardName Name of the dashboard
+   * @param reportFor Type/category of report (e.g., Admin, Tenant)
+   * @param collectionId Collection ID under which the dashboard should exist
+   * @param reportId Optional identifier (State/District) used for filtering
+   * @return Tuple (Boolean, Int) where:
+   *         - Boolean indicates if dashboard exists
+   *         - Int represents dashboard ID if found, otherwise 0
+   */
+
+  def validateDashboard(dashboardName: String, reportFor: String, collectionId: Int, reportId: Option[String] = None): (Boolean, Int) = {
+    def esc(s: String): String = s.replace("'", "''")
+    val safeName      = esc(dashboardName)
+    val safeReportFor = s"%Dashboard For: ${esc(reportFor)}%"
+    val baseQuery = s"""SELECT id FROM report_dashboard WHERE name = '$safeName' AND collection_id = $collectionId AND description LIKE '$safeReportFor' AND archived = false """.stripMargin
+    val finalQuery =
+      reportId.map(esc) match {
+        case Some(id) =>
+          baseQuery + s""" AND ( description LIKE '%State Id: $id%' OR description LIKE '%District Id: $id%' ) LIMIT 1 """.stripMargin
+
+        case None =>
+          baseQuery + " LIMIT 1"
+      }
+    try {
+      val result = metabasePostgresUtil.fetchData(finalQuery)
+      result.collectFirst {
+        case map: Map[_, _] =>
+          val id = map.get("id").map(_.toString.toInt).getOrElse(0)
+          (true, id)
+      }.getOrElse((false, 0))
+
+    } catch {
+      case e: Exception =>
+        println(s"[ERROR] DB validation failed: ${e.getMessage}")
+        (false, 0)
+    }
+  }
+
+  /**
+   * Method to fetch the table ID from Metabase DB using database ID and table name.
+   * If the table is not found, it triggers a sync to create the table and retrieves its ID.
+   * Also caches the result to avoid repeated lookups.
+   *
+   * @param databaseId Metabase database ID
+   * @param tableName Name of the table
+   * @param metabaseApiKey API key used for syncing new table if not found
+   * @return Table ID as Int
+   */
+
+  def getTheTableId(databaseId: Int, tableName: String, metabaseApiKey: String): Int = {
+    def escape(v: String): String = v.replace("'", "''")
+    storedTableIds.get((databaseId, tableName)) match {
+      case Some(tableId) =>
+        tableId
+
+      case None =>
+        val safeTableName = escape(tableName)
+        val tableQuery =s"""SELECT id FROM metabase_table WHERE db_id = $databaseId AND name = '$safeTableName' AND active = true LIMIT 1""".stripMargin
+        val tableIdOpt = metabasePostgresUtil.fetchData(tableQuery) match {
+          case map :: _ =>
+            map.get("id").flatMap(id => scala.util.Try(id.toString.toInt).toOption)
+          case _ => None
+        }
+
+        val tableId = tableIdOpt.getOrElse {
+          val tableJson = syncNewTable(databaseId, tableName, metabaseApiKey)
+          tableJson("id").num.toInt
+        }
+
+        storedTableIds.put((databaseId, tableName), tableId)
+        println(s"tableId = $tableId")
+        tableId
+    }
+  }
+
+  /**
+   * Method to fetch the column ID from Metabase DB using database ID, table name, and column name.
+   * @param databaseId Metabase database ID
+   * @param tableName Name of the table containing the column
+   * @param columnName Name of the column to fetch
+   * @param metabaseApiKey API key used for resolving table (via sync if required)
+   * @param metaTableQuery Query template used to log error messages into meta table
+   * @return Column ID as Int if found, otherwise -1 in case of failure
+   */
+
+  def getTheColumnId(databaseId: Int, tableName: String, columnName: String, metabaseApiKey: String, metaTableQuery: String): Int = {
+    def escape(value: String): String = value.replace("'", "''")
+    val tableId = getTheTableId(databaseId, tableName, metabaseApiKey)
+    storedColumnIds.get((tableId, columnName)) match {
+      case Some(columnId) =>
+        columnId
+      case None =>
+        val columnQuery =s"""SELECT id FROM metabase_field WHERE table_id = $tableId AND name = '${escape(columnName)}' AND active = true LIMIT 1""".stripMargin
+        val columnIdOpt = metabasePostgresUtil.fetchData(columnQuery).headOption.flatMap(_.get("id"))
+          .flatMap {
+            case i: Int => Some(i)
+            case s: String if s.nonEmpty => scala.util.Try(s.toInt).toOption
+            case _ => None
+          }
+
+        columnIdOpt match {
+          case Some(columnId) =>
+            storedColumnIds.put((tableId, columnName), columnId)
+            columnId
+          case None =>
+            val errorMessage =s"Column '$columnName' not found in table '$tableName' (tableId: $tableId)"
+            val escapedError = escape(errorMessage)
+            val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'$escapedError'")
+            postgresUtil.insertData(updateTableQuery)
+            throw new NoSuchElementException(errorMessage)
+        }
+    }
+  }
+
+  /**
+   * Method to validate whether a group exists in Metabase DB based on group name.
+   * Performs a case-insensitive search and returns the group ID if found.
+   *
+   * @param groupName Name of the group to search
+   * @return Tuple (Boolean, Int) where:
+   *         - Boolean indicates if the group exists
+   *         - Int represents group ID if found, otherwise 0
+   */
+
+  def getGroupByName(groupName: String): (Boolean, Int) = {
+
+    def escape(v: String) = v.replace("'", "''")
+    val safeName = escape(groupName)
+
+    val query =
+      s"""
+         |SELECT id
+         |FROM permissions_group
+         |WHERE LOWER(name) = LOWER('$safeName')
+         |LIMIT 1
+     """.stripMargin
+
+    try {
+      val result = metabasePostgresUtil.fetchData(query)
+
+      result.collectFirst {
+        case map: Map[_, _] =>
+          val id = map.get("id").map(_.toString.toInt).getOrElse(0)
+          (true, id)
+      }.getOrElse((false, 0))
+
+    } catch {
+      case e: Exception =>
+        println(s"[ERROR] getGroupByName failed: ${e.getMessage}")
+        (false, 0)
     }
   }
 }
