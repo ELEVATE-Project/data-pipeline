@@ -11,12 +11,12 @@ import scala.util.{Failure, Success, Try}
 
 object ProcessAdminConstructor {
 
-  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, stateNameId: Int, districtNameId: Int, programNameId: Int, blockNameId: Int, clusterNameId: Int, orgNameId: Int, projects: String, solutions: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): ListBuffer[Int] = {
+  def ProcessAndUpdateJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, tabId: Int, stateNameId: Int, districtNameId: Int, programNameId: Int, blockNameId: Int, clusterNameId: Int, orgNameId: Int, projects: String, solutions: String, tenantId: String, metabaseUtil: MetabaseUtil, postgresUtil: PostgresUtil): ListBuffer[Int] = {
     println(s"=====> Started processing admin level json update function for Micro Improvements dashboard")
     val questionCardId = ListBuffer[Int]()
     val objectMapper = new ObjectMapper()
 
-    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, stateNameId: Int, districtNameId: Int, programNameId: Int, blockNameId: Int, clusterNameId: Int, orgNameId: Int): Unit = {
+    def processJsonFiles(reportConfigQuery: String, collectionId: Int, databaseId: Int, dashboardId: Int, stateNameId: Int, districtNameId: Int, programNameId: Int, blockNameId: Int, clusterNameId: Int, orgNameId: Int, tenantId: String): Unit = {
       val dashcardsArray = objectMapper.createArrayNode()
       val queryResult = postgresUtil.fetchData(reportConfigQuery)
       queryResult.foreach { row =>
@@ -28,7 +28,7 @@ object ProcessAdminConstructor {
                 val originalQuestionCard = configJson.path("questionCard")
                 val chartName = Option(originalQuestionCard.path("name").asText()).getOrElse("Unknown Chart")
                 val updatedQuestionCard = updateQuestionCardJsonValues(configJson, collectionId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, databaseId)
-                val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, projects, solutions)
+                val finalQuestionCard = updatePostgresDatabaseQuery(updatedQuestionCard, projects, solutions, tenantId)
                 val requestBody = finalQuestionCard.asInstanceOf[ObjectNode]
                 val cardId = mapper.readTree(metabaseUtil.createQuestionCard(requestBody.toString)).path("id").asInt()
                 println(s">>> Successfully created question card with card_id: $cardId for $chartName")
@@ -122,7 +122,7 @@ object ProcessAdminConstructor {
       }
     }
 
-    def updatePostgresDatabaseQuery(json: JsonNode, projectsTable: String, solutionsTable: String): JsonNode = {
+    def updatePostgresDatabaseQuery(json: JsonNode, projectsTable: String, solutionsTable: String, tenantId: String): JsonNode = {
       Try {
         val queryNode = json.at("/dataset_query/native/query")
         if (queryNode.isMissingNode || !queryNode.isTextual) {
@@ -132,6 +132,7 @@ object ProcessAdminConstructor {
         val updatedQuery = queryNode.asText()
           .replace("${config.projects}", projectsTable)
           .replace("${config.solutions}", solutionsTable)
+          .replace("${tenant_id}", s"'$tenantId'")
 
         val updatedJson = json.deepCopy().asInstanceOf[ObjectNode]
         updatedJson.at("/dataset_query/native")
@@ -170,7 +171,7 @@ object ProcessAdminConstructor {
       }.toOption
     }
 
-    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId)
+    processJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, tenantId)
     println(s"=====> Completed processing admin level json update function for Micro Improvements dashboard")
     questionCardId
   }

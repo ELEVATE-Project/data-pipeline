@@ -103,7 +103,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
          * Logic to process and create the Micro Improvements Dashboard
          */
         println("\n-->> Process Admin Micro Improvements Dashboard")
-        val (mipCollectionPresent, mipCollectionId) = validateCollection("Micro Improvements", "Admin")
+        val (mipCollectionPresent, mipCollectionId) = validateCollection(s"Micro Improvements [TenantId: $tenantId]", "Admin")
         if (mipCollectionPresent && mipCollectionId != 0) {
           println(s"=====> Micro Improvements collection present with id: $mipCollectionId, Skipping this step.")
         } else {
@@ -292,7 +292,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
 
     def createMicroImprovementsCollectionAndDashboard(metaDataTable: String, reportConfig: String, databaseId: Int): Unit = {
       val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE id = '$admin';"
-      val (mipCollectionName, mipCollectionDescription) = (s"Micro Improvements", s"This collection contains dashboards that track the progress, participation, and effectiveness of Micro Improvement Projects across various programs.\n\nCollection For: Admin")
+      val (mipCollectionName, mipCollectionDescription) = (s"Micro Improvements [TenantId: $tenantId]", s"This collection contains dashboards that track the progress, participation, and effectiveness of Micro Improvement Projects across various programs.\n\nCollection For: Admin")
       val mipCollectionId = Utils.checkAndCreateCollection(mipCollectionName, mipCollectionDescription, metabaseUtil)
       if (mipCollectionId != -1) {
         Utils.createGroupForCollection(metabaseUtil, s"Report_Admin_Micro_Improvement", mipCollectionId)
@@ -306,14 +306,26 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
           val clusterNameId: Int = getTheColumnId(databaseId, projects, "cluster_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
           val orgNameId: Int = getTheColumnId(databaseId, projects, "org_name", metabaseUtil, metabasePostgresUtil, metabaseApiKey, createDashboardQuery)
           val projectDetailsConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Admin' AND report_name = 'Project-Details';"
-          val projectQuestionCardIdList = ProcessAdminConstructor.ProcessAndUpdateJsonFiles(projectDetailsConfigQuery, mipCollectionId, databaseId, mipDashboardId, projectTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, metabaseUtil, postgresUtil)
+          val projectQuestionCardIdList = ProcessAdminConstructor.ProcessAndUpdateJsonFiles(projectDetailsConfigQuery, mipCollectionId, databaseId, mipDashboardId, projectTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, tenantId, metabaseUtil, postgresUtil)
           val userDetailsConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Admin' AND report_name = 'User-Details';"
-          val userQuestionCardIdList = ProcessAdminConstructor.ProcessAndUpdateJsonFiles(userDetailsConfigQuery, mipCollectionId, databaseId, mipDashboardId, userTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, metabaseUtil, postgresUtil)
+          val userQuestionCardIdList = ProcessAdminConstructor.ProcessAndUpdateJsonFiles(userDetailsConfigQuery, mipCollectionId, databaseId, mipDashboardId, userTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, tenantId, metabaseUtil, postgresUtil)
           val submissionDetailsConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Admin' AND report_name = 'Submission-Details-CSV';"
-          val submissionQuestionCardIdList = ProcessAdminConstructor.ProcessAndUpdateJsonFiles(submissionDetailsConfigQuery, mipCollectionId, databaseId, mipDashboardId, csvTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, metabaseUtil, postgresUtil)
+          val submissionQuestionCardIdList = ProcessAdminConstructor.ProcessAndUpdateJsonFiles(submissionDetailsConfigQuery, mipCollectionId, databaseId, mipDashboardId, csvTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, tenantId, metabaseUtil, postgresUtil)
           val mainQuestionIdsString = "[" + (projectQuestionCardIdList ++ userQuestionCardIdList ++ submissionQuestionCardIdList).mkString(",") + "]"
+          val filterQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Project-Filters' AND question_type = 'admin-filter'"
+          val filterResults: List[Map[String, Any]] = postgresUtil.fetchData(filterQuery)
+          val objectMapper = new ObjectMapper()
+          val slugNameToTenantIdFilterMap = mutable.Map[String, Int]()
+          for (result <- filterResults) {
+            val configString = result.get("config").map(_.toString).getOrElse("")
+            val configJson = objectMapper.readTree(configString)
+            val slugName = configJson.findValue("name").asText()
+            val tenantIdFilter: Int = UpdateAndAddAdminTenantFilter.updateAndAddFilter(metabaseUtil, configJson: JsonNode, s"$tenantId", mipCollectionId, databaseId, projects, solutions)
+            slugNameToTenantIdFilterMap(slugName) = tenantIdFilter
+          }
+          val immutableSlugNameToTenantIdFilterMap: Map[String, Int] = slugNameToTenantIdFilterMap.toMap
           val parametersQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Project-Parameter' AND question_type = 'admin-parameter'"
-          UpdateParameters.UpdateAdminParameterFunction(metabaseUtil, parametersQuery, mipDashboardId, postgresUtil)
+          UpdateParameters.updateParameterFunction(metabaseUtil, postgresUtil, parametersQuery, immutableSlugNameToTenantIdFilterMap, mipDashboardId)
           val projectMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", mipCollectionId).put("collectionName", mipCollectionName).put("dashboardId", mipDashboardId).put("dashboardName", mipDashboardName).put("questionIds", mainQuestionIdsString))
           postgresUtil.insertData(s"UPDATE $metaDataTable SET  main_metadata = COALESCE(main_metadata::jsonb, '[]'::jsonb) || '$projectMetadataJson' ::jsonb WHERE entity_id = '$admin';")
         } else {
