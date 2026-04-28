@@ -129,7 +129,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
           val stateReportConfigQueryForAdmin: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mi-Dashboard' AND report_name IN ('State-Details-Report', 'State-Details-Table-For-Admin');"
           val stateReportConfigQueryForStateManager: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mi-Dashboard' AND report_name IN ('State-Details-Report', 'State-Details-Table-For-State-Manager');"
           if (targetedStateId.nonEmpty && stateName.nonEmpty) {
-            val (stateCollectionPresent, stateCollectionId) = metabaseUtil.validateCollection(s"$stateName State [Tenant : $tenantId]", "State Manager", Some(targetedStateId))
+            val (stateCollectionPresent, stateCollectionId) = metabaseUtil.validateCollection(s"$stateName State [Tenant : $tenantId]", "State Manager", Some(targetedStateId), Some("State"))
             if (stateCollectionPresent && stateCollectionId != 0) {
               logger.info(s"=====> $stateName State collection present with id: $stateCollectionId, Skipping this step.")
             } else {
@@ -161,7 +161,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
            */
           logger.info("-->> Process District Micro Improvements & Overview Dashboard")
           if (targetedDistrictId.nonEmpty && districtName.nonEmpty) {
-            val (districtCollectionPresent, districtCollectionId) = metabaseUtil.validateCollection(s"$districtName District [Tenant : $tenantIdForDistrictId]", "District Manager", Some(targetedDistrictId))
+            val (districtCollectionPresent, districtCollectionId) = metabaseUtil.validateCollection(s"$districtName District [Tenant : $tenantIdForDistrictId]", "District Manager", Some(targetedDistrictId), Some("District"))
             if (districtCollectionPresent && districtCollectionId != 0) {
               logger.info(s"=====> $districtName district collection present with id: $targetedDistrictId, Skipping this step.")
             } else {
@@ -173,7 +173,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
 
             logger.info(s"-->> Process $districtName district inside $stateName Collection")
             if (stateIdForDistrictId.nonEmpty && stateNameForDistrictId.nonEmpty) {
-              val (stateCollectionPresent, stateCollectionId) = metabaseUtil.validateCollection(s"$stateName State [Tenant : $tenantId]", "State Manager", Some(targetedStateId))
+              val (stateCollectionPresent, stateCollectionId) = metabaseUtil.validateCollection(s"$stateName State [Tenant : $tenantId]", "State Manager", Some(targetedStateId), Some("State"))
               if (stateCollectionPresent && stateCollectionId != 0) {
                 val (districtDashboardPresent, districtDashboardId) = metabaseUtil.validateDashboard(s"$districtName District [Tenant : $tenantIdForDistrictId]", "State Manager", stateCollectionId, Some(targetedDistrictId))
                 if (districtDashboardPresent && districtDashboardId != 0) {
@@ -216,9 +216,9 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
 
             val (mainCollectionPresent, mainCollectionId) = metabaseUtil.validateCollection("Programs", "Admin")
             if (mainCollectionPresent && mainCollectionId != 0) {
-              val (programCollectionPresent, programCollectionId) = metabaseUtil.validateCollection(programCollectionName.take(100), "Admin", Some(targetedProgramId))
+              val (programCollectionPresent, programCollectionId) = metabaseUtil.validateCollection(programCollectionName.take(100), "Admin", Some(targetedProgramId), Some("Program"))
               if (programCollectionPresent && programCollectionId != 0) {
-                val (solutionCollectionPresent, solutionCollectionId) = metabaseUtil.validateCollection(solutionCollectionName.take(100), "Admin", Some(targetedSolutionId))
+                val (solutionCollectionPresent, solutionCollectionId) = metabaseUtil.validateCollection(solutionCollectionName.take(100), "Admin", Some(targetedSolutionId), Some("Solution"))
                 if (solutionCollectionPresent && solutionCollectionId != 0) {
                   logger.info(s"=====> Collection & Dashboard for solution: $solutionCollectionName is already present, Skipping this step.")
                 } else {
@@ -243,14 +243,14 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
            */
           logger.info("-->> Process Program Manager Collection and project solution Dashboard")
           if (targetedSolutionId.nonEmpty && solutionName.nonEmpty && targetedProgramId.nonEmpty && programName.nonEmpty) {
-            val programCollectionName = s"$programName [org : $orgId]"
-            val programCollectionDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $programExternalId\n\nCollection For: Program Manager\n\nProgram Description: $programDescription"
+            val programCollectionName = s"$programName"
+            val programCollectionDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $programExternalId\n\nCreator Organisation: $orgId\n\nCollection For: Program Manager\n\nProgram Description: $programDescription"
             val solutionCollectionName = s"$solutionName [Project]"
             val solutionCollectionDescription = s"Solution Id: $targetedSolutionId\n\nSolution External Id: $solutionExternalId\n\nCollection For: Program Manager\n\nSolution Description: $solutionDescription"
 
-            val (programCollectionPresent, programCollectionId) = metabaseUtil.validateCollection(programCollectionName.take(100), "Program Manager", Some(targetedProgramId))
+            val (programCollectionPresent, programCollectionId) = metabaseUtil.validateCollection(programCollectionName.take(100), "Program Manager", Some(targetedProgramId), Some("Program"))
             if (programCollectionPresent && programCollectionId != 0) {
-              val (solutionCollectionPresent, solutionCollectionId) = metabaseUtil.validateCollection(solutionCollectionName.take(100), "Program Manager", Some(targetedSolutionId))
+              val (solutionCollectionPresent, solutionCollectionId) = metabaseUtil.validateCollection(solutionCollectionName.take(100), "Program Manager", Some(targetedSolutionId), Some("Solution"))
               if (solutionCollectionPresent && solutionCollectionId != 0) {
                 logger.info(s"=====> Collection & Dashboard for solution: $solutionCollectionName is already present, Skipping this step.")
               } else {

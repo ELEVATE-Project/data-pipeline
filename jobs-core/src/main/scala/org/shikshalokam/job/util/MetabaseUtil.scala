@@ -763,29 +763,44 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
    *         - Int represents collection ID if found, otherwise 0
    */
 
-  def validateCollection(collectionName: String, reportFor: String, reportId: Option[String] = None): (Boolean, Int) = {
+  def validateCollection(collectionName: String, reportFor: String, reportId: Option[String] = None, reportIdType: Option[String] = None): (Boolean, Int) = {
     def esc(s: String): String = s.replace("'", "''")
     val safeName      = esc(collectionName)
     val safeReportFor = s"%Collection For: ${esc(reportFor)}%"
-    val baseQuery = s"""SELECT id FROM collection WHERE name = '$safeName' AND description LIKE '$safeReportFor' AND archived = false """.stripMargin
-    val finalQuery =
-      reportId.map(esc) match {
-        case Some(id) =>
-          baseQuery + s""" AND ( description LIKE '%Program Id: $id%' OR description LIKE '%Solution Id: $id%' OR description LIKE '%State Id: $id%' OR description LIKE '%District Id: $id%' OR description LIKE '%Tenant Id: $id%' ) LIMIT 1 """.stripMargin
 
-        case None =>
-          baseQuery + " LIMIT 1"
-      }
+    val baseQuery =s"""SELECT id FROM collection WHERE name = '$safeName' AND description LIKE '$safeReportFor' AND archived = false""".stripMargin
+    val idFilter = reportId match {
+
+      case Some(id) =>
+        val safeId = esc(id)
+
+        reportIdType match {
+          case Some(idType) =>
+            val safeType = esc(idType)
+            s"AND description LIKE '%$safeType Id: $safeId%'"
+
+          case None =>
+            s"""AND ( description LIKE '%Program Id: $safeId%' OR description LIKE '%Solution Id: $safeId%' OR description LIKE '%State Id: $safeId%' OR description LIKE '%District Id: $safeId%' OR description LIKE '%Tenant Id: $safeId%' )""".stripMargin
+        }
+      case None => ""
+    }
+
+    val finalQuery = s"$baseQuery $idFilter LIMIT 1"
+
     try {
       val result = metabasePostgresUtil.fetchData(finalQuery)
+
       result.collectFirst {
         case map: Map[_, _] =>
-          val id = map.get("id").map(_.toString.toInt).getOrElse(0)
+          val id = map.get("id").flatMap {
+            case i: Int => Some(i)
+            case s: String if s.nonEmpty => scala.util.Try(s.toInt).toOption
+            case _ => None
+          }.getOrElse(0)
+
           println(s"[DEBUG] Collection found: id=$id")
           (true, id)
-      }.getOrElse {
-        (false, 0)
-      }
+      }.getOrElse((false, 0))
 
     } catch {
       case e: Exception =>
