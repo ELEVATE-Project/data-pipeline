@@ -109,9 +109,9 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
             println("\n=>> Logic to process and create Survey Admin Dashboard")
             val (adminCollectionPresent, adminCollectionId) = metabaseUtil.validateCollection(s"Programs", "Admin")
             if (adminCollectionPresent && adminCollectionId != 0) {
-              val (programCollectionPresent, programCollectionId) = metabaseUtil.validateCollection(programCollectionName, "Admin", Some(targetedProgramId))
+              val (programCollectionPresent, programCollectionId) = metabaseUtil.validateCollection(programCollectionName, "Admin", Some(targetedProgramId), Some("Program"))
               if (programCollectionPresent && programCollectionId != 0) {
-                val (solutionCollectionPresent, solutionCollectionId) = metabaseUtil.validateCollection(solutionCollectionName, "Admin", Some(targetedSolutionId))
+                val (solutionCollectionPresent, solutionCollectionId) = metabaseUtil.validateCollection(solutionCollectionName, "Admin", Some(targetedSolutionId), Some("Solution"))
                 if (solutionCollectionPresent && solutionCollectionId != 0) {
                   println(s"=====> $solutionCollectionName collection is present, hence skipping the process ......")
                 } else {
@@ -145,10 +145,10 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
              * Logic to process and create Program Dashboard for Survey
              */
             println("\n=>> Logic to process and create Program Dashboard for Survey")
-            val (programCollectionPresent, programCollectionId) = metabaseUtil.validateCollection(programCollectionName, "Program Manager", Some(targetedProgramId))
+            val (programCollectionPresent, programCollectionId) = metabaseUtil.validateCollection(programCollectionName, "Program Manager", Some(targetedProgramId), Some("Program"))
             if (programCollectionPresent && programCollectionId != 0) {
               println(s"=====> $programCollectionName collection is present hence skipping the process ......")
-              val (solutionCollectionPresent, solutionCollectionId) = metabaseUtil.validateCollection(solutionCollectionName, "Program Manager", Some(targetedSolutionId))
+              val (solutionCollectionPresent, solutionCollectionId) = metabaseUtil.validateCollection(solutionCollectionName, "Program Manager", Some(targetedSolutionId), Some("Solution"))
               if (solutionCollectionPresent && solutionCollectionId != 0) {
                 println(s"=====> $solutionCollectionName collection is present, hence skipping the process ......")
               } else {
