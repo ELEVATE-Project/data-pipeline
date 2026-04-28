@@ -40,7 +40,7 @@ class SurveyStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo
 
   override def processElement(SurveyEvent: SurveyEvent, context: ProcessFunction[SurveyEvent, SurveyEvent]#Context, metrics: Metrics): Unit = {
     try {
-    if (SurveyEvent.status.toLowerCase() == "started" || SurveyEvent.status.toLowerCase() == "inprogress" || SurveyEvent.status.toLowerCase() == "submitted" || SurveyEvent.status.toLowerCase() == "completed") {
+    if ((SurveyEvent.status.toLowerCase() == "started" || SurveyEvent.status.toLowerCase() == "inprogress" || SurveyEvent.status.toLowerCase() == "submitted" || SurveyEvent.status.toLowerCase() == "completed") && !event.privateProgram){
       logger.info(s"***************** Start of Processing the Survey SurveyEvent with Id = ${SurveyEvent._id} *****************")
       val surveyQuestionTable = SurveyEvent.solutionId
       val surveyStatusTable = s""""${SurveyEvent.solutionId}_survey_status""""
@@ -474,7 +474,7 @@ class SurveyStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo
         }
       }
     } else {
-      logger.info(s"Skipping the survey SurveyEvent with Id = ${SurveyEvent._id} and status = ${SurveyEvent.status} as it is not in a valid status.")
+      logger.info(s"Skipping the survey SurveyEvent with Id = ${SurveyEvent._id} and status = ${SurveyEvent.status} as it is not in a valid status or belongs to a private program.")
     }
     } catch {
       case e: Exception =>

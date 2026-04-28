@@ -39,7 +39,7 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
   }
 
   override def processElement(event: Event, context: ProcessFunction[Event, Event]#Context, metrics: Metrics): Unit = {
-    if (event.projectStatus.toLowerCase() == "started" || event.projectStatus.toLowerCase() == "inprogress" || event.projectStatus.toLowerCase() == "submitted" || event.projectStatus.toLowerCase() == "completed") {
+    if ((event.projectStatus.toLowerCase() == "started" || event.projectStatus.toLowerCase() == "inprogress" || event.projectStatus.toLowerCase() == "submitted" || event.projectStatus.toLowerCase() == "completed") && !event.privateProgram) {
       println(s"***************** Start of Processing the Project Event with Id = ${event._id} *****************")
 
       //TODO: TO be removed later
@@ -323,7 +323,7 @@ class ProjectStreamFunction(config: ProjectStreamConfig)(implicit val mapTypeInf
 
       println(s"\n***************** End of Processing the Project Event *****************")
     } else {
-      println(s"Skipping the project event with Id = ${event._id} and status = ${event.projectStatus} as it is not in a valid status.")
+      println(s"Skipping the project event with Id = ${event._id} and status = ${event.projectStatus} as it is not in a valid status or it belongs to a private program.")
     }
 
     def checkAndInsert(entityType: String, targetedId: String, dashboardData: java.util.HashMap[String, String], dashboardKey: String): Unit = {

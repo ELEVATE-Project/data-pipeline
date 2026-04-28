@@ -6,6 +6,8 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
 
   def _id: String = readOrDefault[String]("_id", "")
 
+  def privateProgram: Boolean = readOrDefault[Boolean]("isAPrivateProgram", false)
+
   def solutionId: String = readOrDefault[String]("solutionId", "")
 
   def solutionName: String = readOrDefault[String]("solutionInfo.name", "")

@@ -40,8 +40,8 @@ class ProjectStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInf
 
   override def processElement(event: ProjectEvent, context: ProcessFunction[ProjectEvent, ProjectEvent]#Context, metrics: Metrics): Unit = {
     try {
-      if (event.projectStatus.toLowerCase() == "started" || event.projectStatus.toLowerCase() == "inprogress" || event.projectStatus.toLowerCase() == "submitted" || event.projectStatus.toLowerCase() == "completed") {
-        logger.info(s"***************** Start of Processing the Project Event with Id = ${event._id} *****************")
+      if ((event.projectStatus.toLowerCase() == "started" || event.projectStatus.toLowerCase() == "inprogress" || event.projectStatus.toLowerCase() == "submitted" || event.projectStatus.toLowerCase() == "completed") && !event.privateProgram) {
+      logger.info(s"***************** Start of Processing the Project Event with Id = ${event._id} *****************")
 
       //TODO: TO be removed later
       val (projectEvidences, projectEvidencesCount) = extractEvidenceData(event.projectAttachments)
@@ -322,7 +322,7 @@ class ProjectStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInf
 
       logger.info(s"***************** End of Processing the Project Event *****************")
     } else {
-      logger.info(s"Skipping the project event with Id = ${event._id} and status = ${event.projectStatus} as it is not in a valid status.")
+      logger.info(s"Skipping the project event with Id = ${event._id} and status = ${event.projectStatus} as it is not in a valid status or it belongs to a private program.")
     }
 
     def checkAndInsert(entityType: String, targetedId: String, dashboardData: java.util.HashMap[String, String], dashboardKey: String): Unit = {
