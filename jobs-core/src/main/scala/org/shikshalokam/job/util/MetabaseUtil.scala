@@ -705,20 +705,15 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
       "schema_name" -> "public",
       "table_name" -> tableName
     ).render()
-
     val headers = Map(
       "Content-Type" -> "application/json",
       "X-METABASE-APIKEY" -> apiKey
     )
-
-    val response = requests.post(url, data = payload, headers = headers, check = false)
-
+    val response = requests.post(url, data = payload, headers = headers)
     if (response.statusCode == 200) {
       ujson.read(response.text)
-    } else if (response.statusCode == 403) {
-      throw new Exception(s"Authorization failed: User does not have admin privileges to sync tables. Status: ${response.statusCode}, Message: ${response.text}")
     } else {
-      throw new Exception(s"Failed to sync table '$tableName' in database ID $dbId. Status: ${response.statusCode}, Message: ${response.text}")
+      throw new Exception(s"Failed to retrieve database metadata with status code: ${response.statusCode}, message: ${response.text}")
     }
   }
 
@@ -734,22 +729,8 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
     def escape(value: String) = value.replace("'", "''")
     val safeName = escape(tableName)
 
-    val query =
-      s"""
-         |SELECT id
-         |FROM metabase_table
-         |WHERE db_id = $tableDbId
-         |AND (name = '$safeName' OR display_name = '$safeName')
-         |AND active = true
-         |LIMIT 1
-     """.stripMargin
-
-    metabasePostgresUtil
-      .fetchData(query)
-      .headOption
-      .flatMap(_.get("id"))
-      .map(_.toString.toInt)
-      .getOrElse(-1)
+    val query =s"""SELECT id FROM metabase_table WHERE db_id = $tableDbId AND (name = '$safeName' OR display_name = '$safeName') AND active = true LIMIT 1 """.stripMargin
+    metabasePostgresUtil.fetchData(query).headOption.flatMap(_.get("id")).map(_.toString.toInt).getOrElse(-1)
   }
 
   /**
@@ -772,20 +753,17 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
     val idFilter = reportId match {
 
       case Some(id) =>
-        val safeId = esc(id)
-
         reportIdType match {
           case Some(idType) =>
             val safeType = esc(idType)
-            s"AND description LIKE '%$safeType Id: $safeId%'"
-
-          case None =>
-            s"""AND ( description LIKE '%Program Id: $safeId%' OR description LIKE '%Solution Id: $safeId%' OR description LIKE '%State Id: $safeId%' OR description LIKE '%District Id: $safeId%' OR description LIKE '%Tenant Id: $safeId%' )""".stripMargin
+            s" AND description LIKE '%$safeType Id: $id%'"
+          case None => ""
         }
+
       case None => ""
     }
 
-    val finalQuery = s"$baseQuery $idFilter LIMIT 1"
+    val finalQuery = s"$baseQuery$idFilter LIMIT 1"
 
     try {
       val result = metabasePostgresUtil.fetchData(finalQuery)
@@ -823,30 +801,42 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
    *         - Int represents dashboard ID if found, otherwise 0
    */
 
-  def validateDashboard(dashboardName: String, reportFor: String, collectionId: Int, reportId: Option[String] = None): (Boolean, Int) = {
+  def validateDashboard(dashboardName: String, reportFor: String, collectionId: Int, reportId: Option[String] = None, reportIdType: Option[String] = None): (Boolean, Int) = {
     def esc(s: String): String = s.replace("'", "''")
     val safeName      = esc(dashboardName)
     val safeReportFor = s"%Dashboard For: ${esc(reportFor)}%"
     val baseQuery = s"""SELECT id FROM report_dashboard WHERE name = '$safeName' AND collection_id = $collectionId AND description LIKE '$safeReportFor' AND archived = false """.stripMargin
-    val finalQuery =
-      reportId.map(esc) match {
-        case Some(id) =>
-          baseQuery + s""" AND ( description LIKE '%State Id: $id%' OR description LIKE '%District Id: $id%' ) LIMIT 1 """.stripMargin
 
-        case None =>
-          baseQuery + " LIMIT 1"
-      }
+    val idFilter = reportId match {
+      case Some(id) =>
+        reportIdType match {
+          case Some(idType) =>
+            val safeType = esc(idType)
+            s" AND description LIKE '%$safeType Id: $id%'"
+          case None => ""
+        }
+      case None => ""
+    }
+
+    val finalQuery = s"$baseQuery$idFilter LIMIT 1"
+
     try {
       val result = metabasePostgresUtil.fetchData(finalQuery)
+
       result.collectFirst {
         case map: Map[_, _] =>
-          val id = map.get("id").map(_.toString.toInt).getOrElse(0)
+          val id = map.get("id").flatMap {
+            case i: Int => Some(i)
+            case s: String if s.nonEmpty => scala.util.Try(s.toInt).toOption
+            case _ => None
+          }.getOrElse(0)
+
           (true, id)
       }.getOrElse((false, 0))
 
     } catch {
       case e: Exception =>
-        println(s"[ERROR] DB validation failed: ${e.getMessage}")
+        println(s"[ERROR] validateDashboard failed for '$dashboardName': ${e.getMessage}")
         (false, 0)
     }
   }
@@ -938,17 +928,9 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
    */
 
   def getGroupByName(groupName: String): (Boolean, Int) = {
-
     def escape(v: String) = v.replace("'", "''")
     val safeName = escape(groupName)
-
-    val query =
-      s"""
-         |SELECT id
-         |FROM permissions_group
-         |WHERE LOWER(name) = LOWER('$safeName')
-         |LIMIT 1
-     """.stripMargin
+    val query = s"""SELECT id FROM permissions_group WHERE LOWER(name) = LOWER('$safeName') LIMIT 1""".stripMargin
 
     try {
       val result = metabasePostgresUtil.fetchData(query)

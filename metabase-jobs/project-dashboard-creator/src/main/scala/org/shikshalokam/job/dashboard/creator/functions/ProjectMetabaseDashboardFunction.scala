@@ -138,7 +138,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
           println(s"\n-->> Process $stateName state inside National Overview Collection")
           val (collectionPresent, collectionId) = metabaseUtil.validateCollection("National Overview", "Admin")
           if (collectionPresent && collectionId != 0) {
-            val (stateDashboardPresent, stateDashboardId) = metabaseUtil.validateDashboard(s"$stateName - State overview", "Admin", collectionId, Some(targetedStateId))
+            val (stateDashboardPresent, stateDashboardId) = metabaseUtil.validateDashboard(s"$stateName - State overview", "Admin", collectionId, Some(targetedStateId), Some("State"))
             if (stateDashboardPresent && stateDashboardId != 0) {
               println(s"=====> $stateName - State overview dashboard already present inside National Overview collection with id: $stateDashboardId, Skipping this step.")
             } else {
@@ -172,7 +172,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
             val stateCollectionNameForDistrict = s"$stateNameForDistrictId State [Tenant : $tenantIdForDistrictId]"
             val (stateCollectionPresent, stateCollectionId) = metabaseUtil.validateCollection(stateCollectionNameForDistrict, "State Manager", Some(stateIdForDistrictId), Some("District"))
             if (stateCollectionPresent && stateCollectionId != 0) {
-              val (districtDashboardPresent, districtDashboardId) = metabaseUtil.validateDashboard(s"$districtName District [Tenant : $tenantIdForDistrictId]", "State Manager", stateCollectionId, Some(targetedDistrictId))
+              val (districtDashboardPresent, districtDashboardId) = metabaseUtil.validateDashboard(s"$districtName District [Tenant : $tenantIdForDistrictId]", "State Manager", stateCollectionId, Some(targetedDistrictId), Some("District"))
               if (districtDashboardPresent && districtDashboardId != 0) {
                 println(s"=====> $districtName District [Tenant : $tenantIdForDistrictId] dashboard already present inside state collection with id: $districtDashboardId, Skipping this step.")
               } else {
@@ -187,7 +187,7 @@ class ProjectMetabaseDashboardFunction(config: ProjectMetabaseDashboardConfig)(i
           println(s"\n-->> Process $districtName district inside National Overview Collection")
           val (collectionPresent, collectionId) = metabaseUtil.validateCollection("National Overview", "Admin")
           if (collectionPresent && collectionId != 0) {
-            val (districtDashboardPresent, districtDashboardId) = metabaseUtil.validateDashboard(s"$districtName District [Tenant : $tenantIdForDistrictId]", "Admin", collectionId , Some(targetedDistrictId))
+            val (districtDashboardPresent, districtDashboardId) = metabaseUtil.validateDashboard(s"$districtName District [Tenant : $tenantIdForDistrictId]", "Admin", collectionId , Some(targetedDistrictId), Some("District"))
             if (districtDashboardPresent && districtDashboardId != 0) {
               println(s"=====> $districtName District [Tenant : $tenantIdForDistrictId] dashboard already present inside National Overview collection, Skipping this step.")
             } else {
