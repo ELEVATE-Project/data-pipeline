@@ -38,35 +38,35 @@ class SurveyStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo
     super.close()
   }
 
-  override def processElement(SurveyEvent: SurveyEvent, context: ProcessFunction[SurveyEvent, SurveyEvent]#Context, metrics: Metrics): Unit = {
+  override def processElement(event: SurveyEvent, context: ProcessFunction[SurveyEvent, SurveyEvent]#Context, metrics: Metrics): Unit = {
     try {
-    if (SurveyEvent.status.toLowerCase() == "started" || SurveyEvent.status.toLowerCase() == "inprogress" || SurveyEvent.status.toLowerCase() == "submitted" || SurveyEvent.status.toLowerCase() == "completed") {
-      logger.info(s"***************** Start of Processing the Survey SurveyEvent with Id = ${SurveyEvent._id} *****************")
-      val surveyQuestionTable = SurveyEvent.solutionId
-      val surveyStatusTable = s""""${SurveyEvent.solutionId}_survey_status""""
-      val surveyId = SurveyEvent._id
-      val userId = SurveyEvent.createdBy
-      val stateId = SurveyEvent.stateId
-      val stateName = SurveyEvent.stateName
-      val districtId = SurveyEvent.districtId
-      val districtName = SurveyEvent.districtName
-      val blockId = SurveyEvent.blockId
-      val blockName = SurveyEvent.blockName
-      val clusterId = SurveyEvent.clusterId
-      val clusterName = SurveyEvent.clusterName
-      val schoolId = SurveyEvent.schoolId
-      val schoolName = SurveyEvent.schoolName
-      val programName = SurveyEvent.programName
-      val programId = SurveyEvent.programId
-      val solutionName = SurveyEvent.solutionName
-      val solutionId = SurveyEvent.solutionId
-      val status = SurveyEvent.status
-      val submissionDate = SurveyEvent.completedDate
-      val tenantId = SurveyEvent.tenantId
-      val solutionExternalId = SurveyEvent.solutionExternalId
-      val solutionDescription = SurveyEvent.solutionDescription
-      val programExternalId = SurveyEvent.programExternalId
-      val programDescription = SurveyEvent.programDescription
+    if ((event.status.toLowerCase() == "started" || event.status.toLowerCase() == "inprogress" || event.status.toLowerCase() == "submitted" || event.status.toLowerCase() == "completed") && !event.privateProgram){
+      logger.info(s"***************** Start of Processing the Survey event with Id = ${event._id} *****************")
+      val surveyQuestionTable = event.solutionId
+      val surveyStatusTable = s""""${event.solutionId}_survey_status""""
+      val surveyId = event._id
+      val userId = event.createdBy
+      val stateId = event.stateId
+      val stateName = event.stateName
+      val districtId = event.districtId
+      val districtName = event.districtName
+      val blockId = event.blockId
+      val blockName = event.blockName
+      val clusterId = event.clusterId
+      val clusterName = event.clusterName
+      val schoolId = event.schoolId
+      val schoolName = event.schoolName
+      val programName = event.programName
+      val programId = event.programId
+      val solutionName = event.solutionName
+      val solutionId = event.solutionId
+      val status = event.status
+      val submissionDate = event.completedDate
+      val tenantId = event.tenantId
+      val solutionExternalId = event.solutionExternalId
+      val solutionDescription = event.solutionDescription
+      val programExternalId = event.programExternalId
+      val programDescription = event.programDescription
       val privateProgram: Null = null
       val projectCategories: Null = null
       val projectDuration: Null = null
@@ -76,10 +76,10 @@ class SurveyStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo
       var organisationId: String = ""
       var organisationName: String = ""
       var organisationCode: String = ""
-      val parentOrgId: String = SurveyEvent.parentOrgId
+      val parentOrgId: String = event.parentOrgId
 
-      SurveyEvent.organisation.foreach { org =>
-        if (org.get("code").contains(SurveyEvent.organisationId)) {
+      event.organisation.foreach { org =>
+        if (org.get("code").contains(event.organisationId)) {
           organisationName = org.get("name").map(_.toString).getOrElse("")
           organisationId = org.get("id").map(_.toString).getOrElse("")
           organisationCode = org.get("code").map(_.toString).getOrElse("")
@@ -88,7 +88,7 @@ class SurveyStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo
           userRoleIds = userRoleIdsExtracted
           userRoles = userRolesExtracted
         } else {
-          logger.info(s"Organisation with ID ${SurveyEvent.organisationId} not found in the SurveyEvent data.")
+          logger.info(s"Organisation with ID ${event.organisationId} not found in the event data.")
         }
       }
 
@@ -134,16 +134,16 @@ class SurveyStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo
        *
        */
       logger.info("==> SURVEY - Solution Data ")
-      logger.info("solutionId = " + SurveyEvent.solutionId)
-      logger.info("solutionExternalId = " + SurveyEvent.solutionExternalId)
-      logger.info("solutionName = " + SurveyEvent.solutionName)
-      logger.info("solutionDescription = " + SurveyEvent.solutionDescription)
+      logger.info("solutionId = " + event.solutionId)
+      logger.info("solutionExternalId = " + event.solutionExternalId)
+      logger.info("solutionName = " + event.solutionName)
+      logger.info("solutionDescription = " + event.solutionDescription)
       logger.info("duration = " + projectDuration)
       logger.info("categories = " + projectCategories)
-      logger.info("programId = " + SurveyEvent.programId)
-      logger.info("programName = " + SurveyEvent.programName)
-      logger.info("programExternalId = " + SurveyEvent.programExternalId)
-      logger.info("programDescription = " + SurveyEvent.programDescription)
+      logger.info("programId = " + event.programId)
+      logger.info("programName = " + event.programName)
+      logger.info("programExternalId = " + event.programExternalId)
+      logger.info("programDescription = " + event.programDescription)
       logger.info("privateProgram = " + privateProgram)
 
       val upsertSolutionQuery =
@@ -179,30 +179,30 @@ class SurveyStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo
        *
        */
       logger.info("==> Survey Data per user submission ")
-      logger.info("surveyId = " + SurveyEvent._id)
-      logger.info("userId = " + SurveyEvent.createdBy)
+      logger.info("surveyId = " + event._id)
+      logger.info("userId = " + event.createdBy)
       logger.info("userRoleIds = " + userRoleIds)
       logger.info("userRoles = " + userRoles)
-      logger.info("stateId = " + SurveyEvent.stateId)
-      logger.info("stateName = " + SurveyEvent.stateName)
-      logger.info("districtId = " + SurveyEvent.districtId)
-      logger.info("districtName = " + SurveyEvent.districtName)
-      logger.info("blockId = " + SurveyEvent.blockId)
-      logger.info("blockName = " + SurveyEvent.blockName)
-      logger.info("clusterId = " + SurveyEvent.clusterId)
-      logger.info("clusterName = " + SurveyEvent.clusterName)
-      logger.info("schoolId = " + SurveyEvent.schoolId)
-      logger.info("schoolName = " + SurveyEvent.schoolName)
-      logger.info("tenantId = " + SurveyEvent.tenantId)
+      logger.info("stateId = " + event.stateId)
+      logger.info("stateName = " + event.stateName)
+      logger.info("districtId = " + event.districtId)
+      logger.info("districtName = " + event.districtName)
+      logger.info("blockId = " + event.blockId)
+      logger.info("blockName = " + event.blockName)
+      logger.info("clusterId = " + event.clusterId)
+      logger.info("clusterName = " + event.clusterName)
+      logger.info("schoolId = " + event.schoolId)
+      logger.info("schoolName = " + event.schoolName)
+      logger.info("tenantId = " + event.tenantId)
       logger.info("organisationId = " + organisationId)
       logger.info("organisationName = " + organisationName)
       logger.info("organisationCode = " + organisationCode)
-      logger.info("programName = " + SurveyEvent.programName)
-      logger.info("programId = " + SurveyEvent.programId)
-      logger.info("solutionName = " + SurveyEvent.solutionName)
-      logger.info("solutionId = " + SurveyEvent.solutionId)
-      logger.info("status = " + SurveyEvent.status)
-      logger.info("submissionDate = " + SurveyEvent.completedDate)
+      logger.info("programName = " + event.programName)
+      logger.info("programId = " + event.programId)
+      logger.info("solutionName = " + event.solutionName)
+      logger.info("solutionId = " + event.solutionId)
+      logger.info("status = " + event.status)
+      logger.info("submissionDate = " + event.completedDate)
 
       //CREATE TABLE IF NOT EXISTS
       postgresUtil.checkAndCreateTable(surveyStatusTable, config.createSurveyStatusTableQuery.replace("@surveyStatusTable", surveyStatusTable))
@@ -240,22 +240,22 @@ class SurveyStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo
       checkExistenceOfFilterData(statusDashboardFilters, context, solutionId)
       postgresUtil.executePreparedUpdate(upsertSurveyDataQuery, surveyParams, surveyStatusTable, surveyId)
 
-      if (SurveyEvent.status == "completed") {
+      if (event.status == "completed") {
         /**
          * Extracting Survey Questions Data
          */
         postgresUtil.checkAndCreateTable(surveyQuestionTable, config.createSurveyQuestionsTableQuery.replace("@surveyQuestionTable", surveyQuestionTable))
         postgresUtil.executeUpdate(AlterSurveyQuestionsTableQuery, surveyQuestionTable, solutionId)
 
-        val solution_id = SurveyEvent.solutionId
-        val solution_name = SurveyEvent.solutionName
-        val user_id = SurveyEvent.createdBy
-        val state_name = SurveyEvent.stateName
-        val district_name = SurveyEvent.districtName
-        val block_name = SurveyEvent.blockName
-        val cluster_name = SurveyEvent.clusterName
-        val school_name = SurveyEvent.schoolName
-        val answersKey = SurveyEvent.answers
+        val solution_id = event.solutionId
+        val solution_name = event.solutionName
+        val user_id = event.createdBy
+        val state_name = event.stateName
+        val district_name = event.districtName
+        val block_name = event.blockName
+        val cluster_name = event.clusterName
+        val school_name = event.schoolName
+        val answersKey = event.answers
 
         val deleteQuestionQuery =
           s"""DELETE FROM "$surveyQuestionTable"
@@ -455,12 +455,12 @@ class SurveyStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo
       /**
        * Logic to populate kafka messages for creating metabase dashboard
        */
-      if (SurveyEvent.status == "completed") {
+      if (event.status == "completed") {
         val dashboardData = new java.util.HashMap[String, String]()
         val dashboardConfig = Seq(
           ("admin", "1", "admin"),
-          ("program", SurveyEvent.programId, "targetedProgram"),
-          ("solution", SurveyEvent.solutionId, "targetedSolution")
+          ("program", event.programId, "targetedProgram"),
+          ("solution", event.solutionId, "targetedSolution")
         )
 
         dashboardConfig
@@ -474,11 +474,11 @@ class SurveyStreamFunction(config: UnifiedStreamConfig)(implicit val mapTypeInfo
         }
       }
     } else {
-      logger.info(s"Skipping the survey SurveyEvent with Id = ${SurveyEvent._id} and status = ${SurveyEvent.status} as it is not in a valid status.")
+      logger.info(s"Skipping the survey event with Id = ${event._id} and status = ${event.status} as it is not in a valid status or belongs to a private program.")
     }
     } catch {
       case e: Exception =>
-        logger.error(s"Error processing survey event: ${SurveyEvent._id}", e)
+        logger.error(s"Error processing survey event: ${event._id}", e)
     }
   }
 

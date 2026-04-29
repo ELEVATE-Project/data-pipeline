@@ -39,7 +39,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
   }
 
   override def processElement(event: Event, context: ProcessFunction[Event, Event]#Context, metrics: Metrics): Unit = {
-    if (event.status.toLowerCase() == "started" || event.status.toLowerCase() == "inprogress" || event.status.toLowerCase() == "submitted" || event.status.toLowerCase() == "completed") {
+    if ((event.status.toLowerCase() == "started" || event.status.toLowerCase() == "inprogress" || event.status.toLowerCase() == "submitted" || event.status.toLowerCase() == "completed") && !event.privateProgram) {
       println(s"***************** Start of Processing the Observation Event with Id = ${event._id} *****************")
       var userRoleIds: String = ""
       var userRoles: String = ""
@@ -686,7 +686,7 @@ class ObservationStreamFunction(config: ObservationStreamConfig)(implicit val ma
         objects
       }
     } else {
-      println(s"Skipping the observation event with Id = ${event._id} and status = ${event.status} as it is not in a valid status.")
+      println(s"Skipping the observation event with Id = ${event._id} and status = ${event.status} as it is not in a valid status or belongs to a private program.")
     }
   }
 }
