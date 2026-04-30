@@ -148,7 +148,6 @@ def delete_groups(url, session_id):
             logger.info(f"Skipping protected group: {gname}")
             continue
 
-        # Remove memberships
         for m in memberships:
             if m["group_id"] == gid:
                 try:
@@ -159,7 +158,6 @@ def delete_groups(url, session_id):
                 except:
                     logger.warning(f"Skipping membership delete: {m['membership_id']}")
 
-        # Delete group
         try:
             requests.delete(
                 f"{url}/permissions/group/{gid}",
@@ -210,7 +208,6 @@ def remap_users(url, session_id):
         updated_ids = []
         updated_names = []
 
-        # Map new group IDs
         for g_name in existing_names:
             if g_name in group_map:
                 updated_ids.append(group_map[g_name])
@@ -218,7 +215,6 @@ def remap_users(url, session_id):
             else:
                 logger.warning(f"Group not found: {g_name}")
 
-        # Remove old memberships
         for m in memberships:
             if m["user_id"] != user_id:
                 continue
@@ -233,7 +229,6 @@ def remap_users(url, session_id):
             except:
                 pass
 
-        # Add new memberships
         for gid in updated_ids:
             if gid == 1:
                 continue
@@ -247,7 +242,6 @@ def remap_users(url, session_id):
             except:
                 logger.warning(f"Skipping duplicate add for {email}")
 
-        # ✅ UPDATE JSON (THIS WAS MISSING)
         u["existing_groups_id"] = existing_ids
         u["existing_groups_name"] = existing_names
         u["updated_groups_id"] = updated_ids
