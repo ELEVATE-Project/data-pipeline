@@ -36,7 +36,7 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
     val metabaseConnectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$metabasePgDb"
     postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
     metabasePostgresUtil = new PostgresUtil(metabaseConnectionUrl, pgUsername, pgPassword)
-    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil, postgresUtil)
+    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil)
   }
 
   override def close(): Unit = {
@@ -119,16 +119,21 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
                   val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
                   val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
                   createAdminDashboard(solutionCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Admin")
+                  metabaseUtil.clearCaches()
                   createSurveyCsvDashboard(solutionCollectionId, databaseId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin", metabaseApiKey)
+                  metabaseUtil.clearCaches()
                 }
               } else {
                 println(s"=====> $programCollectionName collection is not present, creating $programCollectionName collection for Admin ......")
                 val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, targetedProgramId, programExternalId, programCollectionName, programDescription, "Admin")
                 val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, targetedSolutionId, solutionExternalId, s"$solutionName [Survey]", solutionDescription, "Admin")
                 val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
+                metabaseUtil.clearCaches()
                 val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
                 createAdminDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Admin")
+                metabaseUtil.clearCaches()
                 createSurveyCsvDashboard(surveyCollectionId, databaseId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin", metabaseApiKey)
+                metabaseUtil.clearCaches()
               }
             } else {
               println(s"=====> Programs Collection is not present, creating Programs Collection ......")
@@ -136,9 +141,12 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
               val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, targetedProgramId, programExternalId, programCollectionName, programDescription, "Admin")
               val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, targetedSolutionId, solutionExternalId, s"$solutionName [Survey]", solutionDescription, "Admin")
               val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
+              metabaseUtil.clearCaches()
               val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
               createAdminDashboard(surveyCollectionId, dashboardId, tabIdMap, s"$solutionName [Survey]", "Admin")
+              metabaseUtil.clearCaches()
               createSurveyCsvDashboard(surveyCollectionId, databaseId, dashboardId, tabIdMap, s"$solutionName [Survey]", metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Admin", metabaseApiKey)
+              metabaseUtil.clearCaches()
             }
 
             /**
@@ -155,25 +163,31 @@ class SurveyMetabaseDashboardFunction(config: SurveyMetabaseDashboardConfig)(imp
                 println(s"=====> $solutionCollectionName collection is not present, creating $solutionCollectionName collection for Program Manager ......")
                 val solutionCollectionId = createSurveyCollectionInsideProgram(programCollectionId, targetedSolutionId, solutionExternalId, solutionCollectionName, solutionDescription, "Program Manager")
                 val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
+                metabaseUtil.clearCaches()
                 val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
                 createSurveyCsvDashboard(solutionCollectionId, databaseId, dashboardId, tabIdMap, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Program", metabaseApiKey)
+                metabaseUtil.clearCaches()
                 createProgramDashboard(solutionCollectionId, dashboardId, tabIdMap, solutionCollectionName, "Program")
+                metabaseUtil.clearCaches()
               }
             } else {
               println(s"=====> $programCollectionName collection is not present, creating $programCollectionName collection for Program Manager ......")
               val programCollectionId = createProgramCollection(programCollectionName, targetedProgramId, programExternalId, programDescription, "Program Manager")
               val surveyCollectionId = createSurveyCollectionInsideProgram(programCollectionId, targetedSolutionId, solutionExternalId, solutionCollectionName, solutionDescription, "Program Manager")
               val dashboardId: Int = Utils.createDashboard(surveyCollectionId, s"Survey Dashboard", dashboardDescription, metabaseUtil)
+              metabaseUtil.clearCaches()
               val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
               createSurveyCsvDashboard(surveyCollectionId, databaseId, dashboardId, tabIdMap, solutionCollectionName, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, surveyQuestionTable, surveyStatusTable, evidenceBaseUrl, "Program", metabaseApiKey)
+              metabaseUtil.clearCaches()
               createProgramDashboard(surveyCollectionId, dashboardId, tabIdMap, solutionCollectionName, "Program")
+              metabaseUtil.clearCaches()
             }
         }
         println(s"***************** Processing Completed for Survey Metabase Dashboard Event with Id = ${event._id}*****************\n\n")
       }
 
       if (filterSync.nonEmpty){
-        val filterTableId: Int = metabaseUtil.searchTable(filterTable, databaseId)
+        val filterTableId: Int = metabaseUtil.searchTableWithSQL(filterTable, databaseId)
         if (filterTableId != -1) {
           metabaseUtil.discardValues(filterTableId)
           metabaseUtil.rescanValues(filterTableId)
