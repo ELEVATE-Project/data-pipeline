@@ -1,6 +1,5 @@
 package org.shikshalokam.job.combined.dashboard.creator.functions.project
 
-import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
@@ -12,8 +11,6 @@ import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import org.shikshalokam.job.{BaseProcessFunction, Metrics}
 import org.slf4j.LoggerFactory
 
-import scala.collection.JavaConverters._
-import scala.collection.concurrent.TrieMap
 import scala.collection.immutable._
 import scala.collection.mutable
 
@@ -41,7 +38,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
     val metabaseConnectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$metabasePgDb"
     postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
     metabasePostgresUtil = new PostgresUtil(metabaseConnectionUrl, pgUsername, pgPassword)
-    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil, postgresUtil)
+    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil)
   }
 
   override def close(): Unit = {
@@ -68,7 +65,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
       val metabaseApiKey: String = config.metabaseKey
       val filterSync: String = event.filterSync
       val filterTable: String = event.filterTable
-      val databaseId = metabaseUtil.getDatabaseID(metabaseDatabase); if (databaseId == -1) { println(s"[ERROR] Metabase database '$metabaseDatabase' not found"); return }
+      val databaseId = metabaseUtil.getDatabaseID(metabaseDatabase); if (databaseId == -1) { logger.info(s"[ERROR] Metabase database '$metabaseDatabase' not found"); return }
       val solutionName = postgresUtil.fetchData(s"""SELECT name FROM $solutions WHERE solution_id = '$targetedSolutionId'""").collectFirst { case map: Map[_, _] => map.getOrElse("name", "").toString }.getOrElse("")
       val targetedProgramId: String = Option(event.targetedProgram).map(_.trim).filter(_.nonEmpty).getOrElse(postgresUtil.fetchData(s"SELECT program_id FROM $solutions WHERE solution_id = '$targetedSolutionId'").collectFirst { case map: Map[_, _] => map.get("program_id").map(_.toString).getOrElse("") }.getOrElse(""))
       val programName = postgresUtil.fetchData(s"""SELECT program_name FROM $solutions WHERE solution_id = '$targetedSolutionId'""").collectFirst { case map: Map[_, _] => map.getOrElse("program_name", "").toString }.getOrElse("")
@@ -108,6 +105,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
           } else {
             logger.info("=====> Creating Micro Improvements Collection And Dashboard")
             createMicroImprovementsCollectionAndDashboard(metaDataTable, reportConfig, databaseId)
+            metabaseUtil.clearCaches()
           }
 
           /**
@@ -120,6 +118,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
           } else {
             logger.info("=====> Creating National Overview Collection And Dashboard")
             createNationalOverviewCollectionAndDashboard(metaDataTable, reportConfig, metabaseDatabase)
+            metabaseUtil.clearCaches()
           }
 
           /**
@@ -134,9 +133,12 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
               logger.info(s"=====> $stateName State collection present with id: $stateCollectionId, Skipping this step.")
             } else {
               val stateCollectionId = processStateDashboard(tenantId, stateName, targetedStateId, reportConfig, metaDataTable, databaseId, projects, solutions, "State Manager")
+              metabaseUtil.clearCaches()
               val (stateDashboardName, stateDashboardDescription) = (s"$stateName - State overview", s"This dashboard contains important metrics for $stateName state\n\nDashboard For: State Manager\n\nState Id: $targetedStateId")
               createStateOverviewDashboard(stateDashboardName, stateDashboardDescription, stateCollectionId, s"$stateName State [Tenant : $tenantId]", stateName, databaseId, stateReportConfigQueryForStateManager, "State", "State Manager", "Yes")
+              metabaseUtil.clearCaches()
               createDistrictComparisonDashboard(stateCollectionId, s"$stateName State [Tenant : $tenantId]", stateName, databaseId, "State", "State Manager", "Yes")
+              metabaseUtil.clearCaches()
             }
 
             logger.info(s"-->> Process $stateName state inside National Overview Collection")
@@ -148,6 +150,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
               } else {
                 val (stateDashboardName, stateDashboardDescription) = (s"$stateName - State overview", s"This dashboard contains important metrics for $stateName state\n\nDashboard For: Admin\n\nState Id: $targetedStateId")
                 createStateOverviewDashboard(stateDashboardName, stateDashboardDescription, collectionId, "National Overview", stateName, databaseId, stateReportConfigQueryForAdmin, "Admin", "Admin", "No")
+                metabaseUtil.clearCaches()
               }
             } else {
               logger.info("=====> National Overview collection is not created.")
@@ -169,6 +172,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
               val districtCollectionId = processDistrictDashboard(tenantIdForDistrictId, stateNameForDistrictId, stateIdForDistrictId, districtName, targetedDistrictId, reportConfig, metaDataTable, databaseId, projects, solutions, "District Manager")
               val (districtDashboardName, districtDashboardDescription) = (s"$districtName - District Overview", s"This dashboard contains important metrics for $districtName district in $stateName state\n\nDashboard For: District Manager\n\nDistrict Id: $targetedDistrictId")
               createDistrictOverviewDashboard(districtDashboardName, districtDashboardDescription, districtCollectionId, s"$districtName District [Tenant : $tenantIdForDistrictId]", districtName, databaseId, "District", "District Manager", "Yes")
+              metabaseUtil.clearCaches()
             }
 
             logger.info(s"-->> Process $districtName district inside $stateName Collection")
@@ -181,6 +185,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
                 } else {
                   val (districtDashboardName, districtDashboardDescription) = (s"$districtName District [Tenant : $tenantIdForDistrictId]", s"This dashboard contains important metrics for $districtName district in $stateName state\n\nDashboard For: State Manager\n\nDistrict Id: $targetedDistrictId")
                   createDistrictOverviewDashboard(districtDashboardName, districtDashboardDescription, stateCollectionId, s"$districtName District [Tenant : $tenantIdForDistrictId]", districtName, databaseId, "State", "State Manager", "No")
+                  metabaseUtil.clearCaches()
                 }
               } else {
                 logger.info(s"=====> $stateName State [Tenant : $tenantId] collection is not created.")
@@ -196,6 +201,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
               } else {
                 val (districtDashboardName, districtDashboardDescription) = (s"$districtName District [Tenant : $tenantIdForDistrictId]", s"This dashboard contains important metrics for $districtName district in $stateName state\n\nDashboard For: Admin\n\nDistrict Id: $targetedDistrictId")
                 createDistrictOverviewDashboard(districtDashboardName, districtDashboardDescription, collectionId, s"$districtName District [Tenant : $tenantIdForDistrictId]", districtName, databaseId, "Admin", "Admin", "No")
+                metabaseUtil.clearCaches()
               }
             } else {
               logger.info("=====> National Overview collection is not created.")
@@ -224,17 +230,20 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
                 } else {
                   logger.info(s"=====> Main and Program collection is present creating Solution collection & Dashboard.")
                   createSolutionCollectionAndDashboard(programCollectionId, solutionCollectionName, solutionCollectionDescription, "Admin")
+                  metabaseUtil.clearCaches()
                 }
               } else {
                 logger.info(s"=====> Main collection is present creating Program, Solution collection & Dashboard.")
                 val programCollectionId = createProgramCollectionInsideMain(mainCollectionId, programCollectionName, programCollectionDescription, "Admin")
                 createSolutionCollectionAndDashboard(programCollectionId, solutionCollectionName, solutionCollectionDescription, "Admin")
+                metabaseUtil.clearCaches()
               }
             } else {
               logger.info("=====> Main Program collection is not present creating Programs, Solution collection & Dashboard")
               val mainProgramCollectionId = createMainProgramsCollection
               val programCollectionId = createProgramCollectionInsideMain(mainProgramCollectionId, programCollectionName, programCollectionDescription, "Admin")
               createSolutionCollectionAndDashboard(programCollectionId, solutionCollectionName, solutionCollectionDescription, "Admin")
+              metabaseUtil.clearCaches()
             }
           } else logger.info("Either Solution or Program name is null")
 
@@ -256,18 +265,20 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
               } else {
                 logger.info(s"=====> Main and Program collection is present creating Solution collection & Dashboard.")
                 createSolutionCollectionAndDashboard(programCollectionId, solutionCollectionName, solutionCollectionDescription, "Program Manager")
+                metabaseUtil.clearCaches()
               }
             } else {
               logger.info(s"=====> Main collection is present creating Program, Solution collection & Dashboard.")
               val programCollectionId = createProgramCollectionOutSideMain(targetedProgramId, programCollectionName, programCollectionDescription, "Program Manager")
               createSolutionCollectionAndDashboard(programCollectionId, solutionCollectionName, solutionCollectionDescription, "Program Manager")
+              metabaseUtil.clearCaches()
             }
           } else logger.info("Either Solution or Program name is null")
 
           logger.info(s">>>>>>>>>>> Completed Processing Metabase Project Dashboards >>>>>>>>>>>>")
 
           if (filterSync.nonEmpty) {
-            val filterTableId: Int = metabaseUtil.searchTable(filterTable, databaseId)
+            val filterTableId: Int = metabaseUtil.searchTableWithSQL(filterTable, databaseId)
             if (filterTableId != -1) {
               metabaseUtil.discardValues(filterTableId)
               metabaseUtil.rescanValues(filterTableId)
