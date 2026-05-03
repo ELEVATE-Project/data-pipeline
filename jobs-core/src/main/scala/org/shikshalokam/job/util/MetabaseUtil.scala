@@ -3,7 +3,7 @@ package org.shikshalokam.job.util
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.{List, Map}
 
-class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: String, metabasePostgresUtil: PostgresUtil, postgresUtil: PostgresUtil) {
+class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: String, metabasePostgresUtil: PostgresUtil, postgresUtil: Option[PostgresUtil] = None) {
 
   private val metabaseUrl: String = url
   private val username: String = metabaseUsername
@@ -564,6 +564,27 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
     }
   }
 
+  /**
+   * Method to search a table in Metabase
+   * @param tableName
+   * @param tableDbId
+   * @return JSON string representing the status of the search table
+   */
+
+  def searchTable(tableName: String, tableDbId: Int): String = {
+    val url = s"$metabaseUrl/search"
+    val params = Map(
+      "q" -> tableName,
+      "models" -> "table",
+      "table_db_id" -> tableDbId.toString
+    )
+    val headers = Map(
+      "X-Metabase-Session" -> getSessionToken
+    )
+    val response = requests.get(url, params = params, headers = headers)
+    if (response.statusCode == 200) response.text
+    else throw new Exception(s"Search failed: ${response.statusCode}, ${response.text}")
+  }
 
   /**
    * Method to update a user's password in Metabase
@@ -718,6 +739,12 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
   }
 
   /**
+   * Method to replace (') with ('') to ensure query doesn't brealk on SQL injection.
+   */
+
+  def escape(value: String) = value.replace("'", "''")
+
+  /**
    * Method to search a table in Metabase DB by table name and database ID.
    *
    * @param tableName Name of the table to search
@@ -725,12 +752,29 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
    * @return Table ID as Int if found, otherwise -1
    */
 
-  def searchTable(tableName: String, tableDbId: Int): Int = {
-    def escape(value: String) = value.replace("'", "''")
+  def searchTableWithSQL(tableName: String, tableDbId: Int): Int = {
     val safeName = escape(tableName)
 
-    val query =s"""SELECT id FROM metabase_table WHERE db_id = $tableDbId AND (name = '$safeName' OR display_name = '$safeName') AND active = true LIMIT 1 """.stripMargin
-    metabasePostgresUtil.fetchData(query).headOption.flatMap(_.get("id")).map(_.toString.toInt).getOrElse(-1)
+    val query =
+      s"""
+         |SELECT id
+         |FROM metabase_table
+         |WHERE db_id = $tableDbId
+         |  AND (name = '$safeName' OR display_name = '$safeName')
+         |  AND active IS TRUE
+         |LIMIT 1
+     """.stripMargin
+
+    metabasePostgresUtil
+      .fetchData(query)
+      .headOption
+      .flatMap(_.get("id"))
+      .collect {
+        case i: Int => i
+        case l: Long => l.toInt
+        case other => other.toString.toInt
+      }
+      .getOrElse(-1)
   }
 
   /**
@@ -744,41 +788,45 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
    *         - Int represents collection ID if found, otherwise 0
    */
 
-  def validateCollection(collectionName: String, reportFor: String, reportId: Option[String] = None, reportIdType: Option[String] = None): (Boolean, Int) = {
-    def esc(s: String): String = s.replace("'", "''")
-    val safeName      = esc(collectionName)
-    val safeReportFor = s"%Collection For: ${esc(reportFor)}%"
+  def validateCollection(collectionName: String, reportFor: String, reportId: Option[String] = None, reportIdType: Option[String] = None ): (Boolean, Int) = {
 
-    val baseQuery =s"""SELECT id FROM collection WHERE name = '$safeName' AND description LIKE '$safeReportFor' AND archived = false""".stripMargin
-    val idFilter = reportId match {
+    val safeName = escape(collectionName)
+    val safeReportFor = s"%Collection For: ${escape(reportFor)}%"
 
-      case Some(id) =>
-        reportIdType match {
-          case Some(idType) =>
-            val safeType = esc(idType)
-            s" AND description LIKE '%$safeType Id: $id%'"
-          case None => ""
-        }
+    val baseQuery =
+      s"""
+         |SELECT id
+         |FROM collection
+         |WHERE name = '$safeName'
+         |  AND description LIKE '$safeReportFor'
+         |  AND archived = false
+     """.stripMargin
 
-      case None => ""
+    val idFilter = (reportId, reportIdType) match {
+      case (Some(id), Some(idType)) =>
+        s" AND description LIKE '%${escape(idType)} Id: ${escape(id)}%'"
+      case _ =>
+        ""
     }
 
     val finalQuery = s"$baseQuery$idFilter LIMIT 1"
 
     try {
-      val result = metabasePostgresUtil.fetchData(finalQuery)
-
-      result.collectFirst {
-        case map: Map[_, _] =>
-          val id = map.get("id").flatMap {
-            case i: Int => Some(i)
-            case s: String if s.nonEmpty => scala.util.Try(s.toInt).toOption
-            case _ => None
-          }.getOrElse(0)
-
+      metabasePostgresUtil
+        .fetchData(finalQuery)
+        .headOption
+        .flatMap(_.get("id"))
+        .flatMap {
+          case i: Int => Some(i)
+          case l: Long => Some(l.toInt)
+          case s: String => scala.util.Try(s.toInt).toOption
+          case other => scala.util.Try(other.toString.toInt).toOption
+        }
+        .map(id => {
           println(s"[DEBUG] Collection found: id=$id")
           (true, id)
-      }.getOrElse((false, 0))
+        })
+        .getOrElse((false, 0))
 
     } catch {
       case e: Exception =>
@@ -802,43 +850,57 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
    */
 
   def validateDashboard(dashboardName: String, reportFor: String, collectionId: Int, reportId: Option[String] = None, reportIdType: Option[String] = None): (Boolean, Int) = {
-    def esc(s: String): String = s.replace("'", "''")
-    val safeName      = esc(dashboardName)
-    val safeReportFor = s"%Dashboard For: ${esc(reportFor)}%"
-    val baseQuery = s"""SELECT id FROM report_dashboard WHERE name = '$safeName' AND collection_id = $collectionId AND description LIKE '$safeReportFor' AND archived = false """.stripMargin
 
-    val idFilter = reportId match {
-      case Some(id) =>
-        reportIdType match {
-          case Some(idType) =>
-            val safeType = esc(idType)
-            s" AND description LIKE '%$safeType Id: $id%'"
-          case None => ""
-        }
-      case None => ""
+    val safeName = escape(dashboardName)
+    val safeReportFor = s"%Dashboard For: ${escape(reportFor)}%"
+
+    val baseQuery =
+      s"""
+         |SELECT id
+         |FROM report_dashboard
+         |WHERE name = '$safeName'
+         |  AND collection_id = $collectionId
+         |  AND description LIKE '$safeReportFor'
+         |  AND archived = false
+     """.stripMargin
+
+    val idFilter = (reportId, reportIdType) match {
+      case (Some(id), Some(idType)) =>
+        s" AND description LIKE '%${escape(idType)} Id: ${escape(id)}%'"
+      case _ =>
+        ""
     }
 
     val finalQuery = s"$baseQuery$idFilter LIMIT 1"
 
     try {
-      val result = metabasePostgresUtil.fetchData(finalQuery)
-
-      result.collectFirst {
-        case map: Map[_, _] =>
-          val id = map.get("id").flatMap {
-            case i: Int => Some(i)
-            case s: String if s.nonEmpty => scala.util.Try(s.toInt).toOption
-            case _ => None
-          }.getOrElse(0)
-
-          (true, id)
-      }.getOrElse((false, 0))
+      metabasePostgresUtil
+        .fetchData(finalQuery)
+        .headOption
+        .flatMap(_.get("id"))
+        .flatMap {
+          case i: Int => Some(i)
+          case l: Long => Some(l.toInt)
+          case bd: BigDecimal => Some(bd.toInt)
+          case s: String => scala.util.Try(s.toInt).toOption
+          case other => scala.util.Try(other.toString.toInt).toOption
+        }
+        .map(id => (true, id))
+        .getOrElse((false, 0))
 
     } catch {
       case e: Exception =>
         println(s"[ERROR] validateDashboard failed for '$dashboardName': ${e.getMessage}")
         (false, 0)
     }
+  }
+
+  /**
+   * Method to clear the cached table and column IDs to ensure freshness after schema changes.
+   */
+  def clearCaches(): Unit = {
+    storedTableIds.clear()
+    storedColumnIds.clear()
   }
 
   /**
@@ -853,7 +915,6 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
    */
 
   def getTheTableId(databaseId: Int, tableName: String, metabaseApiKey: String): Int = {
-    def escape(v: String): String = v.replace("'", "''")
     storedTableIds.get((databaseId, tableName)) match {
       case Some(tableId) =>
         tableId
@@ -889,7 +950,6 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
    */
 
   def getTheColumnId(databaseId: Int, tableName: String, columnName: String, metabaseApiKey: String, metaTableQuery: String): Int = {
-    def escape(value: String): String = value.replace("'", "''")
     val tableId = getTheTableId(databaseId, tableName, metabaseApiKey)
     storedColumnIds.get((tableId, columnName)) match {
       case Some(columnId) =>
@@ -911,8 +971,13 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
             val errorMessage =s"Column '$columnName' not found in table '$tableName' (tableId: $tableId)"
             val escapedError = escape(errorMessage)
             val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'$escapedError'")
-            postgresUtil.insertData(updateTableQuery)
-            throw new NoSuchElementException(errorMessage)
+            postgresUtil match {
+              case Some(pg) =>
+                pg.insertData(updateTableQuery)
+              case None =>
+                println(s"[WARN] Skipping DB log: $errorMessage")
+            }
+            -1
         }
     }
   }
@@ -928,18 +993,30 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
    */
 
   def getGroupByName(groupName: String): (Boolean, Int) = {
-    def escape(v: String) = v.replace("'", "''")
     val safeName = escape(groupName)
-    val query = s"""SELECT id FROM permissions_group WHERE LOWER(name) = LOWER('$safeName') LIMIT 1""".stripMargin
+
+    val query =
+      s"""
+         |SELECT id
+         |FROM permissions_group
+         |WHERE LOWER(name) = LOWER('$safeName')
+         |LIMIT 1
+     """.stripMargin
 
     try {
-      val result = metabasePostgresUtil.fetchData(query)
-
-      result.collectFirst {
-        case map: Map[_, _] =>
-          val id = map.get("id").map(_.toString.toInt).getOrElse(0)
-          (true, id)
-      }.getOrElse((false, 0))
+      metabasePostgresUtil
+        .fetchData(query)
+        .headOption
+        .flatMap(_.get("id"))
+        .flatMap {
+          case i: Int => Some(i)
+          case l: Long => Some(l.toInt)
+          case bd: BigDecimal => Some(bd.toInt)
+          case s: String => scala.util.Try(s.toInt).toOption
+          case other => scala.util.Try(other.toString.toInt).toOption
+        }
+        .map(id => (true, id))
+        .getOrElse((false, 0))
 
     } catch {
       case e: Exception =>

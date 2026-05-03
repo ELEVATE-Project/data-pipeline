@@ -1,7 +1,6 @@
 package org.shikshalokam.job.observation.dashboard.creator.functions
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ArrayNode
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
@@ -10,7 +9,6 @@ import org.shikshalokam.job.observation.dashboard.creator.task.ObservationMetaba
 import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import org.shikshalokam.job.{BaseProcessFunction, Metrics}
 import org.slf4j.LoggerFactory
-import scala.collection.concurrent.TrieMap
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.{ListMap, _}
@@ -40,7 +38,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
     val metabaseConnectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$metabasePgDb"
     postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
     metabasePostgresUtil = new PostgresUtil(metabaseConnectionUrl, pgUsername, pgPassword)
-    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil, postgresUtil)
+    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil)
   }
 
   override def close(): Unit = {
@@ -132,17 +130,20 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
                   println(s"=====> $solutionCollectionName collection is present, hence skipping the process ......")
                 } else {
                   createDashboard(programCollectionId, targetedSolutionId, solutionExternalId, solutionCollectionName, solutionDescription, dashboardDescription, tabList, metaDataTable, reportConfig, metabaseDatabase, evidenceBaseUrl, targetedProgramId, observationStatusTable, observationDomainTable, observationQuestionTable, entityType, isRubric, "Admin")
+                  metabaseUtil.clearCaches()
                 }
               } else {
                 println(s"=====> $programCollectionName collection is not present, creating $programCollectionName collection for Admin ......")
                 val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, targetedProgramId, programExternalId, programCollectionName, programDescription, "Admin")
                 createDashboard(programCollectionId, targetedSolutionId, solutionExternalId, solutionCollectionName, solutionDescription, dashboardDescription, tabList, metaDataTable, reportConfig, metabaseDatabase, evidenceBaseUrl, targetedProgramId, observationStatusTable, observationDomainTable, observationQuestionTable, entityType, isRubric, "Admin")
+                metabaseUtil.clearCaches()
               }
             } else {
               println(s"=====> Programs Collection is not present, creating Programs Collection ......")
               val adminCollectionId = createAdminCollection
               val programCollectionId = createProgramCollectionInsideAdmin(adminCollectionId, targetedProgramId, programExternalId, programCollectionName, programDescription, "Admin")
               createDashboard(programCollectionId, targetedSolutionId, solutionExternalId, solutionCollectionName, solutionDescription, dashboardDescription, tabList, metaDataTable, reportConfig, metabaseDatabase, evidenceBaseUrl, targetedProgramId, observationStatusTable, observationDomainTable, observationQuestionTable, entityType, isRubric, "Admin")
+              metabaseUtil.clearCaches()
             }
 
             println("********************************************** Start Observation Program Dashboard Processing **********************************************")
@@ -155,11 +156,13 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
               } else {
                 println(s"=====> $solutionCollectionName collection is not present, creating $solutionCollectionName collection for Program Manager ......")
                 createDashboard(programCollectionId, targetedSolutionId, solutionExternalId, solutionCollectionName, solutionDescription, dashboardDescription, tabList, metaDataTable, reportConfig, metabaseDatabase, evidenceBaseUrl, targetedProgramId, observationStatusTable, observationDomainTable, observationQuestionTable, entityType, isRubric, "Program Manager")
+                metabaseUtil.clearCaches()
               }
             } else {
               println(s"=====> $programCollectionName collection is not present, creating $programCollectionName collection for Program Manager ......")
               val programCollectionId = createProgramCollection(programCollectionName, targetedProgramId, programExternalId, programDescription, "Program Manager")
               createDashboard(programCollectionId, targetedSolutionId, solutionExternalId, solutionCollectionName, solutionDescription, dashboardDescription, tabList, metaDataTable, reportConfig, metabaseDatabase, evidenceBaseUrl, targetedProgramId, observationStatusTable, observationDomainTable, observationQuestionTable, entityType, isRubric, "Program Manager")
+              metabaseUtil.clearCaches()
             }
         }
       } else {
@@ -168,7 +171,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
 
       if (filterSync.nonEmpty){
         println(s"Started syncing the $filterTable table ")
-        val filterTableId: Int = metabaseUtil.searchTable(filterTable, databaseId)
+        val filterTableId: Int = metabaseUtil.searchTableWithSQL(filterTable, databaseId)
         if (filterTableId != -1) {
           metabaseUtil.discardValues(filterTableId)
           metabaseUtil.rescanValues(filterTableId)
@@ -183,6 +186,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
         val dashboardId: Int = Utils.createDashboard(solutionCollectionId, s"Observation Dashboard", dashboardDescription, metabaseUtil)
         val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
         val solutionDashboardIds = combinedFunctionForDashboards(solutionCollectionId, dashboardId, tabIdMap, solutionCollectionName, reportFor)
+        metabaseUtil.clearCaches()
         val csvDashboardIds = createObservationTableDashboard(solutionCollectionId, databaseId, dashboardId, tabIdMap, metaDataTable, reportConfig, metabaseDatabase, evidenceBaseUrl, targetedProgramId, targetedSolutionId, observationStatusTable, observationDomainTable, observationQuestionTable, entityType, reportFor, isRubric)
         val mainQuestionIdsString = "[" + (solutionDashboardIds ++ csvDashboardIds).mkString(",") + "]"
         val solutionMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", solutionCollectionId).put("collectionName", solutionCollectionName).put("Collection For", reportFor).put("dashboardId", dashboardId).put("dashboardName", s"Observation Dashboard").put("questionIds", mainQuestionIdsString))
@@ -194,16 +198,19 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
           if (isRubric == "true") {
             println(s"=====> Creating Observation Domain Dashboard for $exactProgramCollectionName")
             val observationDomainDashboardIds = createObservationDomainDashboard(exactProgramCollectionId, dashboardId, tabIdMap, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, observationDomainTable, entityType)
+            metabaseUtil.clearCaches()
             println(s"=====> Creating Observation Question Dashboard for $exactProgramCollectionName")
             val observationQuestionDashboardIds = createObservationQuestionDashboard(exactProgramCollectionId, dashboardId, tabIdMap, exactProgramCollectionName, metaDataTable, reportConfig, metabaseDatabase, evidenceBaseUrl, targetedProgramId, targetedSolutionId, observationQuestionTable, observationDomainTable, entityType, reportFor)
             (observationDomainDashboardIds, observationQuestionDashboardIds, ListBuffer.empty[Int])
           } else {
             println(s"=====> Creating Observation Without Rubric Question Dashboard for $exactProgramCollectionName")
+            metabaseUtil.clearCaches()
             val observationWithoutRubricQuestionDashboardIds = createObservationWithoutRubricQuestionDashboard(exactProgramCollectionId, databaseId, dashboardId, tabIdMap, exactProgramCollectionName, metaDataTable, reportConfig, metabaseDatabase, evidenceBaseUrl, targetedProgramId, targetedSolutionId, observationQuestionTable, entityType, reportFor)
             (ListBuffer.empty[Int], ListBuffer.empty[Int], observationWithoutRubricQuestionDashboardIds)
           }
 
         println(s"=====> Creating Observation Status Dashboard for $exactProgramCollectionName")
+        metabaseUtil.clearCaches()
         val observationStatusDashboardId: ListBuffer[Int] = createObservationStatusDashboard(exactProgramCollectionId, databaseId, dashboardId, tabIdMap, metaDataTable, reportConfig, metabaseDatabase, targetedProgramId, targetedSolutionId, observationStatusTable, entityType, reportFor)
         val allDashboardIds = domainIds ++ questionIds ++ withoutRubricIds ++ observationStatusDashboardId
         allDashboardIds
