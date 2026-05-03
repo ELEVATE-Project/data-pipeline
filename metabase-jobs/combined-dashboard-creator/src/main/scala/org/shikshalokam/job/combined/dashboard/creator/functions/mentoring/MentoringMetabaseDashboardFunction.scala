@@ -1,7 +1,6 @@
 package org.shikshalokam.job.combined.dashboard.creator.functions.mentoring
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ArrayNode
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
@@ -11,8 +10,6 @@ import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import org.shikshalokam.job.{BaseProcessFunction, Metrics}
 import org.slf4j.LoggerFactory
 
-import scala.collection.JavaConverters._
-import scala.collection.concurrent.TrieMap
 import scala.collection.immutable._
 
 
@@ -40,7 +37,7 @@ class MentoringMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)
     val metabaseConnectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$metabasePgDb"
     postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
     metabasePostgresUtil = new PostgresUtil(metabaseConnectionUrl, pgUsername, pgPassword)
-    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil, postgresUtil)
+    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil)
   }
 
   override def close(): Unit = {
@@ -55,7 +52,7 @@ class MentoringMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)
       val startTime = System.currentTimeMillis()
       val metaDataTable = config.dashboardMetadata
       val metabaseDatabase: String = config.metabaseDatabase
-      val databaseId: Int = metabaseUtil.getDatabaseID(metabaseDatabase); if (databaseId == -1) { println(s"[ERROR] Metabase database '$metabaseDatabase' not found"); return }
+      val databaseId: Int = metabaseUtil.getDatabaseID(metabaseDatabase); if (databaseId == -1) { logger.info(s"[ERROR] Metabase database '$metabaseDatabase' not found"); return }
       val reportConfig: String = config.reportConfig
       val metabaseApiKey: String = config.metabaseApiKey
       val tenantCode: String = event.tenantCode
@@ -76,7 +73,7 @@ class MentoringMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)
       }
 
       if (filterSync.nonEmpty) {
-        val filterTableId: Int = metabaseUtil.searchTable(filterTable, databaseId)
+        val filterTableId: Int = metabaseUtil.searchTableWithSQL(filterTable, databaseId)
         if (filterTableId != -1) {
           metabaseUtil.discardValues(filterTableId)
           metabaseUtil.rescanValues(filterTableId)
@@ -88,8 +85,10 @@ class MentoringMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)
 
       if (tenantCode.nonEmpty) {
         createCollectionAndDashboardForTenant(tenantCode)
+        metabaseUtil.clearCaches()
         if (orgId.nonEmpty) {
           createCollectionAndDashboardForOrg(orgId.toInt, tenantCode, orgName)
+          metabaseUtil.clearCaches()
         } else {
           logger.info(s"[SKIP] Skipping Org Admin dashboard creation due to missing orgId.")
         }
@@ -106,7 +105,9 @@ class MentoringMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)
           val dashboardId: Int = Utils.createDashboard(collectionId, dashboardName, dashboardDescription, metabaseUtil)
           val tabIdMap = Utils.createTabs(dashboardId, tabList, metabaseUtil)
           createOverviewTabInsideTenantDashboard(collectionId, databaseId, dashboardId, tabIdMap, metaDataTable, reportConfig, metabaseDatabase, metabaseApiKey)
+          metabaseUtil.clearCaches()
           createComparisionTabInsideTenantDashboard(collectionId, databaseId, dashboardId, tabIdMap, metaDataTable, reportConfig, metabaseDatabase, metabaseApiKey)
+          metabaseUtil.clearCaches()
         }
       }
 
