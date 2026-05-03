@@ -37,7 +37,7 @@ class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implici
     val metabaseConnectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$metabasePgDb"
     postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
     metabasePostgresUtil = new PostgresUtil(metabaseConnectionUrl, pgUsername, pgPassword)
-    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil, postgresUtil)
+    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil)
   }
 
   override def close(): Unit = {
@@ -63,7 +63,7 @@ class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implici
 
     println("\n-->> Process Report Admin User Metrics Dashboard")
     if (filterSync.nonEmpty){
-      val filterTableId: Int = metabaseUtil.searchTable(filterTable, databaseId)
+      val filterTableId: Int = metabaseUtil.searchTableWithSQL(filterTable, databaseId)
       if (filterTableId != -1) {
         metabaseUtil.discardValues(filterTableId)
         metabaseUtil.rescanValues(filterTableId)
@@ -79,6 +79,7 @@ class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implici
     } else {
       println("=====> Creating Report Admin Collection and User Metrics Dashboard")
       createUserMetricsCollectionAndDashboardForAdmin()
+      metabaseUtil.clearCaches()
     }
 
     if (tenantCode.nonEmpty) {
@@ -92,6 +93,7 @@ class UserMetabaseDashboardFunction(config: UserMetabaseDashboardConfig)(implici
       } else {
         println(s"=====> '$tenantAdminCollectionName' not found. Creating...")
         createUserMetricsCollectionAndDashboardForTenant()
+        metabaseUtil.clearCaches()
       }
     } else {
       println("Tenant name is null or empty, skipping the processing.")

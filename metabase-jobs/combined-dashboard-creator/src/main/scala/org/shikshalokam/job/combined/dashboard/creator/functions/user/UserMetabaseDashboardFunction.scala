@@ -37,7 +37,7 @@ class UserMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(impl
     val metabaseConnectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$metabasePgDb"
     postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
     metabasePostgresUtil = new PostgresUtil(metabaseConnectionUrl, pgUsername, pgPassword)
-    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil, postgresUtil)
+    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil)
   }
 
   override def close(): Unit = {
@@ -53,7 +53,7 @@ class UserMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(impl
       val metaDataTable = config.dashboardMetadata
       val userMetrics: String = config.userMetrics
       val metabaseDatabase: String = config.metabaseDatabase
-      val databaseId = metabaseUtil.getDatabaseID(metabaseDatabase); if (databaseId == -1) { println(s"[ERROR] Metabase database '$metabaseDatabase' not found"); return }
+      val databaseId = metabaseUtil.getDatabaseID(metabaseDatabase); if (databaseId == -1) { logger.info(s"[ERROR] Metabase database '$metabaseDatabase' not found"); return }
       val reportConfig: String = config.reportConfig
       val metabaseApiKey: String = config.metabaseApiKey
       val tenantCode: String = event.tenantCode
@@ -64,7 +64,7 @@ class UserMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(impl
 
       logger.info("-->> Process Report Admin User Metrics Dashboard")
       if (filterSync.nonEmpty) {
-        val filterTableId: Int = metabaseUtil.searchTable(filterTable, databaseId)
+        val filterTableId: Int = metabaseUtil.searchTableWithSQL(filterTable, databaseId)
         if (filterTableId != -1) {
           metabaseUtil.discardValues(filterTableId)
           metabaseUtil.rescanValues(filterTableId)
@@ -80,6 +80,7 @@ class UserMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(impl
       } else {
         logger.info("=====> Creating Report Admin Collection and User Metrics Dashboard")
         createUserMetricsCollectionAndDashboardForAdmin()
+        metabaseUtil.clearCaches()
       }
 
       if (tenantCode.nonEmpty) {
@@ -93,6 +94,7 @@ class UserMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(impl
         } else {
           logger.info(s"=====> '$tenantAdminCollectionName' not found. Creating...")
           createUserMetricsCollectionAndDashboardForTenant()
+          metabaseUtil.clearCaches()
         }
       } else {
         logger.info("Tenant name is null or empty, skipping the processing.")
