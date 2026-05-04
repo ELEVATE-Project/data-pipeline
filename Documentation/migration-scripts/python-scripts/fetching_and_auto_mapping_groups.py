@@ -17,8 +17,11 @@ if EXECUTION_MODE not in VALID_MODES:
     raise Exception(f"Invalid EXECUTION_MODE: {EXECUTION_MODE}")
 
 def setup_logger():
-    ROOT_DIR = "/home/user-1/Documents/elevate-dev/data-pipeline"
-    LOG_DIR = os.path.join(ROOT_DIR, "logs")
+    root_dir = os.environ.get(
+        "DATA_PIPELINE_ROOT",
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+    )
+    LOG_DIR = os.path.join(root_dir, "logs")
     os.makedirs(LOG_DIR, exist_ok=True)
 
     log_file = os.path.join(
@@ -54,17 +57,26 @@ def load_config():
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
     unified_conf = os.environ.get(
-            "UNIFIED_PIPELINE_CONF",
-            os.path.abspath(os.path.join(base_dir, "../../..", "unified-common.conf"))
+        "UNIFIED_PIPELINE_CONF",
+        os.path.abspath(os.path.join(base_dir, "../../..", "unified-common.conf"))
     )
 
-    config = ConfigFactory.parse_file(unified_conf)
+    # Verify the file exists before parsing
+    if not os.path.exists(unified_conf):
+        print(f"Error: Unified configuration file not found at '{unified_conf}'.", file=sys.stderr)
+        print("Please set the UNIFIED_PIPELINE_CONF environment variable or ensure 'unified-common.conf' exists in the root directory.", file=sys.stderr)
+        sys.exit(1)
 
-    return {
-        "url": config.get_string("metabase.url"),
-        "username": config.get_string("metabase.username"),
-        "password": config.get_string("metabase.password")
-    }
+    try:
+        config = ConfigFactory.parse_file(unified_conf)
+        return {
+            "url": config.get_string("metabase.url"),
+            "username": config.get_string("metabase.username"),
+            "password": config.get_string("metabase.password")
+        }
+    except Exception as e:
+        print(f"Error parsing configuration at '{unified_conf}': {e}", file=sys.stderr)
+        sys.exit(1)
 
 def get_session(url, username, password):
     res = requests.post(
@@ -83,10 +95,45 @@ def get_groups(url, session_id):
 
 
 def get_users(url, session_id):
-    return requests.get(
-        f"{url}/user?status=active&limit=200&offset=0",
-        headers={"X-Metabase-Session": session_id}
-    ).json()["data"]
+    logger.info("Fetching users with pagination")
+
+    all_users = []
+    limit = 200
+    offset = 0
+
+    while True:
+        res = requests.get(
+            f"{url}/user",
+            params={
+                "status": "active",
+                "limit": limit,
+                "offset": offset
+            },
+            headers={"X-Metabase-Session": session_id}
+        )
+
+        res.raise_for_status()
+        data = res.json()
+
+        users_page = data.get("data", [])
+        total = data.get("total", 0)
+
+        all_users.extend(users_page)
+
+        logger.info(f"Fetched {len(users_page)} users (offset={offset})")
+
+        # Stop conditions
+        if not users_page:
+            break
+
+        offset += limit
+
+        if offset >= total:
+            break
+
+    logger.info(f"Total users fetched: {len(all_users)}")
+
+    return all_users
 
 
 def get_memberships(url, session_id):
@@ -230,7 +277,7 @@ def remap_users(url, session_id):
                 pass
 
         for gid in updated_ids:
-            if gid == 1:
+            if gid in {1, 2}:
                 continue
 
             try:
