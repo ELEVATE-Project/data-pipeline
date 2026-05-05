@@ -738,11 +738,11 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
     }
   }
 
-  /**
-   * Method to replace (') with ('') to ensure query doesn't brealk on SQL injection.
-   */
+ /**
+ * Method to replace (') with ('') to ensure query doesn't brealk on SQL injection.
+ */
 
-  def escape(value: String) = value.replace("'", "''")
+ def escape(value: String) = value.replace("'", "''")
 
   /**
    * Method to search a table in Metabase DB by table name and database ID.

@@ -39,7 +39,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
   }
 
   override def processElement(event: Event, context: ProcessFunction[Event, Event]#Context, metrics: Metrics): Unit = {
-    if (event.status.toLowerCase() == "started" || event.status.toLowerCase() == "inprogress" || event.status.toLowerCase() == "submitted" || event.status.toLowerCase() == "completed") {
+    if ((event.status.toLowerCase() == "started" || event.status.toLowerCase() == "inprogress" || event.status.toLowerCase() == "submitted" || event.status.toLowerCase() == "completed") && !event.privateProgram)  {
       println(s"***************** Start of Processing the Survey Event with Id = ${event._id} *****************")
       val surveyQuestionTable = event.solutionId
       val surveyStatusTable = s""""${event.solutionId}_survey_status""""
@@ -474,7 +474,7 @@ class SurveyStreamFunction(config: SurveyStreamConfig)(implicit val mapTypeInfo:
         }
       }
     } else {
-      println(s"Skipping the survey event with Id = ${event._id} and status = ${event.status} as it is not in a valid status.")
+      println(s"Skipping the survey event with Id = ${event._id} and status = ${event.status} as it is not in a valid status or belongs to a private program.")
     }
   }
 

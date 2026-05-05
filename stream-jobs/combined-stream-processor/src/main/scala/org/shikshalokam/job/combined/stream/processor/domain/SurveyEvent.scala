@@ -9,6 +9,8 @@ class SurveyEvent(eventMap: java.util.Map[String, Any], partition: Int, offset: 
 
   def _id: String = readOrDefault[String]("_id", "")
 
+  def privateProgram: Boolean = readOrDefault[Boolean]("isAPrivateProgram", false)
+
   def programId: String = readOrDefault[String]("programInfo._id", "")
 
   def programExternalId: String = readOrDefault[String]("programInfo.programExternalId", "")
