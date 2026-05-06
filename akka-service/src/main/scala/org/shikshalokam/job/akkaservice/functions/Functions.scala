@@ -18,13 +18,16 @@ object Functions {
   private val pgUsername = config.getString("postgres.username")
   private val pgPassword = config.getString("postgres.password")
   private val pgDataBase = config.getString("postgres.database")
+  private val metabasePgDb: String = config.getString("postgres.metabaseDb")
   private val projects: String = config.getString("postgres.tables.projectsTable")
   private val metabaseUrl = config.getString("metabase.url")
   private val metabaseUsername = config.getString("metabase.username")
   private val metabasePassword = config.getString("metabase.password")
   private val connectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$pgDataBase"
+  private val metabaseConnectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$metabasePgDb"
   private val postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
-  private val metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword)
+  private val metabasePostgresUtil = new PostgresUtil(metabaseConnectionUrl, pgUsername, pgPassword)
+  private val metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil)
 
   def processCsvFile(filename: String): Unit = {
     val filePath = Paths.get(sinkDirectory, filename).toString
