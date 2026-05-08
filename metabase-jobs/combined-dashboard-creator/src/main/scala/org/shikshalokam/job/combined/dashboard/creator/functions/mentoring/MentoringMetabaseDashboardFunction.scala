@@ -37,7 +37,7 @@ class MentoringMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)
     val metabaseConnectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$metabasePgDb"
     postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
     metabasePostgresUtil = new PostgresUtil(metabaseConnectionUrl, pgUsername, pgPassword)
-    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil)
+    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, Some(metabasePostgresUtil))
   }
 
   override def close(): Unit = {
@@ -117,7 +117,7 @@ class MentoringMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)
           val safeTenantCode = tenantCode.replace("'", "''")
           val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '${safeTenantCode}_tenant_admin';"
           val tabId: Int = tabIdMap.getOrElse(dashboardName, -1)
-          val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, tenantOrgRolesTable, "org_name", metabaseApiKey, createDashboardQuery)
+          val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, tenantOrgRolesTable, "org_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (orgNameId == -1) return
           val reportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mentoring-Reports' AND report_name = 'Tenant-Overview' AND question_type IN ('big-number', 'graph');"
           val questionCardIdList = ProcessTenantConstructor.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, 0, orgNameId, 0, tenantUserTable,
             tenantSessionTable, tenantSessionAttendanceTable, tenantConnectionsTable, tenantOrgMentorRatingTable,
@@ -143,9 +143,9 @@ class MentoringMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)
           val dashboardName: String = s"Compare Organizations"
           val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '${tenantCode}_tenant_admin';"
           val tabId: Int = tabIdMap.getOrElse(dashboardName, -1)
-          val orgIdSession: Int = metabaseUtil.getTheColumnId(databaseId, tenantSessionTable, "org_name", metabaseApiKey, createDashboardQuery)
-          val orgIdMentor: Int = metabaseUtil.getTheColumnId(databaseId, tenantOrgRolesTable, "org_name", metabaseApiKey, createDashboardQuery)
-          val orgIdRating: Int = metabaseUtil.getTheColumnId(databaseId, tenantOrgMentorRatingTable, "org_name", metabaseApiKey, createDashboardQuery)
+          val orgIdSession: Int = metabaseUtil.getTheColumnId(databaseId, tenantSessionTable, "org_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (orgIdSession == -1) return
+          val orgIdMentor: Int = metabaseUtil.getTheColumnId(databaseId, tenantOrgRolesTable, "org_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (orgIdMentor == -1) return
+          val orgIdRating: Int = metabaseUtil.getTheColumnId(databaseId, tenantOrgMentorRatingTable, "org_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (orgIdRating == -1) return
           val reportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mentoring-Reports' AND report_name = 'Tenant-Compare' AND question_type IN ('big-number', 'graph');"
           val questionCardIdList = ProcessTenantConstructor.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, orgIdSession, orgIdMentor, orgIdRating, tenantUserTable,
             tenantSessionTable, tenantSessionAttendanceTable, tenantConnectionsTable, tenantOrgMentorRatingTable,
@@ -176,11 +176,11 @@ class MentoringMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)
           val dashboardDescription = s"Overview of Mentoring Across [Org: $orgName]"
           val dashboardId: Int = Utils.createDashboard(collectionId, dashboardName, dashboardDescription, metabaseUtil)
           val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed' WHERE entity_id = 'org_admin_$orgId';"
-          val stateNameId = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_one_name", metabaseApiKey, createDashboardQuery)
-          val districtNameId = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_two_name", metabaseApiKey, createDashboardQuery)
-          val blockNameId = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_three_name", metabaseApiKey, createDashboardQuery)
-          val clusterNameId = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_four_name", metabaseApiKey, createDashboardQuery)
-          val schoolNameId = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_five_name", metabaseApiKey, createDashboardQuery)
+          val stateNameId = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_one_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (stateNameId == -1) return
+          val districtNameId = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_two_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (districtNameId == -1) return
+          val blockNameId = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_three_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (blockNameId == -1) return
+          val clusterNameId = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_four_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (clusterNameId == -1) return
+          val schoolNameId = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_five_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (schoolNameId == -1) return
           metabaseUtil.updateColumnCategory(stateNameId, "State")
           metabaseUtil.updateColumnCategory(districtNameId, "City")
           val reportConfigQuery = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mentoring-Reports' AND report_name = 'Org-Admin' AND question_type IN ('big-number', 'graph');"
