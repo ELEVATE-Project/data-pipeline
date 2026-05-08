@@ -91,7 +91,6 @@ def get_groups(url, session_id):
 
 
 def get_users(url, session_id):
-    logger.info("Fetching users with pagination")
 
     all_users = []
     limit = 200
@@ -116,7 +115,7 @@ def get_users(url, session_id):
 
         all_users.extend(users_page)
 
-        logger.info(f"Fetched {len(users_page)} users (offset={offset})")
+        logger.info(f"Fetched {len(users_page)} users")
 
         # Stop conditions
         if not users_page:
