@@ -38,7 +38,7 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
     val metabaseConnectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$metabasePgDb"
     postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
     metabasePostgresUtil = new PostgresUtil(metabaseConnectionUrl, pgUsername, pgPassword)
-    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil)
+    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, Some(metabasePostgresUtil))
   }
 
   override def close(): Unit = {
@@ -506,7 +506,11 @@ class ObservationMetabaseDashboardFunction(config: ObservationMetabaseDashboardC
 
         val params: Map[String, Int] =
           mapOfParamsAfterRemovingBelowEntityParams.map { case (key, columnName) =>
-            key -> metabaseUtil.getTheColumnId(databaseId, tableName, columnName, metabaseApiKey, createDashboardQuery)
+            val columnId = metabaseUtil.getTheColumnId(databaseId, tableName, columnName, metabaseApiKey, createDashboardQuery, postgresUtil)
+            if (columnId == -1) {
+              return (Map.empty[String, Int], ListMap.empty[String, String], entityColumnName, false)
+            }
+            key -> columnId
           }
         val mapOfRemovedParams: ListMap[String, String] =
           completeMapOfParamAndColumnName.filterNot {
