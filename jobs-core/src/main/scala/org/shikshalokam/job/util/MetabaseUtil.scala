@@ -3,7 +3,7 @@ package org.shikshalokam.job.util
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.{List, Map}
 
-class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: String, metabasePostgresUtil: PostgresUtil, postgresUtil: Option[PostgresUtil] = None) {
+class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: String, metabasePostgresUtil: Option[PostgresUtil] = None) {
 
   private val metabaseUrl: String = url
   private val username: String = metabaseUsername
@@ -15,6 +15,11 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
   val storedColumnIds = TrieMap.empty[(Int, String), Int]
 
   private var sessionToken: Option[String] = None
+
+  private def metabasePg: PostgresUtil =
+    metabasePostgresUtil.getOrElse(
+      throw new Exception("Metabase PostgresUtil is required but not configured")
+    )
 
   /**
    * Method to get or refresh the session token
@@ -65,7 +70,7 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
     def escape(v: String) = v.replace("'", "''")
 
     val databaseID =
-      metabasePostgresUtil
+      metabasePg
         .fetchData(s"SELECT id FROM metabase_database WHERE name = '${escape(metabaseDatabase)}' LIMIT 1")
         .headOption
         .flatMap(_.get("id"))
@@ -739,10 +744,10 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
   }
 
  /**
- * Method to replace (') with ('') to ensure query doesn't brealk on SQL injection.
+ * Method to replace (') with ('') to ensure query doesn't break on SQL injection.
  */
 
- def escape(value: String) = value.replace("'", "''")
+ private def escape(value: String) = value.replace("'", "''")
 
   /**
    * Method to search a table in Metabase DB by table name and database ID.
@@ -765,7 +770,7 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
          |LIMIT 1
      """.stripMargin
 
-    metabasePostgresUtil
+    metabasePg
       .fetchData(query)
       .headOption
       .flatMap(_.get("id"))
@@ -812,7 +817,7 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
     val finalQuery = s"$baseQuery$idFilter LIMIT 1"
 
     try {
-      metabasePostgresUtil
+      metabasePg
         .fetchData(finalQuery)
         .headOption
         .flatMap(_.get("id"))
@@ -874,7 +879,7 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
     val finalQuery = s"$baseQuery$idFilter LIMIT 1"
 
     try {
-      metabasePostgresUtil
+      metabasePg
         .fetchData(finalQuery)
         .headOption
         .flatMap(_.get("id"))
@@ -922,7 +927,7 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
       case None =>
         val safeTableName = escape(tableName)
         val tableQuery =s"""SELECT id FROM metabase_table WHERE db_id = $databaseId AND name = '$safeTableName' AND active = true LIMIT 1""".stripMargin
-        val tableIdOpt = metabasePostgresUtil.fetchData(tableQuery) match {
+        val tableIdOpt = metabasePg.fetchData(tableQuery) match {
           case map :: _ =>
             map.get("id").flatMap(id => scala.util.Try(id.toString.toInt).toOption)
           case _ => None
@@ -949,14 +954,14 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
    * @return Column ID as Int if found, otherwise -1 in case of failure
    */
 
-  def getTheColumnId(databaseId: Int, tableName: String, columnName: String, metabaseApiKey: String, metaTableQuery: String): Int = {
+  def getTheColumnId(databaseId: Int, tableName: String, columnName: String, metabaseApiKey: String, metaTableQuery: String, postgresUtil: PostgresUtil): Int = {
     val tableId = getTheTableId(databaseId, tableName, metabaseApiKey)
     storedColumnIds.get((tableId, columnName)) match {
       case Some(columnId) =>
         columnId
       case None =>
         val columnQuery =s"""SELECT id FROM metabase_field WHERE table_id = $tableId AND name = '${escape(columnName)}' AND active = true LIMIT 1""".stripMargin
-        val columnIdOpt = metabasePostgresUtil.fetchData(columnQuery).headOption.flatMap(_.get("id"))
+        val columnIdOpt = metabasePg.fetchData(columnQuery).headOption.flatMap(_.get("id"))
           .flatMap {
             case i: Int => Some(i)
             case s: String if s.nonEmpty => scala.util.Try(s.toInt).toOption
@@ -971,12 +976,8 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
             val errorMessage =s"Column '$columnName' not found in table '$tableName' (tableId: $tableId)"
             val escapedError = escape(errorMessage)
             val updateTableQuery = metaTableQuery.replace("'errorMessage'", s"'$escapedError'")
-            postgresUtil match {
-              case Some(pg) =>
-                pg.insertData(updateTableQuery)
-              case None =>
-                println(s"[WARN] Skipping DB log: $errorMessage")
-            }
+            postgresUtil.insertData(updateTableQuery)
+            println(s"[ERROR] $errorMessage")
             -1
         }
     }
@@ -1004,7 +1005,7 @@ class MetabaseUtil(url: String, metabaseUsername: String, metabasePassword: Stri
      """.stripMargin
 
     try {
-      metabasePostgresUtil
+      metabasePg
         .fetchData(query)
         .headOption
         .flatMap(_.get("id"))

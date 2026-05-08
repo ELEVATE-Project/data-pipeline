@@ -38,7 +38,7 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
     val metabaseConnectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$metabasePgDb"
     postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
     metabasePostgresUtil = new PostgresUtil(metabaseConnectionUrl, pgUsername, pgPassword)
-    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil)
+    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, Some(metabasePostgresUtil))
   }
 
   override def close(): Unit = {
@@ -300,12 +300,12 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
           val (mipDashboardName, mipDashboardDescription) = (s"Overview - Across States and Programs", s"A consolidated view of project progress and user participation.")
           val (mipDashboardId, projectTabId, userTabId, csvTabId) = Utils.createMicroImprovementsDashboardAndTabs(mipCollectionId, mipDashboardName, mipDashboardDescription, metabaseUtil)
           if (projectTabId != -1 && userTabId != -1 && csvTabId != -1) {
-            val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "state_name", metabaseApiKey, createDashboardQuery)
-            val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "district_name", metabaseApiKey, createDashboardQuery)
-            val programNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "program_name", metabaseApiKey, createDashboardQuery)
-            val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "block_name", metabaseApiKey, createDashboardQuery)
-            val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "cluster_name", metabaseApiKey, createDashboardQuery)
-            val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "org_name", metabaseApiKey, createDashboardQuery)
+            val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "state_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (stateNameId == -1) return
+            val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "district_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (districtNameId == -1) return
+            val programNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "program_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (programNameId == -1) return
+            val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "block_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (blockNameId == -1) return
+            val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "cluster_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (clusterNameId == -1) return
+            val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "org_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (orgNameId == -1) return
             val projectDetailsConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Admin' AND report_name = 'Project-Details';"
             val projectQuestionCardIdList = ProcessAdminConstructor.ProcessAndUpdateJsonFiles(projectDetailsConfigQuery, mipCollectionId, databaseId, mipDashboardId, projectTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, metabaseUtil, postgresUtil)
             val userDetailsConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Admin' AND report_name = 'User-Details';"
@@ -332,12 +332,12 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
           Utils.createGroupForCollection(metabaseUtil, s"State_Manager_$targetedStateId", collectionId)
           val (dashboardName, dashboardDescription) = (s"Micro Improvements", s"Analytical overview of micro improvements for $stateName state")
           val (dashboardId, projectTabId, userTabId, csvTabId) = Utils.createMicroImprovementsDashboardAndTabs(collectionId, dashboardName, dashboardDescription, metabaseUtil)
-          val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "state_name", metabaseApiKey, metaDataStatusUpdateQuery)
-          val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "district_name", metabaseApiKey, metaDataStatusUpdateQuery)
-          val programNameId: Int = metabaseUtil.getTheColumnId(databaseId, solutions, "program_name", metabaseApiKey, metaDataStatusUpdateQuery)
-          val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "block_name", metabaseApiKey, metaDataStatusUpdateQuery)
-          val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "cluster_name", metabaseApiKey, metaDataStatusUpdateQuery)
-          val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "org_name", metabaseApiKey, metaDataStatusUpdateQuery)
+          val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "state_name", metabaseApiKey, metaDataStatusUpdateQuery, postgresUtil); if (stateNameId == -1) return -1
+          val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "district_name", metabaseApiKey, metaDataStatusUpdateQuery, postgresUtil); if (districtNameId == -1) return -1
+          val programNameId: Int = metabaseUtil.getTheColumnId(databaseId, solutions, "program_name", metabaseApiKey, metaDataStatusUpdateQuery, postgresUtil); if (programNameId == -1) return -1
+          val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "block_name", metabaseApiKey, metaDataStatusUpdateQuery, postgresUtil); if (blockNameId == -1) return -1
+          val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "cluster_name", metabaseApiKey, metaDataStatusUpdateQuery, postgresUtil); if (clusterNameId == -1) return -1
+          val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "org_name", metabaseApiKey, metaDataStatusUpdateQuery, postgresUtil); if (orgNameId == -1) return -1
           val projectReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'State' AND report_name = 'Project-Details';"
           val projectQuestionCardIdList = ProcessStateConstructor.ProcessAndUpdateJsonFiles(projectReportConfigQuery, collectionId, databaseId, dashboardId, projectTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, metabaseUtil, postgresUtil, targetedStateId)
           val userReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'State' AND report_name = 'User-Details';"
@@ -374,12 +374,12 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
           Utils.createGroupForCollection(metabaseUtil, s"District_Manager_$targetedDistrictId", collectionId)
           val (dashboardName, dashboardDescription) = (s"Micro Improvements", s"Analytical overview of micro improvements for $districtName district")
           val (dashboardId, projectTabId, statusTabId, csvTabId) = Utils.createMicroImprovementsDashboardAndTabs(collectionId, dashboardName, dashboardDescription, metabaseUtil)
-          val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "state_name", metabaseApiKey, createDashboardQuery)
-          val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "district_name", metabaseApiKey, createDashboardQuery)
-          val programNameId: Int = metabaseUtil.getTheColumnId(databaseId, solutions, "program_name", metabaseApiKey, createDashboardQuery)
-          val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "block_name", metabaseApiKey, createDashboardQuery)
-          val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "cluster_name", metabaseApiKey, createDashboardQuery)
-          val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "org_name", metabaseApiKey, createDashboardQuery)
+          val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "state_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (stateNameId == -1) return -1
+          val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "district_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (districtNameId == -1) return -1
+          val programNameId: Int = metabaseUtil.getTheColumnId(databaseId, solutions, "program_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (programNameId == -1) return -1
+          val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "block_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (blockNameId == -1) return -1
+          val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "cluster_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (clusterNameId == -1) return -1
+          val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "org_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (orgNameId == -1) return -1
           val projectReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'District' AND report_name = 'Project-Details';"
           val projectQuestionCardIdList = ProcessDistrictConstructor.ProcessAndUpdateJsonFiles(projectReportConfigQuery, collectionId, databaseId, dashboardId, projectTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, metabaseUtil, postgresUtil, projects, solutions, targetedStateId, targetedDistrictId)
           val userReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'District' AND report_name = 'User-Details';"
@@ -439,8 +439,8 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
           val (compareDashboardName, compareDashboardDescription) = (s"Region Comparison Dashboard", s"Compare Micro Improvement progress across states and districts using key metrics.")
           val compareDashboardId: Int = Utils.createDashboard(mainCollectionId, compareDashboardName, compareDashboardDescription, metabaseUtil, "Yes")
           val compareReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Mi-Dashboard' AND report_name = 'Compare-Details-Report';"
-          val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "state_name",metabaseApiKey, createDashboardQuery)
-          val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "district_name", metabaseApiKey, createDashboardQuery)
+          val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "state_name",metabaseApiKey, createDashboardQuery, postgresUtil); if (stateNameId == -1) return
+          val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "district_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (districtNameId == -1) return
           val compareReportQuestionIdList = ComparePage.ProcessAndUpdateJsonFiles(compareReportConfigQuery, mainCollectionId, databaseId, compareDashboardId, stateNameId, districtNameId, projects, solutions, metabaseUtil, postgresUtil)
           val compareQuestionIdsString = "[" + compareReportQuestionIdList.mkString(",") + "]"
           val compareParametersQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Mi-Dashboard-Parameters' AND question_type = 'compare-dashboard-parameter'"
@@ -589,12 +589,12 @@ class ProjectMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(i
         val (solutionDashboardId, projectTabId, submissionCsvTabId, taskReportCsvTabId, statusReportCsvTabId) = Utils.createSolutionDashboardAndTabs(solutionCollectionId, solutionDashboardName, solutionDashboardDescription, metabaseUtil)
         if (projectTabId != -1 && submissionCsvTabId != -1 && taskReportCsvTabId != -1 && statusReportCsvTabId != -1) {
           val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedSolutionId';"
-          val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "state_name", metabaseApiKey, createDashboardQuery)
-          val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "district_name", metabaseApiKey, createDashboardQuery)
-          val programNameId: Int = metabaseUtil.getTheColumnId(databaseId, solutions, "program_name", metabaseApiKey, createDashboardQuery)
-          val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "block_name", metabaseApiKey, createDashboardQuery)
-          val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "cluster_name", metabaseApiKey, createDashboardQuery)
-          val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "org_name", metabaseApiKey, createDashboardQuery)
+          val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "state_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (stateNameId == -1) return
+          val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "district_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (districtNameId == -1) return
+          val programNameId: Int = metabaseUtil.getTheColumnId(databaseId, solutions, "program_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (programNameId == -1) return
+          val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "block_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (blockNameId == -1) return
+          val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "cluster_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (clusterNameId == -1) return
+          val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, projects, "org_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (orgNameId == -1) return
           val projectDetailsConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Program' AND report_name = 'Project-Details';"
           val projectQuestionCardIdList = ProcessProgramConstructor.ProcessAndUpdateJsonFiles(projectDetailsConfigQuery, solutionCollectionId, databaseId, solutionDashboardId, projectTabId, stateNameId, districtNameId, programNameId, blockNameId, clusterNameId, orgNameId, projects, solutions, tasks, metabaseUtil, postgresUtil, targetedProgramId, targetedSolutionId, config.evidenceBaseUrl)
           val submissionReportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Program' AND report_name = 'Submission-Details-CSV';"
