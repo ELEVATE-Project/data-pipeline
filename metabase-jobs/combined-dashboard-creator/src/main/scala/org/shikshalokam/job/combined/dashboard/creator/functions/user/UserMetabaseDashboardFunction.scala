@@ -37,7 +37,7 @@ class UserMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(impl
     val metabaseConnectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$metabasePgDb"
     postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
     metabasePostgresUtil = new PostgresUtil(metabaseConnectionUrl, pgUsername, pgPassword)
-    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil)
+    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, Some(metabasePostgresUtil))
   }
 
   override def close(): Unit = {
@@ -108,7 +108,7 @@ class UserMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(impl
           val (dashboardName, dashboardDescription) = ("User Metrics Summary", "Aggregated user data for a Admin")
           val dashboardId: Int = Utils.createDashboard(collectionId, dashboardName, dashboardDescription, metabaseUtil)
           val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed' WHERE entity_id = '1';"
-          val tenantCodeId: Int = metabaseUtil.getTheColumnId(databaseId, userMetrics, "tenant_code", metabaseApiKey, createDashboardQuery)
+          val tenantCodeId: Int = metabaseUtil.getTheColumnId(databaseId, userMetrics, "tenant_code", metabaseApiKey, createDashboardQuery, postgresUtil); if (tenantCodeId == -1) return
           val reportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Admin' AND report_name = 'User-Metrics-Report' AND question_type IN ('big-number', 'table');"
           val questionCardIdList = ProcessAdminConstructor.processAdminJsonFiles(reportConfigQuery, collectionId, databaseId, dashboardId, tenantCodeId, userMetrics, metabaseUtil, postgresUtil)
           val questionIdsString = "[" + questionCardIdList.mkString(",") + "]"
@@ -129,10 +129,10 @@ class UserMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(impl
           val (dashboardName, dashboardDescription) = ("User Dashboard", "Overview of Users Across Tenant")
           val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed' WHERE entity_id = '$tenantCode';"
           val dashboardId: Int = Utils.createDashboard(collectionId, dashboardName, dashboardDescription, metabaseUtil)
-          val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_one_name", metabaseApiKey, createDashboardQuery)
-          val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_two_name", metabaseApiKey, createDashboardQuery)
-          val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_three_name", metabaseApiKey, createDashboardQuery)
-          val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_four_name", metabaseApiKey, createDashboardQuery)
+          val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_one_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (stateNameId == -1) return
+          val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_two_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (districtNameId == -1) return
+          val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_three_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (blockNameId == -1) return
+          val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, tenantUserTable, "user_profile_four_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (clusterNameId == -1) return
           metabaseUtil.updateColumnCategory(stateNameId, "State")
           metabaseUtil.updateColumnCategory(districtNameId, "City")
           val filterQuery: String = s"SELECT config FROM $reportConfig WHERE report_name = 'Users-Filter' AND question_type = 'tenant-dashboard-filter'"
