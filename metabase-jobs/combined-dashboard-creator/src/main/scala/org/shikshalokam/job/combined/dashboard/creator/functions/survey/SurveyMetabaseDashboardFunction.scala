@@ -1,9 +1,6 @@
 package org.shikshalokam.job.combined.dashboard.creator.functions.survey
 
-import com.fasterxml.jackson.databind.node.ArrayNode
-import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
-
-import scala.collection.JavaConverters._
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
@@ -13,7 +10,6 @@ import org.shikshalokam.job.util.{MetabaseUtil, PostgresUtil}
 import org.shikshalokam.job.{BaseProcessFunction, Metrics}
 import org.slf4j.LoggerFactory
 
-import scala.collection.concurrent.TrieMap
 import scala.collection.immutable._
 
 class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(implicit val mapTypeInfo: TypeInformation[SurveyEvent], @transient var postgresUtil: PostgresUtil = null, @transient var metabasePostgresUtil: PostgresUtil = null, @transient var metabaseUtil: MetabaseUtil = null)
@@ -40,7 +36,7 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
     val metabaseConnectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$metabasePgDb"
     postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
     metabasePostgresUtil = new PostgresUtil(metabaseConnectionUrl, pgUsername, pgPassword)
-    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil)
+    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, Some(metabasePostgresUtil))
   }
 
   override def close(): Unit = {
@@ -263,12 +259,12 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
             val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
             if (parentCollectionId != -1) {
               val tabId: Int = tabIdMap.getOrElse(dashboardName, -1)
-              val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "state_name", metabaseApiKey, createDashboardQuery)
-              val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "district_name", metabaseApiKey, createDashboardQuery)
-              val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "block_name", metabaseApiKey, createDashboardQuery)
-              val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "cluster_name", metabaseApiKey, createDashboardQuery)
-              val schoolNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "school_name", metabaseApiKey, createDashboardQuery)
-              val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "organisation_name", metabaseApiKey, createDashboardQuery)
+              val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "state_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (stateNameId == -1) return -1
+              val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "district_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (districtNameId == -1) return -1
+              val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "block_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (blockNameId == -1) return -1
+              val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "cluster_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (clusterNameId == -1) return -1
+              val schoolNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "school_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (schoolNameId == -1) return -1
+              val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyQuestionTable, "organisation_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (orgNameId == -1) return -1
               metabaseUtil.updateColumnCategory(stateNameId, "State")
               metabaseUtil.updateColumnCategory(districtNameId, "City")
               val questionCardIdList = UpdateQuestionJsonFiles.ProcessAndUpdateJsonFiles(parentCollectionId, databaseId, dashboardId, tabId, stateNameId, districtNameId, blockNameId: Int, clusterNameId, schoolNameId, orgNameId, surveyQuestionTable, metabaseUtil, postgresUtil, reportConfig, evidenceBaseUrl)
@@ -311,12 +307,12 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
 
             def commonStepsToCreateCsvDashboard(reportConfigQuery: String, databaseId: Int, dashboardName: String, dashboardId: Int, tabIdMap: Map[String, Int], parentCollectionId: Int, parametersQuery: String, surveyTable: String, replacements: Map[String, String], metabaseApiKey: String): Unit = {
               val tabId: Int = tabIdMap.getOrElse(dashboardName, -1)
-              val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "state_name", metabaseApiKey, createDashboardQuery)
-              val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "district_name", metabaseApiKey, createDashboardQuery)
-              val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "block_name", metabaseApiKey, createDashboardQuery)
-              val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "cluster_name", metabaseApiKey, createDashboardQuery)
-              val schoolNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "school_name", metabaseApiKey, createDashboardQuery)
-              val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "organisation_name", metabaseApiKey, createDashboardQuery)
+              val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "state_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (stateNameId == -1) return
+              val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "district_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (districtNameId == -1) return
+              val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "block_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (blockNameId == -1) return
+              val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "cluster_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (clusterNameId == -1) return
+              val schoolNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "school_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (schoolNameId == -1) return
+              val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyTable, "organisation_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (orgNameId == -1) return
               metabaseUtil.updateColumnCategory(stateNameId, "State")
               metabaseUtil.updateColumnCategory(districtNameId, "City")
               val questionCardIdList = UpdateCsvDownloadJsonFiles.ProcessAndUpdateJsonFiles(reportConfigQuery, parentCollectionId, databaseId, dashboardId, tabId, stateNameId, districtNameId, blockNameId, clusterNameId, schoolNameId, orgNameId, replacements, metabaseUtil, postgresUtil)
@@ -346,12 +342,12 @@ class SurveyMetabaseDashboardFunction(config: CombinedDashboardCreatorConfig)(im
             val dashboardName: String = s"Status Report"
             val createDashboardQuery = s"UPDATE $metaDataTable SET status = 'Failed',error_message = 'errorMessage'  WHERE entity_id = '$targetedProgramId';"
             val tabId: Int = tabIdMap.getOrElse(dashboardName, -1)
-            val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "state_name", metabaseApiKey, createDashboardQuery)
-            val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "district_name", metabaseApiKey, createDashboardQuery)
-            val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "block_name", metabaseApiKey, createDashboardQuery)
-            val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "cluster_name", metabaseApiKey, createDashboardQuery)
-            val schoolNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "school_name", metabaseApiKey, createDashboardQuery)
-            val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "organisation_name", metabaseApiKey, createDashboardQuery)
+            val stateNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "state_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (stateNameId == -1) return
+            val districtNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "district_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (districtNameId == -1) return
+            val blockNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "block_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (blockNameId == -1) return
+            val clusterNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "cluster_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (clusterNameId == -1) return
+            val schoolNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "school_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (schoolNameId == -1) return
+            val orgNameId: Int = metabaseUtil.getTheColumnId(databaseId, surveyStatusTable, "organisation_name", metabaseApiKey, createDashboardQuery, postgresUtil); if (orgNameId == -1) return
             metabaseUtil.updateColumnCategory(stateNameId, "State")
             metabaseUtil.updateColumnCategory(districtNameId, "City")
             val reportConfigQuery: String = s"SELECT question_type, config FROM $reportConfig WHERE dashboard_name = 'Survey' AND report_name = 'Status-Report' AND question_type IN ('big-number', 'table');"
