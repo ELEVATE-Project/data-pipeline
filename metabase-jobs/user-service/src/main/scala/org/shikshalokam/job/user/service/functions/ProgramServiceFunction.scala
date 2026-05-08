@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
 import scala.collection.JavaConverters._
 import scala.collection.immutable.{Map, _}
 
-class ProgramServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: TypeInformation[Event], @transient var postgresUtil: PostgresUtil = null, @transient var metabasePostgresUtil: PostgresUtil = null, @transient var metabaseUtil: MetabaseUtil = null)
+class ProgramServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo: TypeInformation[Event], @transient var postgresUtil: PostgresUtil = null, @transient var metabaseUtil: MetabaseUtil = null)
   extends BaseProcessFunction[Event, Event](config) {
 
   private[this] val logger = LoggerFactory.getLogger(classOf[ProgramServiceFunction])
@@ -29,15 +29,12 @@ class ProgramServiceFunction(config: UserServiceConfig)(implicit val mapTypeInfo
     val pgUsername: String = config.pgUsername
     val pgPassword: String = config.pgPassword
     val pgDataBase: String = config.pgDataBase
-    val metabasePgDb: String = config.metabasePgDatabase
     val metabaseUrl: String = config.metabaseUrl
     val metabaseUsername: String = config.metabaseUsername
     val metabasePassword: String = config.metabasePassword
     val connectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$pgDataBase"
-    val metabaseConnectionUrl: String = s"jdbc:postgresql://$pgHost:$pgPort/$metabasePgDb"
     postgresUtil = new PostgresUtil(connectionUrl, pgUsername, pgPassword)
-    metabasePostgresUtil = new PostgresUtil(metabaseConnectionUrl, pgUsername, pgPassword)
-    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword, metabasePostgresUtil)
+    metabaseUtil = new MetabaseUtil(metabaseUrl, metabaseUsername, metabasePassword)
   }
 
   override def close(): Unit = {

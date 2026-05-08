@@ -46,7 +46,6 @@ class UserServiceConfig(override val config: Config) extends BaseJobConfig(confi
   val pgUsername: String = config.getString("postgres.username")
   val pgPassword: String = config.getString("postgres.password")
   val pgDataBase: String = config.getString("postgres.database")
-  val metabasePgDatabase: String = config.getString("postgres.metabaseDb")
 
   // Metabase connection config
   val metabaseUrl: String = config.getString("metabase.url")
