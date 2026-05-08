@@ -6,27 +6,30 @@ from datetime import datetime
 from pyhocon import ConfigFactory
 import logging
 
-def setup_logger():
+def setup_logger(execution_mode):
     root_dir = os.environ.get(
         "DATA_PIPELINE_ROOT",
         os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../"))
     )
-    LOG_DIR = os.path.join(root_dir, "logs")
-    os.makedirs(LOG_DIR, exist_ok=True)
+
+    log_dir = os.path.join(root_dir, "logs")
+    os.makedirs(log_dir, exist_ok=True)
+
+    current_date = datetime.now().strftime("%Y-%m-%d")
 
     log_file = os.path.join(
-        LOG_DIR,
-        f"metabase_pipeline_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+        log_dir,
+        f"metabase_{execution_mode}_{current_date}.log"
     )
 
-    logger = logging.getLogger("metabase_pipeline")
+    logger = logging.getLogger(f"metabase_{execution_mode}")
     logger.setLevel(logging.INFO)
 
     if logger.hasHandlers():
         logger.handlers.clear()
 
     formatter = logging.Formatter(
-        '%(asctime)s - %(levelname)s - %(message)s'
+        "%(asctime)s - %(levelname)s - %(message)s"
     )
 
     file_handler = logging.FileHandler(log_file)
@@ -38,10 +41,7 @@ def setup_logger():
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
 
-    return logger, LOG_DIR
-
-
-logger, LOG_DIR = setup_logger()
+    return logger, log_dir
 
 def load_config():
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -51,21 +51,27 @@ def load_config():
         os.path.abspath(os.path.join(base_dir, "../../../..", "unified-common.conf"))
     )
 
-    # Verify the file exists before parsing
     if not os.path.exists(unified_conf):
-        print(f"Error: Unified configuration file not found at '{unified_conf}'.", file=sys.stderr)
-        print("Please set the UNIFIED_PIPELINE_CONF environment variable or ensure 'unified-common.conf' exists in the root directory.", file=sys.stderr)
+        print(
+            f"Error: Unified configuration file not found at '{unified_conf}'.",
+            file=sys.stderr
+        )
         sys.exit(1)
 
     try:
         config = ConfigFactory.parse_file(unified_conf)
+
         return {
             "url": config.get_string("metabase.url"),
             "username": config.get_string("metabase.username"),
             "password": config.get_string("metabase.password")
         }
+
     except Exception as e:
-        print(f"Error parsing configuration at '{unified_conf}': {e}", file=sys.stderr)
+        print(
+            f"Error parsing configuration at '{unified_conf}': {e}",
+            file=sys.stderr
+        )
         sys.exit(1)
 
 def get_session(url, username, password):
@@ -283,13 +289,14 @@ def remap_users(url, session_id):
     logger.info("Remap completed")
 
 def main():
+    global logger, LOG_DIR
 
     if len(sys.argv) != 2:
-            print(
-                "Usage: python fetching_and_auto_mapping_groups.py "
-                "[fetch_user_details | delete_all_the_groups | remap_the_users]"
-            )
-            sys.exit(1)
+        print(
+            "Usage: python fetching_and_auto_mapping_groups.py "
+            "[fetch_user_details | delete_all_the_groups | remap_the_users]"
+        )
+        sys.exit(1)
 
     execution_mode = sys.argv[1]
 
@@ -303,6 +310,11 @@ def main():
         print(f"Invalid execution mode: {execution_mode}")
         sys.exit(1)
 
+    # Initialize logger AFTER execution mode is available
+    logger, LOG_DIR = setup_logger(execution_mode)
+
+    logger.info(f"Execution Mode: {execution_mode}")
+
     config = load_config()
 
     url = config["url"]
@@ -310,8 +322,6 @@ def main():
     password = config["password"]
 
     session_id = get_session(url, username, password)
-
-    logger.info(f"Execution Mode: {execution_mode}")
 
     if execution_mode == "fetch_user_details":
         fetch_users(url, session_id)

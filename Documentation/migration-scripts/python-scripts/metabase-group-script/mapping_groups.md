@@ -21,7 +21,6 @@ The execution mode is passed via command-line arguments.
 * Automatic logging to file and console
 * JSON snapshot generation
 * Automatic user remapping
-* Pagination support for large user bases
 * Uses unified-common.conf for credentials
 * Updates JSON with remapped group details
 * Preserves protected groups (`All Users`, `Administrators`)
@@ -82,6 +81,7 @@ This generates:
 
 ```text
 logs/existing_user_maps_YYYY-MM-DD.json
+logs/metabase_fetch_user_details_YYYY-MM-DD.log
 ```
 
 ---
@@ -91,7 +91,11 @@ logs/existing_user_maps_YYYY-MM-DD.json
 ```bash
 python3 fetching_and_auto_mapping_groups.py delete_all_the_groups
 ```
+This generates:
 
+```text
+logs/metabase_delete_all_the_groups_YYYY-MM-DD.log
+```
 Protected groups are skipped:
 
 * All Users
@@ -105,6 +109,11 @@ After recreating dashboards/groups:
 
 ```bash
 python3 fetching_and_auto_mapping_groups.py remap_the_users
+```
+This generates:
+
+```text
+logs/metabase_remap_the_users_YYYY-MM-DD.log
 ```
 
 The existing JSON file is updated with:
@@ -140,33 +149,6 @@ The existing JSON file is updated with:
 
 ---
 
-# Logging
-
-Logs are stored in:
-
-```text
-logs/metabase_pipeline_YYYYMMDD_HHMMSS.log
-```
-
-The script logs:
-
-* execution mode
-* user fetch counts
-* group deletions
-* remapping status
-* warnings/errors
-
----
-
-# Pagination Support
-
-The script supports Metabase user pagination automatically using:
-
-* limit
-* offset
-* total
-
-This ensures all users are fetched even in large instances.
 
 ---
 
@@ -184,7 +166,7 @@ This ensures all users are fetched even in large instances.
 ```text
 1. fetch_user_details
 2. delete_all_the_groups
-3. recreate dashboards/groups
+3. recreate dashboards/groups (execute this script to populate dashboards and groups : push_kafka_messages.py)
 4. remap_the_users
 ```
 
