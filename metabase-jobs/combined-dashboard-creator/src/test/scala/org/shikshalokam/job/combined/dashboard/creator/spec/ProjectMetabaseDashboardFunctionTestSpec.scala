@@ -12,7 +12,6 @@ import org.shikshalokam.job.connector.FlinkKafkaConnector
 import org.shikshalokam.job.combined.dashboard.creator.domain.ProjectEvent
 import org.shikshalokam.job.combined.dashboard.creator.task.{CombinedDashboardCreatorConfig, CombinedDashboardCreatorTask}
 
-
 import java.io.File
 
 class ProjectMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
@@ -50,7 +49,7 @@ class ProjectMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
   }
 
   def initialize() {
-    when(mockKafkaUtil.kafkaJobRequestSource[ProjectEvent](jobConfig.projectInputTopic))
+    when(mockKafkaUtil.kafkaJobRequestSourceWithProperties[ProjectEvent](jobConfig.projectInputTopic, jobConfig.projectKafkaConsumerProperties))
       .thenReturn(new ProjectMetabaseEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.projectInputTopic)).thenReturn(new GenerateProjectSink)
   }

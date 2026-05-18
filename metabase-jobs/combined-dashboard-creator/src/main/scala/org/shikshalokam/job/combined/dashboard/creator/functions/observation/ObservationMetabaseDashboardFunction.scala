@@ -232,7 +232,7 @@ class ObservationMetabaseDashboardFunction(config: CombinedDashboardCreatorConfi
         }
 
         def createProgramCollection(programCollectionName: String, targetedProgramId: String, programExternalId: String, programDescription: String, reportFor: String): Int = {
-          val programCollectionDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $programExternalId\n\nCollection For: $reportFor\n\nProgram Description: $programDescription"
+          val programCollectionDescription = s"Program Id: $targetedProgramId\n\nProgram External Id: $programExternalId\n\nCreator Organisation: $orgId\n\nCollection For: $reportFor\n\nProgram Description: $programDescription"
           val programCollectionId: Int = Utils.createCollection(programCollectionName, programCollectionDescription, metabaseUtil)
           if (programCollectionId != -1) {
             val programMetadataJson = new ObjectMapper().createArrayNode().add(new ObjectMapper().createObjectNode().put("collectionId", programCollectionId).put("collectionName", programCollectionName).put("Collection For", reportFor))
