@@ -8,7 +8,7 @@ import org.apache.flink.test.util.MiniClusterWithClientResource
 import org.mockito.Mockito
 import org.mockito.Mockito.when
 import org.shikshalokam.BaseTestSpec
-import org.shikshalokam.job.combined.dashboard.creator.domain.{MentoringEvent, ObservationEvent, ProjectEvent, SurveyEvent, UserEvent}
+import org.shikshalokam.job.combined.dashboard.creator.domain.UserEvent
 import org.shikshalokam.job.combined.dashboard.creator.task.{CombinedDashboardCreatorConfig, CombinedDashboardCreatorTask}
 import org.shikshalokam.job.connector.FlinkKafkaConnector
 
@@ -49,7 +49,7 @@ class UserMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
   }
 
   def initialize(): Unit = {
-    when(mockKafkaUtil.kafkaJobRequestSource[UserEvent](jobConfig.userInputTopic))
+    when(mockKafkaUtil.kafkaJobRequestSourceWithProperties[UserEvent](jobConfig.userInputTopic, jobConfig.userKafkaConsumerProperties))
       .thenReturn(new UserMetabaseEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.userInputTopic)).thenReturn(new GenerateUserSink)
   }

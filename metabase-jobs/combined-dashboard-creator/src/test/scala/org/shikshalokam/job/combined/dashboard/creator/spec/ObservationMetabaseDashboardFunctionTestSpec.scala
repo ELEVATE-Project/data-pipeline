@@ -49,7 +49,7 @@ class ObservationMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
   }
 
   def initialize(): Unit = {
-    when(mockKafkaUtil.kafkaJobRequestSource[ObservationEvent](jobConfig.observationInputTopic))
+    when(mockKafkaUtil.kafkaJobRequestSourceWithProperties[ObservationEvent](jobConfig.observationInputTopic, jobConfig.observationKafkaConsumerProperties))
       .thenReturn(new ObservationMetabaseEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.observationInputTopic)).thenReturn(new GenerateObservationSink)
   }

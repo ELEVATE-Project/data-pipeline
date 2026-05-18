@@ -49,7 +49,7 @@ class UserStreamFunctionTestSpec extends BaseTestSpec {
   }
 
   def initialize(): Unit = {
-    when(mockKafkaUtil.kafkaJobRequestSource[UserEvent](jobConfig.userInputTopic))
+    when(mockKafkaUtil.kafkaJobRequestSourceWithProperties[UserEvent](jobConfig.userInputTopic, jobConfig.userKafkaConsumerProperties))
       .thenReturn(new UserEventSource)
     when(mockKafkaUtil.kafkaStringSink(jobConfig.userOutputTopic))
       .thenReturn(new GenerateUserSink)
