@@ -84,9 +84,7 @@ Comprehensive health monitoring support has been added for platform services.
 - Flink JobManager
 - Flink TaskManager
 - Kafka
-- PostgreSQL
 - Metabase
-- Elevate Data Services
 
 ## ✅ Benefits
 
@@ -355,37 +353,51 @@ Introduced CI support for Docker image validation and build workflows.
 
 ## ✅ Recommended Actions
 
-1. Rebuild Docker images
-2. Update Docker Compose configuration
-3. Configure `unified-common.conf`
-4. Validate health monitoring
-5. Verify automated Flink startup flow
+### 1. Configure the unified-common.conf  :
+#### update the conf in the file according to the environment .
+### 2. enable the jobs which you want to run on the flink :
+#### ex . If we want to run only the project, surevy and observation releated stream and dashboard jobs then set the respective config to true .
+
+	combined.project.stream.job.enabled  = true
+	combined.survey.stream.job.enabled  = true
+	combined.observation.stream.job.enabled  = true
+	combined.user.stream.job.enabled  = false
+	combined.mentoring.stream.job.enabled  = false
+	combined.project.dashboard.job.enabled  = true
+	combined.survey.dashboard.job.enabled  = true
+	combined.observation.dashboard.job.enabled  = true
+	combined.mentoring.dashboard.job.enabled  = false
+	combined.user.dashboard.job.enabled  = false
+	combined.user.mapping.job.enabled  = true
+	combined.program.mapping.job.enabled  = true
+### 3. Update Docker Compose configuration :
+	- update the unified-common.conf file path at taskmanager and the elevate data volumn section .
+	    volumes:
+	       /home/local/reports/release-3.1.0/unified-common.conf:/opt/flink/conf/unified-common.conf
+	- update the log4j2.properties file path at the taskmanger .
+		volumes:
+		   /home/local/reports/release-3.1.0/log4j2.properties:/opt/flink/conf/log4j-console.properties
+	- update the logs folder file path  at taskmanager and the elevate data volumn section .
+	   volumes:
+	  /home/local/reports/release-3.1.0/logs/job-logs/:/opt/flink/log
+
+### 4. Recreation of All Dashboards
+
+- Before Re-Creating the Dashboards, make sure you go through this documentation for Fetching the existing user mapping groups of metabase and Re-mapping to newly created Dashboards. [Mapping-Metabase-Groups](https://github.com/ELEVATE-Project/data-pipeline/blob/release-3.1.0/Documentation/migration-scripts/python-scripts/metabase-group-script/mapping_groups.md)
+
+- To reflect the updated tables and charts in the dashboards, all dashboards need to be recreated.
+
+- Please follow the documentation: [/Documentation/migration-scripts/python-scripts/dashboard_recreation.md](https://github.com/ELEVATE-Project/data-pipeline/blob/release-3.1.0/Documentation/migration-scripts/python-scripts/dashbard_recreation.md)
 
 ---
 
 # 📁 Reference Files
 
-| File | Description |
-|------|-------------|
-| `unified-common.conf` | Centralized configuration |
-| `elevate-data-entrypoint.py` | Automated orchestration |
-| `log4j2.properties` | Structured logging |
-| `docker-compose.yml` | Updated infrastructure setup |
-
----
-
-# 📊 Summary
-
-Release **`v3.1.0`** significantly improves the operational maturity of the ELEVATE Data Pipeline platform.
-
-This release delivers major improvements in:
-
-- ⚡ Automation
-- 📊 Observability
-- 🔄 CI/CD
-- 🧩 Configuration Management
-- 🤖 Metabase Optimization
-- 🐳 Docker Infrastructure
-- 🚀 Flink Reliability & Performance
+| File                                                                                                                                                    | Description |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------|-------------|
+| [unified-common.conf](https://github.com/ELEVATE-Project/data-pipeline/blob/release-3.1.0/unified-common.conf)                                          | Centralized configuration |
+| [elevate-data-entrypoint.py](https://github.com/ELEVATE-Project/data-pipeline/blob/release-3.1.0/Documentation/Docker-setup/elevate-data-entrypoint.py) | Automated orchestration |
+| [log4j2.properties](https://github.com/ELEVATE-Project/data-pipeline/blob/release-3.1.0/log4j2.properties)                                              | Structured logging |
+| [docker-compose.yml](https://github.com/ELEVATE-Project/data-pipeline/blob/release-3.1.0/Documentation/Docker-setup/docker-compose.yml)                 | Updated infrastructure setup |
 
 ---
