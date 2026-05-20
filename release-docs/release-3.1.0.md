@@ -40,7 +40,7 @@ This release introduces:
 | 🤖 Metabase | Dashboard Automation & API Optimization |
 | 🔄 CI/CD | Docker Image CI + CodeRabbit Integration |
 | 📨 Kafka Utilities | Shell Scripts Migrated to Python |
-| 🔐 Access Control | Improved Dashboard Mapping & Restrictions |
+| 🔐 Access Control | Improved dashboard mapping and group ID cleanup |
 
 ---
 
@@ -58,12 +58,14 @@ Introduced automated Flink job submission during container startup.
 - Improved orchestration flow
 
 ### 🔁 Previous Approach
+#### Previously, this script required manual execution from within the container.
 
 ```bash
 submit-jobs.sh
 ```
 
 ### ✅ New Approach
+#### The script is now integrated as the container entrypoint, automatically monitoring job status and restarting Flink jobs if they stop.
 
 ```bash
 python3 elevate-data-entrypoint.py
@@ -84,7 +86,7 @@ Comprehensive health monitoring support has been added for platform services.
 - Kafka
 - PostgreSQL
 - Metabase
-- Internal Services
+- Elevate Data Services
 
 ## ✅ Benefits
 
@@ -316,74 +318,6 @@ Introduced CI support for Docker image validation and build workflows.
 
 ---
 
-# 🐳 Docker Infrastructure Improvements
-
-Major Docker Compose and orchestration improvements were introduced.
-
----
-
-# 🔧 Key Docker Changes
-
----
-
-## 📉 Logging Optimization
-
-Disabled unnecessary container logs for Kafka and Zookeeper.
-
-```yaml
-logging:
-  driver: none
-```
-
-### ✅ Benefits
-
-- Reduced container log growth
-- Improved disk usage management
-
----
-
-## 🧠 Metabase Startup Improvements
-
-### ❌ Previous Startup
-
-```yaml
-metabase:
-  image: metabase/metabase:v0.50.25
-```
-
----
-
-### ✅ New Startup Flow
-
-```yaml
-entrypoint: ["/bin/bash", "/app/update_metabase_schema.sh"]
-```
-
-### 🚀 Improvements
-
-- Automated schema updates
-- Better initialization process
-- Cleaner startup lifecycle
-
----
-
-## ⚙️ Elevate Data Service Improvements
-
-### ❌ Previous Startup
-
-```yaml
-entrypoint:
-  ["/bin/bash", "-c", "/app/Documentation/Docker-setup/submit-jobs.sh jobmanager && sleep infinity"]
-```
-
----
-
-### ✅ New Startup
-
-```yaml
-command: python3 /app/Documentation/Docker-setup/elevate-data-entrypoint.py
-```
-
 ### 🚀 Benefits
 
 - Automated orchestration
@@ -455,11 +389,3 @@ This release delivers major improvements in:
 - 🚀 Flink Reliability & Performance
 
 ---
-
-<div align="center">
-
-# ELEVATE Data Pipeline `v3.1.0`
-
-### Reliable • Scalable • Automated • Production Ready
-
-</div>
