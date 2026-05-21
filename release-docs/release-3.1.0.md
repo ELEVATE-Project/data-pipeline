@@ -355,7 +355,7 @@ Introduced CI support for Docker image validation and build workflows.
 
 ### 1. Configure the unified-common.conf  :
 #### update the conf in the file according to the environment .
-### 2. enable the jobs which you want to run on the flink :
+### 2. Enable the jobs which you want to run on the flink :
 #### ex . If we want to run only the project, surevy and observation releated stream and dashboard jobs then set the respective config to true .
 
 	combined.project.stream.job.enabled  = true
@@ -374,12 +374,14 @@ Introduced CI support for Docker image validation and build workflows.
 	- update the unified-common.conf file path at taskmanager and the elevate data volumn section .
 	    volumes:
 	       /home/local/reports/release-3.1.0/unified-common.conf:/opt/flink/conf/unified-common.conf
+
 	- update the log4j2.properties file path at the taskmanger .
-		volumes:
-		   /home/local/reports/release-3.1.0/log4j2.properties:/opt/flink/conf/log4j-console.properties
-	- update the logs folder file path  at taskmanager and the elevate data volumn section .
-	   volumes:
-	  /home/local/reports/release-3.1.0/logs/job-logs/:/opt/flink/log
+	    volumes:
+	        /home/local/reports/release-3.1.0/log4j2.properties:/opt/flink/conf/log4j-console.properties
+
+    - update the logs folder file path  at taskmanager and the elevate data volumn section .
+        volumes:
+            /home/local/reports/release-3.1.0/logs/job-logs/:/opt/flink/log
 
 ### 4. Recreation of All Dashboards
 
