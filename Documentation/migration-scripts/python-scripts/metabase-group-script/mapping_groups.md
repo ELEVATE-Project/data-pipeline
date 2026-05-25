@@ -103,7 +103,14 @@ Protected groups are skipped:
 
 ---
 
-## 3. Remap Users
+## 3. Recreate All The Dashboards 
+
+Please use this [document](Documentation/migration-scripts/python-scripts/dashbard_recreation.md)  to recreate the dashboards once the group ID has been deleted.
+
+
+---
+
+## 4. Remap Users
 
 After recreating dashboards/groups:
 
