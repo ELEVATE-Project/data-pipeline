@@ -20,9 +20,9 @@
         <module>survey-dashboard-creator</module>
         <module>observation-dashboard-creator</module>
         <module>user-dashboard-creator</module>
-        <module>users-via-csv</module>
         <module>user-service</module>
         <module>mentoring-dashboard-creator</module>
+        <module>combined-dashboard-creator</module>
     </modules>
 
     <build>

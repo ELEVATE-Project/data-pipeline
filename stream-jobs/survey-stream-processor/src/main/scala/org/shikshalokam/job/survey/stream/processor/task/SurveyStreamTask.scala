@@ -44,7 +44,7 @@ object SurveyStreamTask {
     val configFilePath = Option(ParameterTool.fromArgs(args).get("config.file.path"))
     val config = configFilePath.map {
       path => ConfigFactory.parseFile(new File(path)).resolve()
-    }.getOrElse(ConfigFactory.load("survey-stream.conf").withFallback(ConfigFactory.systemEnvironment()))
+    }.getOrElse(ConfigFactory.load("unified-common.conf").withFallback(ConfigFactory.systemEnvironment()))
     val surveyStreamConfig = new SurveyStreamConfig(config)
     val kafkaUtil = new FlinkKafkaConnector(surveyStreamConfig)
     val task = new SurveyStreamTask(surveyStreamConfig, kafkaUtil)

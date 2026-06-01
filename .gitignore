@@ -16,3 +16,6 @@ kubernetes/config
 .factorypath
 bin/
 .settings/
+.vscode/
+.bloop/
+.metals/

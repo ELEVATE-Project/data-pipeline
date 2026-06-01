@@ -13,7 +13,7 @@ class BaseJobConfig(val config: Config, val jobName: String) extends Serializabl
 
   implicit val metricTypeInfo: TypeInformation[String] = TypeExtractor.getForClass(classOf[String])
 
-  val kafkaBrokerServers: String = config.getString("kafka.broker-servers")
+  val kafkaBrokerServers: String = config.getString("kafka.broker.servers")
   val zookeeper: String = config.getString("kafka.zookeeper")
   val groupId: String = config.getString("kafka.groupId")
   val restartAttempts: Int = config.getInt("task.restart-strategy.attempts")
@@ -37,6 +37,17 @@ class BaseJobConfig(val config: Config, val jobName: String) extends Serializabl
     val properties = new Properties()
     properties.setProperty("bootstrap.servers", kafkaBrokerServers)
     properties.setProperty("group.id", groupId)
+    properties.setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed")
+    kafkaAutoOffsetReset.map {
+      properties.setProperty("auto.offset.reset", _)
+    }
+    properties
+  }
+
+  def kafkaConsumerPropertiesWithGroupId(customGroupId: String): Properties = {
+    val properties = new Properties()
+    properties.setProperty("bootstrap.servers", kafkaBrokerServers)
+    properties.setProperty("group.id", customGroupId)
     properties.setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed")
     kafkaAutoOffsetReset.map {
       properties.setProperty("auto.offset.reset", _)

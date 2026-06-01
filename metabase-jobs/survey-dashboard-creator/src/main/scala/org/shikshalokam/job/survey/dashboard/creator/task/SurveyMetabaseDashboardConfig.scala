@@ -12,10 +12,10 @@ class SurveyMetabaseDashboardConfig(override val config: Config) extends BaseJob
   implicit val mapTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
 
   // Kafka Topics Configuration
-  val inputTopic: String = config.getString("kafka.input.topic")
+  val inputTopic: String = config.getString("kafka.survey.dashboard.input.topic")
 
   // Parallelism
-  val mlMetabaseParallelism: Int = config.getInt("task.sl.metabase.dashboard.parallelism")
+  val mlMetabaseParallelism: Int = config.getInt("task.survey.metabase.dashboard.parallelism")
 
   // Consumers
   val metabaseDashboardProducer: String = "metabase-dashboard-consumer"
@@ -46,6 +46,6 @@ class SurveyMetabaseDashboardConfig(override val config: Config) extends BaseJob
   val metabasePassword: String = config.getString("metabase.password")
   val metabaseDatabase: String = config.getString("metabase.database")
   val evidenceBaseUrl: String = config.getString("metabase.evidenceBaseUrl")
-  val metabaseApiKey: String = config.getString("metabase.metabaseApiKey")
+  val metabaseApiKey: String = config.getString("metabase.api.key")
 
 }

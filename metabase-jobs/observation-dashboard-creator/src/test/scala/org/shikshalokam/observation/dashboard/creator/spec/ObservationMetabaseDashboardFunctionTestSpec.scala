@@ -1,6 +1,7 @@
 package org.shikshalokam.observation.dashboard.creator.spec
 
 import com.typesafe.config.{Config, ConfigFactory}
+import java.io.File
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.TypeExtractor
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration
@@ -26,7 +27,7 @@ class ObservationMetabaseDashboardFunctionTestSpec extends BaseTestSpec {
 
   val mockKafkaUtil: FlinkKafkaConnector = mock[FlinkKafkaConnector](Mockito.withSettings().serializable())
 
-  val config: Config = ConfigFactory.load("test.conf")
+  val config: Config = ConfigFactory.parseFile(new File("unified-test.conf")).resolve().withFallback(ConfigFactory.systemEnvironment())
   val jobConfig: ObservationMetabaseDashboardConfig = new ObservationMetabaseDashboardConfig(config)
 
 

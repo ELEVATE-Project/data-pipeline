@@ -12,10 +12,10 @@ class ProjectMetabaseDashboardConfig(override val config: Config) extends BaseJo
   implicit val mapTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
 
   // Kafka Topics Configuration
-  val inputTopic: String = config.getString("kafka.input.topic")
+  val inputTopic: String = config.getString("kafka.project.dashboard.input.topic")
 
   // Parallelism
-  val mlMetabaseParallelism: Int = config.getInt("task.sl.metabase.dashboard.parallelism")
+  val mlMetabaseParallelism: Int = config.getInt("task.project.metabase.dashboard.parallelism")
 
   // Consumers
   val metabaseDashboardProducer: String = "metabase-dashboard-consumer"
@@ -49,5 +49,5 @@ class ProjectMetabaseDashboardConfig(override val config: Config) extends BaseJo
   val metabaseDatabase: String = config.getString("metabase.database")
   val metabaseDomainName: String = config.getString("metabase.domainName")
   val evidenceBaseUrl: String = config.getString("metabase.evidenceBaseUrl")
-  val metabaseKey: String = config.getString("metabase.metabaseApiKey")
+  val metabaseKey: String = config.getString("metabase.api.key")
 }

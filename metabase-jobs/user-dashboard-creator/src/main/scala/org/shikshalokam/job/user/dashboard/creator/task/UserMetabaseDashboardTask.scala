@@ -37,7 +37,7 @@ object MetabaseDashboardTask {
     val configFilePath = Option(ParameterTool.fromArgs(args).get("config.file.path"))
     val config = configFilePath.map {
       path => ConfigFactory.parseFile(new File(path)).resolve()
-    }.getOrElse(ConfigFactory.load("metabase-user-dashboard.conf").withFallback(ConfigFactory.systemEnvironment()))
+    }.getOrElse(ConfigFactory.load("unified-common.conf").withFallback(ConfigFactory.systemEnvironment()))
     val metabaseDashboardConfig = new UserMetabaseDashboardConfig(config)
     val kafkaUtil = new FlinkKafkaConnector(metabaseDashboardConfig)
     val task = new MetabaseDashboardTask(metabaseDashboardConfig, kafkaUtil)

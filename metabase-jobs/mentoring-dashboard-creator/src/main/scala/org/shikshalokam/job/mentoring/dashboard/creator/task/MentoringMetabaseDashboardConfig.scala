@@ -12,10 +12,10 @@ class MentoringMetabaseDashboardConfig(override val config: Config) extends Base
   implicit val mapTypeInfo: TypeInformation[Event] = TypeExtractor.getForClass(classOf[Event])
 
   // Kafka Topics Configuration
-  val inputTopic: String = config.getString("kafka.input.topic")
+  val inputTopic: String = config.getString("kafka.mentoring.dashboard.input.topic")
 
   // Parallelism
-  val mlMetabaseParallelism: Int = config.getInt("task.sl.metabase.dashboard.parallelism")
+  val mlMetabaseParallelism: Int = config.getInt("task.mentoring.metabase.dashboard.parallelism")
 
   // Consumers
   val metabaseDashboardProducer: String = "metabase-dashboard-consumer"
@@ -44,5 +44,5 @@ class MentoringMetabaseDashboardConfig(override val config: Config) extends Base
   val metabaseUsername: String = config.getString("metabase.username")
   val metabasePassword: String = config.getString("metabase.password")
   val metabaseDatabase: String = config.getString("metabase.database")
-  val metabaseApiKey: String = config.getString("metabase.metabaseApiKey")
+  val metabaseApiKey: String = config.getString("metabase.api.key")
 }
